@@ -1,0 +1,281 @@
+body {
+  --scene-graph-width: 320px;
+
+  margin: 0;
+  font-family: Monaco;
+  font-size: 0.8em;
+  background-color: #000000;
+}
+
+#container {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+}
+
+#loading-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: calc(100% - var(--scene-graph-width));
+}
+
+#loading-container .loading:not(.active) {
+  display: none;
+}
+
+#loading-container .loading.active .message {
+  text-align: center;
+}
+
+#loading-container .loading.active .dots {
+  line-height: 0em;
+  font-size: 10em;
+  display: flex;
+  justify-content: center;
+}
+
+#loading-container .loading.active [class*=dot-] {
+  opacity: 0.1;
+  animation: font-size 3s linear infinite;
+}
+
+/* animation: name duration timing-function delay iteration-count direction fill-mode; */
+#loading-container .loading.active .dot-1 {
+  color: #00ffff;
+  animation-delay: -1s;
+}
+
+#loading-container .loading.active .dot-2 {
+  color: #ff00ff;
+  animation-delay: 0s;
+}
+
+#loading-container .loading.active .dot-3 {
+  color: #ffff00;
+  animation-delay: 1s;
+}
+
+@keyframes font-size {
+  from { opacity: 0.1; }
+  40% { opacity: 0.1; }
+  50% { opacity: 1; }
+  80% { opacity: 0.1; }
+  to { opacity: 0.1; }
+}
+
+#loading-container .loading.active {
+  color: #ffffff;
+  height: 100%;
+  width: 100%;
+  background-color: #111111;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#error-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: #ffaaaaaa;
+}
+
+#error-container:empty {
+  display: none;
+}
+
+#mousetrap {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: calc(100% - var(--scene-graph-width));
+}
+
+#resizer {
+  position: fixed;
+  top: 0;
+  right: calc(var(--scene-graph-width) - .25em);
+  width: .5em;
+  height: 100vh;
+  background: #444444;
+}
+
+#resizer:hover {
+  cursor: col-resize;
+}
+
+#glCanvas {
+  height: 100%;
+  width: calc(100% - var(--scene-graph-width));
+}
+
+#scene-graph-container {
+  height: 100%;
+  width: var(--scene-graph-width);
+  min-width: var(--scene-graph-width);
+}
+
+.error .message {
+  padding: 2em;
+}
+
+.error .stack {
+  padding: 0 2em 2em 2em;
+}
+
+.scene-graph {
+  color: #b3b3b3;
+  background-color: #333333;
+  display: flex;
+  justify-content: space-between;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+  border-left: 1px #333333 solid;
+}
+
+.scene-tree {
+  height: 100%;
+}
+
+.scene-tree-header {
+  text-transform: capitalize;
+  background-color: #000000;
+  padding: 1em;
+}
+
+.scene-node {
+  margin: 0px !important;
+  padding: 0px !important;
+  padding-left: 1em !important;
+}
+
+.scene-nodes {
+  list-style: none;
+  margin: 0px !important;
+  padding: 0px !important;
+
+  /* This is for animating collapsing of the tree */
+  max-height: 100px;
+}
+
+.scene-node.collapsed > .scene-nodes {
+  /* This is how we animate collapsing the tree */
+  max-height: 0px;
+  overflow-y: auto;
+  transition: max-height .3s ease;
+}
+
+.scene-node > .scene-node-content {
+  position: relative;
+}
+
+.scene-node > .scene-node-content > .expander:hover {
+  cursor: pointer;
+  color: #ffffff;
+  background-color: #111111;
+}
+
+.scene-node:not(.empty) > .scene-node-content > .expander {
+  position: absolute;
+  left: -1em;
+  text-align: center;
+  padding: .5em;
+  width: 1em;
+}
+
+.scene-node:not(.empty) > .scene-node-content > .expander:before {
+  display: block;
+  transform: rotateZ(90deg);
+  transition: transform 150ms ease;
+  content: "▶"; /* em dash ➤ ▶ ▸ ► */
+}
+
+.scene-node.collapsed:not(.empty) > .scene-node-content > .expander:before {
+  transform: rotateZ(0deg);
+}
+
+.scene-node-content > .name {
+  padding: .5em;
+  margin-left: 1em;
+}
+
+.scene-node-content.selected > .name {
+  background-color: #111111;
+}
+
+.scene-node-content:not(.selected) > .name:hover {
+  cursor: pointer;
+  background-color: #222222;
+}
+
+.scene-node-details .scene-node-details-header {
+  text-transform: capitalize;
+  padding: 1em;
+  background-color: #000000;
+  display: flex;
+  justify-content: space-between;
+}
+
+.scene-node-details .scene-node-details-body {
+  display: flex;
+}
+
+.scene-node-details .scene-node-details-content {
+  padding: 1em;
+  width: 100%;
+  height: 250px;
+  overflow-y: auto;
+}
+
+.scene-node-details .scene-node-details-toolbar {
+  display: flex;
+  flex-direction: column;
+  width: 3em;
+  background-color: #000000;
+}
+
+.scene-node-details-toolbar > .button {
+  padding: 1em;
+  background: #000000;
+  /* border-top: solid 1px #444444;
+  border-right: solid 1px #444444; */
+}
+
+.scene-node-details-toolbar > .button:hover {
+  cursor: pointer;
+  background: #444444;
+}
+
+.scene-node-details-toolbar > .button.selected {
+  cursor: pointer;
+  background-color: #333333;
+}
+
+.scene-node-details .node-properties > * {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 10px;
+}
+
+.scene-node-details .node-properties .value > * {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.scene-node-details .node-properties input[type="number"] {
+  text-align: center;
+  width: 8em;
+  margin-left: 1em;
+  padding: .25em;
+
+  background-color: #a9a9a9;
+  border: 1px solid;
+  border-radius: 4px;
+}

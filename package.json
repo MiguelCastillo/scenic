@@ -1,0 +1,30 @@
+{
+  "name": "scenic",
+  "version": "0.0.0",
+  "description": "Scene graph rendering",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "jest",
+    "serve": "3dub",
+    "editor": "pakit --config editor/.pakit.js"
+  },
+  "author": "Miguel Castillo",
+  "license": "MIT",
+  "dependencies": {
+    "encoding": "^0.1.13",
+    "node-fetch": "^2.6.1"
+  },
+  "devDependencies": {
+    "3dub": "^1.1.0",
+    "@babel/eslint-parser": "^7.13.8",
+    "@babel/plugin-proposal-class-properties": "^7.13.0",
+    "@babel/preset-env": "^7.13.8",
+    "@babel/preset-react": "^7.12.13",
+    "@bit/loader-text": "^1.2.1",
+    "eslint": "^7.22.0",
+    "jest": "^26.6.3",
+    "pakit": "^2.1.0",
+    "react": "^17.0.1",
+    "react-dom": "^17.0.1"
+  }
+}
