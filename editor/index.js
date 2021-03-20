@@ -14,6 +14,7 @@ import webgl from "../src/webgl.js";
 import {PerspectiveProjectionMatrix} from "../src/math/projections.js";
 import * as vec3 from "../src/math/vector3.js";
 import * as angles from "../src/math/angles.js";
+import * as easings from "../src/math/easings.js";
 import {Subscription} from "../src/dom/events.js";
 import {onReady} from "../src/dom/ready.js";
 import {ShaderProgram} from "../src/shaders/program.js";
@@ -32,9 +33,43 @@ import {ResourceManager} from "../src/resource-manager.js";
 
 import {createFrameRateCounter} from "./fps-counter.js";
 import {config} from "./scene-config.js";
+
 // paki bug. importing a third part module that doesn't exist cases
 // issues when calling sourceMap.addFile in chunkedBundleBuilder
 // import { Body } from "node-fetch";
+
+class WeightedItems {
+  // Default is a linear weight
+  constructor(weightFunction = (x) => x) {
+    this.items = [];
+    this.factor = 0;
+    this.weightFunction = weightFunction;
+  }
+
+  start(items) {
+    this.items = items;
+    this.factor = 1;
+  }
+
+  reset() {
+    this.factor = 0;
+  }
+
+  update(reduction=0.01) {
+    // Weighted world rotation.
+    if (this.factor > 0) {
+      this.factor = this.factor - reduction;
+      return true;
+    }
+    this.factor = 0;
+    return false;
+  }
+
+  getWeighted() {
+    const weightedFactor = this.weightFunction(this.factor);
+    return this.items.map(item => angles.fixed7f(item * weightedFactor));
+  }
+}
 
 function buildScene(gl, stateManager, resources) {
   const sceneManager = new SceneManager();
@@ -130,21 +165,25 @@ function buildScene(gl, stateManager, resources) {
 // render it.
 function createSceneUpdater(gl, sceneManager, stateManager) {
   const getFrameRate = createFrameRateCounter();
+  const {canvas} = gl;
 
   // The camera is the projection matrix.
-  let projectionMatrix = createProjectionMatrix(...getClientDimensions(gl.canvas));
+  let projectionMatrix = createProjectionMatrix(canvas.clientWidth, canvas.clientHeight);
   let rotationDegrees = 0;
+
+  function handleResize() {
+    const {clientWidth, clientHeight} = canvas;
+    canvas.width = clientWidth;
+    canvas.height = clientHeight;
+    projectionMatrix = createProjectionMatrix(clientWidth, clientHeight);
+  }
 
   // Update canvas width/height whenever the window is resized. clientHeight
   // and clientWidth are the window.innerHeight and window.innerWidth. it is
   // just a convenient accessor for the global object dimensions.
   Subscription.create(window)
     .on("resize", () => {
-      const {canvas} = gl;
-      const {clientWidth, clientHeight} = canvas;
-      canvas.width = clientWidth;
-      canvas.height = clientHeight;
-      projectionMatrix = createProjectionMatrix(clientWidth, clientHeight);
+      handleResize();
     });
 
   let resizeEnabled = false;
@@ -161,15 +200,12 @@ function createSceneUpdater(gl, sceneManager, stateManager) {
     .on("mousemove", (evt) => {
       if (resizeEnabled) {
         document.body.style.setProperty("--scene-graph-width", (document.body.clientWidth - evt.clientX) + "px");
-
-        const {canvas} = gl;
-        const {clientWidth, clientHeight} = canvas;
-        projectionMatrix = createProjectionMatrix(clientWidth, clientHeight);
-        canvas.width = clientWidth;
-        canvas.height = clientHeight;
+        handleResize();
       }
     });
 
+  const worldRotation = new WeightedItems(easings.easeInQuart);
+  const worldTranslation = new WeightedItems(easings.easeInQuart);
   const mousetrapEl = document.getElementById("mousetrap");
   Subscription.create(mousetrapEl)
     .on("click", (/*evt*/) => {
@@ -177,16 +213,59 @@ function createSceneUpdater(gl, sceneManager, stateManager) {
     })
     .on("mousemove", (evt) => {
       if (document.pointerLockElement === mousetrapEl) {
-        const worldMatrixName = "world matrix";
-        const worldMatrix = stateManager.getItemByName(worldMatrixName);
-        stateManager.updateItemByName(worldMatrixName, {
-          transform: {
-            ...worldMatrix.transform,
-            rotation: vec3.add([evt.movementY, evt.movementX, 0], worldMatrix.transform.rotation),
-          },
-        });
+        const {devicePixelRatio} = window;
+
+        if (evt.ctrlKey) {
+          const movementRation = devicePixelRatio*4;
+          worldTranslation.start([0, 0, evt.movementY/movementRation]);
+        }
+        else {
+          const movementRation = devicePixelRatio;
+          worldRotation.start([
+            evt.movementY/movementRation,
+            evt.movementX/movementRation,
+          ]);
+        }
+      }
+    })
+    .on("wheel", (evt) => {
+      // Prevent leaving the page when scrolling left/right.
+      evt.preventDefault();
+
+      if (document.pointerLockElement === mousetrapEl) {
+        if (evt.ctrlKey) {
+          applyWorldTranslation(-(evt.deltaX * 0.05), (evt.deltaY * 0.05), 0);
+        }
       }
     });
+
+  function applyWorldRotation(rotateX, rotateY, rotateZ=0) {
+    const worldMatrixName = "world matrix";
+    const worldMatrix = stateManager.getItemByName(worldMatrixName);
+
+    stateManager.updateItemByName(worldMatrixName, {
+      transform: {
+        ...worldMatrix.transform,
+        rotation: vec3.add([
+          rotateX, rotateY, rotateZ],
+          worldMatrix.transform.rotation),
+      },
+    });
+  }
+
+  function applyWorldTranslation(translateX, translateY, translateZ) {
+    const worldMatrixName = "world matrix";
+    const worldMatrix = stateManager.getItemByName(worldMatrixName);
+
+    stateManager.updateItemByName(worldMatrixName, {
+      transform: {
+        ...worldMatrix.transform,
+        position: vec3.add([
+          translateX, translateY, translateZ],
+          worldMatrix.transform.position),
+      },
+    });
+  }
 
   // This is the logic for updating the scene state and the scene graph with the
   // new scene state. This is the logic for the game itself.
@@ -219,6 +298,13 @@ function createSceneUpdater(gl, sceneManager, stateManager) {
         position: lightPosition,
       },
     });
+
+    if (worldRotation.update()) {
+      applyWorldRotation(...worldRotation.getWeighted());
+    }
+    if (worldTranslation.update()) {
+      applyWorldTranslation(...worldTranslation.getWeighted());
+    }
   }
 
   function renderScene(ms) {
@@ -237,10 +323,6 @@ function createSceneUpdater(gl, sceneManager, stateManager) {
       //console.log(frameRate);
     }
   }
-
-  function getClientDimensions(canvas) {
-    return [canvas.clientWidth, canvas.clientHeight];
-  }  
 
   return {
     updateScene,
