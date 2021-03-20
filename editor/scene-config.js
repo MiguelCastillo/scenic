@@ -4,7 +4,7 @@ export const config = {
   }, {
     "file": "/resources/obj/sphere.obj",
   }, {
-    "file": "/resources/obj/monkey.obj",
+    "file": "/resources/obj/torus-knot.obj",
   }],
   "items": [
     {
@@ -86,15 +86,15 @@ export const config = {
           },
           "items": [
             {
-              "name": "johnwick-1",
+              "name": "torus knot",
               "type": "static-mesh",
-              "resource": "/resources/obj/monkey.obj",
+              "resource": "/resources/obj/torus-knot.obj",
               "material": {
                 "color": [1, 1, 1, 1],
                 "reflectiveness": 1,
               },
               "transform": {
-                "scale": [7, 7, 7],
+                "scale": [1, 1, 1],
                 "position": [0, 0, 0],
                 "rotation": [0, 0, 0],
               },
