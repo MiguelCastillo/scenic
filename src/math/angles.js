@@ -38,9 +38,11 @@ export const sine = [...new Array(361).keys()].map(degToRad).map(Math.sin).map(f
 // Functions to get back sine and cosine values for degrees using the
 // precomputed table of angles.
 export const cos = (degrees) => {
-	return cosine[clampDegrees(degrees)];
+	// return cosine[clampDegrees(degrees)];
+	return fixed7f(Math.cos(degToRad(degrees)));
 };
 
 export const sin = (degrees) => {
-	return sine[clampDegrees(degrees)];
+	// return sine[clampDegrees(degrees)];
+	return fixed7f(Math.sin(degToRad(degrees)));
 };
