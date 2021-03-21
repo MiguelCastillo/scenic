@@ -1,3 +1,5 @@
+import * as angles from "./angles.js";
+
 // Some fun weight functions https://easings.net/
 // Easy In functions are great weight functions for the mouse because
 // they slow down as they reach 0. Easy Out function will start a start
@@ -14,3 +16,36 @@ export const easeInCubic = (x) => x * x * x; // https://easings.net/#easeInCubic
 export const easeOutCubic = (x) => 1 - Math.pow(1 - x, 3); // https://easings.net/#easeOutCubic
 export const easeInQuart = (x) => x * x * x * x;  // https://easings.net/#easeInQuart
 export const easeOutQuart = (x) => 1 - Math.pow(1 - x, 4); // https://easings.net/#easeOutQuart
+
+export class WeightedItems {
+  // Default is a linear weight
+  constructor(weightFunction = (x) => x) {
+    this.items = [];
+    this.factor = 0;
+    this.weightFunction = weightFunction;
+  }
+
+  start(items) {
+    this.items = items;
+    this.factor = 1;
+  }
+
+  reset() {
+    this.factor = 0;
+  }
+
+  update(reduction=0.01) {
+    // Weighted world rotation.
+    if (this.factor > 0) {
+      this.factor = this.factor - reduction;
+      return true;
+    }
+    this.factor = 0;
+    return false;
+  }
+
+  getWeighted() {
+    const weightedFactor = this.weightFunction(this.factor);
+    return this.items.map(item => angles.fixed7f(item * weightedFactor));
+  }
+}

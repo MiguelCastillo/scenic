@@ -34,42 +34,6 @@ import {ResourceManager} from "../src/resource-manager.js";
 import {createFrameRateCounter} from "./fps-counter.js";
 import {config} from "./scene-config.js";
 
-// paki bug. importing a third part module that doesn't exist cases
-// issues when calling sourceMap.addFile in chunkedBundleBuilder
-// import { Body } from "node-fetch";
-
-class WeightedItems {
-  // Default is a linear weight
-  constructor(weightFunction = (x) => x) {
-    this.items = [];
-    this.factor = 0;
-    this.weightFunction = weightFunction;
-  }
-
-  start(items) {
-    this.items = items;
-    this.factor = 1;
-  }
-
-  reset() {
-    this.factor = 0;
-  }
-
-  update(reduction=0.01) {
-    // Weighted world rotation.
-    if (this.factor > 0) {
-      this.factor = this.factor - reduction;
-      return true;
-    }
-    this.factor = 0;
-    return false;
-  }
-
-  getWeighted() {
-    const weightedFactor = this.weightFunction(this.factor);
-    return this.items.map(item => angles.fixed7f(item * weightedFactor));
-  }
-}
 
 function buildScene(gl, stateManager, resources) {
   const sceneManager = new SceneManager();
@@ -205,8 +169,8 @@ function createSceneUpdater(gl, sceneManager, stateManager) {
     });
 
   let enableWorldTranslation = false;
-  const worldRotation = new WeightedItems(easings.easeInQuart);
-  const worldTranslation = new WeightedItems(easings.easeInQuart);
+  const worldRotation = new easings.WeightedItems(easings.easeInQuart);
+  const worldTranslation = new easings.WeightedItems(easings.easeInQuart);
   const mousetrapEl = document.getElementById("mousetrap");
   Subscription.create(mousetrapEl)
     .on("click", (/*evt*/) => {
