@@ -30,6 +30,7 @@ import {StaticMesh} from "../src/scene/static-mesh.js";
 import {SceneManager, treeTraversal} from "../src/scene-manager.js";
 import {StateManager} from "../src/state-manager.js";
 import {ResourceManager} from "../src/resource-manager.js";
+import {ObjLoader} from "./file-loaders.js";
 
 import {createFrameRateCounter} from "./fps-counter.js";
 import {config} from "./scene-config.js";
@@ -554,25 +555,4 @@ function startSceneLoop(gl, {updateScene, renderScene}) {
     // Queue up next frame.
     requestAnimationFrame(renderFrame)
   });
-}
-
-class ObjLoader {
-  constructor() {
-    this.worker = new Worker("/src/formats/objfile-worker.js");
-
-    this.worker.onmessage = (evt) => {
-      const {file, model} = evt.data;
-      this.pending[file].resolve(model);
-      delete this.pending[file];
-    };
-
-    this.pending = {};
-  }
-
-  load(file, invertDirection=false) {
-    return new Promise((resolve, reject) => {
-      this.pending[file] = {resolve, reject};
-      this.worker.postMessage({file, invertDirection});
-    });
-  }
 }
