@@ -4,12 +4,7 @@
 // https://www.tutorialspoint.com/webgl/webgl_drawing_points.htm
 //
 
-import React from "react";
-import ReactDOM from "react-dom";
-import {SceneGraph} from "./app/app.jsx";
-import {Error} from "./app/error.jsx";
-import {Loading} from "./app/loading.jsx";
-
+import {App} from "./app.js";
 import webgl from "../src/webgl.js";
 import {PerspectiveProjectionMatrix} from "../src/math/projections.js";
 import * as vec3 from "../src/math/vector3.js";
@@ -487,26 +482,21 @@ function createProjectionMatrix(width, height, depth=1000) {
 // because the canvas where we render stuff needs to be ready for creating the
 // webgl context and be ready for rendering.
 onReady(() => {
+  const start = Date.now();
+  const app = new App();
+
   try {
+    const stateManager = new StateManager(config.items);
     const objLoader = new ObjLoader();
-    const resourseManager = new ResourceManager()
+    const resourceManager = new ResourceManager()
       .register("obj", (file) => objLoader.load(file));
 
+    // Startup up the app.
+    app.init({resourceManager, stateManager});
+
     const resourceFiles = config.resources.map(r => r.file);
-    const stateManager = new StateManager(config.items);
-    const start = Date.now();
 
-    // Let's show our app loading spinner
-    ReactDOM.render(
-      <Loading isLoading={true}/>,
-      document.querySelector("#loading-container"));
-
-    // Let's mount the scene tree viewer
-    ReactDOM.render(
-      <SceneGraph stateManager={stateManager} resourseManager={resourseManager}/>,
-      document.querySelector("#scene-graph-container"));
-
-    resourseManager.loadMany(resourceFiles).then(resources => {
+    resourceManager.loadMany(resourceFiles).then(resources => {
       config.resources.forEach((r, i) => {
         r.model = resources[i];
       });
@@ -518,18 +508,16 @@ onReady(() => {
       // We are done loading up obj models. Let's discard the worker for now.
       // objLoader.worker.terminate();
 
-      ReactDOM.render(
-        <Loading isLoading={false}/>,
-        document.querySelector("#loading-container"));
+      // App is ready
+      app.ready();
 
       // eslint-disable-next-line
       console.log(`Load time: ${(Date.now() - start)/1000} secs`)
     });
   }
   catch(ex) {
-    ReactDOM.render(
-      <Error error={ex}/>,
-      document.querySelector("#error-container"));
+    // Report error
+    app.error(ex);
   }
 });
 
