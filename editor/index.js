@@ -204,6 +204,7 @@ function createSceneUpdater(gl, sceneManager, stateManager) {
       }
     });
 
+  let enableWorldTranslation = false;
   const worldRotation = new WeightedItems(easings.easeInQuart);
   const worldTranslation = new WeightedItems(easings.easeInQuart);
   const mousetrapEl = document.getElementById("mousetrap");
@@ -211,19 +212,29 @@ function createSceneUpdater(gl, sceneManager, stateManager) {
     .on("click", (/*evt*/) => {
       mousetrapEl.requestPointerLock();
     })
+    .on("mousedown", (evt) => {
+      enableWorldTranslation = true;
+    })
+    .on("mouseup", (evt) => {
+      enableWorldTranslation = false;
+    })
     .on("mousemove", (evt) => {
       if (document.pointerLockElement === mousetrapEl) {
         const {devicePixelRatio} = window;
+        const movementTranslation = devicePixelRatio*6;
 
-        if (evt.ctrlKey) {
-          const movementRation = devicePixelRatio*4;
-          worldTranslation.start([0, 0, evt.movementY/movementRation]);
+        if (enableWorldTranslation || evt.ctrlKey) {
+          worldTranslation.start([
+            evt.movementX/movementTranslation,
+            -evt.movementY/movementTranslation,
+            0,
+          ]);
         }
         else {
-          const movementRation = devicePixelRatio;
+          const movementRotation = devicePixelRatio;
           worldRotation.start([
-            evt.movementY/movementRation,
-            evt.movementX/movementRation,
+            evt.movementY/movementRotation,
+            evt.movementX/movementRotation,
           ]);
         }
       }
@@ -233,9 +244,9 @@ function createSceneUpdater(gl, sceneManager, stateManager) {
       evt.preventDefault();
 
       if (document.pointerLockElement === mousetrapEl) {
-        if (evt.ctrlKey) {
-          applyWorldTranslation(-(evt.deltaX * 0.05), (evt.deltaY * 0.05), 0);
-        }
+        const {devicePixelRatio} = window;
+        const movementRotation = devicePixelRatio*6;
+        applyWorldTranslation(0, 0, -(evt.deltaY/movementRotation));
       }
     });
 
