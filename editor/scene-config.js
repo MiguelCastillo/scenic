@@ -1,11 +1,4 @@
 export const config = {
-  "resources": [{
-    "file": "/resources/obj/cube.obj",
-  }, {
-    "file": "/resources/obj/sphere.obj",
-  }, {
-    "file": "/resources/obj/torus-knot.obj",
-  }],
   "items": [
     {
       "name": "world matrix",

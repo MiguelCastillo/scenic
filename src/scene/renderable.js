@@ -13,6 +13,10 @@ export class Renderable extends Node {
   _bindShaderProgram(program) {
     const {vertexBuffer} = this;
 
+    if (!vertexBuffer) {
+      throw new Error(`no vertex buffer bound to renderable ${this.name}`);
+    }
+
     program.bind();
 
     program.getAttributes()
@@ -26,5 +30,15 @@ export class Renderable extends Node {
       .forEach(uniform => {
         uniform.enable();
       });
+  }
+
+  withShaderProgram(shaderProgram) {
+    this.shaderProgram = shaderProgram;
+    return this;
+  }
+
+  withVertexBuffer(vertexBuffer) {
+    this.vertexBuffer = vertexBuffer;
+    return this;
   }
 }

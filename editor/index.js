@@ -31,13 +31,8 @@ import {createFrameRateCounter} from "./fps-counter.js";
 import {config} from "./scene-config.js";
 
 
-function buildScene(gl, stateManager, resources) {
+function buildScene(gl, stateManager) {
   const sceneManager = new SceneManager();
-
-  const resourcesByFile = resources.reduce((rs, r) => {
-    rs[r.file] = r;
-    return rs;
-  }, {});
 
   const renderableShaderProgram = createRenderableShaderProgram(gl, new Array(8).fill(0))
     .addAttributes([
@@ -59,47 +54,16 @@ function buildScene(gl, stateManager, resources) {
       },
     ]);
 
-  function buildVertexBuffer(model) {
-    let {vertices, normals, colors} = model;
-
-    const vertexBuffer = VertexBuffer.create({
-      positions: new VertexBufferData(gl, vertices),
-    });
-
-    if (!normals.byteLength && !normals.length) {
-      vertexBuffer.withNormals(
-        new VertexBufferData(
-          gl, vec3.normalizeTriangleVertices(new Float32Array(vertices))));
-    }
-    else {
-      vertexBuffer.withNormals(new VertexBufferData(gl, normals));
-    }
-
-    if (colors.byteLength || colors.length) {
-      vertexBuffer.withColors(new VertexBufferData(gl, colors));
-    }
-
-    return vertexBuffer;
-  }
-
   function buildSceneParentNode(parent, items) {
     return parent.addItems(items);
   }
 
   function buildSceneNode(node /*, parent*/) {
     if (node.type === "static-mesh") {
-      const vertexBuffer = buildVertexBuffer(resourcesByFile[node.resource].model);
-      return new StaticMesh(
-        node,
-        vertexBuffer,
-        renderableShaderProgram);
+      return new StaticMesh(node).withShaderProgram(renderableShaderProgram);
     }
     else if (node.type === "light") {
-      const vertexBuffer = buildVertexBuffer(resourcesByFile[node.resource].model);
-      return new SceneLight(
-        node,
-        vertexBuffer,
-        lightSourceProgramShader);
+      return new SceneLight(node).withShaderProgram(lightSourceProgramShader);
     }
 
     return new SceneNode(node);
@@ -478,6 +442,64 @@ function createProjectionMatrix(width, height, depth=1000) {
   // return OrthographicProjectionMatrix.create(width, height, depth);
 }
 
+function buildVertexBuffer(gl, model) {
+  let {vertices, normals, colors} = model;
+
+  const vertexBuffer = VertexBuffer.create({
+    positions: new VertexBufferData(gl, vertices),
+  });
+
+  if (!normals.byteLength && !normals.length) {
+    vertexBuffer.withNormals(
+      new VertexBufferData(
+        gl, vec3.normalizeTriangleVertices(new Float32Array(vertices))));
+  }
+  else {
+    vertexBuffer.withNormals(new VertexBufferData(gl, normals));
+  }
+
+  if (colors.byteLength || colors.length) {
+    vertexBuffer.withColors(new VertexBufferData(gl, colors));
+  }
+
+  return vertexBuffer;
+}
+
+function loadSceneResources(gl, resourceManager, {sceneManager, stateManager}) {
+  // Load up all the resources.
+  const resources = {}
+  const traverse = treeTraversal((node) => {
+    switch(node.type) {
+      case "static-mesh":
+      case "light":
+        if (node.resource) {
+          if (!resources[node.resource]) {
+            resources[node.resource] = [];
+          }
+
+          resources[node.resource].push(node);
+        }
+        break;
+    }
+
+    return node;
+  }, () => {});
+
+  stateManager.getItems().map(item => traverse(item));
+
+  const deferred = Object.keys(resources).map(resource => {
+    return resourceManager.load(resource).then(model => {
+      resources[resource].forEach(node => {
+        sceneManager
+          .getNodeByName(node.name)
+          .withVertexBuffer(buildVertexBuffer(gl, model))
+      });
+    });
+  });
+
+  return Promise.all(deferred);
+}
+
 // Whenever the DOM is ready is when we want to start doing work. That's
 // because the canvas where we render stuff needs to be ready for creating the
 // webgl context and be ready for rendering.
@@ -494,21 +516,11 @@ onReady(() => {
     // Startup up the app.
     app.init({resourceManager, stateManager});
 
-    const resourceFiles = config.resources.map(r => r.file);
+    const gl = webgl.createContext(document.querySelector("#glCanvas"));
+    const scene = buildScene(gl, stateManager);
+    startSceneLoop(gl, scene);
 
-    resourceManager.loadMany(resourceFiles).then(resources => {
-      config.resources.forEach((r, i) => {
-        r.model = resources[i];
-      });
-
-      const gl = webgl.createContext(document.querySelector("#glCanvas"));
-      const scene = buildScene(gl, stateManager, config.resources);
-      startSceneLoop(gl, scene);
-
-      // We are done loading up obj models. Let's discard the worker for now.
-      // objLoader.worker.terminate();
-
-      // App is ready
+    loadSceneResources(gl, resourceManager, scene).then(() => {
       app.ready();
 
       // eslint-disable-next-line

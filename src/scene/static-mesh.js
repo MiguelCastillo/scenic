@@ -10,6 +10,10 @@ export class StaticMesh extends Renderable {
     const {shaderProgram, worldMatrix, vertexBuffer} = this;
     const {gl, projectionMatrix, sceneManager, stateManager} = context;
 
+    if (!vertexBuffer) {
+      return;
+    }
+
     const lightsStates = sceneManager
       .getLightsForNode(this)
       .map(({name}) => stateManager.getItemByName(name));
