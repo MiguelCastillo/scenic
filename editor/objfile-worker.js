@@ -20,6 +20,13 @@ onmessage = (evt) => {
     const triangles = obj.getTriangles();
     console.log("Triangulate:", file, `${timer.elapsed()} seconds`);
 
+    console.log(
+      "Stats:", file,
+      `\n vertices ${triangles.vertices.length}`,
+      `\n normals ${triangles.normals.length}`,
+      `\n textures ${triangles.textures.length}`,
+    );
+
     const buffers = {
       vertices: new Float32Array(triangles.vertices).buffer,
       normals: new Float32Array(triangles.normals).buffer,
