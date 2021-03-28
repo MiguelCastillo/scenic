@@ -28,6 +28,10 @@ export class App {
 
   error(err) {
     ReactDOM.render(
+      <Loading isLoading={false}/>,
+      document.querySelector("#loading-container"));
+
+    ReactDOM.render(
       <Error error={err}/>,
       document.querySelector("#error-container"));
   }
