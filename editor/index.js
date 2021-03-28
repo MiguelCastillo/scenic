@@ -34,7 +34,7 @@ import {createFrameRateCounter} from "./fps-counter.js";
 import {config} from "./scene-config.js";
 
 
-function buildScene(gl, stateManager) {
+function createSceneManager(gl, stateManager) {
   const sceneManager = new SceneManager();
 
   const renderableShaderProgram = createRenderableShaderProgram(gl, new Array(8).fill(0))
@@ -74,18 +74,35 @@ function buildScene(gl, stateManager) {
 
   const traverse = treeTraversal(buildSceneNode, buildSceneParentNode);
   const sceneNodes = stateManager.getItems().map(item => traverse(item));
+  return sceneManager.withSceneNodes(sceneNodes);
+}
 
-  // Two functions to update the scene state and another for actually render
-  // the scene based on the updated scene state.
-  const {updateScene, renderScene} = createSceneUpdater(
-    gl, sceneManager.withSceneNodes(sceneNodes), stateManager);
+function applyWorldRotation(stateManager, rotateX, rotateY, rotateZ=0) {
+  const worldMatrixName = "world matrix";
+  const worldMatrix = stateManager.getItemByName(worldMatrixName);
 
-  return {
-    updateScene,
-    renderScene,
-    sceneManager,
-    stateManager,
-  };
+  stateManager.updateItemByName(worldMatrixName, {
+    transform: {
+      ...worldMatrix.transform,
+      rotation: vec3.add([
+        rotateX, rotateY, rotateZ],
+        worldMatrix.transform.rotation),
+    },
+  });
+}
+
+function applyWorldTranslation(stateManager, translateX, translateY, translateZ) {
+  const worldMatrixName = "world matrix";
+  const worldMatrix = stateManager.getItemByName(worldMatrixName);
+
+  stateManager.updateItemByName(worldMatrixName, {
+    transform: {
+      ...worldMatrix.transform,
+      position: vec3.add([
+        translateX, translateY, translateZ],
+        worldMatrix.transform.position),
+    },
+  });
 }
 
 function createSplitPanel(el) {
@@ -188,37 +205,9 @@ function createSceneUpdater(gl, sceneManager, stateManager) {
       if (document.pointerLockElement === mousetrapEl) {
         const {devicePixelRatio} = window;
         const rotationRatio = devicePixelRatio*6;
-        applyWorldTranslation(0, 0, -(evt.deltaY/rotationRatio));
+        applyWorldTranslation(stateManager, 0, 0, -(evt.deltaY/rotationRatio));
       }
     });
-
-  function applyWorldRotation(rotateX, rotateY, rotateZ=0) {
-    const worldMatrixName = "world matrix";
-    const worldMatrix = stateManager.getItemByName(worldMatrixName);
-
-    stateManager.updateItemByName(worldMatrixName, {
-      transform: {
-        ...worldMatrix.transform,
-        rotation: vec3.add([
-          rotateX, rotateY, rotateZ],
-          worldMatrix.transform.rotation),
-      },
-    });
-  }
-
-  function applyWorldTranslation(translateX, translateY, translateZ) {
-    const worldMatrixName = "world matrix";
-    const worldMatrix = stateManager.getItemByName(worldMatrixName);
-
-    stateManager.updateItemByName(worldMatrixName, {
-      transform: {
-        ...worldMatrix.transform,
-        position: vec3.add([
-          translateX, translateY, translateZ],
-          worldMatrix.transform.position),
-      },
-    });
-  }
 
   // This is the logic for updating the scene state and the scene graph with the
   // new scene state. This is the logic for the game itself.
@@ -253,10 +242,10 @@ function createSceneUpdater(gl, sceneManager, stateManager) {
     });
 
     if (worldRotation.update()) {
-      applyWorldRotation(...worldRotation.getWeighted());
+      applyWorldRotation(stateManager, ...worldRotation.getWeighted());
     }
     if (worldTranslation.update()) {
-      applyWorldTranslation(...worldTranslation.getWeighted());
+      applyWorldTranslation(stateManager, ...worldTranslation.getWeighted());
     }
   }
 
@@ -322,7 +311,7 @@ function buildVertexBuffer(gl, model) {
   return vertexBuffer;
 }
 
-function loadSceneResources(gl, resourceManager, {sceneManager, stateManager}) {
+function loadSceneResources(gl, resourceManager, sceneManager, stateManager) {
   // Load up all the resources.
   const resources = {}
   const traverse = treeTraversal((node) => {
@@ -365,19 +354,48 @@ onReady(() => {
   const app = new App();
 
   try {
-    const stateManager = new StateManager(config.items);
     const objLoader = new ObjLoader();
     const resourceManager = new ResourceManager()
       .register("obj", (file) => objLoader.load(file));
 
-    // Startup up the app.
+    // webgl context! There is where we render all the stuff. This is
+    // the thing that renders to screen.
+    const gl = webgl.createContext(document.querySelector("#glCanvas"));
+
+    // The state manager is the first thing we create. This is built from all
+    // the scene configuation information, and it is used for creating the
+    // scene manager itself. The state manager is where the state of the world
+    // is actually stored. This is the input to the scene manager so that it
+    // can render the current state of the world.
+    const stateManager = new StateManager(config.items);
+
+    // Startup up the app. We give it the state manager so that it can create
+    // the scene tree panel. This will render a spinner until we call
+    // app.ready.  Or an error if something goes wrong when settings things up.
     app.init({resourceManager, stateManager});
 
-    const gl = webgl.createContext(document.querySelector("#glCanvas"));
-    const scene = buildScene(gl, stateManager);
-    startSceneLoop(gl, scene);
+    // The scene manager is the tree of renderables, which uses the state
+    // manager as input to determine the state of the world that needs to be
+    // rendered. The only state we store in the scene manager is the
+    // relationship between all the nodes in the scene tree. A combination
+    // of the nodes in the scene tree (stored in the scene manager) and the
+    // state manager are ultimately make up a scene.
+    // How it works is that we use the scene manager to traverse all the nodes
+    // in the scene reading their state from the state manager to calculate
+    // information such as world matrices.
+    const sceneManager = createSceneManager(gl, stateManager);
 
-    loadSceneResources(gl, resourceManager, scene).then(() => {
+    // Two functions to update the scene state and another for actually render
+    // the scene based on the updated scene state.
+    const {
+      updateScene,
+      renderScene,
+    } = createSceneUpdater(gl, sceneManager, stateManager);
+
+    // This starts the render loop to render the scene!
+    startRenderLoop(gl, updateScene, renderScene);
+
+    loadSceneResources(gl, resourceManager, sceneManager, stateManager).then(() => {
       app.ready();
 
       // eslint-disable-next-line
@@ -390,7 +408,7 @@ onReady(() => {
   }
 });
 
-function startSceneLoop(gl, {updateScene, renderScene}) {
+function startRenderLoop(gl, updateScene, renderScene) {
   const {canvas} = gl;
 
   // requestAnimationFrame will _try_ to run at 60 frames per seconds.
