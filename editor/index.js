@@ -151,41 +151,41 @@ function createSceneUpdater(gl, sceneManager, stateManager) {
     .on("click", (/*evt*/) => {
       mousetrapEl.requestPointerLock();
     })
-    .on("mousedown", (evt) => {
+    .on("mousedown", (/*evt*/) => {
       enableWorldTranslation = true;
     })
-    .on("mouseup", (evt) => {
+    .on("mouseup", (/*evt*/) => {
       enableWorldTranslation = false;
     })
     .on("mousemove", (evt) => {
       if (document.pointerLockElement === mousetrapEl) {
         const {devicePixelRatio} = window;
-        const movementTranslation = devicePixelRatio*6;
 
         if (enableWorldTranslation || evt.ctrlKey) {
+          const translationRatio = devicePixelRatio*6;
           worldTranslation.start([
-            evt.movementX/movementTranslation,
-            -evt.movementY/movementTranslation,
+            evt.movementX/translationRatio,
+            -evt.movementY/translationRatio,
             0,
           ]);
         }
         else {
-          const movementRotation = devicePixelRatio;
+          const rotationRatio = devicePixelRatio;
           worldRotation.start([
-            evt.movementY/movementRotation,
-            evt.movementX/movementRotation,
+            evt.movementY/rotationRatio,
+            evt.movementX/rotationRatio,
           ]);
         }
       }
     })
     .on("wheel", (evt) => {
-      // Prevent leaving the page when scrolling left/right.
+      // Prevent leaving the page when scrolling left/right with a trackpad
       evt.preventDefault();
 
       if (document.pointerLockElement === mousetrapEl) {
         const {devicePixelRatio} = window;
-        const movementRotation = devicePixelRatio*6;
-        applyWorldTranslation(0, 0, -(evt.deltaY/movementRotation));
+        const rotationRatio = devicePixelRatio*6;
+        applyWorldTranslation(0, 0, -(evt.deltaY/rotationRatio));
       }
     });
 
