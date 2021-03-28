@@ -1,0 +1,75 @@
+.split-panel {
+  --resizer-size: 8px;
+  --resizer-position: calc(100% - 320px);
+}
+
+.split-panel.vertical {
+  display: flex;
+  height: 100%;
+  width: 100%;
+}
+
+.split-panel.vertical > .panel-left {
+  position: relative;
+  width: var(--resizer-position);
+  padding-right: calc(var(--resizer-size)/2);
+  box-sizing: border-box;
+}
+
+.split-panel.vertical > .panel-right {
+  position: relative;
+  width: calc(100% - var(--resizer-position));
+  padding-left: calc(var(--resizer-size)/2);
+  box-sizing: border-box;
+}
+
+.split-panel.vertical > .resizer {
+  position: fixed;
+  top: 0;
+  left: calc(var(--resizer-position) - var(--resizer-size)/2);
+  width: var(--resizer-size);
+  height: 100%;
+  background: #444444;
+  z-index: 10000;
+}
+
+.split-panel.vertical > .resizer:hover {
+  cursor: col-resize;
+}
+
+.split-panel.horizontal {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+}
+
+.split-panel.horizontal > .panel-top {
+  position: relative;
+  height: var(--resizer-position);
+  width: 100%;
+  padding-bottom: calc(var(--resizer-size)/2);
+  box-sizing: border-box;
+}
+
+.split-panel.horizontal > .panel-bottom {
+  position: relative;
+  height: calc(100% - var(--resizer-position));
+  width: 100%;
+  padding-top: calc(var(--resizer-size)/2);
+  box-sizing: border-box;
+}
+
+.split-panel.horizontal > .resizer {
+  position: fixed;
+  top: calc(var(--resizer-position) - var(--resizer-size)/2);
+  left: 0;
+  height: var(--resizer-size);
+  width: 100%;
+  background: #444444;
+  z-index: 10000;
+}
+
+.split-panel.horizontal > .resizer:hover {
+  cursor: row-resize;
+}

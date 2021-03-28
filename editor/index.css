@@ -1,6 +1,4 @@
 body {
-  --scene-graph-width: 320px;
-
   margin: 0;
   font-family: Monaco;
   font-size: 0.8em;
@@ -14,11 +12,11 @@ body {
 }
 
 #loading-container {
-  position: fixed;
+  position: absolute;
   top: 0;
   left: 0;
-  height: 100vh;
-  width: calc(100% - var(--scene-graph-width));
+  height: 100%;
+  width: 100%;
 }
 
 #loading-container .loading:not(.active) {
@@ -83,6 +81,7 @@ body {
   width: 100vw;
   height: 100vh;
   background-color: #ffaaaaaa;
+  z-index: 1000000;
 }
 
 #error-container:empty {
@@ -90,35 +89,21 @@ body {
 }
 
 #mousetrap {
-  position: fixed;
+  position: absolute;
   top: 0;
   left: 0;
   height: 100%;
-  width: calc(100% - var(--scene-graph-width));
-}
-
-#resizer {
-  position: fixed;
-  top: 0;
-  right: calc(var(--scene-graph-width) - .25em);
-  width: .5em;
-  height: 100vh;
-  background: #444444;
-}
-
-#resizer:hover {
-  cursor: col-resize;
+  width: 100%;
 }
 
 #glCanvas {
   height: 100%;
-  width: calc(100% - var(--scene-graph-width));
+  width: 100%;
 }
 
 #scene-graph-container {
   height: 100%;
-  width: var(--scene-graph-width);
-  min-width: var(--scene-graph-width);
+  width: 100%;
 }
 
 .error .message {
@@ -137,7 +122,6 @@ body {
   flex-direction: column;
   height: 100%;
   overflow-y: auto;
-  border-left: 1px #333333 solid;
 }
 
 .scene-tree {

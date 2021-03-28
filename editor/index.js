@@ -85,6 +85,31 @@ function buildScene(gl, stateManager) {
   };
 }
 
+function createSplitPanel(el) {
+  let resizeEnabled = false;
+  const resizerEl = el.querySelector(".resizer");
+
+  if (!resizerEl) {
+    throw new Error("Unable to find resizer element");
+  }
+
+  Subscription.create(resizerEl)
+    .on("mousedown", () => {
+      resizeEnabled = true;
+    });
+
+  Subscription.create(el)
+    .on("mouseup", () => {
+      resizeEnabled = false;
+    })
+    .on("mousemove", (evt) => {
+      if (resizeEnabled) {
+        el.style.setProperty("--resizer-position", evt.clientX + "px");
+        el.dispatchEvent(new Event("panel:resize"));
+      }
+    });
+}
+
 // Helper function for providing the ability to update a scene and to also
 // render it.
 function createSceneUpdater(gl, sceneManager, stateManager) {
@@ -110,22 +135,12 @@ function createSceneUpdater(gl, sceneManager, stateManager) {
       handleResize();
     });
 
-  let resizeEnabled = false;
-  const resizerEl = document.getElementById("resizer");
-  Subscription.create(resizerEl)
-    .on("mousedown", () => {
-      resizeEnabled = true;
-    });
+  const splitPanelEl = document.getElementById("app-panel");
+  createSplitPanel(splitPanelEl);
 
-  Subscription.create(document.body)
-    .on("mouseup", () => {
-      resizeEnabled = false;
-    })
-    .on("mousemove", (evt) => {
-      if (resizeEnabled) {
-        document.body.style.setProperty("--scene-graph-width", (document.body.clientWidth - evt.clientX) + "px");
-        handleResize();
-      }
+  Subscription.create(splitPanelEl)
+    .on("panel:resize", () => {
+      handleResize();
     });
 
   let enableWorldTranslation = false;

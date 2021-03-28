@@ -2,16 +2,23 @@
   <head>
     <title>Scenic!!</title>
     <link rel="stylesheet" href="index.css">
+    <link rel="stylesheet" href="split-panel.css">
     <script type="text/javascript" src="dist/index.js" defer></script>
   </head>
   <body>
     <div id="container">
-      <div id="loading-container"></div>
       <div id="error-container"></div>
-      <div id="mousetrap"></div>
-      <canvas id="glCanvas"></canvas>
-      <div id="resizer"></div>
-      <div id="scene-graph-container"></div>
+      <div class="split-panel vertical" id="app-panel">
+        <div class="panel-left">
+          <div id="loading-container"></div>
+          <div id="mousetrap"></div>
+          <canvas id="glCanvas"></canvas>
+        </div>
+        <div class="resizer"></div>
+        <div class="panel-right">
+          <div id="scene-graph-container"></div>
+        </div>
+      </div>
     </div>
   </body>
 </html>
