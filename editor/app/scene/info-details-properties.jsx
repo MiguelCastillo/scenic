@@ -1,10 +1,15 @@
 import * as React from "react";
 
+import {SceneUpdateContext} from "./scene-update-context.js";
+
 export class InfoDetailsProperties extends React.Component {
+  static contextType = SceneUpdateContext;
+
   handleChange = (which, evt) => {
     const {node} = this.props;
     node[which] = evt.target.value;
     this.forceUpdate();
+    this.context.updateScene(node);
   }
 
   render() {
