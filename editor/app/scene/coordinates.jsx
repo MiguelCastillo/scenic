@@ -1,6 +1,6 @@
 import * as React from "react";
 
-export class CoordinateProperties extends React.Component {
+export class Coordinates extends React.Component {
   handleChange = (which, evt) => {
     this.props.onChange(which, evt.target.value);
   }

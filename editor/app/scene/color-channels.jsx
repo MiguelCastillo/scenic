@@ -1,7 +1,7 @@
 import * as React from "react";
 import {rgbToHex, hexToRgb} from "../../../src/colors.js";
 
-export class ColorChannelProperties extends React.Component {
+export class ColorChannels extends React.Component {
   handleChange = (evt) => {
     this.props.onChange(hexToRgb(evt.target.value));
   }

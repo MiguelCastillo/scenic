@@ -1,5 +1,5 @@
 import * as React from "react"
-import {ColorChannelProperties} from "./color-channel-properties.jsx";
+import {ColorChannels} from "./color-channels.jsx";
 
 export class MaterialProperties extends React.Component {
   handleChangeColor = (value) => {
@@ -24,7 +24,7 @@ export class MaterialProperties extends React.Component {
         <div className="color">
           <div className="label">Color</div>
           <div className="value">
-            <ColorChannelProperties onChange={this.handleChangeColor} data={material.color}/>
+            <ColorChannels onChange={this.handleChangeColor} data={material.color}/>
           </div>
         </div>
         <div className="reflectiveness">

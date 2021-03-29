@@ -1,5 +1,5 @@
 import * as React from "react"
-import {CoordinateProperties} from "./coordinate-properties.jsx";
+import {Coordinates} from "./coordinates.jsx";
 
 export class TransformProperties extends React.Component {
   handleChangePosition = (which, value) => {
@@ -28,19 +28,19 @@ export class TransformProperties extends React.Component {
         <div className="position">
           <div className="label">Position</div>
           <div className="value">
-            <CoordinateProperties onChange={this.handleChangePosition} data={node.transform.position}/>
+            <Coordinates onChange={this.handleChangePosition} data={node.transform.position}/>
           </div>
         </div>
         <div className="rotation">
           <div className="label">Rotation</div>
           <div className="value">
-            <CoordinateProperties step="1" min="-360" max="360" onChange={this.handleChangeRotation} data={node.transform.rotation}/>
+            <Coordinates step="1" min="-360" max="360" onChange={this.handleChangeRotation} data={node.transform.rotation}/>
           </div>
         </div>
         <div className="scale">
           <div className="label">Scale</div>
           <div className="value">
-            <CoordinateProperties onChange={this.handleChangeScale} data={node.transform.scale}/>
+            <Coordinates onChange={this.handleChangeScale} data={node.transform.scale}/>
           </div>
         </div>
       </div>
