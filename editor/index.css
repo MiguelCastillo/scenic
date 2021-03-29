@@ -253,8 +253,20 @@ body {
   justify-content: flex-end;
 }
 
+.scene-node-details .node-properties .label {
+  flex-grow: 1;
+}
+
+.scene-node-details .node-properties .value {
+  flex-grow: 2;
+}
+
 .scene-node-details .node-properties input[type="number"] {
   text-align: center;
+}
+
+.scene-node-details .node-properties input[type="number"],
+.scene-node-details .node-properties input[type="text"] {
   width: 8em;
   margin-left: 1em;
   padding: .25em;
