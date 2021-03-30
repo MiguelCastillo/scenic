@@ -243,22 +243,14 @@ body {
 }
 
 .scene-node-details .node-properties > * {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 30% 1fr;
   padding-top: 10px;
 }
 
 .scene-node-details .node-properties .value > * {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.scene-node-details .node-properties .label {
-  flex-grow: 1;
-}
-
-.scene-node-details .node-properties .value {
-  flex-grow: 2;
+  display: grid;
+  grid-template-columns: auto 1fr;
 }
 
 .scene-node-details .node-properties input[type="number"] {
@@ -267,11 +259,14 @@ body {
 
 .scene-node-details .node-properties input[type="number"],
 .scene-node-details .node-properties input[type="text"] {
-  width: 8em;
   margin-left: 1em;
   padding: .25em;
 
   background-color: #a9a9a9;
   border: 1px solid;
   border-radius: 4px;
+}
+
+.color-picker {
+  text-align: end;
 }
