@@ -248,11 +248,6 @@ body {
   padding-top: 10px;
 }
 
-.scene-node-details .node-properties .value > * {
-  display: grid;
-  grid-template-columns: auto 1fr;
-}
-
 .scene-node-details .node-properties input[type="number"] {
   text-align: center;
 }
@@ -269,4 +264,9 @@ body {
 
 .color-picker {
   text-align: end;
+}
+
+.coordinates > * {
+  display: grid;
+  grid-template-columns: auto 1fr;
 }

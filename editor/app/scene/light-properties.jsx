@@ -22,19 +22,12 @@ export class LightProperties extends React.Component {
     return (
       <div className="node-properties light">
         <div className="color">
-          <div className="label">Color</div>
-          <div className="value">
-            <ColorChannels onChange={this.handleChangeColor} data={light.color}/>
-          </div>
+          <label>Color</label>
+          <ColorChannels onChange={this.handleChangeColor} data={light.color}/>
         </div>
         <div className="intensity">
-          <div className="label">Intensity</div>
-          <div className="value">
-            <div className="intensity-coefficient">
-              <label>i</label>
-              <input type="number" step=".1" min="0" max="1" onChange={this.handleChangeIntensity} value={light.intensity} />
-            </div>
-          </div>
+          <label>Intensity</label>
+          <input type="number" step=".1" min="0" max="1" onChange={this.handleChangeIntensity} value={light.intensity} />
         </div>
       </div>
     )

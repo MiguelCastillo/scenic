@@ -26,22 +26,16 @@ export class TransformProperties extends React.Component {
     return (
       <div className="node-properties transform">
         <div className="position">
-          <div className="label">Position</div>
-          <div className="value">
-            <Coordinates onChange={this.handleChangePosition} data={node.transform.position}/>
-          </div>
+          <label>Position</label>
+          <Coordinates onChange={this.handleChangePosition} data={node.transform.position}/>
         </div>
         <div className="rotation">
-          <div className="label">Rotation</div>
-          <div className="value">
-            <Coordinates step="1" min="-360" max="360" onChange={this.handleChangeRotation} data={node.transform.rotation}/>
-          </div>
+          <label>Rotation</label>
+          <Coordinates step="1" min="-360" max="360" onChange={this.handleChangeRotation} data={node.transform.rotation}/>
         </div>
         <div className="scale">
-          <div className="label">Scale</div>
-          <div className="value">
-            <Coordinates onChange={this.handleChangeScale} data={node.transform.scale}/>
-          </div>
+          <label>Scale</label>
+          <Coordinates onChange={this.handleChangeScale} data={node.transform.scale}/>
         </div>
       </div>
     )

@@ -8,7 +8,7 @@ export class Coordinates extends React.Component {
   render() {
     const {data, step="0.1", min, max} = this.props;
     return (
-      <React.Fragment>
+      <div className="coordinates">
         <div className="x">
           <label>x</label>
           <input
@@ -39,7 +39,7 @@ export class Coordinates extends React.Component {
             onChange={(evt) => this.handleChange("z", evt)}
             value={data[2]} />
         </div>
-      </React.Fragment>
+      </div>
     );
   }
 }

@@ -9,12 +9,10 @@ export class ColorChannels extends React.Component {
   render() {
     const {data} = this.props;
     return (
-      <React.Fragment>
-        <div className="color-picker">
-          <label>rgb({data[0]}, {data[1]}, {data[2]})</label>&nbsp;
-          <input type="color" onInput={(evt) => this.handleChange(evt)} value={rgbToHex(...data)} />
-        </div>
-      </React.Fragment>
+      <div className="color-picker">
+        <label>rgb({data[0]}, {data[1]}, {data[2]})</label>&nbsp;
+        <input type="color" onInput={(evt) => this.handleChange(evt)} value={rgbToHex(...data)} />
+      </div>
     );
   }
 }
