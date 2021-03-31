@@ -5,6 +5,24 @@ import {SceneUpdateContext} from "./scene-update-context.js";
 export class InfoDetailsProperties extends React.Component {
   static contextType = SceneUpdateContext;
 
+  handleResourceSelection = (evt) => {
+    if (evt.target.files.length === 0) {
+      return;
+    }
+
+    const [file] = evt.target.files;
+
+    /*
+    // TODO(miguel): wire this up to the resource loader.
+    const url = URL.createObjectURL(file)
+    */
+
+    const {node} = this.props;
+    node.resource = file.name;
+    this.forceUpdate();
+    this.context.updateScene(node);
+  }
+
   handleChange = (which, evt) => {
     const {node} = this.props;
     node[which] = evt.target.value;
@@ -34,10 +52,23 @@ export class InfoDetailsProperties extends React.Component {
         {(node.type === "static-mesh" || node.type === "light") ?
           <div className="resource">
             <label>Resource</label>
-            <input
-              type="text"
-              onChange={(evt) => this.handleChange("resource", evt)}
-              value={node.resource} />
+            <div className="resource-selector">
+              <div className="selected-file">{
+                (
+                  node.resource ?
+                  node.resource.split(/[/\\]/).pop() :
+                  "<select file>"
+                )}</div>
+              <button className="dialog-openener">
+                <label htmlFor="resource_file_loader">...</label>
+              </button>
+              <input
+                id="resource_file_loader"
+                name="resource_file_loader"
+                type="file"
+                accept=".obj"
+                onChange={(evt) => this.handleResourceSelection(evt)} />
+            </div>
           </div>
           : null
        }

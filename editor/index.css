@@ -272,3 +272,44 @@ body {
   grid-template-columns: auto 1fr;
   align-items: center;
 }
+
+.resource-selector {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.resource-selector > button.dialog-openener,
+.resource-selector > button.dialog-openener > label {
+  cursor: pointer;
+}
+
+.resource-selector > button.dialog-openener {
+  /*
+  this style is for the button itself, which we want to remove the padding for
+  so that we don't have unresponsive dead space when clicking on the button
+  since it is the label contained in the button itself that opens the dialog.
+   */
+  padding: 0;
+}
+
+.resource-selector > button.dialog-openener > label {
+  /*
+  so instead of using the button's padding, we add padding to the label itself
+  so that we can have a larger surface area to click on to open the file
+  selector dialog.
+  */
+  padding: 0.5em;
+}
+
+.resource-selector > .selected-file {
+  margin-left: 1em;
+}
+
+#resource_file_loader {
+  opacity: 0;
+  position: absolute;
+  cursor: pointer;
+  z-index: -1;
+}
