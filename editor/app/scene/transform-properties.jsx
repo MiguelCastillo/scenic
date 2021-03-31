@@ -31,7 +31,14 @@ export class TransformProperties extends React.Component {
         </div>
         <div className="rotation">
           <label>Rotation</label>
-          <Coordinates step="1" min="-360" max="360" onChange={this.handleChangeRotation} data={node.transform.rotation}/>
+          {/* setting min/max in a numberic input element can cause the element
+              to render with a different width than without them. So we are
+              padding the min/max values with decimal values so that we can
+              make up for the loss of width. Otherwise, the rotation input
+              elements will render a lot smaller than the other numeruc input
+              elements.
+          */}
+          <Coordinates step="1" min="-360.0000000000000" max="360" onChange={this.handleChangeRotation} data={node.transform.rotation}/>
         </div>
         <div className="scale">
           <label>Scale</label>
