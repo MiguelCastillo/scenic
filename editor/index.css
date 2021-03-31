@@ -244,7 +244,8 @@ body {
 
 .scene-node-details .node-properties > * {
   display: grid;
-  grid-template-columns: 30% 1fr;
+  grid-template-columns: minmax(6em, 10%) 1fr;
+  align-items: center;
   padding-top: 10px;
 }
 
@@ -269,4 +270,5 @@ body {
 .coordinates > * {
   display: grid;
   grid-template-columns: auto 1fr;
+  align-items: center;
 }
