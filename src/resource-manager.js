@@ -12,8 +12,14 @@ export class ResourceManager {
     return this;
   }
 
-  load(file) {
-    const match = file.match(/(?:\.(\w+))$/);
+  // Filename is a separate argument because a URL can be from a file selector
+  // in which case the URL object will be a blob and a filename cannot be
+  // derrived from it. We need a filename to be able to derrive the correct
+  // file loader, which relies on the file extension. Blobs do not have
+  // filenames with extensions, and that's a security feature. They looks like:
+  // blob:http://localhost:3000/9f19dc8a-02fd-4554-99a0-8ee40151b4a1
+  load(url, filename) {
+    const match = filename.match(/(?:\.(\w+))$/);
 
     if (!match) {
       throw new Error("File didn't have an extension");
@@ -25,7 +31,7 @@ export class ResourceManager {
       throw new Error(`Loader for file extension "${fileExtension}" not registered`);
     }
 
-    return this.loaders[fileExtension](file);
+    return this.loaders[fileExtension](url);
   }
 
   loadMany(files) {

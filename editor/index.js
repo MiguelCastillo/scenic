@@ -34,7 +34,23 @@ import {createFrameRateCounter} from "./fps-counter.js";
 import {config} from "./scene-config.js";
 
 
-function createSceneManager(gl, stateManager) {
+function createScene(gl, config) {
+  // The state manager is the first thing we create. This is built from all
+  // the scene configuation information, and it is used for creating the
+  // scene manager itself. The state manager is where the state of the world
+  // is actually stored. This is the input to the scene manager so that it
+  // can render the current state of the world.
+  const stateManager = new StateManager(config.items);
+
+  // The scene manager is the tree of renderables, which uses the state
+  // manager as input to determine the state of the world that needs to be
+  // rendered. The only state we store in the scene manager is the
+  // relationship between all the nodes in the scene tree. A combination
+  // of the nodes in the scene tree (stored in the scene manager) and the
+  // state manager are ultimately what make up a scene.
+  // How it works is that we use the scene manager to traverse all the nodes
+  // in the scene reading their state from the state manager to calculate
+  // information such as world matrices.
   const sceneManager = new SceneManager();
 
   const renderableShaderProgram = createRenderableShaderProgram(gl, new Array(8).fill(0))
@@ -74,7 +90,11 @@ function createSceneManager(gl, stateManager) {
 
   const traverse = treeTraversal(buildSceneNode, buildSceneParentNode);
   const sceneNodes = stateManager.getItems().map(item => traverse(item));
-  return sceneManager.withSceneNodes(sceneNodes);
+
+  return {
+    stateManager,
+    sceneManager: sceneManager.withSceneNodes(sceneNodes),
+  };
 }
 
 function applyWorldRotation(stateManager, rotateX, rotateY, rotateZ=0) {
@@ -311,39 +331,72 @@ function buildVertexBuffer(gl, model) {
   return vertexBuffer;
 }
 
-function loadSceneResources(gl, resourceManager, sceneManager, stateManager) {
-  // Load up all the resources.
-  const resources = {}
-  const traverse = treeTraversal((node) => {
-    switch(node.type) {
+function getResourcesFromConfig(config) {
+  const resources = [];
+  const traverse = treeTraversal((item) => {
+    switch(item.type) {
       case "static-mesh":
       case "light":
-        if (node.resource) {
-          if (!resources[node.resource]) {
-            resources[node.resource] = [];
-          }
-
-          resources[node.resource].push(node);
+        if (item.resource) {
+          resources.push({
+            node: item,
+            url: item.resource,
+            filename: item.resource.split(/[\/]/).pop()
+          });
         }
         break;
     }
 
-    return node;
+    return item;
   }, () => {});
 
-  stateManager.getItems().map(item => traverse(item));
+  config.items.map(item => traverse(item));
+  return resources;
+}
 
-  const deferred = Object.keys(resources).map(resource => {
-    return resourceManager.load(resource).then(model => {
-      resources[resource].forEach(node => {
-        sceneManager
-          .getNodeByName(node.name)
-          .withVertexBuffer(buildVertexBuffer(gl, model))
-      });
+function createResourceLoader(gl, sceneManager) {
+  const cache = {};
+
+  const objLoader = new ObjLoader();
+  const resourceManager = new ResourceManager()
+    .register("obj", (file) => objLoader.load(file));
+
+  function loadMany(resources) {
+    return Promise.all(
+      resources.map((resource) => this.load(resource))
+    );
+  }
+
+  // Filename is a separate argument because a URL can be from a file selector
+  // in which case the URL object will be a blob and a filename cannot be
+  // derrived from it. We need a filename to be able to derrive the correct
+  // file loader, which relies on the file extension. Blobs do not have
+  // filenames with extensions, and that's a security feature. They looks like:
+  // blob:http://localhost:3000/9f19dc8a-02fd-4554-99a0-8ee40151b4a1
+  function load({node, url, filename}) {
+    if (!cache[filename]) {
+      cache[filename] = resourceManager
+        .load(url, filename)
+        // For now I am assuming that all resources are for object files.
+        // But that's clearly going to be changing to support other types
+        // of resources. For example, some resources will be for files that
+        // support animation. In those cases we will need a different handler
+        // here.  But for now, let's keep it simple and we will expand as the
+        // need comes up.
+        .then(model => buildVertexBuffer(gl, model));
+    }
+
+    return cache[filename].then(vbuffer => {
+      sceneManager
+        .getNodeByName(node.name)
+        .withVertexBuffer(vbuffer);
     });
-  });
+  }
 
-  return Promise.all(deferred);
+  return {
+    loadMany,
+    load,
+  }
 }
 
 // Whenever the DOM is ready is when we want to start doing work. That's
@@ -354,36 +407,24 @@ onReady(() => {
   const app = new App();
 
   try {
-    const objLoader = new ObjLoader();
-    const resourceManager = new ResourceManager()
-      .register("obj", (file) => objLoader.load(file));
-
     // webgl context! There is where we render all the stuff. This is
     // the thing that renders to screen.
     const gl = webgl.createContext(document.querySelector("#glCanvas"));
 
-    // The state manager is the first thing we create. This is built from all
-    // the scene configuation information, and it is used for creating the
-    // scene manager itself. The state manager is where the state of the world
-    // is actually stored. This is the input to the scene manager so that it
-    // can render the current state of the world.
-    const stateManager = new StateManager(config.items);
+    // Let's create the scene, which is made up of a scene manager and a
+    // state manager.
+    const {
+      sceneManager,
+      stateManager,
+    } = createScene(gl, config);
+
+    // API for loading resources for scene nodes.
+    const resourceLoader = createResourceLoader(gl, sceneManager);
 
     // Startup up the app. We give it the state manager so that it can create
     // the scene tree panel. This will render a spinner until we call
     // app.ready.  Or an error if something goes wrong when settings things up.
-    app.init({resourceManager, stateManager});
-
-    // The scene manager is the tree of renderables, which uses the state
-    // manager as input to determine the state of the world that needs to be
-    // rendered. The only state we store in the scene manager is the
-    // relationship between all the nodes in the scene tree. A combination
-    // of the nodes in the scene tree (stored in the scene manager) and the
-    // state manager are ultimately make up a scene.
-    // How it works is that we use the scene manager to traverse all the nodes
-    // in the scene reading their state from the state manager to calculate
-    // information such as world matrices.
-    const sceneManager = createSceneManager(gl, stateManager);
+    app.init({resourceLoader, stateManager});
 
     // Two functions to update the scene state and another for actually render
     // the scene based on the updated scene state.
@@ -395,7 +436,7 @@ onReady(() => {
     // This starts the render loop to render the scene!
     startRenderLoop(gl, updateScene, renderScene);
 
-    loadSceneResources(gl, resourceManager, sceneManager, stateManager).then(() => {
+    resourceLoader.loadMany(getResourcesFromConfig(config)).then(() => {
       app.ready();
 
       // eslint-disable-next-line

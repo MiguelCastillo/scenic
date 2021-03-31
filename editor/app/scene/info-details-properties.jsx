@@ -1,26 +1,47 @@
 import * as React from "react";
 
-import {SceneUpdateContext} from "./scene-update-context.js";
+import {SceneContext} from "./scene-context.js";
 
 export class InfoDetailsProperties extends React.Component {
-  static contextType = SceneUpdateContext;
+  static contextType = SceneContext;
 
   handleResourceSelection = (evt) => {
     if (evt.target.files.length === 0) {
       return;
     }
 
+    const {
+      resourceLoader,
+      updateScene,
+    } = this.context;
+
+    const {
+      node,
+    } = this.props;
+
+    // The input element is not configured to multiselect, so this should
+    // always be 1 file.
     const [file] = evt.target.files;
 
-    /*
-    // TODO(miguel): wire this up to the resource loader.
-    const url = URL.createObjectURL(file)
-    */
+    resourceLoader.load({
+      node,
+      url: URL.createObjectURL(file),
+      filename: file.name,
+    })
+    .then(() => {
+      // Clean up URL resource because this will stay in memory until the
+      // document is reloaded. And new URL object are instantiated each time
+      // createObjectURL is called, even if it's for the same resource.
+      URL.revokeObjectURL(file);
+    });
 
-    const {node} = this.props;
+    // HACK(miguel): we need a better way to set the resource name for
+    // display purposes.
     node.resource = file.name;
     this.forceUpdate();
-    this.context.updateScene(node);
+
+    // Trigger scene update so that the scene tree is re-rendered.
+    updateScene(node);
   }
 
   handleChange = (which, evt) => {
