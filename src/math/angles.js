@@ -5,6 +5,10 @@ export const fixed7f = a => {
 	return !a ? 0 : parseFloat(parseFloat(a).toFixed(7));
 }
 
+export const fixed3f = a => {
+	return !a ? 0 : parseFloat(parseFloat(a).toFixed(3));
+}
+
 // Convert degrees to radians which is what Math.sin and Math.cos want.
 export const degToRad = (d) => d * Math.PI / 180;
 

@@ -1,4 +1,4 @@
-import {fixed7} from "./math/angles.js";
+import {fixed3f} from "./math/angles.js";
 
 export function rgbToHex(r, g, b) {
   let hex = [
@@ -29,5 +29,5 @@ function convert1to255(v /*number*/) {
 }
 
 function convert255to1(v /*number*/) {
-  return fixed7(v/255);
+  return fixed3f(v/255);
 }
