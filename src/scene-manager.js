@@ -29,6 +29,29 @@ export function occlusionTraversal(occlusionTest, processParentNode) {
   }
 }
 
+export function treeGetMatches(matcher) {
+  return function traverse(roots) {
+    const result = [];
+    const stack = [roots];
+
+    for (let index = 0; index !== stack.length; index++) {
+      const items = stack[index];
+    
+      for (const item of items) {
+        if (matcher(item)) {
+          result.push(item);
+        }
+      
+        if (item.items && !!item.items.length) {
+          stack.push(item.items);
+        }
+      }
+    }
+
+    return result;
+  }
+}
+
 export class SceneManager {
   constructor() {
     this.rootNodes = [];

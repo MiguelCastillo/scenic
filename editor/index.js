@@ -21,7 +21,7 @@ import {
 import {Node as SceneNode} from "../src/scene/node.js";
 import {Light as SceneLight} from "../src/scene/light.js";
 import {StaticMesh} from "../src/scene/static-mesh.js";
-import {SceneManager, treeTraversal} from "../src/scene-manager.js";
+import {SceneManager, treeTraversal, treeGetMatches} from "../src/scene-manager.js";
 import {StateManager} from "../src/state-manager.js";
 import {ResourceManager} from "../src/resource-manager.js";
 import {ObjLoader} from "./file-loaders.js";
@@ -332,26 +332,19 @@ function buildVertexBuffer(gl, model) {
 }
 
 function getResourcesFromConfig(config) {
-  const resources = [];
-  const traverse = treeTraversal((item) => {
-    switch(item.type) {
-      case "static-mesh":
-      case "light":
-        if (item.resource) {
-          resources.push({
-            node: item,
-            url: item.resource,
-            filename: item.resource.split(/[\/]/).pop()
-          });
-        }
-        break;
-    }
+  const traverse = treeGetMatches((node) => {
+    return node.type === "static-mesh" || node.type === "light";
+  });
 
-    return item;
-  }, () => {});
-
-  config.items.map(item => traverse(item));
-  return resources;
+  return (
+    traverse(config.items)
+    .map(item => {
+      return {
+        node: item,
+        url: item.resource,
+        filename: item.resource.split(/[\/]/).pop(),
+      }
+    }));
 }
 
 function createResourceLoader(gl, sceneManager) {
