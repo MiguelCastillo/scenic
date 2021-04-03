@@ -4,7 +4,7 @@ import {StaticMesh} from "../src/scene/static-mesh.js";
 import {SceneManager, treeTraversal} from "../src/scene-manager.js";
 import {StateManager} from "../src/state-manager.js";
 
-export function createScene(gl, config) {
+export function createScene(config) {
   // The state manager is the first thing we create. This is built from all
   // the scene configuation information, and it is used for creating the
   // scene manager itself. The state manager is where the state of the world

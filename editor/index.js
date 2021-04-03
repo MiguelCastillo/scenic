@@ -222,10 +222,7 @@ onReady(() => {
 
     // Let's create the scene, which is made up of a scene manager and a
     // state manager.
-    const {
-      sceneManager,
-      stateManager,
-    } = createScene(gl, config);
+    const {sceneManager, stateManager} = createScene(config);
 
     // API for loading resources for scene nodes.
     const resourceLoader = createResourceLoader(gl, sceneManager);
