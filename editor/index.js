@@ -22,6 +22,7 @@ import {treeGetMatches} from "../src/scene-manager.js";
 import {ResourceManager} from "../src/resource-manager.js";
 import {ObjLoader} from "./file-loaders.js";
 
+import {createSplitPanel} from "./split-panel.js";
 import {createScene} from "./scene-factory.js";
 
 import {createFrameRateCounter} from "./fps-counter.js";
@@ -53,31 +54,6 @@ function applyWorldTranslation(stateManager, translateX, translateY, translateZ)
         worldMatrix.transform.position),
     },
   });
-}
-
-function createSplitPanel(el) {
-  let resizeEnabled = false;
-  const resizerEl = el.querySelector(".resizer");
-
-  if (!resizerEl) {
-    throw new Error("Unable to find resizer element");
-  }
-
-  Subscription.create(resizerEl)
-    .on("mousedown", () => {
-      resizeEnabled = true;
-    });
-
-  Subscription.create(el)
-    .on("mouseup", () => {
-      resizeEnabled = false;
-    })
-    .on("mousemove", (evt) => {
-      if (resizeEnabled) {
-        el.style.setProperty("--resizer-position", evt.clientX + "px");
-        el.dispatchEvent(new Event("panel:resize"));
-      }
-    });
 }
 
 // Helper function for providing the ability to update a scene and to also
