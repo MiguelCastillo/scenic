@@ -126,6 +126,7 @@ body {
 
 .scene-tree {
   height: 100%;
+  overflow-y: auto;
 }
 
 .scene-tree-header {
@@ -146,7 +147,7 @@ body {
   padding: 0px !important;
 
   /* This is for animating collapsing of the tree */
-  max-height: 100px;
+  /* max-height: 100px; */
 }
 
 .scene-node.collapsed > .scene-nodes {
