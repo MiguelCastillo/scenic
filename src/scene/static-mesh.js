@@ -10,7 +10,7 @@ export class StaticMesh extends Renderable {
     const {shaderProgram, worldMatrix, vertexBuffer} = this;
     const {gl, projectionMatrix, sceneManager, stateManager} = context;
 
-    if (!vertexBuffer) {
+    if (!vertexBuffer || !shaderProgram) {
       return;
     }
 

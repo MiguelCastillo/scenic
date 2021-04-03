@@ -1,4 +1,7 @@
+
 import {ShaderProgram} from "../src/shaders/program.js";
+import {treeGetMatches} from "../src/scene-manager.js";
+import {isLight, isStaticMesh} from "./scene-factory.js";
 
 export function createRenderableShaderProgram(gl, lights) {
   const vertShaderCode = `#version 300 es
@@ -106,4 +109,53 @@ export function createPointShaderProgram(gl) {
   `;
 
   return new ShaderProgram(gl).link(vertShaderCode, fragShaderCode);
+}
+
+export function createShaderProgramLoader(gl, sceneManager) {
+  const renderableShaderProgram = createRenderableShaderProgram(gl, new Array(8).fill(0))
+    .addAttributes([
+      {
+        name: "color",
+      }, {
+        name: "normal",
+      }, {
+        name: "position",
+      },
+    ]);
+
+  const lightSourceProgramShader = createPointShaderProgram(gl)
+    .addAttributes([
+      {
+        name: "color",
+      }, {
+        name: "position",
+      },
+    ]);
+
+  function load(node) {
+    if (isStaticMesh(node)) {
+      sceneManager.getNodeByName(node.name).withShaderProgram(renderableShaderProgram);
+    } else if (isLight(node)) {
+      sceneManager.getNodeByName(node.name).withShaderProgram(lightSourceProgramShader);
+    } else {
+      throw new Error("Unable to intialize shader program because node is not a static-mesh or light");
+    }
+  }
+
+  function loadMany(nodes) {
+    nodes.forEach(n => load(n));
+  }
+
+  return {
+    loadMany,
+    load,
+  }
+}
+
+export function getNodesWithShadersFromConfig(config) {
+  const traverse = treeGetMatches((item) => (
+    isLight(item) || isStaticMesh(item)
+  ));
+
+  return traverse(config.items);
 }

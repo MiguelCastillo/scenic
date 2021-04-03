@@ -1,12 +1,8 @@
 import {Node as SceneNode} from "../src/scene/node.js";
 import {Light as SceneLight} from "../src/scene/light.js";
 import {StaticMesh} from "../src/scene/static-mesh.js";
-import {SceneManager, treeTraversal, treeGetMatches} from "../src/scene-manager.js";
+import {SceneManager, treeTraversal} from "../src/scene-manager.js";
 import {StateManager} from "../src/state-manager.js";
-import {
-  createRenderableShaderProgram,
-  createPointShaderProgram,
-} from "./shaders.js";
 
 export function createScene(gl, config) {
   // The state manager is the first thing we create. This is built from all
@@ -27,36 +23,16 @@ export function createScene(gl, config) {
   // information such as world matrices.
   const sceneManager = new SceneManager();
 
-  const renderableShaderProgram = createRenderableShaderProgram(gl, new Array(8).fill(0))
-    .addAttributes([
-      {
-        name: "color",
-      }, {
-        name: "normal",
-      }, {
-        name: "position",
-      },
-    ]);
-
-  const lightSourceProgramShader = createPointShaderProgram(gl)
-    .addAttributes([
-      {
-        name: "color",
-      }, {
-        name: "position",
-      },
-    ]);
-
   function buildSceneParentNode(parent, items) {
     return parent.addItems(items);
   }
 
   function buildSceneNode(node /*, parent*/) {
-    if (node.type === "static-mesh") {
-      return new StaticMesh(node).withShaderProgram(renderableShaderProgram);
+    if (isStaticMesh(node)) {
+      return new StaticMesh(node);
     }
-    else if (node.type === "light") {
-      return new SceneLight(node).withShaderProgram(lightSourceProgramShader);
+    else if (isLight(node)) {
+      return new SceneLight(node);
     }
 
     return new SceneNode(node);
@@ -71,18 +47,10 @@ export function createScene(gl, config) {
   };
 }
 
-export function getResourcesFromConfig(config) {
-  const traverse = treeGetMatches((node) => {
-    return node.type === "static-mesh" || node.type === "light";
-  });
+export function isLight(node) {
+  return node.type === "light";
+}
 
-  return (
-    traverse(config.items)
-    .map(item => {
-      return {
-        node: item,
-        url: item.resource,
-        filename: item.resource.split(/[\/]/).pop(),
-      }
-    }));
+export function isStaticMesh(node) {
+  return node.type === "static-mesh";
 }

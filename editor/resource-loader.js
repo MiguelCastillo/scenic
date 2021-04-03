@@ -4,7 +4,10 @@ import {
 } from "../src/renderer/vertexbuffer.js";
 
 import {ResourceManager} from "../src/resource-manager.js";
+import {treeGetMatches} from "../src/scene-manager.js";
+
 import {ObjLoader} from "./file-loaders.js";
+import {isLight, isStaticMesh} from "./scene-factory.js";
 
 function buildVertexBuffer(gl, model) {
   let {vertices, normals, colors} = model;
@@ -72,4 +75,21 @@ export function createResourceLoader(gl, sceneManager) {
     loadMany,
     load,
   }
+}
+
+export function getResourcesFromConfig(config) {
+  const traverse = treeGetMatches((item) => (
+    (isStaticMesh(item) || isLight(item)) &&
+    (!!item.resource && typeof item.resource === "string")
+  ));
+
+  return (
+    traverse(config.items)
+    .map(item => {
+      return {
+        node: item,
+        url: item.resource,
+        filename: item.resource.split(/[\/]/).pop(),
+      }
+    }));
 }

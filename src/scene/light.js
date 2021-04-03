@@ -9,7 +9,7 @@ export class Light extends Renderable {
     const {shaderProgram, worldMatrix, vertexBuffer} = this;
     const {gl, projectionMatrix, stateManager} = context;
 
-    if (!vertexBuffer) {
+    if (!vertexBuffer || !shaderProgram) {
       return;
     }
 

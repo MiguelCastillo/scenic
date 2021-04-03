@@ -14,8 +14,9 @@ import {Subscription} from "../src/dom/events.js";
 import {onReady} from "../src/dom/ready.js";
 
 import {createSplitPanel} from "./split-panel.js";
-import {createScene, getResourcesFromConfig} from "./scene-factory.js";
-import {createResourceLoader} from "./resource-loader.js";
+import {createScene} from "./scene-factory.js";
+import {createResourceLoader, getResourcesFromConfig} from "./resource-loader.js";
+import {createShaderProgramLoader, getNodesWithShadersFromConfig} from "./shaders.js";
 import {startRenderLoop} from "./render-loop.js";
 
 import {createFrameRateCounter} from "./fps-counter.js";
@@ -228,6 +229,7 @@ onReady(() => {
 
     // API for loading resources for scene nodes.
     const resourceLoader = createResourceLoader(gl, sceneManager);
+    const shaderProgramLoader = createShaderProgramLoader(gl, sceneManager);
 
     // Startup up the app. We give it the state manager so that it can create
     // the scene tree panel. This will render a spinner until we call
@@ -244,7 +246,10 @@ onReady(() => {
     // This starts the render loop to render the scene!
     startRenderLoop(gl, updateScene, renderScene);
 
-    resourceLoader.loadMany(getResourcesFromConfig(config)).then(() => {
+    Promise.all([
+      resourceLoader.loadMany(getResourcesFromConfig(config)),
+      shaderProgramLoader.loadMany(getNodesWithShadersFromConfig(config)),
+    ]).then(() => {
       app.ready();
 
       // eslint-disable-next-line
@@ -254,5 +259,6 @@ onReady(() => {
   catch(ex) {
     // Report error
     app.error(ex);
+    throw ex;
   }
 });
