@@ -34,14 +34,14 @@ export function treeGetMatches(matcher) {
     const result = [];
     const stack = [roots];
 
-    for (let index = 0; index !== stack.length; index++) {
-      const items = stack[index];
-    
+    while (stack.length) {
+      const items = stack.shift();
+
       for (const item of items) {
         if (matcher(item)) {
           result.push(item);
         }
-      
+
         if (item.items && !!item.items.length) {
           stack.push(item.items);
         }
