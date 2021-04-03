@@ -12,10 +12,9 @@ import * as angles from "../src/math/angles.js";
 import * as easings from "../src/math/easings.js";
 import {Subscription} from "../src/dom/events.js";
 import {onReady} from "../src/dom/ready.js";
-import {treeGetMatches} from "../src/scene-manager.js";
 
 import {createSplitPanel} from "./split-panel.js";
-import {createScene} from "./scene-factory.js";
+import {createScene, getResourcesFromConfig} from "./scene-factory.js";
 import {createResourceLoader} from "./resource-loader.js";
 
 import {createFrameRateCounter} from "./fps-counter.js";
@@ -205,22 +204,6 @@ function createProjectionMatrix(width, height, depth=1000) {
   // we render.
   return PerspectiveProjectionMatrix.create(90, width, height, 0, depth);
   // return OrthographicProjectionMatrix.create(width, height, depth);
-}
-
-function getResourcesFromConfig(config) {
-  const traverse = treeGetMatches((node) => {
-    return node.type === "static-mesh" || node.type === "light";
-  });
-
-  return (
-    traverse(config.items)
-    .map(item => {
-      return {
-        node: item,
-        url: item.resource,
-        filename: item.resource.split(/[\/]/).pop(),
-      }
-    }));
 }
 
 // Whenever the DOM is ready is when we want to start doing work. That's

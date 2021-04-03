@@ -1,7 +1,7 @@
 import {Node as SceneNode} from "../src/scene/node.js";
 import {Light as SceneLight} from "../src/scene/light.js";
 import {StaticMesh} from "../src/scene/static-mesh.js";
-import {SceneManager, treeTraversal} from "../src/scene-manager.js";
+import {SceneManager, treeTraversal, treeGetMatches} from "../src/scene-manager.js";
 import {StateManager} from "../src/state-manager.js";
 import {
   createRenderableShaderProgram,
@@ -69,4 +69,20 @@ export function createScene(gl, config) {
     stateManager,
     sceneManager: sceneManager.withSceneNodes(sceneNodes),
   };
+}
+
+export function getResourcesFromConfig(config) {
+  const traverse = treeGetMatches((node) => {
+    return node.type === "static-mesh" || node.type === "light";
+  });
+
+  return (
+    traverse(config.items)
+    .map(item => {
+      return {
+        node: item,
+        url: item.resource,
+        filename: item.resource.split(/[\/]/).pop(),
+      }
+    }));
 }
