@@ -1,3 +1,4 @@
+import * as vec3 from "../src/math/vector3.js";
 import {
   VertexBuffer,
   VertexBufferData,
