@@ -12,18 +12,11 @@ import * as angles from "../src/math/angles.js";
 import * as easings from "../src/math/easings.js";
 import {Subscription} from "../src/dom/events.js";
 import {onReady} from "../src/dom/ready.js";
-
-import {
-  VertexBuffer,
-  VertexBufferData,
-} from "../src/renderer/vertexbuffer.js";
-
 import {treeGetMatches} from "../src/scene-manager.js";
-import {ResourceManager} from "../src/resource-manager.js";
-import {ObjLoader} from "./file-loaders.js";
 
 import {createSplitPanel} from "./split-panel.js";
 import {createScene} from "./scene-factory.js";
+import {createResourceLoader} from "./resource-loader.js";
 
 import {createFrameRateCounter} from "./fps-counter.js";
 import {config} from "./scene-config.js";
@@ -214,29 +207,6 @@ function createProjectionMatrix(width, height, depth=1000) {
   // return OrthographicProjectionMatrix.create(width, height, depth);
 }
 
-function buildVertexBuffer(gl, model) {
-  let {vertices, normals, colors} = model;
-
-  const vertexBuffer = VertexBuffer.create({
-    positions: new VertexBufferData(gl, vertices),
-  });
-
-  if (!normals.byteLength && !normals.length) {
-    vertexBuffer.withNormals(
-      new VertexBufferData(
-        gl, vec3.normalizeTriangleVertices(new Float32Array(vertices))));
-  }
-  else {
-    vertexBuffer.withNormals(new VertexBufferData(gl, normals));
-  }
-
-  if (colors.byteLength || colors.length) {
-    vertexBuffer.withColors(new VertexBufferData(gl, colors));
-  }
-
-  return vertexBuffer;
-}
-
 function getResourcesFromConfig(config) {
   const traverse = treeGetMatches((node) => {
     return node.type === "static-mesh" || node.type === "light";
@@ -251,51 +221,6 @@ function getResourcesFromConfig(config) {
         filename: item.resource.split(/[\/]/).pop(),
       }
     }));
-}
-
-function createResourceLoader(gl, sceneManager) {
-  const cache = {};
-
-  const objLoader = new ObjLoader();
-  const resourceManager = new ResourceManager()
-    .register("obj", (file) => objLoader.load(file));
-
-  function loadMany(resources) {
-    return Promise.all(
-      resources.map((resource) => this.load(resource))
-    );
-  }
-
-  // Filename is a separate argument because a URL can be from a file selector
-  // in which case the URL object will be a blob and a filename cannot be
-  // derrived from it. We need a filename to be able to derrive the correct
-  // file loader, which relies on the file extension. Blobs do not have
-  // filenames with extensions, and that's a security feature. They looks like:
-  // blob:http://localhost:3000/9f19dc8a-02fd-4554-99a0-8ee40151b4a1
-  function load({node, url, filename}) {
-    if (!cache[filename]) {
-      cache[filename] = resourceManager
-        .load(url, filename)
-        // For now I am assuming that all resources are for object files.
-        // But that's clearly going to be changing to support other types
-        // of resources. For example, some resources will be for files that
-        // support animation. In those cases we will need a different handler
-        // here.  But for now, let's keep it simple and we will expand as the
-        // need comes up.
-        .then(model => buildVertexBuffer(gl, model));
-    }
-
-    return cache[filename].then(vbuffer => {
-      sceneManager
-        .getNodeByName(node.name)
-        .withVertexBuffer(vbuffer);
-    });
-  }
-
-  return {
-    loadMany,
-    load,
-  }
 }
 
 // Whenever the DOM is ready is when we want to start doing work. That's
