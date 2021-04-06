@@ -1,5 +1,6 @@
 import {Node as SceneNode} from "../src/scene/node.js";
 import {Light as SceneLight} from "../src/scene/light.js";
+import {Projection} from "../src/scene/projection.js";
 import {StaticMesh} from "../src/scene/static-mesh.js";
 import {SceneManager, treeTraversal} from "../src/scene-manager.js";
 import {StateManager} from "../src/state-manager.js";
@@ -34,6 +35,9 @@ export function createScene(config) {
     else if (isLight(node)) {
       return new SceneLight(node);
     }
+    else if (isPerspective(node) || isOrthographic(node)) {
+      return new Projection(node);
+    }
 
     return new SceneNode(node);
   }
@@ -45,6 +49,14 @@ export function createScene(config) {
     stateManager,
     sceneManager: sceneManager.withSceneNodes(sceneNodes),
   };
+}
+
+export function isPerspective(node) {
+  return node.type === "perspective";
+}
+
+export function isOrthographic(node) {
+  return node.type === "orthographic";
 }
 
 export function isLight(node) {
