@@ -92,6 +92,22 @@ export class SceneManager {
     }
   }
 
+  getProjectionMatrixForNode(node) {
+    let currentNode = node;
+
+    while (currentNode && !currentNode.projectionMatrix) {
+      currentNode = currentNode.parent;
+    }
+
+    // A projection should not return the projection of itself so that we
+    // don't end up 
+    if (currentNode) {
+      return currentNode.projectionMatrix;
+    }
+
+    return mat4.Matrix4.identity();
+  }
+
   getLightsForNode(node) {
     let currentNode = node;
 
