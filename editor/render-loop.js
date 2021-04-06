@@ -9,6 +9,9 @@ export function startRenderLoop(gl, updateScene, renderScene) {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.enable(gl.DEPTH_TEST);
     gl.enable(gl.CULL_FACE);
+
+    // WebGL default frontface is gl.CCW.
+    // https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/frontFace
     // gl.frontFace(gl.CW);
     
     // Update the scene and states.
