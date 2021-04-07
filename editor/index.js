@@ -6,7 +6,10 @@
 
 import {App} from "./app.js";
 import webgl from "../src/webgl.js";
-import {PerspectiveProjectionMatrix} from "../src/math/projections.js";
+import {
+  PerspectiveProjectionMatrix,
+  OrthographicProjectionMatrix,
+} from "../src/math/projections.js";
 import * as vec3 from "../src/math/vector3.js";
 import * as angles from "../src/math/angles.js";
 import * as easings from "../src/math/easings.js";
@@ -23,7 +26,7 @@ import {createFrameRateCounter} from "./fps-counter.js";
 import {config} from "./scene-config.js";
 
 function applyWorldRotation(stateManager, rotateX, rotateY, rotateZ=0) {
-  const worldMatrixName = "world matrix";
+  const worldMatrixName = "world projection";
   const worldMatrix = stateManager.getItemByName(worldMatrixName);
 
   stateManager.updateItemByName(worldMatrixName, {
@@ -37,7 +40,7 @@ function applyWorldRotation(stateManager, rotateX, rotateY, rotateZ=0) {
 }
 
 function applyWorldTranslation(stateManager, translateX, translateY, translateZ) {
-  const worldMatrixName = "world matrix";
+  const worldMatrixName = "world projection";
   const worldMatrix = stateManager.getItemByName(worldMatrixName);
 
   stateManager.updateItemByName(worldMatrixName, {
@@ -54,18 +57,34 @@ function applyWorldTranslation(stateManager, translateX, translateY, translateZ)
 // render it.
 function createSceneUpdater(gl, sceneManager, stateManager) {
   const getFrameRate = createFrameRateCounter();
-  const {canvas} = gl;
 
-  // The camera is the projection matrix.
-  let projectionMatrix = createProjectionMatrix(canvas.clientWidth, canvas.clientHeight);
-  let rotationDegrees = 0;
+  let axisProjectionMatrix, perspectiveProjectionMatrix;
 
   function handleResize() {
+    const {canvas} = gl;
     const {clientWidth, clientHeight} = canvas;
     canvas.width = clientWidth;
     canvas.height = clientHeight;
-    projectionMatrix = createProjectionMatrix(clientWidth, clientHeight);
+
+    const worldProjectionState = stateManager.getItemByName("world projection");
+    perspectiveProjectionMatrix = createPerspectiveProjectionMatrix(
+      clientWidth,
+      clientHeight,
+      worldProjectionState.fov,
+      worldProjectionState.near,
+      worldProjectionState.far,
+    );
+  
+    const axisProjectionState = stateManager.getItemByName("axis projection");
+    axisProjectionMatrix = createOrthographicProjectionMatrix(
+      clientWidth,
+      clientHeight,
+      axisProjectionState.far,
+    );
   }
+
+  // Initialize projections and canvas dimensions.
+  handleResize();
 
   // Update canvas width/height whenever the window is resized. clientHeight
   // and clientWidth are the window.innerHeight and window.innerWidth. it is
@@ -129,9 +148,28 @@ function createSceneUpdater(gl, sceneManager, stateManager) {
       }
     });
 
+  let rotationDegrees = 0;
+
   // This is the logic for updating the scene state and the scene graph with the
   // new scene state. This is the logic for the game itself.
   function updateScene(/*ms*/) {
+    sceneManager
+      .getNodeByName("world projection")
+      .withProjection(perspectiveProjectionMatrix);
+
+    const axisName = "axis projection";
+    sceneManager
+      .getNodeByName(axisName)
+      .withProjection(axisProjectionMatrix);
+
+    const axisState = stateManager.getItemByName(axisName);
+    stateManager.updateItemByName(axisName, {
+      transform: {
+        ...axisState.transform,
+        rotation: stateManager.getItemByName("world projection").transform.rotation,
+      },
+    });
+
     const group1Name = "group-1";
 
     // Update rotations based on keyboard inputs.
@@ -170,12 +208,16 @@ function createSceneUpdater(gl, sceneManager, stateManager) {
   }
 
   function renderScene(ms) {
-    sceneManager.render(stateManager, (node) => node.render({
-      gl,
-      projectionMatrix,
-      sceneManager,
-      stateManager,
-    }));
+    sceneManager.render(stateManager, (node) => {
+      const projectionMatrix = sceneManager.getProjectionMatrixForNode(node);
+
+      node.render({
+        gl,
+        projectionMatrix,
+        sceneManager,
+        stateManager,
+      })
+    });
 
     // Let's write out the number of frames per second that we are able to
     // render.
@@ -197,15 +239,24 @@ function createSceneUpdater(gl, sceneManager, stateManager) {
 // reason about in pixel space, but when rasterizing it is much simpler for the
 // low level engines to work with clip space, which is used for determining
 // what geometry can be culled out.
-function createProjectionMatrix(width, height, depth=1000) {
+function createPerspectiveProjectionMatrix(width, height, fov=90, near=0, far=1000) {
   // Primitives are clipped to a space coordinate that ranges from -1 to 1
   // in all axis. This is what the hardware wants, so we need to project
   // screen space to clip space so that all things that we render can be
   // in screen space, but when we render to can convert all things to clip
   // space for the hardward to properly cull out and rasterize everything
   // we render.
-  return PerspectiveProjectionMatrix.create(90, width, height, 0, depth);
-  // return OrthographicProjectionMatrix.create(width, height, depth);
+  return PerspectiveProjectionMatrix.create(fov, width, height, near, far);
+}
+
+function createOrthographicProjectionMatrix(width, height, far=1000) {
+  // Primitives are clipped to a space coordinate that ranges from -1 to 1
+  // in all axis. This is what the hardware wants, so we need to project
+  // screen space to clip space so that all things that we render can be
+  // in screen space, but when we render to can convert all things to clip
+  // space for the hardward to properly cull out and rasterize everything
+  // we render.
+  return OrthographicProjectionMatrix.create(width, height, far);
 }
 
 // Whenever the DOM is ready is when we want to start doing work. That's

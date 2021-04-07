@@ -1,13 +1,92 @@
 export const config = {
   "items": [
     {
-      "name": "world matrix",
-      "type": "transform",
+      "name": "axis projection",
+      "type": "orthographic",
+      "far": 1000,
+
+      "transform": {
+        "scale": [30, 30, 30],
+        "position": [100, 100, 0],
+        "rotation": [0, 0, 0],
+      },
+      "items": [
+        {
+          "name": "axis-x",
+          "type": "static-mesh",
+          "resource": "/resources/obj/axis.obj",
+
+          "material": {
+            "color": [1, 0, 0, 1],
+            "reflectiveness": 0,
+          },
+
+          "ambient": {
+            "color": [1, 0, 0],
+          },
+
+          "transform": {
+            "scale": [1, 1, 1],
+            "position": [0, 0, 0],
+            "rotation": [0, 0, 0],
+          },
+        },
+        {
+          "name": "axis-y",
+          "type": "static-mesh",
+          "resource": "/resources/obj/axis.obj",
+
+          "material": {
+            "color": [0, 1, 0, 1],
+            "reflectiveness": 0,
+          },
+
+          "ambient": {
+            "color": [0, 1, 0],
+          },
+
+          "transform": {
+            "scale": [1, 1, 1],
+            "position": [0, 0, 0],
+            "rotation": [0, 0, 90],
+          },
+        },
+        {
+          "name": "axis-z",
+          "type": "static-mesh",
+          "resource": "/resources/obj/axis.obj",
+
+          "material": {
+            "color": [0, 0, 1, 1],
+            "reflectiveness": 0,
+          },
+
+          "ambient": {
+            "color": [0, 0, 1],
+          },
+
+          "transform": {
+            "scale": [1, 1, 1],
+            "position": [0, 0, 0],
+            "rotation": [0, -90, 0],
+          },
+        },
+      ]
+    },
+    {
+      "name": "world projection",
+      "type": "perspective",
+
+      "near": 0,
+      "far": 1000,
+      "fov": 90,
+
       "transform": {
         "scale": [1, 1, 1],
         "position": [0, 0, -20],
         "rotation": [0, 0, 0],
       },
+
       "items": [
         {
           "name": "light-cyan",
