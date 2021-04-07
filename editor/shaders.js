@@ -31,7 +31,7 @@ export function createRenderableShaderProgram(gl, lights) {
     in vec4 fragmentColor;
     in vec4 fragmentNormal;
 
-    uniform vec3 ambientLightColor;
+    uniform vec3 ambientColor;
     uniform vec4 materialColor;
     uniform float materialReflectiveness;
 
@@ -50,7 +50,7 @@ export function createRenderableShaderProgram(gl, lights) {
     }
 
     void main() {
-      vec3 calculatedLightColor = ambientLightColor;
+      vec3 calculatedLightColor = ambientColor;
       vec3 normal = normalize(fragmentNormal.xyz);
 
       if (materialReflectiveness != 0.0) {

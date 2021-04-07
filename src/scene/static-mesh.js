@@ -61,13 +61,24 @@ export class StaticMesh extends Renderable {
         }, {
           name: "materialColor",
           update: ({index}) => {
-            gl.uniform4fv(index, renderableState.material.color);
+            const {color=[1,1,1,1]} = renderableState.material || {};
+            gl.uniform4fv(index, color);
           },
         }, {
           name: "materialReflectiveness",
           update: ({index}) => {
-            gl.uniform1f(index, renderableState.material.reflectiveness);
+            const {reflectiveness=1} = renderableState.material || {};
+            gl.uniform1f(index, reflectiveness);
           },
+        }, {
+          name: "ambientColor",
+          update: ({index}) => {
+            const {color=[0,0,0]} = renderableState.ambient || {};
+
+            if (color) {
+              gl.uniform3fv(index, color);
+            }
+          }
         },
         ...lightPositions,
         ...lightColors,
