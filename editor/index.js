@@ -60,27 +60,33 @@ function createSceneUpdater(gl, sceneManager, stateManager) {
 
   let axisProjectionMatrix, perspectiveProjectionMatrix;
 
-  function handleResize() {
+  function refreshProjection() {
     const {canvas} = gl;
     const {clientWidth, clientHeight} = canvas;
-    canvas.width = clientWidth;
-    canvas.height = clientHeight;
 
     const worldProjectionState = stateManager.getItemByName("world projection");
     perspectiveProjectionMatrix = createPerspectiveProjectionMatrix(
       clientWidth,
       clientHeight,
-      worldProjectionState.fov,
-      worldProjectionState.near,
-      worldProjectionState.far,
+      worldProjectionState.projection.fov,
+      worldProjectionState.projection.near,
+      worldProjectionState.projection.far,
     );
   
     const axisProjectionState = stateManager.getItemByName("axis projection");
     axisProjectionMatrix = createOrthographicProjectionMatrix(
       clientWidth,
       clientHeight,
-      axisProjectionState.far,
+      axisProjectionState.projection.far,
     );
+  }
+
+  function handleResize() {
+    const {canvas} = gl;
+    const {clientWidth, clientHeight} = canvas;
+    canvas.width = clientWidth;
+    canvas.height = clientHeight;
+    refreshProjection();
   }
 
   // Initialize projections and canvas dimensions.
@@ -231,6 +237,7 @@ function createSceneUpdater(gl, sceneManager, stateManager) {
   return {
     updateScene,
     renderScene,
+    refreshProjection,
   };
 }
 
@@ -279,17 +286,18 @@ onReady(() => {
     const resourceLoader = createResourceLoader(gl, sceneManager);
     const shaderProgramLoader = createShaderProgramLoader(gl, sceneManager);
 
-    // Startup up the app. We give it the state manager so that it can create
-    // the scene tree panel. This will render a spinner until we call
-    // app.ready.  Or an error if something goes wrong when settings things up.
-    app.init({resourceLoader, stateManager});
-
     // Two functions to update the scene state and another for actually render
     // the scene based on the updated scene state.
     const {
       updateScene,
       renderScene,
+      refreshProjection,
     } = createSceneUpdater(gl, sceneManager, stateManager);
+
+    // Startup up the app. We give it the state manager so that it can create
+    // the scene tree panel. This will render a spinner until we call
+    // app.ready.  Or an error if something goes wrong when settings things up.
+    app.init({resourceLoader, stateManager, refreshProjection});
 
     // This starts the render loop to render the scene!
     startRenderLoop(gl, updateScene, renderScene);

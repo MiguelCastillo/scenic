@@ -25,12 +25,12 @@ export class SceneGraph extends React.Component {
   }
 
   render() {
-    const {stateManager, resourceLoader} = this.props;
+    const {stateManager, resourceLoader, refreshProjection} = this.props;
     const {selectedNode} = this.state;
 
     return (
       <NodeSelectionContext.Provider value={{handleNodeSelection: this.handleNodeSelection, selectedNode}}>
-        <SceneContext.Provider value={{updateScene: this.handleSceneUpdate, resourceLoader}}>
+        <SceneContext.Provider value={{updateScene: this.handleSceneUpdate, resourceLoader, refreshProjection, stateManager}}>
           <div className="scene-graph">
             <div className="scene-tree">
               <div className="scene-tree-header">Scene Graph</div>

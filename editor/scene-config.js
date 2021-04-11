@@ -3,7 +3,10 @@ export const config = {
     {
       "name": "axis projection",
       "type": "orthographic",
-      "far": 1000,
+
+      "projection": {
+        "far": 1000,
+      },
 
       "transform": {
         "scale": [30, 30, 30],
@@ -77,9 +80,11 @@ export const config = {
       "name": "world projection",
       "type": "perspective",
 
-      "near": 0,
-      "far": 1000,
-      "fov": 90,
+      "projection": {
+        "near": 1,
+        "far": 1000,
+        "fov": 90,
+      },
 
       "transform": {
         "scale": [1, 1, 1],
