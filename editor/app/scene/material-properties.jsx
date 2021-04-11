@@ -1,23 +1,38 @@
 import * as React from "react"
 import {ColorChannels} from "./color-channels.jsx";
+import {WithNodeState} from "./with-node-state.jsx";
 
-export class MaterialProperties extends React.Component {
+import {fixed3f} from "../../../src/math/angles.js";
+
+export class MaterialProperties extends WithNodeState {
   handleChangeColor = (value) => {
-    const {node: {material}} = this.props;
-    material.color[0] = value[0];
-    material.color[1] = value[1];
-    material.color[2] = value[2];
-    this.forceUpdate();
+    const nodeState = this.getNodeState();
+    const {material:{color}} = nodeState;
+
+    this.updateNodeState({
+      ...nodeState,
+      material: {
+        ...nodeState.material,
+        // The color selector component does not support selecting alpha
+        // channels, so we just copy whatever already in the state.
+        color: [...value, color[3]],
+      },
+    });
   }
 
   handleChangeReflectiveness = (evt) => {
-    const {node: {material}} = this.props;
-    material.reflectiveness = evt.target.value;
-    this.forceUpdate();
+    const nodeState = this.getNodeState();
+    this.updateNodeState({
+      ...nodeState,
+      material: {
+        ...nodeState.material,
+        reflectiveness: fixed3f(evt.target.value),
+      },
+    });
   }
 
   render() {
-    const {node: {material}} = this.props;
+    const {material} = this.getNodeState();
 
     return (
       <div className="node-properties material">

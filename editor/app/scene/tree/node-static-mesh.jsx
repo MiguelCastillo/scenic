@@ -44,7 +44,7 @@ export class SceneNodeMesh extends React.Component {
           handlerExpanderClick={this.handlerExpanderClick}
           handleNameClick={this.handleNameClick}
         />
-        <SceneNodeCollection items={items} />
+        <SceneNodeCollection nodes={items} />
       </li>
     );
   }

@@ -1,25 +1,29 @@
 import * as React from "react"
+import {WithNodeState} from "./with-node-state.jsx";
 
-import {SceneContext} from "./scene-context.js";
-
-export class OrthographicProjectionProperties extends React.Component {
-  static contextType = SceneContext;
-
+export class OrthographicProjectionProperties extends WithNodeState {
   handleChangeFar = (evt) => {
-    const {node} = this.props;
-    node.projection.far = parseInt(evt.target.value);
-    this.forceUpdate();
+    const nodeState = this.getNodeState();
+
+    this.updateNodeState({
+      ...nodeState,
+      projection: {
+        ...nodeState.projection,
+        far: parseInt(evt.target.value),
+      },
+    });
+
     this.context.refreshProjection();
   }
 
   render() {
-    const {node} = this.props;
+    const {projection} = this.getNodeState();
 
     return (
       <div className="node-properties orthographic">
         <div className="far">
           <label>Far</label>
-          <input type="number" onChange={this.handleChangeFar} value={node.projection.far}/>
+          <input type="number" onChange={this.handleChangeFar} value={projection.far}/>
         </div>
       </div>
     )

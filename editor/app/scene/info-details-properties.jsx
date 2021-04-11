@@ -1,10 +1,7 @@
 import * as React from "react";
+import {WithNodeState} from "./with-node-state.jsx";
 
-import {SceneContext} from "./scene-context.js";
-
-export class InfoDetailsProperties extends React.Component {
-  static contextType = SceneContext;
-
+export class InfoDetailsProperties extends WithNodeState {
   handleResourceSelection = (evt) => {
     if (evt.target.files.length === 0) {
       return;
@@ -15,16 +12,14 @@ export class InfoDetailsProperties extends React.Component {
       updateScene,
     } = this.context;
 
-    const {
-      node,
-    } = this.props;
+    const nodeState = this.getNodeState();
 
     // The input element is not configured to multiselect, so this should
     // always be 1 file.
     const [file] = evt.target.files;
 
     resourceLoader.load({
-      node,
+      node: nodeState,
       url: URL.createObjectURL(file),
       filename: file.name,
     })
@@ -37,22 +32,29 @@ export class InfoDetailsProperties extends React.Component {
 
     // HACK(miguel): we need a better way to set the resource name for
     // display purposes.
-    node.resource = file.name;
-    this.forceUpdate();
+    this.updateNodeState({
+      ...nodeState,
+      resource: evt.target.value,
+    });
 
     // Trigger scene update so that the scene tree is re-rendered.
-    updateScene(node);
+    updateScene();
   }
 
   handleChange = (which, evt) => {
-    const {node} = this.props;
-    node[which] = evt.target.value;
-    this.forceUpdate();
-    this.context.updateScene(node);
+    const nodeState = this.getNodeState();
+
+    this.updateNodeState({
+      ...nodeState,
+      [which]: evt.target.value,
+    });
+
+    this.context.updateScene();
   }
 
   render() {
-    const {node} = this.props;
+    const nodeState = this.getNodeState();
+
     return (
       <div className="node-properties info-details">
         <div className="name">
@@ -60,7 +62,7 @@ export class InfoDetailsProperties extends React.Component {
           <input
             type="text"
             onChange={(evt) => this.handleChange("name", evt)}
-            value={node.name} />
+            value={nodeState.name} />
         </div>
         <div className="type">
           <label>Type</label>
@@ -68,16 +70,16 @@ export class InfoDetailsProperties extends React.Component {
             readOnly
             type="text"
             onChange={(evt) => this.handleChange("type", evt)}
-            value={node.type} />
+            value={nodeState.type} />
         </div>
-        {(node.type === "static-mesh" || node.type === "light") ?
+        {(nodeState.type === "static-mesh" || nodeState.type === "light") ?
           <div className="resource">
             <label>Resource</label>
             <div className="resource-selector">
               <div className="selected-file">{
                 (
-                  node.resource ?
-                  node.resource.split(/[/\\]/).pop() :
+                  nodeState.resource ?
+                  nodeState.resource.split(/[/\\]/).pop() :
                   "<select file>"
                 )}</div>
               <button className="dialog-openener">

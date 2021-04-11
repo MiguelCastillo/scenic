@@ -297,7 +297,7 @@ onReady(() => {
     // Startup up the app. We give it the state manager so that it can create
     // the scene tree panel. This will render a spinner until we call
     // app.ready.  Or an error if something goes wrong when settings things up.
-    app.init({resourceLoader, stateManager, refreshProjection});
+    app.init({resourceLoader, sceneManager, stateManager, refreshProjection});
 
     // This starts the render loop to render the scene!
     startRenderLoop(gl, updateScene, renderScene);

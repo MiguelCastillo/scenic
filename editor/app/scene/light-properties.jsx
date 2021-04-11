@@ -1,23 +1,36 @@
 import * as React from "react"
 import {ColorChannels} from "./color-channels.jsx";
+import {WithNodeState} from "./with-node-state.jsx";
 
-export class LightProperties extends React.Component {
+import {fixed3f} from "../../../src/math/angles.js";
+
+export class LightProperties extends WithNodeState {
   handleChangeColor = (value) => {
-    const {node: {light}} = this.props;
-    light.color[0] = value[0];
-    light.color[1] = value[1];
-    light.color[2] = value[2];
-    this.forceUpdate();
+    const nodeState = this.getNodeState();
+
+    this.updateNodeState({
+      ...nodeState,
+      light: {
+        ...nodeState.light,
+        color: [...value],
+      },
+    });
   }
 
   handleChangeIntensity = (evt) => {
-    const {node: {light}} = this.props;
-    light.intensity = evt.target.value;
-    this.forceUpdate();
+    const nodeState = this.getNodeState();
+
+    this.updateNodeState({
+      ...nodeState,
+      light: {
+        ...nodeState.light,
+        intensity: fixed3f(evt.target.value),
+      },
+    });
   }
 
   render() {
-    const {node: {light}} = this.props;
+    const {light} = this.getNodeState();
 
     return (
       <div className="node-properties light">

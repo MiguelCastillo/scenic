@@ -1,33 +1,44 @@
-import * as React from "react"
+import * as React from "react";
 import {Coordinates} from "./coordinates.jsx";
+import {WithNodeState} from "./with-node-state.jsx";
 
-export class TransformProperties extends React.Component {
-  handleChangePosition = (which, value) => {
-    const {node:{transform}} = this.props;
-    transform.position[xyzToIndex(which)] = value;
-    this.forceUpdate();
+import {fixed3f} from "../../../src/math/angles.js";
+
+export class TransformProperties extends WithNodeState {
+  _handleChange = (which, axis, value) => {
+    const nodeState = this.getNodeState();
+    const newTransform = [...nodeState.transform[which]];
+    newTransform[xyzToIndex(axis)] = value;
+
+    this.updateNodeState({
+      ...nodeState,
+      transform: {
+        ...nodeState.transform,
+        [which]: newTransform,
+      },
+    });
   }
 
-  handleChangeRotation = (which, value) => {
-    const {node:{transform}} = this.props;
-    transform.rotation[xyzToIndex(which)] = value;
-    this.forceUpdate();
+  handleChangePosition = (axis, value) => {
+    this._handleChange("position", axis, fixed3f(value));
   }
 
-  handleChangeScale = (which, value) => {
-    const {node:{transform}} = this.props;
-    transform.scale[xyzToIndex(which)] = value;
-    this.forceUpdate();
+  handleChangeRotation = (axis, value) => {
+    this._handleChange("rotation", axis, parseInt(value));
+  }
+
+  handleChangeScale = (axis, value) => {
+    this._handleChange("scale", axis, fixed3f(value));
   }
 
   render() {
-    const {node} = this.props;
+    const {transform} = this.getNodeState();
 
     return (
       <div className="node-properties transform">
         <div className="position">
           <label>Position</label>
-          <Coordinates onChange={this.handleChangePosition} data={node.transform.position}/>
+          <Coordinates onChange={this.handleChangePosition} data={transform.position}/>
         </div>
         <div className="rotation">
           <label>Rotation</label>
@@ -38,11 +49,11 @@ export class TransformProperties extends React.Component {
               elements will render a lot smaller than the other numeruc input
               elements.
           */}
-          <Coordinates step="1" min="-360.0000000000000" max="360" onChange={this.handleChangeRotation} data={node.transform.rotation}/>
+          <Coordinates step="1" min="-360.0000000000000" max="360" onChange={this.handleChangeRotation} data={transform.rotation}/>
         </div>
         <div className="scale">
           <label>Scale</label>
-          <Coordinates onChange={this.handleChangeScale} data={node.transform.scale}/>
+          <Coordinates onChange={this.handleChangeScale} data={transform.scale}/>
         </div>
       </div>
     )

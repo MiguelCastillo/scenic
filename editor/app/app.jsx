@@ -16,7 +16,7 @@ export class SceneGraph extends React.Component {
 
   handleNodeSelection = (node) => {
     this.setState({
-      selectedNode: node
+      selectedNode: node,
     });
   }
 
@@ -25,16 +25,34 @@ export class SceneGraph extends React.Component {
   }
 
   render() {
-    const {stateManager, resourceLoader, refreshProjection} = this.props;
+    const {
+      sceneManager,
+      stateManager,
+      resourceLoader,
+      refreshProjection,
+    } = this.props;
     const {selectedNode} = this.state;
 
+    const nodeSelectionContext = {
+      handleNodeSelection: this.handleNodeSelection,
+      selectedNode,
+    };
+
+    const sceneContext = {
+      updateScene: this.handleSceneUpdate,
+      resourceLoader,
+      refreshProjection,
+      stateManager,
+      sceneManager,
+    };
+
     return (
-      <NodeSelectionContext.Provider value={{handleNodeSelection: this.handleNodeSelection, selectedNode}}>
-        <SceneContext.Provider value={{updateScene: this.handleSceneUpdate, resourceLoader, refreshProjection, stateManager}}>
+      <NodeSelectionContext.Provider value={nodeSelectionContext}>
+        <SceneContext.Provider value={sceneContext}>
           <div className="scene-graph">
             <div className="scene-tree">
               <div className="scene-tree-header">Scene Graph</div>
-              <SceneNodeCollection items={stateManager.getItems()} />
+              <SceneNodeCollection nodes={sceneManager.rootNodes} />
             </div>
             {this.state.selectedNode ? <NodeDetailsPanel node={this.state.selectedNode} /> : null}            
           </div>

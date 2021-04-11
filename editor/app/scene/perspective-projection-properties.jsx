@@ -1,14 +1,18 @@
 import * as React from "react"
+import {WithNodeState} from "./with-node-state.jsx";
 
-import {SceneContext} from "./scene-context.js";
-
-export class PerspectiveProjectionProperties extends React.Component {
-  static contextType = SceneContext;
-
+export class PerspectiveProjectionProperties extends WithNodeState {
   _handleChange = (which, evt) => {
-    const {node} = this.props;
-    node.projection[which] = parseInt(evt.target.value);
-    this.forceUpdate();
+    const nodeState = this.getNodeState();
+
+    this.updateNodeState({
+      ...nodeState,
+      projection: {
+        ...nodeState.projection,
+        [which]: parseInt(evt.target.value),
+      },
+    });
+
     this.context.refreshProjection();
   }
 
@@ -25,21 +29,21 @@ export class PerspectiveProjectionProperties extends React.Component {
   }
 
   render() {
-    const {node} = this.props;
+    const {projection} = this.getNodeState();
 
     return (
       <div className="node-properties perspective">
         <div className="fov">
           <label>FOV</label>
-          <input type="number" onChange={this.handleChangeFOV} value={node.projection.fov}/>
+          <input type="number" onChange={this.handleChangeFOV} value={projection.fov}/>
         </div>
         <div className="near">
           <label>Near</label>
-          <input type="number" onChange={this.handleChangeNear} value={node.projection.near}/>
+          <input type="number" onChange={this.handleChangeNear} value={projection.near}/>
         </div>
         <div className="far">
           <label>Far</label>
-          <input type="number" onChange={this.handleChangeFar} value={node.projection.far}/>
+          <input type="number" onChange={this.handleChangeFar} value={projection.far}/>
         </div>
       </div>
     )

@@ -7,11 +7,11 @@ import {NodeSelectionContext} from "./selection-context.js";
 
 export class SceneNodeCollection extends React.Component {
   render() {
-    const {items} = this.props;
+    const {nodes} = this.props;
 
     return (
       <ul className="scene-nodes">
-        {items.map(item => <SceneNode key={item.name} node={item} />)}
+        {nodes.map(node => <SceneNode key={node.name} node={node} />)}
       </ul>
     );
   }
@@ -65,7 +65,7 @@ export class SceneNode extends React.Component {
             handlerExpanderClick={this.handlerExpanderClick}
             handleNameClick={this.handleNameClick}
           />
-          <SceneNodeCollection items={items} />
+          <SceneNodeCollection nodes={items} />
         </li>
       );
     }
