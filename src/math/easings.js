@@ -1,4 +1,4 @@
-import * as angles from "./angles.js";
+import {fixed3f} from "./float.js";
 
 // Some fun weight functions https://easings.net/
 // Easy In functions are great weight functions for the mouse because
@@ -46,6 +46,6 @@ export class WeightedItems {
 
   getWeighted() {
     const weightedFactor = this.weightFunction(this.factor);
-    return this.items.map(item => angles.fixed7f(item * weightedFactor));
+    return this.items.map(item => fixed3f(item * weightedFactor));
   }
 }

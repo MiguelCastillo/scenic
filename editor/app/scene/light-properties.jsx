@@ -2,7 +2,7 @@ import * as React from "react"
 import {ColorChannels} from "./color-channels.jsx";
 import {WithNodeState} from "./with-node-state.jsx";
 
-import {fixed3f} from "../../../src/math/angles.js";
+import {fixed3f} from "../../../src/math/float.js";
 
 export class LightProperties extends WithNodeState {
   handleChangeColor = (value) => {

@@ -1,6 +1,7 @@
 // https://www.khanacademy.org/math/linear-algebra/matrix-transformations#lin-trans-examples
 
-import {sin, cos, fixed7f} from "./angles.js";
+import {sin, cos} from "./angles.js";
+import {fixed3f} from "./float.js";
 
 export class Matrix4 {
   constructor(data) {
@@ -8,7 +9,7 @@ export class Matrix4 {
       return Matrix4.identity();
     }
 
-    this.data = data.map(fixed7f);
+    this.data = data.map(fixed3f);
   }
 
   static identity() {
@@ -201,7 +202,7 @@ export function multiply(a, b) {
     b30 * a01 + b31 * a11 + b32 * a21 + b33 * a31,
     b30 * a02 + b31 * a12 + b32 * a22 + b33 * a32,
     b30 * a03 + b31 * a13 + b32 * a23 + b33 * a33,
-  ].map(fixed7f);
+  ].map(fixed3f);
 };
 
 // Multiply multiple matrices, one after the other to compound transformations.

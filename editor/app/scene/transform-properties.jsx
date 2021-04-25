@@ -2,7 +2,7 @@ import * as React from "react";
 import {Coordinates} from "./coordinates.jsx";
 import {WithNodeState} from "./with-node-state.jsx";
 
-import {fixed3f} from "../../../src/math/angles.js";
+import {fixed3f} from "../../../src/math/float.js";
 
 export class TransformProperties extends WithNodeState {
   _handleChange = (which, axis, value) => {

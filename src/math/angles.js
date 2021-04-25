@@ -1,13 +1,7 @@
 // Clamp floating point to 7 decimal places. Not too big to prevent floating
 // point issues, and not too small to lose resolution when working with sine
 // cosine functions.
-export const fixed7f = a => {
-	return !a ? 0 : parseFloat(parseFloat(a).toFixed(7));
-}
-
-export const fixed3f = a => {
-	return !a ? 0 : parseFloat(parseFloat(a).toFixed(3));
-}
+import {fixed7f} from "./float.js";
 
 // Convert degrees to radians which is what Math.sin and Math.cos want.
 export const degToRad = (d) => d * Math.PI / 180;

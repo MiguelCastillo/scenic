@@ -1,4 +1,4 @@
-import {fixed3f} from "./math/angles.js";
+import {fixed3f} from "./math/float.js";
 
 export function rgbToHex(r, g, b) {
   let hex = [
