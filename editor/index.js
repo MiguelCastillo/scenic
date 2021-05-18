@@ -19,7 +19,7 @@ import {onReady} from "../src/dom/ready.js";
 import {createSplitPanel} from "./split-panel.js";
 import {createScene} from "./scene-factory.js";
 import {createResourceLoader, getResourcesFromConfig} from "./resource-loader.js";
-import {createShaderProgramLoader, getNodesWithShadersFromConfig} from "./shaders.js";
+import {createShaderProgramLoader, getNodesWithShadersFromConfig} from "./shader-factory.js";
 import {startRenderLoop} from "./render-loop.js";
 
 import {createFrameRateCounter} from "./fps-counter.js";
