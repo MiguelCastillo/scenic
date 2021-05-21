@@ -36,7 +36,6 @@ export class Light extends Renderable {
         }
       ]);
 
-    this._bindShaderProgram(program);
-    vertexBuffer.render(gl, gl.TRIANGLES);
+    Renderable.render(gl, program, vertexBuffer);
   }
 }

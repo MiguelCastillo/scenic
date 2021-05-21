@@ -74,10 +74,7 @@ export class StaticMesh extends Renderable {
           name: "ambientColor",
           update: ({index}) => {
             const {color=[0,0,0]} = renderableState.ambient || {};
-
-            if (color) {
-              gl.uniform3fv(index, color);
-            }
+            gl.uniform3fv(index, color);
           }
         },
         ...lightPositions,
@@ -85,7 +82,6 @@ export class StaticMesh extends Renderable {
         ...lightIntensities,
       ]);
 
-    this._bindShaderProgram(program);
-    vertexBuffer.render(gl, gl.TRIANGLES);
+    Renderable.render(gl, program, vertexBuffer);
   }
 }
