@@ -1,4 +1,5 @@
 import {Renderable} from "./renderable.js";
+import {findParentItemsWithItemType} from "./traversal.js";
 import * as vec3 from "../math/vector3.js";
 
 // SceneNodeMesh renders meshes. These are the node that lighting is applied
@@ -14,8 +15,7 @@ export class StaticMesh extends Renderable {
       return;
     }
 
-    const lightsStates = sceneManager
-      .getLightsForNode(this)
+    const lightsStates = findParentItemsWithItemType(this, "light")
       .map(({name}) => stateManager.getItemByName(name));
 
     const lightPositions = lightsStates

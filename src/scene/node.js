@@ -3,7 +3,7 @@ export class Node {
     Object.assign(this, {
       type, name,
       items: [],
-      lights: [],
+      byType: {},
     });
   }
 
@@ -22,9 +22,14 @@ export class Node {
   add(node) {
     this.items.push(node._withParent(this));
 
-    if (node.type === "light") {
-      this.lights.push(node);
+    // We will be storing all nodes by type to speed up the lookup
+    // of nodes in the scene tree
+    const typeKey = node.type + "s";
+    if (!this.byType[typeKey]) {
+      this.byType[typeKey] = [];
     }
+
+    this.byType[typeKey].push(node);
 
     return this;
   }
