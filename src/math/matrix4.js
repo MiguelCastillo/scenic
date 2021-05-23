@@ -1,7 +1,7 @@
 // https://www.khanacademy.org/math/linear-algebra/matrix-transformations#lin-trans-examples
 
 import {sin, cos} from "./angles.js";
-import {fixed3f} from "./float.js";
+import {matrixFloatPrecision} from "./float.js";
 
 export class Matrix4 {
   constructor(data) {
@@ -9,7 +9,7 @@ export class Matrix4 {
       return Matrix4.identity();
     }
 
-    this.data = data.map(fixed3f);
+    this.data = data.map(matrixFloatPrecision);
   }
 
   static identity() {
@@ -72,13 +72,17 @@ export class Matrix4 {
 
   rotation(degreesX, degreesY, degreesZ) {
     const data = rotate(degreesX, degreesY, degreesZ);
-    data.splice(_30, 3, this.data[_30], this.data[_31], this.data[_32]);
+    data[_30] = this.data[_30];
+    data[_31] = this.data[_31];
+    data[_32] = this.data[_32];
     return new Matrix4(data);
   }
 
   translation(tx, ty, tz) {
     const data = this.data.slice();
-    data.splice(_30, 3, tx, ty, tz);
+    data[_30] = tx;
+    data[_31] = ty;
+    data[_32] = tz;
     return new Matrix4(data);
   }
 };
@@ -202,7 +206,7 @@ export function multiply(a, b) {
     b30 * a01 + b31 * a11 + b32 * a21 + b33 * a31,
     b30 * a02 + b31 * a12 + b32 * a22 + b33 * a32,
     b30 * a03 + b31 * a13 + b32 * a23 + b33 * a33,
-  ].map(fixed3f);
+  ];
 };
 
 // Multiply multiple matrices, one after the other to compound transformations.
@@ -235,7 +239,7 @@ export function multiplyMany(...matrices) {
 // Rotation along Z:
 // 00(cos)  01(sin)
 // 10(-sin) 11(cos)
-const _00 = 0 * 4 + 0; const _01 = 0 * 4 + 1; const _02 = 0 * 4 + 2; const _03 = 0 * 4 + 3;
-const _10 = 1 * 4 + 0; const _11 = 1 * 4 + 1; const _12 = 1 * 4 + 2; const _13 = 1 * 4 + 3;
-const _20 = 2 * 4 + 0; const _21 = 2 * 4 + 1; const _22 = 2 * 4 + 2; const _23 = 2 * 4 + 3;
-const _30 = 3 * 4 + 0; const _31 = 3 * 4 + 1; const _32 = 3 * 4 + 2; const _33 = 3 * 4 + 3;
+const _00 = 0;  const _01 = 1;  const _02 = 2;  const _03 = 3;
+const _10 = 4;  const _11 = 5;  const _12 = 6;  const _13 = 7;
+const _20 = 8;  const _21 = 9;  const _22 = 10; const _23 = 11;
+const _30 = 12; const _31 = 13; const _32 = 14; const _33 = 15;

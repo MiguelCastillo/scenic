@@ -1,7 +1,4 @@
-export const fixed7f = a => {
-	return !a ? 0 : parseFloat(parseFloat(a).toFixed(7));
-}
-
-export const fixed3f = a => {
-	return !a ? 0 : parseFloat(parseFloat(a).toFixed(3));
-}
+export const fixedFloat = (precision) => (a) => !a ? 0 : parseFloat(parseFloat(a).toFixed(precision));
+export const fixed3f = fixedFloat(3);
+export const fixed7f = fixedFloat(7);
+export const matrixFloatPrecision = fixedFloat(5);

@@ -108,20 +108,6 @@ export class SceneManager {
     return mat4.Matrix4.identity();
   }
 
-  getLightsForNode(node) {
-    let currentNode = node;
-
-    while (currentNode && !currentNode.lights.length) {
-      currentNode = currentNode.parent;
-    }
-
-    if (!currentNode) {
-      return [];
-    }
-
-    return currentNode.lights;
-  }
-
   render(stateManager, renderNode) {
     // When we are traversing the scene graph from the root to its leaf nodes
     // (down), we will multiply all the matrices along the path to convert from
