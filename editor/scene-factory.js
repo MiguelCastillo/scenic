@@ -2,7 +2,8 @@ import {Node as SceneNode} from "../src/scene/node.js";
 import {Light as SceneLight} from "../src/scene/light.js";
 import {Projection} from "../src/scene/projection.js";
 import {StaticMesh} from "../src/scene/static-mesh.js";
-import {SceneManager, treeTraversal} from "../src/scene-manager.js";
+import {treeTraversal} from "../src/scene/traversal.js";
+import {SceneManager} from "../src/scene-manager.js";
 import {StateManager} from "../src/state-manager.js";
 
 export function createScene(config) {

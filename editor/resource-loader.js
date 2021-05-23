@@ -4,8 +4,8 @@ import {
   VertexBufferData,
 } from "../src/renderer/vertexbuffer.js";
 
+import {treeGetMatches} from "../src/scene/traversal.js";
 import {ResourceManager} from "../src/resource-manager.js";
-import {treeGetMatches} from "../src/scene-manager.js";
 
 import {ObjLoader} from "./file-loaders.js";
 import {isLight, isStaticMesh} from "./scene-factory.js";

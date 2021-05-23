@@ -1,6 +1,6 @@
 
 import {ShaderProgram} from "../src/shaders/program.js";
-import {treeGetMatches} from "../src/scene-manager.js";
+import {treeGetMatches} from "../src/scene/traversal.js";
 import {isLight, isStaticMesh} from "./scene-factory.js";
 
 export function createRenderableShaderProgram(gl, lights) {
