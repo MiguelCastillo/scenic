@@ -32,9 +32,10 @@ function applyWorldRotation(stateManager, rotateX, rotateY, rotateZ=0) {
   stateManager.updateItemByName(worldMatrixName, {
     transform: {
       ...worldMatrix.transform,
-      rotation: vec3.add([
-        rotateX, rotateY, rotateZ],
-        worldMatrix.transform.rotation),
+      rotation: vec3.add(
+        [rotateX, rotateY, rotateZ],
+        worldMatrix.transform.rotation
+      ),
     },
   });
 }
@@ -46,9 +47,10 @@ function applyWorldTranslation(stateManager, translateX, translateY, translateZ)
   stateManager.updateItemByName(worldMatrixName, {
     transform: {
       ...worldMatrix.transform,
-      position: vec3.add([
-        translateX, translateY, translateZ],
-        worldMatrix.transform.position),
+      position: vec3.add(
+        [translateX, translateY, translateZ],
+        worldMatrix.transform.position
+      ),
     },
   });
 }
@@ -159,8 +161,9 @@ function createSceneUpdater(gl, sceneManager, stateManager) {
   // This is the logic for updating the scene state and the scene graph with the
   // new scene state. This is the logic for the game itself.
   function updateScene(/*ms*/) {
+    const worldProjectionName = "world projection";
     sceneManager
-      .getNodeByName("world projection")
+      .getNodeByName(worldProjectionName)
       .withProjection(perspectiveProjectionMatrix);
 
     const axisName = "axis projection";
@@ -172,13 +175,12 @@ function createSceneUpdater(gl, sceneManager, stateManager) {
     stateManager.updateItemByName(axisName, {
       transform: {
         ...axisState.transform,
-        rotation: stateManager.getItemByName("world projection").transform.rotation,
+        rotation: stateManager.getItemByName(worldProjectionName).transform.rotation,
       },
     });
 
-    const group1Name = "group-1";
-
     // Update rotations based on keyboard inputs.
+    const group1Name = "group-1";
     const group1State = stateManager.getItemByName(group1Name);
     stateManager.updateItemByName(group1Name, {
       transform: {
