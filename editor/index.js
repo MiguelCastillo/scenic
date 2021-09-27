@@ -14,6 +14,7 @@ import * as vec3 from "../src/math/vector3.js";
 import * as angles from "../src/math/angles.js";
 import * as easings from "../src/math/easings.js";
 import {Subscription} from "../src/dom/events.js";
+import {keyframe} from "../src/animation/keyframe.js";
 import {onReady} from "../src/dom/ready.js";
 
 import {createSplitPanel} from "./split-panel.js";
@@ -74,7 +75,7 @@ function createSceneUpdater(gl, sceneManager, stateManager) {
       worldProjectionState.projection.near,
       worldProjectionState.projection.far,
     );
-  
+
     const axisProjectionState = stateManager.getItemByName("axis projection");
     axisProjectionMatrix = createOrthographicProjectionMatrix(
       clientWidth,
@@ -156,11 +157,26 @@ function createSceneUpdater(gl, sceneManager, stateManager) {
       }
     });
 
-  let rotationDegrees = 0;
+  const lightRotations = (() => {
+    const frames = [];
+    // for (let i = -3, idx = 0; i <= 3; i++, idx++) {
+    //   frames[idx] = [i, 0, 0];
+    // }
+
+    for (let i = 0; i < 360; i++) {
+      frames[i] = [
+        -angles.cos(i),
+        0,
+        -angles.sin(i),
+      ];
+    }
+
+    return keyframe(frames);
+  })()
 
   // This is the logic for updating the scene state and the scene graph with the
   // new scene state. This is the logic for the game itself.
-  function updateScene(/*ms*/) {
+  function updateScene(ms) {
     const worldProjectionName = "world projection";
     sceneManager
       .getNodeByName(worldProjectionName)
@@ -189,17 +205,13 @@ function createSceneUpdater(gl, sceneManager, stateManager) {
       },
     });
 
-    // We are going in a full circle (360 degrees) with this light.
-    rotationDegrees = (rotationDegrees+1) % 360;
-    const lightRotationAmount = Math.floor(rotationDegrees);
     const lightState = stateManager.getItemByName("light-yellow");
     const lightRotationMultiplier = 15;
-    const lightPosition = [
-      -angles.cos(lightRotationAmount) * lightRotationMultiplier,
-      0,
-      -angles.sin(lightRotationAmount) * lightRotationMultiplier,
-    ];
-    
+    const lightPosition = lightRotations(ms, 20);
+    lightPosition[0] *= lightRotationMultiplier;
+    lightPosition[1] *= lightRotationMultiplier;
+    lightPosition[2] *= lightRotationMultiplier;
+
     stateManager.updateItemByName("light-yellow", {
       transform: {
         ...lightState.transform,
