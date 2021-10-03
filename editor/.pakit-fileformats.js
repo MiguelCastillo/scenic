@@ -1,5 +1,5 @@
 module.exports = {
-  "src": ["editor/file-formats.js"],
+  "src": ["editor/loaders/file-formats.js"],
   "dest": "editor/dist/file-formats.js",
   "umd": "fileformats",
   "watch": true,

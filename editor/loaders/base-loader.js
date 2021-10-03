@@ -2,7 +2,7 @@
  * API for loading different file types in a web worker.
  */
 
-class FileLoader {
+export class BaseLoader {
   constructor(worker) {
     this.worker = worker;
 
@@ -20,14 +20,5 @@ class FileLoader {
       this.pending[file] = {resolve, reject};
       this.worker.postMessage({file, ...options});
     });
-  }
-}
-
-/**
- * File loader for obj formatted files.
- */
-export class ObjLoader extends FileLoader {
-  constructor() {
-    super(new Worker("/editor/objfile-worker.js"));
   }
 }
