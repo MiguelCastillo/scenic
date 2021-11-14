@@ -23,6 +23,7 @@
       "args": [
         "${file}",
       ],
+      "console":"integratedTerminal",
       "skipFiles": [],
     }
   ]
