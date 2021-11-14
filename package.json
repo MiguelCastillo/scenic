@@ -14,15 +14,17 @@
   "license": "MIT",
   "dependencies": {
     "encoding": "^0.1.13",
-    "node-fetch": "^2.6.1"
+    "node-fetch": "^2.6.1",
+    "pako": "^2.0.4",
+    "yargs": "^17.2.1"
   },
   "devDependencies": {
-    "3dub": "^1.1.0",
     "@babel/eslint-parser": "^7.13.8",
     "@babel/plugin-proposal-class-properties": "^7.13.0",
     "@babel/preset-env": "^7.13.8",
     "@babel/preset-react": "^7.12.13",
     "@bit/loader-text": "^1.2.1",
+    "3dub": "^1.1.0",
     "eslint": "^7.22.0",
     "jest": "^26.6.3",
     "pakit": "^2.1.0",

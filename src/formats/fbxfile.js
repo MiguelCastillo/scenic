@@ -1,0 +1,391 @@
+// https://docs.fileformat.com/3d/fbx/
+// https://banexdevblog.wordpress.com/2014/06/23/a-quick-tutorial-about-the-fbx-ascii-format/
+// https://code.blender.org/2013/08/fbx-binary-file-format-specification/
+// https://stackoverflow.com/questions/57032793/why-is-there-a-long-list-of-polygonvertexindex-without-any-negatives-in-one-fbx
+
+import * as pako from "pako";
+
+export class FbxFile {
+  static fromBinary(buffer) {
+    const bufferReader = new BufferReader(buffer);
+    const {binaryParser} = createParser(bufferReader);
+
+    let node = new Node();
+    let done = false;
+
+    do {
+      const {
+        endOffset,
+        propertyCount,
+        name,
+      } = binaryParser.readHeader();
+
+      let propertyValues = [];
+      for (let i = 0; i < propertyCount; i++) {
+        propertyValues.push(binaryParser.readPropertyValues());
+      }
+
+      if (bufferReader.currentPos === endOffset) {
+        if (propertyCount) {
+          node.properties.push({
+            name,
+            value: propertyCount === 1 ? propertyValues[0] : propertyValues,
+          });
+        }
+      } else {
+        if (endOffset) {
+          // Create a child node and make it the current
+          // node to parse data into it.
+          const newNode = new Node(name, node);
+          newNode.attributes = propertyValues;
+          node = newNode;
+        } else {
+          if (node.parent) {
+            node = node.parent;
+          } else {
+            done = true;
+          }
+        }
+      }
+    } while(!done);
+
+    return node;
+  }
+}
+
+export class Node {
+  constructor(name, parent) {
+    this.name = name;
+    this.parent = parent;
+    this.attributes = [];
+    this.properties = [];
+    this.children = [];
+
+    if (parent) {
+      parent.children.push(this);
+    }
+  }
+
+  toJSON = (key) => {
+    // Let's skip parent to avoid circular references!
+    if (key === "parent") {
+      return undefined;
+    }
+
+    return this;
+  };
+}
+
+export const findPropertyValueByName = (node, name) => {
+  const p = node.properties.find(p => p.name === name);
+  if (!p) {
+    return undefined;
+  }
+
+  return p.value;
+};
+
+export const findChildByName = (node, name) => {
+  return node.children.find(c => c.name === name);
+};
+
+// createParser is a factory for creating fbx parsers.
+function createParser(bufferReader) {
+  // Not user.  So we are just going to skip this data.
+  const fileHeader = [
+    bufferReader.getString(21),
+    bufferReader.getUint8(), bufferReader.getUint8(),
+    bufferReader.getUint32()];
+
+  // Format version
+  const [,,,version] = fileHeader;
+  if (version !== 7400) {
+    throw new Error("version not supported: " + version)
+  }
+
+  return {
+    fileHeader,
+    binaryParser: new BinaryParser(bufferReader),
+  };
+}
+
+class BinaryParser {
+  constructor(bufferReader) {
+    this.bufferReader = bufferReader;
+  }
+
+  readHeader() {
+    const {bufferReader} = this;
+    // When there is no more data left for the current
+    // node in the buffer, we read a total of 13 bytes.
+    // This gets us to start of the next node.
+    // I am not entirely sure if reading an empty header
+    // has any particular purpose or it is just for
+    // convenience of how the parser is written to allow
+    // to read an empty header to signify the end of a
+    // node in the buffer.
+    return {
+      endOffset: bufferReader.getUint32(),           // 4 bytes
+      propertyCount: bufferReader.getUint32(),       // 4 bytes
+      propertyListLength: bufferReader.getUint32(),  // 4 bytes
+      name: bufferReader.getString(bufferReader.getUint8()), // 1 byte
+    };
+  }
+
+  readPropertyValues() {
+    const {bufferReader} = this;
+    let propertyData;
+    const typeCode = bufferReader.getChar();
+    switch(typeCode) {
+      case "Y":
+        propertyData = bufferReader.getInt16();
+        break;
+      case "C":
+        propertyData = Boolean(bufferReader.getUint8());
+        break;
+      case "I":
+        propertyData = bufferReader.getInt32();
+        break;
+      case "F":
+        propertyData = bufferReader.getFloat32();
+        break;
+      case "D":
+        propertyData = bufferReader.getFloat64();
+        break;
+      case "L":
+        propertyData = [bufferReader.getInt32(), bufferReader.getInt32()];
+        // propertyData = bufferReader.getBigInt64();
+        break;
+      case "S":
+        propertyData = bufferReader.getString(bufferReader.getInt32());
+        break;
+      case "R":
+        propertyData = bufferReader.getBytes(bufferReader.getInt32());
+        break;
+      default:
+        propertyData = this.readArray(typeCode);
+        break;
+    }
+
+    return propertyData;
+  }
+
+  readArray(typeCode) {
+    if (!byteCountTable[typeCode]) {
+      return [];
+    }
+
+    const {bufferReader} = this;
+    const arrayLength = bufferReader.getUint32();
+    const encoding = bufferReader.getUint32();
+    const compressedLength = bufferReader.getUint32();
+    let result = bufferReader.getBytes(encoding ? compressedLength : arrayLength * byteCountTable[typeCode]);
+
+    if (encoding) {
+      const decomp = pako.inflate(result);
+      result = decomp.buffer;
+    }
+
+    const b = new BufferReader(result);
+    const r = [];
+
+    switch(typeCode) {
+      case "b":
+        for (let i = 0; i < arrayLength; i++) {
+          r[i] = Boolean(b.getInt8());
+        }
+        break;
+      case "f":
+        for (let i = 0; i < arrayLength; i++) {
+          r[i] = b.getFloat32();
+        }
+        break;
+      case "i":
+        for (let i = 0; i < arrayLength; i++) {
+          r[i] = b.getInt32();
+        }
+        break;
+      case "d":
+        for (let i = 0; i < arrayLength; i++) {
+          r[i] = b.getFloat64();
+        }
+        break;
+      case "l":
+        for (let i = 0; i < arrayLength; i++) {
+          r[i] = b.getBigInt64();
+        }
+        break;
+    }
+
+    return r;
+  }
+}
+
+// From https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView
+const littleEndian = (() => {
+  var buffer = new ArrayBuffer(2);
+  new DataView(buffer).setInt16(0, 256, true /* littleEndian */);
+  // Int16Array uses the platform's endianness.
+  return new Int16Array(buffer)[0] === 256;
+})();
+
+class BufferReader {
+  constructor(buffer) {
+    this.buffer = buffer
+    this.view = new DataView(buffer);
+    this.currentPos = 0;
+  }
+
+  forward(amount) {
+    this.currentPos += amount;
+  }
+
+  seek(position) {
+    this.currentPos = position;
+  }
+
+  getChar() {
+    return String.fromCharCode(this.getUint8());
+  }
+
+  getString(length) {
+    if (!length) {
+      return "";
+    }
+
+    let r = "";
+    const chunkSize = 512;
+    let startOffset = 0;
+    let endOffset = chunkSize;
+
+    // We will chunk this up so that we don't causes
+    // issues with passing too many items to `fromCharCode`.
+    while (startOffset !== length) {
+      if (endOffset > length) {
+        endOffset = length;
+      }
+
+      const chars = new Uint8Array(
+        this.buffer.slice(
+          this.currentPos + startOffset,
+          this.currentPos + endOffset,
+        )
+      );
+
+      r += String.fromCharCode(...chars);
+
+      startOffset = endOffset;
+      endOffset += chunkSize;
+    }
+
+    this.currentPos += length;
+    return r;
+  }
+
+  getRemainingBytes() {
+    return this.buffer.slice(this.currentPos, this.currentPos + (this.buffer.byteLength - this.currentPos));
+  }
+
+  getBytes(byteCount) {
+    const result = this.buffer.slice(this.currentPos, this.currentPos + byteCount);
+    this.currentPos += byteCount;
+    return result;
+  }
+
+  getInt8(littleEnd=littleEndian) {
+    return this.view.getInt8(this.currentPos++, littleEnd);
+  }
+
+  getUint8(littleEnd=littleEndian) {
+    return this.view.getUint8(this.currentPos++, littleEnd);
+  }
+
+  getInt16(littleEnd=littleEndian) {
+    const idx = this.currentPos;
+    this.currentPos += 2;
+    return this.view.getInt8(idx, littleEnd);
+  }
+
+  getUint16(littleEnd=littleEndian) {
+    const idx = this.currentPos;
+    this.currentPos += 2;
+    return this.view.getUint16(idx, littleEnd);
+  }
+
+  getInt32(littleEnd=littleEndian) {
+    const idx = this.currentPos;
+    this.currentPos += 4;
+    return this.view.getInt32(idx, littleEnd);
+  }
+
+  getUint32(littleEnd=littleEndian) {
+    const idx = this.currentPos;
+    this.currentPos += 4;
+    return this.view.getUint32(idx, littleEnd);
+  }
+
+  getFloat32(littleEnd=littleEndian) {
+    const idx = this.currentPos;
+    this.currentPos += 4;
+    return this.view.getFloat32(idx, littleEnd);
+  }
+
+  getFloat64(littleEnd=littleEndian) {
+    const idx = this.currentPos;
+    this.currentPos += 8;
+    return this.view.getFloat64(idx, littleEnd);
+  }
+
+  getBigInt64(littleEnd=littleEndian) {
+    const idx = this.currentPos;
+    this.currentPos += 8;
+    // JavaScript doesn't support 64 bit ints. So, we
+    // are just going to return a string.
+    return this.view.getBigInt64(idx, littleEnd);
+  }
+
+  getBigUint64(littleEnd=littleEndian) {
+    const idx = this.currentPos;
+    this.currentPos += 8;
+    // JavaScript doesn't support 64 bit ints. So, we
+    // are just going to return a string.
+    return this.view.getBigUint64(idx, littleEnd);
+  }
+}
+
+const byteCountTable = {
+  "b": 1, // boolean is 1 byte
+  "i": 4, // integer is 4 bytes
+  "f": 4, // float is 4 bytes
+  "d": 8, // double is 8 bytes
+  "l": 8, // long is 8 bytes
+};
+
+// Support JSON serialization of BigInt
+BigInt.prototype.toJSON = function() { return this.toString(); }
+
+export function triangulatePolygonIndexes(indexes) {
+  let triangleIndexes = [];
+  let polygon = [];
+
+  for (let i = 0; i < indexes.length; i++) {
+    for (let j = 0; true; j++, i++) {
+      // Negative values mean the end of a polygon. So
+      // we stop here to triangulate the polygon.
+      if (indexes[i] < 0) {
+        polygon[j] = -(indexes[i] + 1);
+        break;
+      }
+
+      polygon[j] = indexes[i];
+    }
+
+    for (let j = 1; j < polygon.length - 1; j++) {
+      triangleIndexes.push(polygon[0], polygon[j], polygon[j + 1]);
+    }
+
+    polygon = [];
+  }
+
+  return triangleIndexes;
+}
