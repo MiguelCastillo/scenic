@@ -9,14 +9,14 @@ import * as vec3 from "../math/vector3.js";
 export class StaticMesh extends Renderable {
   render(context) {
     const {shaderProgram, worldMatrix, vertexBuffer} = this;
-    const {gl, projectionMatrix, sceneManager, stateManager} = context;
+    const {gl, projectionMatrix, sceneManager} = context;
 
     if (!vertexBuffer || !shaderProgram) {
       return;
     }
 
     const lightsStates = findParentItemsWithItemType(this, "light")
-      .map(({name}) => stateManager.getItemByName(name));
+      .map(({name}) => sceneManager.getNodeStateByName(name));
 
     const lightPositions = lightsStates
       .map(({transform: {position}}, idx) => ({
@@ -43,7 +43,7 @@ export class StaticMesh extends Renderable {
       }));
 
     // State of the thing we are rendering.
-    const renderableState = stateManager.getItemByName(this.name);
+    const renderableState = sceneManager.getNodeStateByName(this.name);
 
     // Configure shader program with its current state.
     const program = shaderProgram
@@ -61,19 +61,19 @@ export class StaticMesh extends Renderable {
         }, {
           name: "materialColor",
           update: ({index}) => {
-            const {color=[1,1,1,1]} = renderableState.material || {};
+            const {color=[1,1,1,1]} = renderableState && renderableState.material || {};
             gl.uniform4fv(index, color);
           },
         }, {
           name: "materialReflectiveness",
           update: ({index}) => {
-            const {reflectiveness=1} = renderableState.material || {};
+            const {reflectiveness=1} = renderableState && renderableState.material || {};
             gl.uniform1f(index, reflectiveness);
           },
         }, {
           name: "ambientColor",
           update: ({index}) => {
-            const {color=[0,0,0]} = renderableState.ambient || {};
+            const {color=[0,0,0]} = renderableState && renderableState.ambient || {};
             gl.uniform3fv(index, color);
           }
         },

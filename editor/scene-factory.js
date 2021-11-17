@@ -23,7 +23,7 @@ export function createScene(config) {
   // How it works is that we use the scene manager to traverse all the nodes
   // in the scene reading their state from the state manager to calculate
   // information such as world matrices.
-  const sceneManager = new SceneManager();
+  const sceneManager = new SceneManager(stateManager);
 
   function buildSceneParentNode(parent, items) {
     return parent.addItems(items);
@@ -44,12 +44,8 @@ export function createScene(config) {
   }
 
   const traverse = treeTraversal(buildSceneNode, buildSceneParentNode);
-  const sceneNodes = stateManager.getItems().map(item => traverse(item));
-
-  return {
-    stateManager,
-    sceneManager: sceneManager.withSceneNodes(sceneNodes),
-  };
+  const sceneNodes = config.items.map(item => traverse(item));
+  return sceneManager.withSceneNodes(sceneNodes);
 }
 
 export function isPerspective(node) {

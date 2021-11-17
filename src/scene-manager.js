@@ -2,8 +2,17 @@ import * as mat4 from "./math/matrix4.js";
 import {bubbleTraversal} from "./scene/traversal.js";
 
 export class SceneManager {
-  constructor() {
+  constructor(stateManager) {
+    this.stateManager = stateManager;
     this.rootNodes = [];
+  }
+
+  getNodeStateByName(name) {
+    return this.stateManager.getItemByName(name);
+  }
+
+  updateNodeStateByName(name, newState) {
+    this.stateManager.updateItemByName(name, newState);
   }
 
   addNode(node) {
@@ -48,8 +57,6 @@ export class SceneManager {
       currentNode = currentNode.parent;
     }
 
-    // A projection should not return the projection of itself so that we
-    // don't end up 
     if (currentNode) {
       return currentNode.projectionMatrix;
     }
@@ -57,7 +64,7 @@ export class SceneManager {
     return mat4.Matrix4.identity();
   }
 
-  render(stateManager, renderNode) {
+  render(renderNode) {
     // When we are traversing the scene graph from the root to its leaf nodes
     // (down), we will multiply all the matrices along the path to convert from
     // local space to world space.
@@ -76,12 +83,16 @@ export class SceneManager {
     // concerns about depencies on other objects' location in space.
     const bubbleDown = (node /*, parent*/) => {
       const {parent} = node;
-      const nodeState = stateManager.getItemByName(node.name);
+      const nodeState = this.stateManager.getItemByName(node.name);
+      let modelMatrix = mat4.Matrix4.identity()
 
-      let modelMatrix = mat4.Matrix4
-        .translation(...nodeState.transform.position)
-        .rotation(...nodeState.transform.rotation)
-        .scale(...nodeState.transform.scale);
+      if (!!nodeState) {
+        const {transform} = nodeState;
+        modelMatrix = modelMatrix
+          .translation(...transform.position)
+          .rotation(...transform.rotation)
+          .scale(...transform.scale);
+      }
 
       if (!parent) {
         return node.withMatrix(modelMatrix);

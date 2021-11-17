@@ -26,11 +26,11 @@ import {startRenderLoop} from "./render-loop.js";
 import {createFrameRateCounter} from "./fps-counter.js";
 import {config} from "./scene-config.js";
 
-function applyWorldRotation(stateManager, rotateX, rotateY, rotateZ=0) {
+function applyWorldRotation(sceneManager, rotateX, rotateY, rotateZ=0) {
   const worldMatrixName = "world projection";
-  const worldMatrix = stateManager.getItemByName(worldMatrixName);
+  const worldMatrix = sceneManager.getNodeStateByName(worldMatrixName);
 
-  stateManager.updateItemByName(worldMatrixName, {
+  sceneManager.updateNodeStateByName(worldMatrixName, {
     transform: {
       ...worldMatrix.transform,
       rotation: vec3.add(
@@ -41,11 +41,11 @@ function applyWorldRotation(stateManager, rotateX, rotateY, rotateZ=0) {
   });
 }
 
-function applyWorldTranslation(stateManager, translateX, translateY, translateZ) {
+function applyWorldTranslation(sceneManager, translateX, translateY, translateZ) {
   const worldMatrixName = "world projection";
-  const worldMatrix = stateManager.getItemByName(worldMatrixName);
+  const worldMatrix = sceneManager.getNodeStateByName(worldMatrixName);
 
-  stateManager.updateItemByName(worldMatrixName, {
+  sceneManager.updateNodeStateByName(worldMatrixName, {
     transform: {
       ...worldMatrix.transform,
       position: vec3.add(
@@ -58,7 +58,7 @@ function applyWorldTranslation(stateManager, translateX, translateY, translateZ)
 
 // Helper function for providing the ability to update a scene and to also
 // render it.
-function createSceneUpdater(gl, sceneManager, stateManager) {
+function createSceneUpdater(gl, sceneManager) {
   const getFrameRate = createFrameRateCounter();
 
   let axisProjectionMatrix, perspectiveProjectionMatrix;
@@ -67,7 +67,7 @@ function createSceneUpdater(gl, sceneManager, stateManager) {
     const {canvas} = gl;
     const {clientWidth, clientHeight} = canvas;
 
-    const worldProjectionState = stateManager.getItemByName("world projection");
+    const worldProjectionState = sceneManager.getNodeStateByName("world projection");
     perspectiveProjectionMatrix = createPerspectiveProjectionMatrix(
       clientWidth,
       clientHeight,
@@ -76,7 +76,7 @@ function createSceneUpdater(gl, sceneManager, stateManager) {
       worldProjectionState.projection.far,
     );
 
-    const axisProjectionState = stateManager.getItemByName("axis projection");
+    const axisProjectionState = sceneManager.getNodeStateByName("axis projection");
     axisProjectionMatrix = createOrthographicProjectionMatrix(
       clientWidth,
       clientHeight,
@@ -153,7 +153,7 @@ function createSceneUpdater(gl, sceneManager, stateManager) {
       if (document.pointerLockElement === mousetrapEl) {
         const {devicePixelRatio} = window;
         const rotationRatio = devicePixelRatio*6;
-        applyWorldTranslation(stateManager, 0, 0, -(evt.deltaY/rotationRatio));
+        applyWorldTranslation(sceneManager, 0, 0, -(evt.deltaY/rotationRatio));
       }
     });
 
@@ -187,32 +187,32 @@ function createSceneUpdater(gl, sceneManager, stateManager) {
       .getNodeByName(axisName)
       .withProjection(axisProjectionMatrix);
 
-    const axisState = stateManager.getItemByName(axisName);
-    stateManager.updateItemByName(axisName, {
+    const axisState = sceneManager.getNodeStateByName(axisName);
+    sceneManager.updateNodeStateByName(axisName, {
       transform: {
         ...axisState.transform,
-        rotation: stateManager.getItemByName(worldProjectionName).transform.rotation,
+        rotation: sceneManager.getNodeStateByName(worldProjectionName).transform.rotation,
       },
     });
 
     // Update rotations based on keyboard inputs.
     const group1Name = "group-1";
-    const group1State = stateManager.getItemByName(group1Name);
-    stateManager.updateItemByName(group1Name, {
+    const group1State = sceneManager.getNodeStateByName(group1Name);
+    sceneManager.updateNodeStateByName(group1Name, {
       transform: {
         ...group1State.transform,
         rotation: vec3.add([0, 1, 0], group1State.transform.rotation),
       },
     });
 
-    const lightState = stateManager.getItemByName("light-yellow");
+    const lightState = sceneManager.getNodeStateByName("light-yellow");
     const lightRotationMultiplier = 15;
     const lightPosition = lightRotations(ms, 20);
     lightPosition[0] *= lightRotationMultiplier;
     lightPosition[1] *= lightRotationMultiplier;
     lightPosition[2] *= lightRotationMultiplier;
 
-    stateManager.updateItemByName("light-yellow", {
+    sceneManager.updateNodeStateByName("light-yellow", {
       transform: {
         ...lightState.transform,
         position: lightPosition,
@@ -220,22 +220,21 @@ function createSceneUpdater(gl, sceneManager, stateManager) {
     });
 
     if (worldRotation.update()) {
-      applyWorldRotation(stateManager, ...worldRotation.getWeighted());
+      applyWorldRotation(sceneManager, ...worldRotation.getWeighted());
     }
     if (worldTranslation.update()) {
-      applyWorldTranslation(stateManager, ...worldTranslation.getWeighted());
+      applyWorldTranslation(sceneManager, ...worldTranslation.getWeighted());
     }
   }
 
   function renderScene(ms) {
-    sceneManager.render(stateManager, (node) => {
+    sceneManager.render((node) => {
       const projectionMatrix = sceneManager.getProjectionMatrixForNode(node);
 
       node.render({
         gl,
         projectionMatrix,
         sceneManager,
-        stateManager,
       })
     });
 
@@ -294,7 +293,7 @@ onReady(() => {
 
     // Let's create the scene, which is made up of a scene manager and a
     // state manager.
-    const {sceneManager, stateManager} = createScene(config);
+    const sceneManager = createScene(config);
 
     // API for loading resources for scene nodes.
     const resourceLoader = createResourceLoader(gl, sceneManager);
@@ -306,12 +305,12 @@ onReady(() => {
       updateScene,
       renderScene,
       refreshProjection,
-    } = createSceneUpdater(gl, sceneManager, stateManager);
+    } = createSceneUpdater(gl, sceneManager);
 
     // Startup up the app. We give it the state manager so that it can create
     // the scene tree panel. This will render a spinner until we call
     // app.ready.  Or an error if something goes wrong when settings things up.
-    app.init({resourceLoader, sceneManager, stateManager, refreshProjection});
+    app.init({resourceLoader, sceneManager, refreshProjection});
 
     // This starts the render loop to render the scene!
     startRenderLoop(gl, updateScene, renderScene);

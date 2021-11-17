@@ -27,7 +27,6 @@ export class SceneGraph extends React.Component {
   render() {
     const {
       sceneManager,
-      stateManager,
       resourceLoader,
       refreshProjection,
     } = this.props;
@@ -42,7 +41,6 @@ export class SceneGraph extends React.Component {
       updateScene: this.handleSceneUpdate,
       resourceLoader,
       refreshProjection,
-      stateManager,
       sceneManager,
     };
 
@@ -54,7 +52,7 @@ export class SceneGraph extends React.Component {
               <div className="scene-tree-header">Scene Graph</div>
               <SceneNodeCollection nodes={sceneManager.rootNodes} />
             </div>
-            {this.state.selectedNode ? <NodeDetailsPanel node={this.state.selectedNode} /> : null}            
+            {this.state.selectedNode ? <NodeDetailsPanel node={this.state.selectedNode} /> : null}
           </div>
         </SceneContext.Provider>
       </NodeSelectionContext.Provider>

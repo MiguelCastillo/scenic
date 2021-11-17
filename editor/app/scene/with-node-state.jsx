@@ -7,12 +7,12 @@ export class WithNodeState extends React.Component {
 
   getNodeState = () => {
     const {node} = this.props;
-    return this.context.stateManager.getItemByName(node.name);
+    return this.context.sceneManager.getNodeStateByName(node.name);
   }
 
   updateNodeState = (data) => {
-    const nodeState = this.getNodeState();
-    this.context.stateManager.updateItemByName(nodeState.name, data);
+    const {node} = this.props;
+    this.context.sceneManager.updateNodeStateByName(node.name, data);
     this.forceUpdate();
   }
 }

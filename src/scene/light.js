@@ -7,14 +7,14 @@ import {Renderable} from "./renderable.js";
 export class Light extends Renderable {
   render(context) {
     const {shaderProgram, worldMatrix, vertexBuffer} = this;
-    const {gl, projectionMatrix, stateManager} = context;
+    const {gl, projectionMatrix, sceneManager} = context;
 
     if (!vertexBuffer || !shaderProgram) {
       return;
     }
 
     // State of the thing we are rendering.
-    const renderableState = stateManager.getItemByName(this.name);
+    const renderableState = sceneManager.getNodeStateByName(this.name);
 
     const program = shaderProgram
       .clone()

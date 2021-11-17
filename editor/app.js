@@ -8,7 +8,7 @@ export class App {
   constructor() {
   }
 
-  init({stateManager, sceneManager, resourceLoader, refreshProjection}) {
+  init({sceneManager, resourceLoader, refreshProjection}) {
     // Let's show our app loading spinner
     ReactDOM.render(
       <Loading isLoading={true}/>,
@@ -18,7 +18,6 @@ export class App {
     ReactDOM.render(
       <SceneGraph
         sceneManager={sceneManager}
-        stateManager={stateManager}
         resourceLoader={resourceLoader}
         refreshProjection={refreshProjection}
       />,
