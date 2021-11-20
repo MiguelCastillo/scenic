@@ -25,11 +25,14 @@ export class FbxFile {
         propertyValues.push(binaryParser.readPropertyValues());
       }
 
-      if (bufferReader.currentPos === endOffset) {
+      // Loosely equal comparissons for endOffset and
+      // propertyCount because BintInt and Number are
+      // loosely equal but not strictly equal.
+      if (bufferReader.currentPos == endOffset) {
         if (propertyCount) {
           node.properties.push({
             name,
-            value: propertyCount === 1 ? propertyValues[0] : propertyValues,
+            value: propertyCount == 1 ? propertyValues[0] : propertyValues,
           });
         }
       } else {
@@ -97,39 +100,28 @@ function createParser(bufferReader) {
     bufferReader.getUint8(), bufferReader.getUint8(),
     bufferReader.getUint32()];
 
-  // Format version
+  let binaryParser;
+
+  // Format version.
+  // https://help.autodesk.com/view/FBX/2016/ENU/?guid=__cpp_ref_fbxio_8h_html
   const [,,,version] = fileHeader;
-  if (version !== 7400) {
+  if (version === 7400) {
+    binaryParser = new BinaryParser7400(bufferReader);
+  } else if (version === 7500) {
+    binaryParser = new BinaryParser7500(bufferReader);
+  } else {
     throw new Error("version not supported: " + version)
   }
 
   return {
     fileHeader,
-    binaryParser: new BinaryParser(bufferReader),
+    binaryParser,
   };
 }
 
 class BinaryParser {
   constructor(bufferReader) {
     this.bufferReader = bufferReader;
-  }
-
-  readHeader() {
-    const {bufferReader} = this;
-    // When there is no more data left for the current
-    // node in the buffer, we read a total of 13 bytes.
-    // This gets us to start of the next node.
-    // I am not entirely sure if reading an empty header
-    // has any particular purpose or it is just for
-    // convenience of how the parser is written to allow
-    // to read an empty header to signify the end of a
-    // node in the buffer.
-    return {
-      endOffset: bufferReader.getUint32(),           // 4 bytes
-      propertyCount: bufferReader.getUint32(),       // 4 bytes
-      propertyListLength: bufferReader.getUint32(),  // 4 bytes
-      name: bufferReader.getString(bufferReader.getUint8()), // 1 byte
-    };
   }
 
   readPropertyValues() {
@@ -218,6 +210,38 @@ class BinaryParser {
     }
 
     return r;
+  }
+}
+
+class BinaryParser7400 extends BinaryParser {
+  readHeader() {
+    const {bufferReader} = this;
+    // When there is no more data left for the current
+    // node in the buffer, we read a total of 13 bytes.
+    // This gets us to start of the next node.
+    // I am not entirely sure if reading an empty header
+    // has any particular purpose or it is just for
+    // convenience of how the parser is written to allow
+    // to read an empty header to signify the end of a
+    // node in the buffer.
+    return {
+      endOffset: bufferReader.getUint32(),                   // 4 bytes
+      propertyCount: bufferReader.getUint32(),               // 4 bytes
+      propertyListLength: bufferReader.getUint32(),          // 4 bytes
+      name: bufferReader.getString(bufferReader.getUint8()), // 1 byte
+    };
+  }
+}
+
+class BinaryParser7500 extends BinaryParser {
+  readHeader() {
+    const {bufferReader} = this;
+    return {
+      endOffset: bufferReader.getBigUint64(),                // 8 bytes
+      propertyCount: bufferReader.getBigUint64(),            // 8 bytes
+      propertyListLength: bufferReader.getBigUint64(),       // 8 bytes
+      name: bufferReader.getString(bufferReader.getUint8()), // 1 byte
+    };
   }
 }
 
