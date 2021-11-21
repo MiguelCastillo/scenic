@@ -7,12 +7,12 @@ import {
   VertexBufferData,
 } from "../../../src/renderer/vertexbuffer.js";
 
-import {BaseLoader} from "../base-loader.js";
+import {WorkerLoader} from "../base-loader.js";
 
 /**
  * File loader for obj formatted files.
  */
-export class Loader extends BaseLoader {
+export class Loader extends WorkerLoader {
   constructor() {
     super(new Worker("/editor/loaders/obj/worker.js"));
   }

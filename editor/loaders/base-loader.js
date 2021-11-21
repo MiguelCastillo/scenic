@@ -2,8 +2,39 @@
  * API for loading different file types in a web worker.
  */
 
+import {Timer} from "../../src/timer.js";
+
 export class BaseLoader {
+  load(file, options={}) {
+    throw new Error("Must implement load");
+  }
+}
+
+export class TextFileLoader extends BaseLoader {
+  load(file, options={}) {
+    const timer = new Timer();
+    return fetch(file).then(res => {
+      // eslint-disable-next-line no-console
+      console.log("Downloaded:", file, `${timer.elapsed()} seconds`);
+      return res.text();
+    })
+  }
+}
+
+export class BrinaryFileLoader extends BaseLoader {
+  load(file, options={}) {
+    const timer = new Timer();
+    return fetch(file).then(res => {
+      // eslint-disable-next-line no-console
+      console.log("Downloaded:", file, `${timer.elapsed()} seconds`);
+      return res.arrayBuffer();
+    })
+  }
+}
+
+export class WorkerLoader extends BaseLoader {
   constructor(worker) {
+    super();
     this.worker = worker;
 
     this.worker.onmessage = (evt) => {
