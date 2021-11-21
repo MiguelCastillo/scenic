@@ -92,6 +92,10 @@ export const findChildByName = (node, name) => {
   return node.children.find(c => c.name === name);
 };
 
+export const findChildrenByName = (node, name) => {
+  return node.children.filter(c => c.name === name);
+};
+
 // createParser is a factory for creating fbx parsers.
 function createParser(bufferReader) {
   // Not user.  So we are just going to skip this data.

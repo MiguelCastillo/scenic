@@ -33,8 +33,7 @@ export const config = {
             "position": [0, 0, 0],
             "rotation": [0, 0, 0],
           },
-        },
-        {
+        }, {
           "name": "axis-y",
           "type": "static-mesh",
           "resource": "/resources/obj/axis.obj",
@@ -53,8 +52,7 @@ export const config = {
             "position": [0, 0, 0],
             "rotation": [0, 0, 90],
           },
-        },
-        {
+        }, {
           "name": "axis-z",
           "type": "static-mesh",
           "resource": "/resources/obj/axis.obj",
@@ -96,7 +94,7 @@ export const config = {
         {
           "name": "light-cyan",
           "type": "light",
-          "resource": "/resources/obj/sphere.obj",
+          "resource": "/resources/fbx/sphere.fbx",
 
           "light": {
             "color": [0, 1, 1],
@@ -116,7 +114,7 @@ export const config = {
         }, {
           "name": "light-magenta",
           "type": "light",
-          "resource": "/resources/obj/sphere.obj",
+          "resource": "/resources/fbx/sphere.fbx",
 
           "light": {
             "color": [1, 0, 1],
@@ -136,7 +134,7 @@ export const config = {
         }, {
           "name": "light-yellow",
           "type": "light",
-          "resource": "/resources/obj/sphere.obj",
+          "resource": "/resources/fbx/sphere.fbx",
 
           "light": {
             "intensity": 0.75,

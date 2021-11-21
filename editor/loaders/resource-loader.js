@@ -5,6 +5,11 @@ import {
   buildSceneNode as objBuildSceneNode
 } from "./obj/loader.js";
 
+import {
+  Loader as FbxFileLoader,
+  buildSceneNode as fbxBuildSceneNode
+} from "./fbx/loader.js";
+
 import {isLight, isStaticMesh} from "../scene-factory.js";
 
 export function createResourceLoader(gl, sceneManager) {
@@ -15,6 +20,10 @@ export function createResourceLoader(gl, sceneManager) {
     .register("obj", {
       loader: new ObjFileLoader(),
       buildSceneNode: objBuildSceneNode,
+    })
+    .register("fbx", {
+      loader: new FbxFileLoader(),
+      buildSceneNode: fbxBuildSceneNode,
     });
 
   function loadMany(resources) {
