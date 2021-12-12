@@ -1,3 +1,4 @@
+// https://download.autodesk.com/us/fbx/20112/fbx_sdk_help/index.html
 // https://docs.fileformat.com/3d/fbx/
 // https://banexdevblog.wordpress.com/2014/06/23/a-quick-tutorial-about-the-fbx-ascii-format/
 // https://code.blender.org/2013/08/fbx-binary-file-format-specification/

@@ -8,12 +8,14 @@ export class App {
   constructor() {
   }
 
-  init({sceneManager, resourceLoader, refreshProjection}) {
+  init() {
     // Let's show our app loading spinner
     ReactDOM.render(
       <Loading isLoading={true}/>,
       document.querySelector("#loading-container"));
+  }
 
+  ready({sceneManager, resourceLoader, refreshProjection}) {
     // Let's mount the scene tree viewer
     ReactDOM.render(
       <SceneGraph
@@ -22,9 +24,7 @@ export class App {
         refreshProjection={refreshProjection}
       />,
       document.querySelector("#scene-graph-container"));
-  }
 
-  ready() {
     ReactDOM.render(
       <Loading isLoading={false}/>,
       document.querySelector("#loading-container"));

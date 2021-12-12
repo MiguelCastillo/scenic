@@ -45,6 +45,32 @@ test("parse binary cube", () => {
   )
 });
 
+test("iterate connections", () => {
+  const file = fs.readFileSync(path.join(__dirname, "../../resources/fbx/cube.fbx"));
+  const model = FbxFile.fromBinary(file.buffer);
+
+  const objectsByID = {};
+  const objects = findChildByName(model, "Objects");
+  for (let i = 0; i < objects.children.length; i++) {
+    const obj = objects.children[i];
+    objectsByID[obj.attributes[0]] = obj;
+  }
+
+  expect(Object.keys(objectsByID)).toEqual(["287677978,0", "678716397,0"]);
+
+  const connectionsByID = {};
+  const connections = findChildByName(model, "Connections");
+  for (let i = 0; i < connections.properties.length; i++) {
+    const propertyValue = connections.properties[i].value;
+    connectionsByID[propertyValue[1]] = propertyValue;
+  }
+
+  expect(Object.keys(connectionsByID)).toEqual(["678716397,0", "287677978,0"]);
+  expect(connectionsByID["678716397,0"][2]).toEqual([0, 0]); // 0,0 is a root document.
+  expect(connectionsByID["287677978,0"][2]).toEqual([678716397,0]);
+  expect(objectsByID["287677978,0"].name).toEqual("Geometry")
+});
+
 test("parse binary cube7500", () => {
   const file = fs.readFileSync(path.join(__dirname, "../../resources/fbx/cube7500.fbx"));
   const model = FbxFile.fromBinary(file.buffer);

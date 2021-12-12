@@ -287,6 +287,8 @@ onReady(() => {
   const app = new App();
 
   try {
+    app.init();
+
     // webgl context! There is where we render all the stuff. This is
     // the thing that renders to screen.
     const gl = webgl.createContext(document.querySelector("#glCanvas"));
@@ -307,23 +309,20 @@ onReady(() => {
       refreshProjection,
     } = createSceneUpdater(gl, sceneManager);
 
-    // Startup up the app. We give it the state manager so that it can create
-    // the scene tree panel. This will render a spinner until we call
-    // app.ready.  Or an error if something goes wrong when settings things up.
-    app.init({resourceLoader, sceneManager, refreshProjection});
-
     // This starts the render loop to render the scene!
     startRenderLoop(gl, updateScene, renderScene);
 
-    Promise.all([
-      resourceLoader.loadMany(getResourcesFromConfig(config)),
-      shaderProgramLoader.loadMany(getNodesWithShadersFromConfig(config)),
-    ]).then(() => {
-      app.ready();
+    // First thing is to load the shaders so that loading renderable
+    // resources have them when they are getting built.
+    shaderProgramLoader
+      .loadMany(getNodesWithShadersFromConfig(config))
+      .then(() => resourceLoader.loadMany(getResourcesFromConfig(config)))
+      .then(() => {
+        app.ready({resourceLoader, sceneManager, refreshProjection});
 
-      // eslint-disable-next-line
-      console.log(`Load time: ${(Date.now() - start)/1000} secs`)
-    });
+        // eslint-disable-next-line
+        console.log(`Load time: ${(Date.now() - start)/1000} secs`)
+      });
   }
   catch(ex) {
     // Report error
