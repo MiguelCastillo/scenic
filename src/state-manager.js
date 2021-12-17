@@ -13,19 +13,11 @@ export class StateManager {
   }
 
   getItemByName(name) {
-    if (!this.itemsByName.hasOwnProperty(name)) {
-      throw new Error(`State item with name "${name}" not found`)
-    }
-
     return this.itemsByName[name];
   }
 
   updateItemByName(name, item) {
-    if (!this.itemsByName.hasOwnProperty(name)) {
-      throw new Error(`State item with name "${name}" not found`)
-    }
-
-    Object.assign(this.itemsByName[name], item);
+    this.itemsByName[name] = Object.assign({}, this.itemsByName[name], item);
     return this;
   }
 
