@@ -83,8 +83,8 @@ export class SceneManager {
     // concerns about depencies on other objects' location in space.
     const bubbleDown = (node /*, parent*/) => {
       const {parent} = node;
-      const nodeState = this.stateManager.getItemByName(node.name);
-      let modelMatrix = mat4.Matrix4.identity()
+      const nodeState = this.getNodeStateByName(node.name);
+      let modelMatrix = mat4.Matrix4.identity();
 
       if (!!nodeState) {
         const {transform} = nodeState;
