@@ -58,7 +58,8 @@ export class VertexBufferData extends VertexBufferArray {
 export class VertexBufferIndexes extends VertexBufferArray {
   constructor(gl, data) {
     // Indexes are Unsigned Integers of 16 bits to match gl.UNSIGNED_SHORT
-    // in the render method.
+    // in the render method. And unsigned shorts give us a range of
+    // 0 to 65,535.
     super(gl, new Uint16Array(data), 3, gl.ELEMENT_ARRAY_BUFFER);
   }
 
