@@ -10,12 +10,11 @@ export class ShaderAttribute {
       throw new Error("The attribute must have a name");
     }
 
-    const {
-      gl,
-      program,
-    } = shaderProgram;
+    // TODO(miguel): validate the incoming options and ensure the program
+    // is linked. gl.validateProgram(program)
 
-    this._shaderProgram = shaderProgram;
+    const {gl, program} = shaderProgram;
+    this.shaderProgram = shaderProgram;
 
     const index = gl.getAttribLocation(program, options.name);
 
@@ -34,21 +33,21 @@ export class ShaderAttribute {
   }
 
   bind() {
-    const {_shaderProgram: shaderProgram} = this;
-    const {gl} = shaderProgram;
+    const {gl} = this.shaderProgram;
+    const {index, size, type, normalized, stride, offset} = this;
 
     // Enable this shader attribute.
-    gl.enableVertexAttribArray(this.index);
+    gl.enableVertexAttribArray(index);
 
     // enableVertexAttribArray binds this shader attribute and the currently
     // bound ARRAY_BUFFER we are rendering. So before calling enable on an
     // attribute, you must have called bindBuffer.
-    gl.vertexAttribPointer(
-      this.index,
-      this.size,
-      this.type,
-      this.normalized,
-      this.stride,
-      this.offset);
+    gl.vertexAttribPointer(index, size, type, normalized, stride, offset);
+  }
+
+  unbind() {
+    const {gl} = this.shaderProgram;
+    const {index} = this;
+    gl.disableVertexAttribArray(index);
   }
 }

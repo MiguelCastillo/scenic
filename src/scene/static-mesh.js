@@ -23,7 +23,7 @@ export class StaticMesh extends Renderable {
         name: `lightPosition${idx}`,
         update: ({index}) => {
           gl.uniform3fv(index, vec3.normalize(...position));
-        }
+        },
       }));
 
     const lightColors = lightsStates

@@ -13,7 +13,7 @@ export class ShaderProgram {
   }
 
   setUniforms(uniforms) {
-    this._uniforms = [...uniforms].map(uniform => new ShaderUniform(uniform, this));
+    this._uniforms = uniforms.map(uniform => new ShaderUniform(uniform, this));
     return this;
   }
 
@@ -28,7 +28,7 @@ export class ShaderProgram {
   }
 
   setAttributes(attributes) {
-    this._attributes = [...attributes].map(attr => new ShaderAttribute(attr, this));
+    this._attributes = attributes.map(attr => new ShaderAttribute(attr, this));
     return this;
   }
 
@@ -43,20 +43,13 @@ export class ShaderProgram {
   }
 
   bind() {
-    const {
-      gl,
-      program,
-    } = this;
-
+    const {gl, program} = this;
     gl.useProgram(program);
     return this;
   }
 
   link(vertShaderSource, fragShaderSource) {
-    const {
-      gl,
-      program,
-    } = this;
+    const {gl, program} = this;
 
     linkShaderProgram(
       gl,

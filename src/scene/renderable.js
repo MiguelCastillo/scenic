@@ -1,13 +1,8 @@
 import {Node} from "./node.js";
 
 export class Renderable extends Node {
-  constructor({name, type}, vertexBuffer, shaderProgram) {
+  constructor({name, type}) {
     super({name, type});
-
-    Object.assign(this, {
-      vertexBuffer,
-      shaderProgram,
-    });
   }
 
   withShaderProgram(shaderProgram) {
@@ -34,6 +29,12 @@ export class Renderable extends Node {
       .getUniforms()
       .forEach(uniform => {
         uniform.enable();
+      });
+
+    program
+      .getAttributes()
+      .forEach(attr => {
+        attr.unbind();
       });
 
     program
