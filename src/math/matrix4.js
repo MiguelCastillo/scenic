@@ -9,7 +9,11 @@ export class Matrix4 {
       return Matrix4.identity();
     }
 
-    this.data = data.map(matrixFloatPrecision);
+    if (data instanceof Matrix4) {
+      this.data = data.data.slice();
+    } else {
+      this.data = data.map(matrixFloatPrecision);
+    }
   }
 
   static identity() {
