@@ -13,11 +13,11 @@ test("parse binary cube", () => {
   const model = FbxFile.fromBinary(file.buffer);
   expect(model).toBeInstanceOf(Node);
   expect(findPropertyValueByName(model, "CreationTime")).toEqual("1970-01-01 10:00:00:000");
-  expect(findPropertyValueByName(model, "Creator")).toEqual("Blender (stable FBX IO) - 2.93.4 - 4.22.0");
+  expect(findPropertyValueByName(model, "Creator")).toEqual("Blender (stable FBX IO) - 3.0.0 - 4.27.0");
 
   const objects = findChildByName(model, "Objects");
   expect(objects).not.toBeUndefined();
-  expect(objects.children).toHaveLength(2);
+  expect(objects.children).toHaveLength(3);
 
   const geometry = findChildByName(objects, "Geometry");
   expect(geometry).not.toBeUndefined();
@@ -42,7 +42,16 @@ test("parse binary cube", () => {
       5, 4, 0,
       5, 0, 1,
     ]
-  )
+  );
+
+  const normalLayer = findChildByName(geometry, "LayerElementNormal");
+  expect(normalLayer).not.toBeUndefined();
+  expect(findPropertyValueByName(normalLayer, "Normals")).toEqual([0,0,1,0,0,1,0,0,1,0,0,1,0,-1,0,0,-1,0,0,-1,0,0,-1,0,-1,0,0,-1,0,0,-1,0,0,-1,0,0,0,0,-1,0,0,-1,0,0,-1,0,0,-1,1,0,0,1,0,0,1,0,0,1,0,0,0,1,0,0,1,0,0,1,0,0,1,0]);
+
+  const UVLayer = findChildByName(geometry, "LayerElementUV");
+  expect(UVLayer).not.toBeUndefined();
+  expect(findPropertyValueByName(UVLayer, "UV")).toEqual([0.625,1,0.625,0.25,0.375,0.5,0.875,0.5,0.625,0.75,0.375,1,0.375,0.75,0.625,0,0.375,0,0.375,0.25,0.125,0.5,0.875,0.75,0.125,0.75,0.625,0.5]);
+  expect(findPropertyValueByName(UVLayer, "UVIndex")).toEqual([13,3,11,4,6,4,0,5,8,7,1,9,10,2,6,12,2,13,4,6,9,1,13,2]);
 });
 
 test("iterate connections", () => {
@@ -56,7 +65,7 @@ test("iterate connections", () => {
     objectsByID[obj.attributes[0]] = obj;
   }
 
-  expect(Object.keys(objectsByID)).toEqual(["287677978,0", "678716397,0"]);
+  expect(Object.keys(objectsByID)).toEqual(["123698400,0", "535348117,0", "318760608,0"]);
 
   const connectionsByID = {};
   const connections = findChildByName(model, "Connections");
@@ -65,10 +74,12 @@ test("iterate connections", () => {
     connectionsByID[propertyValue[1]] = propertyValue;
   }
 
-  expect(Object.keys(connectionsByID)).toEqual(["678716397,0", "287677978,0"]);
-  expect(connectionsByID["678716397,0"][2]).toEqual([0, 0]); // 0,0 is a root document.
-  expect(connectionsByID["287677978,0"][2]).toEqual([678716397,0]);
-  expect(objectsByID["287677978,0"].name).toEqual("Geometry")
+  expect(Object.keys(connectionsByID)).toEqual(["535348117,0", "123698400,0", "318760608,0"]);
+  expect(connectionsByID["535348117,0"][2]).toEqual([0, 0]); // 0,0 is a root document.
+  expect(connectionsByID["123698400,0"][2]).toEqual([535348117,0]);
+  expect(connectionsByID["318760608,0"][2]).toEqual([535348117,0]);
+  expect(objectsByID["123698400,0"].name).toEqual("Geometry")
+  expect(objectsByID["318760608,0"].name).toEqual("Material")
 });
 
 test("parse binary cube7500", () => {
