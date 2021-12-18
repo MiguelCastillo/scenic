@@ -1,9 +1,12 @@
 import * as mat4 from "../../../src/math/matrix4.js";
+import {
+  getTriangleComponents,
+  normalizeTriangleVertices,
+} from "../../../src/math/geometry.js";
 
 import {
   VertexBuffer,
   VertexBufferData,
-  VertexBufferIndexes,
 } from "../../../src/renderer/vertexbuffer.js";
 
 import {
@@ -56,9 +59,6 @@ function sceneNodeFromFbxNode(gl, parentSceneNode, fbxNode, sceneManager) {
           rotation: [0,0,0],
           position: [0,0,0],
           scale: [1,1,1],
-        },
-        ambient: {
-          color: [0.5, 1, 1],
         },
       });
 
@@ -160,10 +160,14 @@ function buildVertexBufferForGeometry(gl, name, geometry) {
   const indexes = triangulatePolygonIndexes(vertexIndex);
 
   validateTriangles(name, vertices, indexes);
+  const triangles = getTriangleComponents(vertices, indexes);
+  const normals = normalizeTriangleVertices(triangles);
 
   return VertexBuffer.create({
-    positions: new VertexBufferData(gl, vertices),
-    indexes: new VertexBufferIndexes(gl, indexes),
+    positions: new VertexBufferData(gl, triangles),
+    normals: new VertexBufferData(gl, normals),
+    // positions: new VertexBufferData(gl, vertices),
+    // indexes: new VertexBufferIndexes(gl, indexes),
   });
 }
 
