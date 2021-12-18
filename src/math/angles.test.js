@@ -1,4 +1,4 @@
-import {clampDegrees} from "../../../src/math/angles.js";
+import {clampDegrees} from "./angles.js";
 
 test("clampDegrees 1 returns 1", () => {
   expect(clampDegrees(1)).toEqual(1);

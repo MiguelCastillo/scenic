@@ -1,4 +1,4 @@
-import {StateManager} from "../../src/state-manager.js";
+import {StateManager} from "./state-manager.js";
 
 test("flat array itemsByName", () => {
   const itemsByName = StateManager.getItemsByName([{

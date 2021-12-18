@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import {ObjFile} from "../../../src/formats/objfile.js";
+import {ObjFile} from "./objfile.js";
 
 const simpleCube = `
 # cube.obj
@@ -261,7 +261,7 @@ test("parse cube with texture vertices", () => {
 });
 
 test("large obj with unknown attributes still loads correctly", () => {
-  const objContent = fs.readFileSync(path.join(__dirname, "../../../resources/obj/airboat.obj"));
+  const objContent = fs.readFileSync(path.join(__dirname, "../../resources/obj/airboat.obj"));
   const obj = ObjFile.create(objContent.toString());
 
   expect(obj.groups.length).toEqual(17);

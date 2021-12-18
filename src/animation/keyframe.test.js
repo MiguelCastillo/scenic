@@ -1,4 +1,4 @@
-import {keyframe} from "../../../src/animation/keyframe.js";
+import {keyframe} from "./keyframe.js";
 
 test("no frames throws error", () => {
   expect(() => {

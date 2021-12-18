@@ -1,4 +1,4 @@
-import {Matrix4} from "../../../src/math/matrix4.js";
+import {Matrix4} from "./matrix4.js";
 
 test("Identity has the correct values", () => {
   expect(Matrix4.identity().data).toEqual([
