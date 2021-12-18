@@ -9,6 +9,8 @@
 // https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/frontFace
 //
 
+import {getTriangleComponents} from "../math/geometry.js";
+
 const DEFAULT_GROUP_NAME = "__default_group_" + Math.floor(Math.random() * Math.floor(10000));
 const COMMENT = "#";
 const GROUP = "g";
@@ -325,29 +327,6 @@ function isTextureVertex(line) {
 
 function isFace(line) {
   return line[0] === "f";
-}
-
-export function getTriangleComponents(items, indexes) {
-  // Items can be vertex coordinates, texture coordinates, normal coordinates,
-  // and even color information.
-  // When color is provided, we will use the vertex indexes to determine the
-  // color of each vertex. But sometimes color is not defined in the obj file
-  // so items will be an empty array. And since indexes are for the vertex
-  // coordinates, which typically have data, we would iterate over an empty
-  // array. This early return makes sure that if there are no items then
-  // we don't iterate over it.
-  if (items.length === 0) {
-    return [];
-  }
-
-  const outVertices = [];
-
-  for (let i = 0; i < indexes.length; i++) {
-    const offset = (indexes[i]*3);
-    outVertices.push(items[offset], items[offset+1], items[offset+2]);
-  }
-
-  return outVertices
 }
 
 function isGroupEmpty(group) {

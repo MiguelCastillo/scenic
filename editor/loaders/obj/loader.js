@@ -1,4 +1,7 @@
-import * as vec3 from "../../../src/math/vector3.js";
+import {
+  normalizeTriangleVertices,
+} from "../../../src/math/geometry.js";
+
 import {
   VertexBuffer,
   VertexBufferData,
@@ -25,7 +28,7 @@ export function buildSceneNode(gl, model, node, sceneManager) {
   if (!normals.byteLength && !normals.length) {
     vertexBuffer.withNormals(
       new VertexBufferData(
-        gl, vec3.normalizeTriangleVertices(new Float32Array(vertices))));
+        gl, normalizeTriangleVertices(new Float32Array(vertices))));
   }
   else {
     vertexBuffer.withNormals(new VertexBufferData(gl, normals));
