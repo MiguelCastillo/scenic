@@ -8,9 +8,7 @@ import {
 } from "../../../src/formats/fbxfile.js";
 
 import {
-  Loader,
   buildSceneNode,
-  Node,
 } from "./loader.js";
 
 import {
@@ -38,7 +36,7 @@ describe("fbx Loader", () => {
     buildSceneNode(gl, model, sceneNodeFxbCube, sceneManager);
 
     const sceneNode = sceneManager.getNodeByName("fbx cube")
-    expect(sceneNode.items[0].name).toEqual("Cube\u0000\u0001Model::fbx cube::1");
-    expect(sceneNode.items[0].items[0].name).toEqual("Cube\u0000\u0001Geometry::fbx cube::0");
+    expect(sceneNode.items[0].name).toEqual("Cube\u0000\u0001Model_n1");
+    expect(sceneNode.items[0].items[0].name).toEqual("Cube\u0000\u0001Geometry_n1");
   });
 });

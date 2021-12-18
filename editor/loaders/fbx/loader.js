@@ -171,9 +171,13 @@ function buildVertexBufferForGeometry(gl, name, geometry) {
   });
 }
 
-let _idx = 0;
-function nodeName(fbxNodeName, sceneNode) {
-  return fbxNodeName + "::"+ sceneNode.name + "::" + _idx++;
+let _idxNameMap = {};
+function nodeName(fbxNodeName) {
+  const n = fbxNodeName;
+  if (!_idxNameMap[n]) {
+    _idxNameMap[n] = 1;
+  }
+  return n + "_n" + _idxNameMap[n]++;
 }
 
 function validateTriangles(name, vertices, indexes) {
