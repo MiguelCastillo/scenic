@@ -94,7 +94,7 @@ export const config = {
         {
           "name": "light-cyan",
           "type": "light",
-          "resource": "/resources/fbx/sphere.fbx",
+          "resource": "/resources/obj/sphere.obj",
 
           "light": {
             "color": [0, 1, 1],
@@ -114,7 +114,7 @@ export const config = {
         }, {
           "name": "light-magenta",
           "type": "light",
-          "resource": "/resources/fbx/sphere.fbx",
+          "resource": "/resources/obj/sphere.obj",
 
           "light": {
             "color": [1, 0, 1],
@@ -134,7 +134,7 @@ export const config = {
         }, {
           "name": "light-yellow",
           "type": "light",
-          "resource": "/resources/fbx/sphere.fbx",
+          "resource": "/resources/obj/sphere.obj",
 
           "light": {
             "intensity": 0.75,
@@ -152,30 +152,19 @@ export const config = {
             "rotation": [0, 0, 0],
           },
         }, {
-          "name": "group-1",
-          "type": "transform",
+          "name": "jedi star fighter",
+          "type": "static-mesh",
+          "resource": "/resources/fbx/JediStarFighter.fbx",
+          "material": {
+            "color": [1, 1, 1, 1],
+            "reflectiveness": 1,
+          },
           "transform": {
-            "scale": [1, 1, 1],
+            "scale": [.05, .05, .05],
             "position": [0, 0, 0],
             "rotation": [0, 0, 0],
           },
-          "items": [
-            {
-              "name": "torus knot",
-              "type": "static-mesh",
-              "resource": "/resources/obj/torus-knot.obj",
-              "material": {
-                "color": [1, 1, 1, 1],
-                "reflectiveness": 1,
-              },
-              "transform": {
-                "scale": [1, 1, 1],
-                "position": [0, 0, 0],
-                "rotation": [0, 0, 0],
-              },
-            },
-          ]
-        }
+        },
       ]
     }
   ]
