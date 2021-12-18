@@ -195,16 +195,6 @@ function createSceneUpdater(gl, sceneManager) {
       },
     });
 
-    // Update rotations based on keyboard inputs.
-    const group1Name = "group-1";
-    const group1State = sceneManager.getNodeStateByName(group1Name);
-    sceneManager.updateNodeStateByName(group1Name, {
-      transform: {
-        ...group1State.transform,
-        rotation: vec3.add([0, 1, 0], group1State.transform.rotation),
-      },
-    });
-
     const lightState = sceneManager.getNodeStateByName("light-yellow");
     const lightRotationMultiplier = 15;
     const lightPosition = lightRotations(ms, 20);
