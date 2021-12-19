@@ -26,6 +26,7 @@ import {
   findChildByName,
   findPropertyValueByName,
   triangulatePolygonIndexes,
+  mapIndexByPolygonVertex,
 } from "../../../src/formats/fbxfile.js";
 
 /**
@@ -156,12 +157,21 @@ export function buildSceneNode(gl, model, node, sceneManager) {
 
 function buildVertexBufferForGeometry(gl, name, geometry) {
   const vertices = findPropertyValueByName(geometry, "Vertices");
-  const vertexIndex = findPropertyValueByName(geometry, "PolygonVertexIndex");
-  const indexes = triangulatePolygonIndexes(vertexIndex);
+  const polygonVertexIndex = findPropertyValueByName(geometry, "PolygonVertexIndex");
+  const vertexIndexes = triangulatePolygonIndexes(polygonVertexIndex);
 
-  validateTriangles(name, vertices, indexes);
-  const triangles = getTriangleComponents(vertices, indexes);
-  const normals = normalizeTriangleVertices(triangles);
+  validateTriangles(name, vertices, vertexIndexes);
+  const triangles = getTriangleComponents(vertices, vertexIndexes);
+
+  // We will try to use the normals in the geometry if available.
+  // If not available then we will calculate them based on the
+  // triangles in the model.
+  const normalLayer = findChildByName(geometry, "LayerElementNormal");
+  const normals = normalLayer ?
+    getTriangleComponents(
+      findPropertyValueByName(normalLayer, "Normals"),
+      mapIndexByPolygonVertex(polygonVertexIndex)) :
+    normalizeTriangleVertices(triangles);
 
   return VertexBuffer.create({
     positions: new VertexBufferData(gl, triangles),

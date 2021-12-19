@@ -393,6 +393,26 @@ const byteCountTable = {
 // Support JSON serialization of BigInt
 BigInt.prototype.toJSON = function() { return this.toString(); }
 
+// triangulatePolygonIndexes returns a new array from the provided polygon
+// indexes; PolygonVertexIndex. The new indexes are created from the polygon
+// groups which are delimeted by negative indexes and we use them for creating
+// the triangle coordinates indexes that are returned.
+// 
+// The formula to convert the negative index is formuala `-(x-1)`. We use the
+// first index as the first coordinate index for every triangle we generate.
+// Then we will go thru each pair of subsequent indexes to create the others
+// triangle coordinate indexes.
+// Consider the following PolygonVertexIndex
+// [0, 4, 6, -3]
+//
+// 1. Convert the -3 with `-(x+1)`. -(-3+1) == 2`
+//    [0, 4, 6, 2]
+// 2. Create the first triangle coordinate indexes
+//    [0, 4, 6]
+// 3. Create the second triangle coordinate indexes
+//    [0, 6, 2].
+// 4. The final array of indexes
+//    [0, 4, 6, 0, 6, 2]
 export function triangulatePolygonIndexes(indexes) {
   let triangleIndexes = [];
   let polygon = [];
@@ -417,4 +437,27 @@ export function triangulatePolygonIndexes(indexes) {
   }
 
   return triangleIndexes;
+}
+
+// mapIndexByPolygonVertex returns an array of indexes derrived from polygon
+// vertex indexes; PolygonVertexIndex. The way it works start by finding
+// polygon groups in the indexes, which are delimeted by a negative number.
+// We then create new indexes for those polygons. We do not use the polygon
+// themselves, we instead will create new ones from the indexes used for
+// iterating thru the polygon indexes themselves.
+export function mapIndexByPolygonVertex(indexes) {
+  let normalsIndexes = [];
+
+  for (let i = 0, offset = 0; i < indexes.length; i++) {
+    if (indexes[i] >= 0) {
+      continue;
+    }
+
+    for (let start = offset; start < i - 1; start++) {
+      normalsIndexes.push(offset, start + 1, start + 2);
+    }
+    offset = i+1;
+  }
+
+  return normalsIndexes;
 }
