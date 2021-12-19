@@ -3,6 +3,9 @@
 // https://banexdevblog.wordpress.com/2014/06/23/a-quick-tutorial-about-the-fbx-ascii-format/
 // https://code.blender.org/2013/08/fbx-binary-file-format-specification/
 // https://stackoverflow.com/questions/57032793/why-is-there-a-long-list-of-polygonvertexindex-without-any-negatives-in-one-fbx
+//
+// Info RE ReferenceInformationType and MappingInformationType
+// https://banexdevblog.wordpress.com/2014/06/23/a-quick-tutorial-about-the-fbx-ascii-format/
 
 import * as pako from "pako";
 
@@ -415,25 +418,20 @@ BigInt.prototype.toJSON = function() { return this.toString(); }
 //    [0, 4, 6, 0, 6, 2]
 export function triangulatePolygonIndexes(indexes) {
   let triangleIndexes = [];
-  let polygon = [];
 
-  for (let i = 0; i < indexes.length; i++) {
-    for (let j = 0; true; j++, i++) {
-      // Negative values mean the end of a polygon. So
-      // we stop here to triangulate the polygon.
-      if (indexes[i] < 0) {
-        polygon[j] = -(indexes[i] + 1);
-        break;
-      }
-
-      polygon[j] = indexes[i];
+  for (let i = 0, offset = 0; i < indexes.length; i++) {
+    if (indexes[i] >= 0) {
+      continue;
     }
 
-    for (let j = 1; j < polygon.length - 1; j++) {
-      triangleIndexes.push(polygon[0], polygon[j], polygon[j + 1]);
+    for (let j = offset; j < i - 1; j++) {
+      triangleIndexes.push(indexes[offset], indexes[j+1], indexes[j+2]);
     }
 
-    polygon = [];
+    // `-(x+1)`
+    const xi = triangleIndexes.length - 1;
+    triangleIndexes[xi] = -(triangleIndexes[xi] + 1);
+    offset = i+1;
   }
 
   return triangleIndexes;
@@ -444,20 +442,26 @@ export function triangulatePolygonIndexes(indexes) {
 // polygon groups in the indexes, which are delimeted by a negative number.
 // We then create new indexes for those polygons. We do not use the polygon
 // themselves, we instead will create new ones from the indexes used for
-// iterating thru the polygon indexes themselves.
+// iterating thru the polygon indexes themselves. This works under the
+// assumption that geometry data is also expanded out and the vertices for
+// the model are stored in the order in which indexes are iterated so that
+// the first indexed vertex is the first item in the new array of vertices
+// regardless of the indexed value. See triangulatePolygonIndexes that is
+// usually called to do such processing on PolygonVertexIndex where we convert
+// those indexes from N vertex polygons to triangle vertex polygons.
 export function mapIndexByPolygonVertex(indexes) {
-  let normalsIndexes = [];
+  let results = [];
 
   for (let i = 0, offset = 0; i < indexes.length; i++) {
     if (indexes[i] >= 0) {
       continue;
     }
 
-    for (let start = offset; start < i - 1; start++) {
-      normalsIndexes.push(offset, start + 1, start + 2);
+    for (let j = offset; j < i - 1; j++) {
+      results.push(offset, j + 1, j + 2);
     }
     offset = i+1;
   }
 
-  return normalsIndexes;
+  return results;
 }
