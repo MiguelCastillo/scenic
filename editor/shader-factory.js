@@ -1,22 +1,25 @@
 import {treeGetMatches} from "../src/scene/traversal.js";
 import {isLight, isStaticMesh} from "./scene-factory.js";
-import {ShaderProgram} from "../src/shaders/program.js";
+import {
+  ShaderProgram,
+  compileShaderSource,
+} from "../src/shaders/program.js";
 
 const shaderCache = {};
 
 export function createShaderProgramLoader(gl, sceneManager) {
   function load(node) {
     if (isStaticMesh(node)) {
-      sceneManager.getNodeByName(node.name).withShaderProgram(shaderCache["phong-lighting"]);
+      sceneManager.getNodeByName(node.name).withShaderProgram(createShaderProgram(gl, "phong-lighting"));
     } else if (isLight(node)) {
-      sceneManager.getNodeByName(node.name).withShaderProgram(shaderCache["flat-material"]);
+      sceneManager.getNodeByName(node.name).withShaderProgram(createShaderProgram(gl, "flat-material"));
     } else {
       throw new Error("Unable to intialize shader program because node is not a static-mesh or light");
     }
   }
 
   function loadMany(nodes) {
-    return cacheShaders(gl, [
+    return cacheShaders([
       "phong-lighting",
       "flat-material",
     ]).then(() => {
@@ -37,7 +40,7 @@ export function getNodesWithShadersFromConfig(config) {
   return traverse(config.items);
 }
 
-function cacheShaders(gl, names) {
+function cacheShaders(names) {
   const pendingShaders = names
     .filter(shaderName => !shaderCache[shaderName])
     .map(shaderName => {
@@ -51,23 +54,79 @@ function cacheShaders(gl, names) {
         fetch(vertexShaderPath).then(resp => resp.text()),
         fetch(fragmentShaderPath).then(resp => resp.text()),
       ])
-      .then(([vert, frag]) => {
+      .then(([vertexShaderSource, fragmentShaderSource]) => {
         // tester for regex to parse out attributes.
         // https://regex101.com/r/jmad0Z/1
         const vertAttributes = [
-          ...vert.matchAll(/\s*in\s+(\w+)\s+(\w+);/g)
-        ].map(([,/*type*/,name]) => {
+          ...vertexShaderSource.matchAll(/\s*in\s+(\w+)\s+(\w+);/g)
+        ].map(([,type,name]) => {
+          let size = 3;
+          switch (type) {
+            case "vec2":
+              size = 2;
+              break;
+            case "vec3":
+              size = 3;
+              break;
+            case "vec4":
+              // TODO(miguel): bad bad bad.  I took the quick shortcut
+              // to make everything size 3 in the attributes for the
+              // shader program. That's because until now everything had
+              // been 3D vertex data. But now we have texture coordinates
+              // which are 2D (uv) coordinates, so that shortcut breaks
+              // that. To make this better, the vector sizes should match
+              // the component count in the buffers.
+              size = 3;
+              break;
+          }
+
           return {
             name,
+            size,
           };
         });
 
+
         // TODO(miguel): automatically add attributes during program linking
-        shaderCache[shaderName] = new ShaderProgram(gl)
-          .link(vert, frag)
-          .addAttributes(vertAttributes);
+        shaderCache[shaderName] = {
+          vertAttributes,
+          vertexShaderSource,
+          fragmentShaderSource,
+        };
+
+        return shaderCache[shaderName];
       });
     });
 
   return Promise.all(pendingShaders);
+}
+
+function createShaderProgram(gl, name) {
+  if (!shaderCache[name]) {
+    throw new Error(`shader program ${name} is not loaded`);
+  }
+
+  let {
+    vertexShader,
+    fragmentShader,
+    vertexShaderSource,
+    fragmentShaderSource,
+    vertAttributes,
+  } = shaderCache[name];
+
+  if (!vertexShader) {
+    vertexShader = shaderCache[name].vertexShader = compileShaderSource(
+      gl, gl.VERTEX_SHADER, vertexShaderSource,
+    )
+  }
+
+  if (!fragmentShader) {
+    fragmentShader = shaderCache[name].fragmentShader = compileShaderSource(
+      gl, gl.FRAGMENT_SHADER, fragmentShaderSource,
+    )
+  }
+
+  return ShaderProgram
+    .create(gl, vertexShader, fragmentShader)
+    .addAttributes(vertAttributes);
 }

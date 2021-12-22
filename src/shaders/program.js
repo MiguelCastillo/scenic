@@ -5,7 +5,11 @@ import {ShaderAttribute} from "./attribute.js";
 import {ShaderUniform} from "./uniform.js";
 
 export class ShaderProgram {
-  constructor(gl, program = gl.createProgram()) {
+  constructor(gl, program) {
+    if (!gl || !program) {
+      throw new Error("must provide a webgl context and a linked webgl program");
+    }
+
     this.gl = gl;
     this.program =  program;
     this._attributes = [];
@@ -48,37 +52,45 @@ export class ShaderProgram {
     return this;
   }
 
-  link(vertShaderSource, fragShaderSource) {
-    const {gl, program} = this;
-
-    linkShaderProgram(
-      gl,
-      program,
-      vertShaderSource,
-      fragShaderSource);
-
-    return this;
-  }
-
   clone() {
     const shaderProgram = new ShaderProgram(this.gl, this.program);
     shaderProgram._attributes = [...this._attributes];
     shaderProgram._uniforms = [...this._uniforms];
     return shaderProgram;
   }
+
+  static create(gl, vertexShader, fragmentShader) {
+    const program = gl.createProgram();
+
+    linkShaderProgram(
+      gl,
+      program,
+      vertexShader,
+      fragmentShader);
+
+    return new ShaderProgram(gl, program);
+  }
 }
 
-export function linkShaderProgram(gl, program, vertShaderCode, fragShaderCode) {
-  if (!vertShaderCode) {
-    throw new Error("Must specify a vertex shader");
+// linkShaderProgram links a WebGL program with already compiled shaders.
+// If you have shader source you wish to compile, you can use 
+// compileShaderSource and pass the results from that to this function.
+export function linkShaderProgram(
+  gl,             // WebGL context, usually from a canvas.
+  program,        // WebGL program, usually from gl.createProgram().
+  vertexShader,   // Compiled vertex shader.
+  fragmentShader, // Compiled fragment shader.
+) {
+  if (!vertexShader) {
+    throw new Error("must specify a vertex shader to link");
   }
 
-  if (!fragShaderCode) {
-    throw new Error("Must specify a fragment shader");
+  if (!fragmentShader) {
+    throw new Error("must specify a fragment shader to link");
   }
 
-  gl.attachShader(program, compileShaderSource(gl, gl.VERTEX_SHADER, vertShaderCode)); 
-  gl.attachShader(program, compileShaderSource(gl, gl.FRAGMENT_SHADER, fragShaderCode));
+  gl.attachShader(program, vertexShader);   // compileShaderSource(gl, gl.VERTEX_SHADER, vertexShaderSource)); 
+  gl.attachShader(program, fragmentShader); // compileShaderSource(gl, gl.FRAGMENT_SHADER, fragmentShaderSource));
   gl.linkProgram(program);
 
   if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
@@ -86,7 +98,34 @@ export function linkShaderProgram(gl, program, vertShaderCode, fragShaderCode) {
   }
 }
 
-function compileShaderSource(gl, shaderType, shaderSource) {
+// compileShaderProgram is like linkShaderProgram except that its inputs are
+// vertex shader and fragment shader source code that needs to be compiled
+// and then linked.
+export function compileShaderProgram(
+  gl,                   // WebGL context, usually from a canvas.
+  program,              // WebGL program, usually from gl.createProgram().
+  vertexShaderSource,   // Vertex shader source. This gets compiled.
+  fragmentShaderSource, // Fragment shader source. This gets compiled.
+) {
+  if (!vertexShaderSource) {
+    throw new Error("must specify a vertex shader to compile");
+  }
+
+  if (!fragmentShaderSource) {
+    throw new Error("must specify a fragment shader to compile");
+  }
+
+  linkShaderProgram(
+    gl,
+    program,
+    compileShaderSource(gl, gl.VERTEX_SHADER, vertexShaderSource),
+    compileShaderSource(gl, gl.FRAGMENT_SHADER, fragmentShaderSource));
+}
+
+
+// TODO(miguel): add caching so that we don't have to compile the source
+// if it has already been compiled before.
+export function compileShaderSource(gl, shaderType, shaderSource) {
   var shader = gl.createShader(shaderType);
   gl.shaderSource(shader, shaderSource);
   gl.compileShader(shader);
