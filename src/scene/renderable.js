@@ -15,6 +15,8 @@ export class Renderable extends Node {
     return this;
   }
 
+  // TODO(miguel): make this a class method instead of a static one.
+  // Make sure to use the program and vertexBuffer in the node instance.
   static render(gl, program, vertexBuffer) {
     if (!program) {
       throw new Error("Must provide a shader program");
@@ -34,17 +36,14 @@ export class Renderable extends Node {
     program
       .getAttributes()
       .forEach(attr => {
-        attr.unbind();
+        if (vertexBuffer[`${attr.name}s`]) {
+          vertexBuffer[`${attr.name}s`].bind();
+          attr.bind();
+        } else {
+          attr.unbind();
+        }
       });
 
-    program
-      .getAttributes()
-      .filter(attr => vertexBuffer[`${attr.name}s`])
-      .forEach(attr => {
-        vertexBuffer[`${attr.name}s`].bind();
-        attr.bind();
-      });
-
-    vertexBuffer.render(gl, gl.TRIANGLES);
+    vertexBuffer.render(gl);
   }
 }

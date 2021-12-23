@@ -1,13 +1,6 @@
 class VertexBufferArray {
-  constructor(gl, data, componentsPerVertex, bufferType) {
+  constructor(gl, data, bufferType=gl.ARRAY_BUFFER) {
     this.gl = gl;
-
-    // This is only useful when we are rendering vertices directly without
-    // indexes since we need to tell the vertex shader how many items in the
-    // vertex buffer make up the primitive we are drawing. Most often we will
-    // be rendering triangles, so componentsPerVertex defaults to 3 since a
-    // triable has 3 vertices.
-    this.componentsPerVertex = componentsPerVertex;
 
     // Create a new buffer object
     this.data = data;
@@ -33,50 +26,41 @@ class VertexBufferArray {
 // we are defaulting to 3 components (X,Y,Z) per vertex.
 export class VertexBufferData extends VertexBufferArray {
   constructor(gl, data, componentsPerVertex=3, bufferType=gl.ARRAY_BUFFER) {
-    super(gl, new Float32Array(data), componentsPerVertex, bufferType);
-  }
+    super(gl, new Float32Array(data), bufferType);
 
-  render(gl, primitiveType) {
-    const {
-      data,
-      componentsPerVertex,
-    } = this;
-
-    const vertexOffset = 0;
-
-    this.bind();
-
-    gl.drawArrays(
-      primitiveType,
-      vertexOffset,
-      data.length/componentsPerVertex);
+    // This is only useful when we are rendering vertices directly without
+    // indexes since we need to tell the vertex shader how many items in the
+    // vertex buffer make up the primitive we are drawing. Most often we will
+    // be rendering triangles, so componentsPerVertex defaults to 3 since a
+    // triangle has 3 vertices.
+    this.componentsPerVertex = componentsPerVertex;
   }
 }
 
-// VertexBufferIndexes these indexes are for rendering triangles, so we are
-// going to use 3 components (X,Y,Z) per vertex in 3 dimensional space.
+// VertexBufferIndexes are indexes for rendering triangles based on indexes.
+// The buffer is a 16 bit unsigned int array.
 export class VertexBufferIndexes extends VertexBufferArray {
   constructor(gl, data) {
     // Indexes are Unsigned Integers of 16 bits to match gl.UNSIGNED_SHORT
     // in the render method. And unsigned shorts give us a range of
     // 0 to 65,535.
-    super(gl, new Uint16Array(data), 3, gl.ELEMENT_ARRAY_BUFFER);
-  }
-
-  render(gl, primitiveType) {
-    const {data} = this;
-    const vertexOffset = 0;
-
-    this.bind();
-
-    gl.drawElements(
-      primitiveType,
-      data.length,
-      gl.UNSIGNED_SHORT,
-      vertexOffset);
+    super(gl, new Uint16Array(data), gl.ELEMENT_ARRAY_BUFFER);
   }
 }
 
+// TextureVertexBufferData is for texture coordinates, which is just UV
+// coordinates. These coordinates are stored in a 32 bit float array.
+export class TextureVertexBufferData extends VertexBufferArray {
+  constructor(gl, data) {
+    super(gl, new Float32Array(data));
+  }
+}
+
+// VertexBuffer contains the buffers that are most commonly used for rendering.
+// It makes it simpler to find all the relevant buffers in one place with a
+// render function that can use either vertices of indexes.
+// If an index buffer exists, then we render with the indexes using
+// gl.drawElements. Otherwise, we will render the positions with gl.drawArrays.
 export class VertexBuffer {
   constructor(options={}) {
     const {
@@ -84,6 +68,7 @@ export class VertexBuffer {
       positions=null,
       colors=null,
       normals=null,
+      textureCoords=null,
     } = options;
 
     if (indexes) {
@@ -100,6 +85,10 @@ export class VertexBuffer {
 
     if (colors) {
       this.colors = colors;
+    }
+
+    if (textureCoords) {
+      this.textureCoords = textureCoords;
     }
   }
 
@@ -118,6 +107,11 @@ export class VertexBuffer {
     return this;
   }
 
+  withTextureCoords(textureCoords) {
+    this.textureCoords = textureCoords;
+    return this;
+  }
+
   withIndexes(indexes) {
     this.indexes = indexes;
     return this;
@@ -127,18 +121,33 @@ export class VertexBuffer {
     return new VertexBuffer(this);
   }
 
-  render(gl, primitiveType) {
-    const {
-      positions,
-      indexes,
-    } = this;
+  render(gl, primitiveType=gl.TRIANGLES) {
+    const {positions, indexes} = this;
 
     // Send command to start rendering the vertices.
     if (indexes) {
-      indexes.render(gl, primitiveType);
-    }
-    else {
-      positions.render(gl, primitiveType);
+      const {data} = indexes;
+      const vertexOffset = 0;
+  
+      indexes.bind();
+  
+      gl.drawElements(
+        primitiveType,
+        data.length,
+        gl.UNSIGNED_SHORT,
+        vertexOffset);
+    } else if (positions) {
+      const {data, componentsPerVertex} = positions;
+      const vertexOffset = 0;
+  
+      positions.bind();
+  
+      gl.drawArrays(
+        primitiveType,
+        vertexOffset,
+        data.length/componentsPerVertex);
+    } else {
+      throw new Error("neither indexes or positions that are configured. must provide one to render.");
     }
 
     return this;
