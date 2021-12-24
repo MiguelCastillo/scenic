@@ -37,27 +37,114 @@ export function normalizeTriangleVertices(vertices) {
   return normals.map(_fixZeros);
 }
 
-export function getTriangleComponents(vertices, offsets) {
-  // Items can be vertex coordinates, texture coordinates, normal coordinates,
-  // and even color information.
-  // When color is provided, we will use the vertex offsets to determine the
-  // color of each vertex. But sometimes color is not defined in the obj file
-  // so vertices will be an empty array. And since offsets are for the vertex
-  // coordinates, which typically have data, we would iterate over an empty
-  // array. This early return makes sure that if there are no vertices then
-  // we don't iterate over it.
-  if (vertices.length === 0) {
+// getTriangleComponents returns a new array by reading 3D indexes data
+// from the provided array of coordinates. This is for processing (mostly)
+// data for XYZ 3D rendering like vertex and normal coordinates. This is
+// very similar to getIndexed2DComponents except that getIndexed3DComponents
+// has a Z (third) coordinate.
+//
+// v2       v3
+//  +-------+
+//  |     . |
+//  |   .   |
+//  | .     |
+//  +-------+
+// v0       v1
+// 
+// coordinates:
+//  0, 0, 0, // v0
+//  1, 0, 0, // v1
+//  1, 1, 0, // v2
+//  0, 1, 0, // v3
+//
+// indexes:
+//  0, 1, 2, // triangle 1
+//  0, 2, 3, // triangle 2
+//
+// The output will be:
+//  0, 0, 0, // v0 |
+//  1, 0, 0, // v1 | triangle 1
+//  1, 1, 0, // v2 |
+//
+//  0, 0, 0, // v0 |
+//  1, 1, 0, // v2 | triangle 2
+//  0, 1, 0, // v3 |
+//
+export function getIndexed3DComponents(coordinates, indexes) {
+  if (coordinates.length === 0) {
     return [];
   }
 
-  const outVertices = [];
+  // Items can be vertex coordinates, normal coordinates, or even color
+  // information.
+  const result = [];
 
-  for (let i = 0; i < offsets.length; i++) {
-    const offset = (offsets[i]*3);
-    outVertices.push(vertices[offset], vertices[offset+1], vertices[offset+2]);
+  for (let i = 0; i < indexes.length; i++) {
+    const offset = (indexes[i]*3);
+    result.push(coordinates[offset], coordinates[offset+1], coordinates[offset+2]);
   }
 
-  return outVertices.map(_fixZeros);
+  return result;
+}
+
+// TODO(miguel): transition everything to use getIndexed3DComponents, but
+// in the meantime we have an alias to make the transition easier.
+export const getTriangleComponents = getIndexed3DComponents;
+
+// getIndexed2DComponents returns a new array by reading 2D indexed data
+// from the provided array of coordinates. Main use cases are UV vertices
+// for textures and 2 dimensional rendering where models contain XY
+// coordinates instead of XYZ as you'd see in 3D like getIndexed3DComponents
+// supports.
+// Consider the 4 vertices (8 coordinates) for the quad below, which is
+// rendered as two triangles. The coordinates are listed counter clockwise.
+//
+// v2       v3
+//  +-------+
+//  |     . |
+//  |   .   |
+//  | .     |
+//  +-------+
+// v0       v1
+//
+// coordinates:
+//  0, 0, // v0
+//  1, 0, // v1
+//  1, 1, // v2
+//  0, 1, // v3
+//
+// indexes:
+//  0, 1, 2, // triangle 1
+//  0, 2, 3, // triangle 2
+//
+// The output will be:
+//  0, 0, // v0 |
+//  1, 0, // v1 | triangle 1
+//  1, 1, // v2 |
+//
+//  0, 0, // v0 |
+//  1, 1, // v2 | triangle 2
+//  0, 1, // v3 |
+//
+// A few reasons why to do this.  With large data sets, this can yield smaller
+// files. And when dealing with multiple data buffers, you can use a single
+// index array for multiple buffers for things like vertex, normals, and
+// texture coordinates which can be effciently processed by WebGL and uses
+// less memory.
+//
+export function getIndexed2DComponents(coordinates, indexes) {
+  if (coordinates.length === 0) {
+    return [];
+  }
+
+  const result = [];
+
+  for (let i = 0; i < indexes.length; i++) {
+    const offset = indexes[i]*2;
+    result.push(coordinates[offset], coordinates[offset+1]);
+  }
+
+  return result;
 }
 
 function _fixZeros(v) {
