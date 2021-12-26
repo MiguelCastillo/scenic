@@ -1,21 +1,20 @@
 import * as mat4 from "../../../src/math/matrix4.js";
+
 import {
   getTriangleComponents,
+  getIndexed2DComponents,
   normalizeTriangleVertices,
 } from "../../../src/math/geometry.js";
 
 import {
+  createShaderProgram,
+} from "../../shader-factory.js";
+
+import {
   VertexBuffer,
   VertexBufferData,
+  TextureVertexBufferData,
 } from "../../../src/renderer/vertexbuffer.js";
-
-import {
-  StaticMesh,
-} from "../../../src/scene/static-mesh.js";
-
-import {
-  Node as SceneNode,
-} from "../../../src/scene/node.js";
 
 import {
   BrinaryFileLoader
@@ -30,9 +29,11 @@ import {
 } from "../../../src/formats/fbxfile.js";
 
 import {
-  createShaderProgram,
-} from "../../shader-factory.js";
-
+  ModelNode,
+  GometryNode,
+  MaterialNode,
+  TextureNode,
+} from "./scene-node.js";
 
 /**
  * File loader for bfx formatted files.
@@ -51,75 +52,100 @@ export class Loader extends BrinaryFileLoader {
   }
 }
 
-function sceneNodeFromFbxNode(gl, parentSceneNode, fbxNode, sceneManager) {
-  let node;
-  const name = nodeName(fbxNode.attributes[1] , parentSceneNode);
+function sceneNodeFromFbxRootNode(gl, fbxRootNode, sceneManager) {
+  let textureCount = 0;
+  return createSceneNode(fbxRootNode);
 
-  switch(fbxNode.name) {
-    case "Geometry": {
-      node = new StaticMesh({name, type: "static-mesh"});
-      const vertexBuffer = buildVertexBufferForGeometry(gl, name, fbxNode);
+  function createSceneNode({fbxNode, fbxChildren}) {
+    const name = nodeName(fbxNode.attributes[1]);
+    const childrenSceneNodes = fbxChildren.map(createSceneNode).filter(Boolean);
+    let node;
 
-      sceneManager.updateNodeStateByName(node.name, {
-        transform: {
-          rotation: [0,0,0],
-          position: [0,0,0],
-          scale: [1,1,1],
-        },
-      });
+    switch(fbxNode.name) {
+      case "Geometry": {
+        node = new GometryNode({name}, buildVertexBufferForGeometry(gl, name, fbxNode));
 
-      // Add geometry data.
-      node = node
-        .withVertexBuffer(vertexBuffer)
-        .withShaderProgram(createShaderProgram(gl, "phong-lighting"));
-      break;
-    }
-    case "Model": {
-      node = new SceneNode({name, type: "group"});
-    
-      let rotation = [0,0,0];
-      let translation = [0,0,0];
-      let scale = [1,1,1];
+        sceneManager.updateNodeStateByName(name, {
+          transform: {
+            rotation: [0,0,0],
+            position: [0,0,0],
+            scale: [1,1,1],
+          },
+        });
 
-      const properties70 = findChildByName(fbxNode, "Properties70");
-      for (const property of properties70.properties) {
-        switch (property.value[0]) {
-          case "Lcl Rotation": {
-            rotation = property.value.slice(4);
-            break;
-          }
-          case "Lcl Scaling": {
-            scale = property.value.slice(4);
-            break;
-          }
-          case "Lcl Translation": {
-            translation = property.value.slice(4);
-            break;
+        break;
+      }
+      case "Model": {
+        const shaderName = textureCount ? "phong-texture" : "phong-lighting";
+        node = new ModelNode({name}, createShaderProgram(gl, shaderName));
+
+        let rotation = [0,0,0];
+        let translation = [0,0,0];
+        let scale = [1,1,1];
+
+        const properties70 = findChildByName(fbxNode, "Properties70");
+        if (properties70) {
+          for (const property of properties70.properties) {
+            switch (property.value[0]) {
+              case "Lcl Rotation": {
+                rotation = property.value.slice(4);
+                break;
+              }
+              case "Lcl Scaling": {
+                scale = property.value.slice(4);
+                break;
+              }
+              case "Lcl Translation": {
+                translation = property.value.slice(4);
+                break;
+              }
+            }
           }
         }
+
+        sceneManager.updateNodeStateByName(name, {
+          transform: {
+            rotation: rotation,
+            position: translation,
+            scale: scale,
+          },
+        });
+
+        break;
       }
+      case "Material": {
+        node = new MaterialNode({name});
 
-      sceneManager.updateNodeStateByName(node.name, {
-        transform: {
-          rotation: rotation,
-          position: translation,
-          scale: scale,
-        },
-      });
+        const properties70 = findChildByName(fbxNode, "Properties70");
+        if (properties70) {
+          for (const property of properties70.properties) {
+            switch (property.value[0]) {
+              case "AmbientColor": {
+                node.withAmbientColor(property.value.slice(4));
+                break;
+              }
+              case "DiffuseColor": {
+                node.withMaterialColor(property.value.slice(4));
+                break;
+              }
+            }
+          }
+        }
 
-      break;
+        break;
+      }
+      case "Texture": {
+        const fileName = findPropertyValueByName(fbxNode, "RelativeFilename").split("/").pop();
+        node = new TextureNode(gl, fileName, textureCount++, {name, type: "texture"});
+        break;
+      }
+      default: {
+        return null;
+      }
     }
-    case "Material": {
-      node = new SceneNode({name, type: "material"});
-      break;
-    }
-    default: {
-      node = new SceneNode({name, type: "unknown"});
-      break;
-    }
+
+    return node.withMatrix(mat4.Matrix4.identity()).addItems(childrenSceneNodes);
   }
-
-  return node.withMatrix(mat4.Matrix4.identity());
 }
 
 export function buildSceneNode(gl, model, node, sceneManager) {
@@ -127,62 +153,105 @@ export function buildSceneNode(gl, model, node, sceneManager) {
 
   const objectsByID = {
     "0,0": {
-      fbx: null,
-      sceneNode,
+      fbxChildren: [],
     },
   };
 
   const objects = findChildByName(model, "Objects");
-  for (const obj of objects.children) {
-    const newSceneNode = sceneNodeFromFbxNode(gl, sceneNode, obj, sceneManager);
-
-    objectsByID[obj.attributes[0]] = {
-      fbx: obj,
-      sceneNode: newSceneNode,
-    };
+  for (const fbxNode of objects.children) {
+    objectsByID[fbxNode.attributes[0]] = {
+      fbxNode,
+      fbxChildren: [],
+    }
   }
 
   const connections = findChildByName(model, "Connections");
   for (const props of connections.properties) {
     switch(props.name) {
       case "C": {
-        // Only support for OO connections.
+        const [connectionType, src, dest] = props.value;
+        // Only support for OO and OP (partially OP) connections.
         // TODO(miguel): add support for other types of connections.
         // https://download.autodesk.com/us/fbx/20112/fbx_sdk_help/index.html
-        if (props.value[0] === "OO") {
-          const src = props.value[1];
-          const dest = props.value[2];
-          objectsByID[dest].sceneNode.add(objectsByID[src].sceneNode);
+        if (connectionType === "OO" || connectionType === "OP") {
+          if (objectsByID[src] && objectsByID[dest]) {
+            objectsByID[dest].fbxChildren.push(objectsByID[src]);
+          }
         }
         break;
       }
     }
   }
+
+  sceneNode.addItems(
+    objectsByID["0,0"].fbxChildren
+      .map(root => sceneNodeFromFbxRootNode(gl, root, sceneManager))
+      .filter(Boolean));
 }
 
+// buildVertexBufferForGeometry builds all the different buffers needed for
+// rendering a FBX file. This includes UVs, Normals, and Vertices. The
+// semantics include expanding out polygons to triangles to uniformly handle
+// quads, triangle fans, and other polygon types.
+// TODO(miguel): Support triangle fans. It's ultimately less efficient to
+// render each triangle individually, especially if the models are built using
+// triangle fans. However, current implementation in the scene renderer assumes
+// everything is a triangle which is good enough for now.
 function buildVertexBufferForGeometry(gl, name, geometry) {
   const vertices = findPropertyValueByName(geometry, "Vertices");
   const polygonVertexIndex = findPropertyValueByName(geometry, "PolygonVertexIndex");
   const vertexIndexes = triangulatePolygonIndexes(polygonVertexIndex);
 
-  validateTriangles(name, vertices, vertexIndexes);
+  validateIndexedTriangles(name, vertices, vertexIndexes);
   const triangles = getTriangleComponents(vertices, vertexIndexes);
 
   // We will try to use the normals in the geometry if available.
   // If not available then we will calculate them based on the
   // triangles in the model.
+  let normals;
   const normalLayer = findChildByName(geometry, "LayerElementNormal");
-  const normals = normalLayer ?
-    getTriangleComponents(
-      findPropertyValueByName(normalLayer, "Normals"),
-      mapIndexByPolygonVertex(polygonVertexIndex)) :
-    normalizeTriangleVertices(triangles);
+  if (normalLayer) {
+    normals = findPropertyValueByName(normalLayer, "Normals");
 
-  return VertexBuffer.create({
+    // NOTE(miguel): the only combination I have seen for reference types
+    // regarding Normals is:
+    // "MappingInformationType": "ByPolygonVertex"
+    // "ReferenceInformationType": "Direct"
+
+    if (findPropertyValueByName(normalLayer, "ReferenceInformationType") === "IndexToDirect") {
+      normals = getTriangleComponents(normals, findPropertyValueByName(normalLayer, "NormalsIndex"));
+    }
+
+    normals = getTriangleComponents(normals, mapIndexByPolygonVertex(polygonVertexIndex));
+  } else {
+    normals = normalizeTriangleVertices(triangles);
+  }
+
+  let uv;
+  const uvLayer = findChildByName(geometry, "LayerElementUV");
+  if (uvLayer) {
+    uv = findPropertyValueByName(uvLayer, "UV");
+
+    // NOTE(miguel): the only combination I have seen for reference types
+    // regarding UV is:
+    // "MappingInformationType": "ByPolygonVertex"
+    // "ReferenceInformationType": "IndexToDirect"
+
+    if (findPropertyValueByName(uvLayer, "ReferenceInformationType") === "IndexToDirect") {
+      // When IndexToDirect.
+      // 1. We map UV using UVIndex
+      // 2. Then we expand the result of that by mapping ByPolygonVertexIndex
+      uv = getIndexed2DComponents(uv, findPropertyValueByName(uvLayer, "UVIndex"));
+    }
+
+    // Map UV to polygon indexes.
+    uv = getIndexed2DComponents(uv, mapIndexByPolygonVertex(polygonVertexIndex));
+  }
+
+  return new VertexBuffer({
     positions: new VertexBufferData(gl, triangles),
     normals: new VertexBufferData(gl, normals),
-    // positions: new VertexBufferData(gl, vertices),
-    // indexes: new VertexBufferIndexes(gl, indexes),
+    textureCoords: uv && new TextureVertexBufferData(gl, uv),
   });
 }
 
@@ -195,10 +264,10 @@ function nodeName(fbxNodeName) {
   return n + "_n" + _idxNameMap[n]++;
 }
 
-function validateTriangles(name, vertices, indexes) {
+function validateIndexedTriangles(name, vertices, indexes) {
   // eslint-disable-next-line
   console.log(name,
-    "total triangles", indexes.length/3,
+    "triangle count", indexes.length/3,
     "index count", indexes.length,
     "vertex count", vertices.length);
 

@@ -12,6 +12,8 @@ export class Node {
     return this;
   }
 
+  // preRender is a hook that is called when the scene tree is traversing down.
+  preRender() {}
   render() {}
 
   withMatrix(matrix) {

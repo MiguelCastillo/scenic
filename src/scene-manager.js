@@ -86,6 +86,8 @@ export class SceneManager {
       const nodeState = this.getNodeStateByName(node.name);
       let modelMatrix = mat4.Matrix4.identity();
 
+      node.preRender();
+
       if (!!nodeState) {
         const {transform} = nodeState;
         modelMatrix = modelMatrix
