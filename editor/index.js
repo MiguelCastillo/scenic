@@ -11,10 +11,8 @@ import {
   OrthographicProjectionMatrix,
 } from "../src/math/projections.js";
 import * as vec3 from "../src/math/vector3.js";
-import * as angles from "../src/math/angles.js";
 import * as easings from "../src/math/easings.js";
 import {Subscription} from "../src/dom/events.js";
-import {keyframe} from "../src/animation/keyframe.js";
 import {onReady} from "../src/dom/ready.js";
 
 import {createSplitPanel} from "./split-panel.js";
@@ -27,30 +25,30 @@ import {createFrameRateCounter} from "./fps-counter.js";
 import {config} from "./scene-config.js";
 
 function applyWorldRotation(sceneManager, rotateX, rotateY, rotateZ=0) {
-  const worldMatrixName = "world projection";
-  const worldMatrix = sceneManager.getNodeStateByName(worldMatrixName);
+  const sceneObjectsName = "scene objects";
+  const sceneObjects = sceneManager.getNodeStateByName(sceneObjectsName);
 
-  sceneManager.updateNodeStateByName(worldMatrixName, {
+  sceneManager.updateNodeStateByName(sceneObjectsName, {
     transform: {
-      ...worldMatrix.transform,
+      ...sceneObjects.transform,
       rotation: vec3.add(
         [rotateX, rotateY, rotateZ],
-        worldMatrix.transform.rotation
+        sceneObjects.transform.rotation
       ),
     },
   });
 }
 
 function applyWorldTranslation(sceneManager, translateX, translateY, translateZ) {
-  const worldMatrixName = "world projection";
-  const worldMatrix = sceneManager.getNodeStateByName(worldMatrixName);
+  const sceneObjectsName = "scene objects";
+  const sceneObjects = sceneManager.getNodeStateByName(sceneObjectsName);
 
-  sceneManager.updateNodeStateByName(worldMatrixName, {
+  sceneManager.updateNodeStateByName(sceneObjectsName, {
     transform: {
-      ...worldMatrix.transform,
+      ...sceneObjects.transform,
       position: vec3.add(
         [translateX, translateY, translateZ],
-        worldMatrix.transform.position
+        sceneObjects.transform.position
       ),
     },
   });
@@ -157,23 +155,6 @@ function createSceneUpdater(gl, sceneManager) {
       }
     });
 
-  const lightRotations = (() => {
-    const frames = [];
-    // for (let i = -3, idx = 0; i <= 3; i++, idx++) {
-    //   frames[idx] = [i, 0, 0];
-    // }
-
-    for (let i = 0; i < 360; i++) {
-      frames[i] = [
-        -angles.cos(i),
-        0,
-        -angles.sin(i),
-      ];
-    }
-
-    return keyframe(frames);
-  })()
-
   // This is the logic for updating the scene state and the scene graph with the
   // new scene state. This is the logic for the game itself.
   function updateScene(ms) {
@@ -187,25 +168,12 @@ function createSceneUpdater(gl, sceneManager) {
       .getNodeByName(axisName)
       .withProjection(axisProjectionMatrix);
 
+    const sceneObjectsName = "scene objects";
     const axisState = sceneManager.getNodeStateByName(axisName);
     sceneManager.updateNodeStateByName(axisName, {
       transform: {
         ...axisState.transform,
-        rotation: sceneManager.getNodeStateByName(worldProjectionName).transform.rotation,
-      },
-    });
-
-    const lightState = sceneManager.getNodeStateByName("light-yellow");
-    const lightRotationMultiplier = 15;
-    const lightPosition = lightRotations(ms, 20);
-    lightPosition[0] *= lightRotationMultiplier;
-    lightPosition[1] *= lightRotationMultiplier;
-    lightPosition[2] *= lightRotationMultiplier;
-
-    sceneManager.updateNodeStateByName("light-yellow", {
-      transform: {
-        ...lightState.transform,
-        position: lightPosition,
+        rotation: sceneManager.getNodeStateByName(sceneObjectsName).transform.rotation,
       },
     });
 

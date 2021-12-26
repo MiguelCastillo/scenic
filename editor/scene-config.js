@@ -86,7 +86,7 @@ export const config = {
 
       "transform": {
         "scale": [1, 1, 1],
-        "position": [0, 0, -20],
+        "position": [0, 0, 0],
         "rotation": [0, 0, 0],
       },
 
@@ -108,7 +108,7 @@ export const config = {
 
           "transform": {
             "scale": [1, 1, 1],
-            "position": [-15, 0, 3],
+            "position": [-100, 5, 0],
             "rotation": [0, 0, 0],
           },
         }, {
@@ -117,8 +117,8 @@ export const config = {
           "resource": "/resources/obj/sphere.obj",
 
           "light": {
-            "color": [1, 0, 1],
             "intensity": 0.5,
+            "color": [1, 0, 1],
           },
 
           "material": {
@@ -128,42 +128,53 @@ export const config = {
 
           "transform": {
             "scale": [1, 1, 1],
-            "position": [15, 0, 3],
+            "position": [100, 5, 0],
             "rotation": [0, 0, 0],
           },
         }, {
-          "name": "light-yellow",
+          "name": "light-white",
           "type": "light",
           "resource": "/resources/obj/sphere.obj",
 
           "light": {
-            "intensity": 0.75,
-            "color": [1, 1, 0],
+            "intensity": 1,
+            "color": [1, 1, 1],
           },
 
           "material": {
-            "color": [1, 1, 0, 1],
+            "color": [1, 1, 1, 1],
             "reflectiveness": 1,
           },
 
           "transform": {
             "scale": [1, 1, 1],
-            "position": [-15, 0, 3],
+            "position": [0, 100, 100],
             "rotation": [0, 0, 0],
           },
         }, {
-          "name": "jedi star fighter",
-          "type": "static-mesh",
-          "resource": "/resources/fbx/JediStarFighter.fbx",
-          "material": {
-            "color": [1, 1, 1, 1],
-            "reflectiveness": 1,
-          },
+          "name": "scene objects",
+          "type": "transform",
+        
           "transform": {
-            "scale": [.05, .05, .05],
-            "position": [0, 0, 0],
+            "scale": [1, 1, 1],
+            "position": [0, 0, -20],
             "rotation": [0, 0, 0],
           },
+
+          "items": [{
+            "name": "jedi star fighter",
+            "type": "static-mesh",
+            "resource": "/resources/fbx/JediStarFighter.fbx",
+            "material": {
+              "color": [1, 1, 1, 1],
+              "reflectiveness": 1,
+            },
+            "transform": {
+              "scale": [.05, .05, .05],
+              "position": [0, 0, 0],
+              "rotation": [0, 0, 0],
+            },
+          }],
         },
       ]
     }
