@@ -9,6 +9,11 @@ const shaderCache = {};
 
 export function createShaderProgramLoader(gl, sceneManager) {
   function load(node) {
+    // TODO(miguel): remove this magic of matching shaders to node types and
+    // instead define these in the scene config for each model. This approach
+    // was useful to get started, but as I build out support for custom scene
+    // node types, this won't scale as we have in the case of FBX file
+    // support where I use a different shader to support textures.
     if (isStaticMesh(node)) {
       sceneManager.getNodeByName(node.name).withShaderProgram(createShaderProgram(gl, "phong-lighting"));
     } else if (isLight(node)) {
@@ -21,6 +26,7 @@ export function createShaderProgramLoader(gl, sceneManager) {
   function loadMany(nodes) {
     return cacheShaders([
       "phong-lighting",
+      "phong-texture",
       "flat-material",
     ]).then(() => {
       nodes.forEach(n => load(n));
@@ -101,7 +107,7 @@ function cacheShaders(names) {
   return Promise.all(pendingShaders);
 }
 
-function createShaderProgram(gl, name) {
+export function createShaderProgram(gl, name) {
   if (!shaderCache[name]) {
     throw new Error(`shader program ${name} is not loaded`);
   }
