@@ -29,6 +29,11 @@ import {
   mapIndexByPolygonVertex,
 } from "../../../src/formats/fbxfile.js";
 
+import {
+  createShaderProgram,
+} from "../../shader-factory.js";
+
+
 /**
  * File loader for bfx formatted files.
  *
@@ -66,7 +71,7 @@ function sceneNodeFromFbxNode(gl, parentSceneNode, fbxNode, sceneManager) {
       // Add geometry data.
       node = node
         .withVertexBuffer(vertexBuffer)
-        .withShaderProgram(parentSceneNode.shaderProgram);
+        .withShaderProgram(createShaderProgram(gl, "phong-lighting"));
       break;
     }
     case "Model": {

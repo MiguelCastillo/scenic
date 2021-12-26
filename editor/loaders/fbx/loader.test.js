@@ -1,3 +1,4 @@
+
 import fs from "fs";
 import path from "path";
 import "webgl-mock";
@@ -12,10 +13,25 @@ import {
 } from "./loader.js";
 
 import {
+  addShaderCacheEntry,
+} from "../../shader-factory.js";
+
+import {
   createScene,
 } from "../../scene-factory.js";
 
+
 const cubdeFilePath = path.join(__dirname, "../../../resources/fbx/cube.fbx");
+
+function mockShaders(shaders) {
+  shaders.forEach(s => {
+    const shaderDir = path.join(__dirname, "../../shaders/");
+    addShaderCacheEntry(s,
+      fs.readFileSync(shaderDir + s + ".vert") + "",
+      fs.readFileSync(shaderDir + s + ".frag") + "",
+    );
+  });
+};
 
 describe("fbx Loader", () => {
   test("loading cube.fbx", () => {
@@ -33,6 +49,8 @@ describe("fbx Loader", () => {
     const sceneManager = createScene(sceneNodeConfig);
     const canvas = new HTMLCanvasElement(500, 500);
     const gl = canvas.getContext("webgl");
+
+    mockShaders(["phong-lighting"]);
     buildSceneNode(gl, model, sceneNodeFxbCube, sceneManager);
 
     const sceneNode = sceneManager.getNodeByName("fbx cube")

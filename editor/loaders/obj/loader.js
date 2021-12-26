@@ -9,6 +9,15 @@ import {
 
 import {WorkerLoader} from "../base-loader.js";
 
+import {
+  isLight,
+  isStaticMesh,
+} from "../../scene-factory.js";
+
+import {
+  createShaderProgram,
+} from "../../shader-factory.js";
+
 /**
  * File loader for obj formatted files.
  */
@@ -38,7 +47,17 @@ export function buildSceneNode(gl, model, node, sceneManager) {
     vertexBuffer.withColors(new VertexBufferData(gl, colors));
   }
 
+  let shaderProgram;
+  if (isStaticMesh(node)) {
+    shaderProgram = createShaderProgram(gl, "phong-lighting");
+  } else if (isLight(node)) {
+    shaderProgram = createShaderProgram(gl, "flat-material");
+  } else {
+    throw new Error("Unable to intialize shader program because node is not a static-mesh or light");
+  }
+
   sceneManager
     .getNodeByName(node.name)
-    .withVertexBuffer(vertexBuffer);
+    .withVertexBuffer(vertexBuffer)
+    .withShaderProgram(shaderProgram);
 }

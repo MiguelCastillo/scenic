@@ -18,7 +18,7 @@ import {onReady} from "../src/dom/ready.js";
 import {createSplitPanel} from "./split-panel.js";
 import {createScene} from "./scene-factory.js";
 import {createResourceLoader, getResourcesFromConfig} from "./loaders/resource-loader.js";
-import {createShaderProgramLoader, getNodesWithShadersFromConfig} from "./shader-factory.js";
+import {loadShaders} from "./shader-factory.js";
 import {startRenderLoop} from "./render-loop.js";
 
 import {createFrameRateCounter} from "./fps-counter.js";
@@ -257,7 +257,6 @@ onReady(() => {
 
     // API for loading resources for scene nodes.
     const resourceLoader = createResourceLoader(gl, sceneManager);
-    const shaderProgramLoader = createShaderProgramLoader(gl, sceneManager);
 
     // Two functions to update the scene state and another for actually render
     // the scene based on the updated scene state.
@@ -272,8 +271,13 @@ onReady(() => {
 
     // First thing is to load the shaders so that loading renderable
     // resources have them when they are getting built.
-    shaderProgramLoader
-      .loadMany(getNodesWithShadersFromConfig(config))
+    loadShaders([
+      // These are built in shaders.
+      // TODO(miguel): add support for defining shaders in the config files.
+      "phong-lighting",
+      "phong-texture",
+      "flat-material",
+    ])
       .then(() => resourceLoader.loadMany(getResourcesFromConfig(config)))
       .then(() => {
         app.ready({resourceLoader, sceneManager, refreshProjection});
