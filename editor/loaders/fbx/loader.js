@@ -224,7 +224,7 @@ function buildVertexBufferForGeometry(gl, name, geometry) {
 
     normals = getTriangleComponents(normals, mapIndexByPolygonVertex(polygonVertexIndex));
   } else {
-    normals = normalizeTriangleVertices(triangles);
+    normals = normalizeTriangleVertices(triangles, true);
   }
 
   let uv;

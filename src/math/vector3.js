@@ -27,3 +27,7 @@ export function crossproduct(a, b) {
 export function dotproduct(a, b) {
   return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 }
+
+export function edges(v1, v2, v3) {
+  return [subtract(v2, v1), subtract(v3, v1)];
+}
