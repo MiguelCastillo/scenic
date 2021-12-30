@@ -71,6 +71,57 @@ test("parse binary cube", () => {
     5, 0, 1, // ti11
   ]);
 
+  const triangles = getTriangleComponents(vertices, triangulatedIndexes);
+  expect(triangles).toEqual([
+     1,  1,  1, // v0
+    -1,  1,  1, // v4
+    -1, -1,  1, // v6
+
+     1,  1,  1, // v0
+    -1, -1,  1, // v6
+     1, -1,  1, // v2
+
+     1, -1, -1, // v3
+     1, -1,  1, // v2
+    -1, -1,  1, // v6
+
+     1, -1, -1, // v3
+    -1, -1,  1, // v6
+    -1, -1, -1, // v7
+
+    -1, -1, -1, // v7
+    -1, -1,  1, // v6
+    -1,  1,  1, // v4
+
+    -1, -1, -1, // v7
+    -1,  1,  1, // v4
+    -1,  1, -1, // v5
+
+    -1,  1, -1, // v5
+     1,  1, -1, // v1
+     1, -1, -1, // v3
+
+    -1,  1, -1, // v5
+     1, -1, -1, // v3
+    -1, -1, -1, // v7
+
+     1,  1, -1, // v1
+     1,  1,  1, // v0
+     1, -1,  1, // v2
+
+     1,  1, -1, // v1
+     1, -1,  1, // v2
+     1, -1, -1, // v3
+
+    -1,  1, -1, // v5
+    -1,  1,  1, // v4
+     1,  1,  1, // v0
+
+    -1,  1, -1, // v5
+     1,  1,  1, // v0
+     1,  1, -1, // v1
+  ]);
+
   const normalLayer = findChildByName(geometry, "LayerElementNormal");
   expect(normalLayer).not.toBeUndefined();
 
@@ -107,7 +158,8 @@ test("parse binary cube", () => {
   // This tests works fine for a cube because smoothing of the normals
   // will yield the same normals as non smoothed ones.
   const normalIndexes = mapIndexByPolygonVertex(polygonVertexIndex);
-  expect(getTriangleComponents(normals, normalIndexes))
+  const triangleNormals = getTriangleComponents(normals, normalIndexes);
+  expect(triangleNormals)
     .toEqual(normalizeTriangleVertices(
       getTriangleComponents(vertices, triangulatedIndexes)));
 
@@ -187,8 +239,8 @@ test("parse binary cube", () => {
     0.375, 0.5,    // 2
   ]);
 
-  const UVForTriangle = getIndexed2DComponents(UVCoordinates, mapIndexByPolygonVertex(polygonVertexIndex));
-  expect(UVForTriangle).toEqual([
+  const triangleUVs = getIndexed2DComponents(UVCoordinates, mapIndexByPolygonVertex(polygonVertexIndex));
+  expect(triangleUVs).toEqual([
     0.625,  0.5,
     0.875,  0.5,
     0.875, 0.75,
@@ -237,6 +289,11 @@ test("parse binary cube", () => {
     0.625,  0.5,
     0.375,  0.5,
   ]);
+
+  expect(triangles.length).toEqual(triangleNormals.length);
+
+  // UVs are 2 dimensional so that they will have 1 less coordinate per vertex.
+  expect(triangles.length - triangles.length/3).toEqual(triangleUVs.length);
 });
 
 test("match calculated normals to normals from file", () => {
