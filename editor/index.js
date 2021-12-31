@@ -271,13 +271,7 @@ onReady(() => {
 
     // First thing is to load the shaders so that loading renderable
     // resources have them when they are getting built.
-    loadShaders([
-      // These are built in shaders.
-      // TODO(miguel): add support for defining shaders in the config files.
-      "phong-lighting",
-      "phong-texture",
-      "flat-material",
-    ])
+    loadShaders(config.preload.shaders)
       .then(() => resourceLoader.loadMany(getResourcesFromConfig(config)))
       .then(() => {
         app.ready({resourceLoader, sceneManager, refreshProjection});

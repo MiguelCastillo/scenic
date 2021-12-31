@@ -1,4 +1,7 @@
 export const config = {
+  "preload": {
+    "shaders": ["phong-lighting","phong-texture","flat-material",]
+  },
   "items": [
     {
       "name": "axis projection",
