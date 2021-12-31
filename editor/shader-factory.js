@@ -1,4 +1,3 @@
-import {treeGetMatches} from "../src/scene/traversal.js";
 import {
   ShaderProgram,
   compileShaderSource,
