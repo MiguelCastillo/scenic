@@ -86,12 +86,32 @@ export const config = {
 
       "transform": {
         "scale": [1, 1, 1],
-        "position": [0, 0, 0],
+        "position": [0, 0, -20],
         "rotation": [0, 0, 0],
       },
 
       "items": [
         {
+          "name": "light-white",
+          "type": "light",
+          "resource": "/resources/obj/sphere.obj",
+
+          "light": {
+            "intensity": 1,
+            "color": [1, 1, 1],
+          },
+
+          "material": {
+            "color": [1, 1, 1, 1],
+            "reflectiveness": 1,
+          },
+
+          "transform": {
+            "scale": [1, 1, 1],
+            "position": [0, 20, 10],
+            "rotation": [0, 0, 0],
+          },
+        }, {
           "name": "light-cyan",
           "type": "light",
           "resource": "/resources/obj/sphere.obj",
@@ -108,7 +128,7 @@ export const config = {
 
           "transform": {
             "scale": [1, 1, 1],
-            "position": [-100, 5, 0],
+            "position": [-35, 5, 0],
             "rotation": [0, 0, 0],
           },
         }, {
@@ -128,27 +148,7 @@ export const config = {
 
           "transform": {
             "scale": [1, 1, 1],
-            "position": [100, 5, 0],
-            "rotation": [0, 0, 0],
-          },
-        }, {
-          "name": "light-white",
-          "type": "light",
-          "resource": "/resources/obj/sphere.obj",
-
-          "light": {
-            "intensity": 1,
-            "color": [1, 1, 1],
-          },
-
-          "material": {
-            "color": [1, 1, 1, 1],
-            "reflectiveness": 1,
-          },
-
-          "transform": {
-            "scale": [1, 1, 1],
-            "position": [0, 100, 100],
+            "position": [35, 5, 0],
             "rotation": [0, 0, 0],
           },
         }, {
@@ -157,7 +157,7 @@ export const config = {
         
           "transform": {
             "scale": [1, 1, 1],
-            "position": [0, 0, -20],
+            "position": [0, 0, 0],
             "rotation": [0, 0, 0],
           },
 
@@ -170,7 +170,7 @@ export const config = {
               "reflectiveness": 1,
             },
             "transform": {
-              "scale": [.05, .05, .05],
+              "scale": [1, 1, 1],
               "position": [0, 0, 0],
               "rotation": [0, 0, 0],
             },

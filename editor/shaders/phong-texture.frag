@@ -1,5 +1,8 @@
 #version 300 es
 
+#define MAX_LIGHTS 6
+#define MAX_TEXTURES 6
+
 // This is mostly duplicated from phong-lighting because texture support
 // causes any program using this shader to throw warnings for texture not
 // being bound when used for rendering models that do not have an actual
@@ -13,87 +16,71 @@
 // need.
 
 precision highp float;
+
+struct Texture {
+  bool enabled;
+
+  // NOTE(miguel): for some reason unknown to me whenever a struct has a
+  // sampler2D as the first item, using the index in a for loop to
+  // access the texture does not work correctly; values don't seem to
+  // be set correctly in textures. For example, textures[i]enabled does
+  // not have the correct uniform value set.
+  sampler2D id;
+};
+
+struct Light {
+  bool enabled;
+  float intensity;
+  vec3 color;
+  vec3 position;
+};
+
 out vec4 pixelColor;
 
 in vec4 fragmentColor;
 in vec4 fragmentNormal;
 in vec2 fragmentTextureCoord;
 
-uniform sampler2D uTexture0;uniform bool uTexture0Enabled;
-uniform sampler2D uTexture1;uniform bool uTexture1Enabled;
-uniform sampler2D uTexture2;uniform bool uTexture2Enabled;
-uniform sampler2D uTexture3;uniform bool uTexture3Enabled;
-uniform sampler2D uTexture4;uniform bool uTexture4Enabled;
-uniform sampler2D uTexture5;uniform bool uTexture5Enabled;
-
 uniform vec3 ambientColor;
 uniform vec4 materialColor;
 uniform float materialReflectiveness;
+uniform Texture textures[MAX_TEXTURES];
+uniform Light lights[MAX_LIGHTS];
 
-// TODO(miguel): apply world transform to light position.
-uniform vec3 lightColor0;uniform vec3 lightPosition0;uniform float lightIntensity0;
-uniform vec3 lightColor1;uniform vec3 lightPosition1;uniform float lightIntensity1;
-uniform vec3 lightColor2;uniform vec3 lightPosition2;uniform float lightIntensity2;
-uniform vec3 lightColor3;uniform vec3 lightPosition3;uniform float lightIntensity3;
-uniform vec3 lightColor4;uniform vec3 lightPosition4;uniform float lightIntensity4;
-uniform vec3 lightColor5;uniform vec3 lightPosition5;uniform float lightIntensity5;
-
-vec3 calculateDiffuseLight(vec3 normal, vec3 lightPosition, vec3 lightColor, float lightIntensity) {
-  if (lightIntensity == 0.0) {
-    return vec3(0.0, 0.0, 0.0);
+vec3 calculateDiffuseLight(vec3 normal, Light light) {
+  if (light.intensity == 0.0 || light.color.rgb == vec3(0.0)) {
+    return vec3(0.0);
   }
 
-  if (lightColor.r == 0.0 && lightColor.g == 0.0 && lightColor.b == 0.0) {
-    return vec3(0.0, 0.0, 0.0);
-  }
-
-  return lightColor * lightIntensity * clamp(dot(normal, lightPosition), 0.1, 1.0);
+  return light.color * light.intensity * clamp(dot(normal, light.position), 0.0, 1.0);
 }
 
 void main() {
-  vec3 calculatedLightColor = vec3(0.0, 0.0, 0.0);
-  vec3 normal = normalize(fragmentNormal.xyz);
+  vec3 calculatedLightColor;
 
   if (materialReflectiveness != 0.0) {
-    calculatedLightColor += calculateDiffuseLight(normal, lightPosition0, lightColor0, lightIntensity0);
-    calculatedLightColor += calculateDiffuseLight(normal, lightPosition1, lightColor1, lightIntensity1);
-    calculatedLightColor += calculateDiffuseLight(normal, lightPosition2, lightColor2, lightIntensity2);
-    calculatedLightColor += calculateDiffuseLight(normal, lightPosition3, lightColor3, lightIntensity3);
-    calculatedLightColor += calculateDiffuseLight(normal, lightPosition4, lightColor4, lightIntensity4);
-    calculatedLightColor += calculateDiffuseLight(normal, lightPosition5, lightColor5, lightIntensity5);
+    vec3 normal = normalize(fragmentNormal.xyz);
+
+    for (int i = 0; i < MAX_LIGHTS; i++) {
+      if (lights[i].enabled) {
+        calculatedLightColor += calculateDiffuseLight(normal, lights[i]);
+      }
+    }
     calculatedLightColor *= materialReflectiveness;
 
     // This gives a great blend of CYM colors to generate RGB colors.
     // calculatedLightColor += log2((${processDiffuseLighting(lights)}) * materialReflectiveness);
   }
 
+  vec4 texelColor;
   int textureCount = 0;
-  vec4 texelColor = vec4(0.0, 0.0, 0.0, 0.0);
 
-  // TODO(miguel): look into more sophisticated texture blending techniques.
-  if (uTexture0Enabled) {
-    texelColor += texture(uTexture0, fragmentTextureCoord);
-    textureCount += 1;
-  }
-  if (uTexture1Enabled) {
-    texelColor += texture(uTexture1, fragmentTextureCoord);
-    textureCount += 1;
-  }
-  if (uTexture2Enabled) {
-    texelColor += texture(uTexture2, fragmentTextureCoord);
-    textureCount += 1;
-  }
-  if (uTexture3Enabled) {
-    texelColor += texture(uTexture3, fragmentTextureCoord);
-    textureCount += 1;
-  }
-  if (uTexture4Enabled) {
-    texelColor += texture(uTexture4, fragmentTextureCoord);
-    textureCount += 1;
-  }
-  if (uTexture5Enabled) {
-    texelColor += texture(uTexture5, fragmentTextureCoord);
-    textureCount += 1;
+  for (int i = 0; i < MAX_TEXTURES; i++) {
+    if (textures[i].enabled) {
+      // TODO(miguel): look into more sophisticated texture blending techniques.
+      textureCount++;
+      texelColor += texture(textures[i].id, fragmentTextureCoord);
+    }
   }
 
   if (textureCount != 0) {

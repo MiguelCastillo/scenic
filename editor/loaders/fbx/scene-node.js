@@ -38,7 +38,7 @@ export class ModelNode extends RenderableSceneNode {
 
     const lightPositions = lightsStates
       .map(({transform: {position}}, idx) => ({
-        name: `lightPosition${idx}`,
+        name: `lights[${idx}].position`,
         update: ({index}) => {
           gl.uniform3fv(index, vec3.normalize(...position));
         },
@@ -46,7 +46,7 @@ export class ModelNode extends RenderableSceneNode {
 
     const lightColors = lightsStates
       .map(({light: {color}}, idx) => ({
-        name: `lightColor${idx}`,
+        name: `lights[${idx}].color`,
         update: ({index}) => {
           gl.uniform3fv(index, color);
         }
@@ -54,9 +54,17 @@ export class ModelNode extends RenderableSceneNode {
 
     const lightIntensities = lightsStates
       .map(({light: {intensity}}, idx) => ({
-        name: `lightIntensity${idx}`,
+        name: `lights[${idx}].intensity`,
         update: ({index}) => {
           gl.uniform1f(index, intensity);
+        },
+      }));
+
+    const lightEnabled = lightsStates
+      .map((_, idx) => ({
+        name: `lights[${idx}].enabled`,
+        update: ({index}) => {
+          gl.uniform1i(index, 1);
         },
       }));
 
@@ -76,6 +84,7 @@ export class ModelNode extends RenderableSceneNode {
         ...lightPositions,
         ...lightColors,
         ...lightIntensities,
+        ...lightEnabled,
       ]);
 
     this.vertexBuffers.forEach(vb => {
@@ -230,19 +239,24 @@ export class TextureNode extends SceneNode {
     if (renderable) {
       const {gl} = context;
       const {textureID} = this;
-      
+
       renderable.shaderProgram.addUniforms([
         {
-          name: "uTexture" + textureID,
+          name: `textures[${textureID}].enabled`,
+          update: ({index}) => {
+            gl.uniform1i(index, 1);
+          },
+        }, {
+          name: `textures[${textureID}].notused`,
+          update: ({index}) => {
+            gl.uniform1i(index, 1);
+          },
+        }, {
+          name: `textures[${textureID}].id`,
           update: ({index}) => {
             gl.activeTexture(gl.TEXTURE0 + textureID);
             gl.bindTexture(gl.TEXTURE_2D, this.texture);
             gl.uniform1i(index, textureID);
-          },
-        }, {
-          name: "uTexture" + textureID + "Enabled",
-          update: ({index}) => {
-            gl.uniform1i(index, 1);
           },
         }
       ]);

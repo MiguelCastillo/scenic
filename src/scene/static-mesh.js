@@ -20,7 +20,7 @@ export class StaticMesh extends Renderable {
 
     const lightPositions = lightsStates
       .map(({transform: {position}}, idx) => ({
-        name: `lightPosition${idx}`,
+        name: `lights[${idx}].position`,
         update: ({index}) => {
           gl.uniform3fv(index, vec3.normalize(...position));
         },
@@ -28,7 +28,7 @@ export class StaticMesh extends Renderable {
 
     const lightColors = lightsStates
       .map(({light: {color}}, idx) => ({
-        name: `lightColor${idx}`,
+        name: `lights[${idx}].color`,
         update: ({index}) => {
           gl.uniform3fv(index, color);
         }
@@ -36,9 +36,17 @@ export class StaticMesh extends Renderable {
 
     const lightIntensities = lightsStates
       .map(({light: {intensity}}, idx) => ({
-        name: `lightIntensity${idx}`,
+        name: `lights[${idx}].intensity`,
         update: ({index}) => {
           gl.uniform1f(index, intensity);
+        },
+      }));
+
+    const lightEnabled = lightsStates
+      .map((_, idx) => ({
+        name: `lights[${idx}].enabled`,
+        update: ({index}) => {
+          gl.uniform1i(index, true);
         },
       }));
 
@@ -80,6 +88,7 @@ export class StaticMesh extends Renderable {
         ...lightPositions,
         ...lightColors,
         ...lightIntensities,
+        ...lightEnabled,
       ]);
 
     Renderable.render(gl, program, vertexBuffer);
