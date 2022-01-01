@@ -1,6 +1,10 @@
 import * as mat4 from "../../../src/math/matrix4.js";
 
 import {
+  getTBNVectorsFromTriangles,
+} from "../../../src/math/tbn-matrix.js";
+
+import {
   getTriangleComponents,
   getIndexed2DComponents,
   normalizeTriangleVertices,
@@ -52,7 +56,7 @@ export class Loader extends BrinaryFileLoader {
   }
 }
 
-function sceneNodeFromFbxRootNode(gl, fbxRootNode, sceneManager) {
+function sceneNodeFromFbxRootNode(gl, fbxRootNode, sceneNodeConfig, sceneManager) {
   let textureCount = 0;
   return createSceneNode(fbxRootNode);
 
@@ -76,6 +80,14 @@ function sceneNodeFromFbxRootNode(gl, fbxRootNode, sceneManager) {
         break;
       }
       case "Model": {
+        // If the model has any textures, then we use phong-texture. We have a
+        // separate shader specifically for handling textures because if the
+        // a shader defined a sample2D type and does not call the `texture`
+        // method in the shader then we get the warning:
+        // "there is no texture bound to the unit 0".
+        // So we want to make sure we pick a shader that can handle texture
+        // if the model has any, otherwise use an equivalent shader without
+        // textures.
         const shaderName = textureCount ? "phong-texture" : "phong-lighting";
         node = new ModelNode({name}, createShaderProgram(gl, shaderName));
 
@@ -136,7 +148,17 @@ function sceneNodeFromFbxRootNode(gl, fbxRootNode, sceneManager) {
       }
       case "Texture": {
         const fileName = findPropertyValueByName(fbxNode, "RelativeFilename").split("/").pop();
-        node = new TextureNode(gl, fileName, textureCount++, {name, type: "texture"});
+        let type = "textures";
+
+        if (sceneNodeConfig.material && sceneNodeConfig.material.textures) {
+          // TODO(miguel): also add support for pattern matching.
+          const textureMetaData = sceneNodeConfig.material.textures.find(t => t.name === fileName);
+          if (textureMetaData) {
+            type = textureMetaData.type;
+          }
+        }
+
+        node = new TextureNode(gl, fileName, textureCount++, type, {name, type: "texture"});
         break;
       }
       default: {
@@ -148,8 +170,8 @@ function sceneNodeFromFbxRootNode(gl, fbxRootNode, sceneManager) {
   }
 }
 
-export function buildSceneNode(gl, model, node, sceneManager) {
-  const sceneNode = sceneManager.getNodeByName(node.name);
+export function buildSceneNode(gl, model, sceneNodeConfig, sceneManager) {
+  const sceneNode = sceneManager.getNodeByName(sceneNodeConfig.name);
 
   const objectsByID = {
     "0,0": {
@@ -185,7 +207,7 @@ export function buildSceneNode(gl, model, node, sceneManager) {
 
   sceneNode.addItems(
     objectsByID["0,0"].fbxChildren
-      .map(root => sceneNodeFromFbxRootNode(gl, root, sceneManager))
+      .map(root => sceneNodeFromFbxRootNode(gl, root, sceneNodeConfig, sceneManager))
       .filter(Boolean));
 }
 
@@ -204,28 +226,6 @@ function buildVertexBufferForGeometry(gl, name, geometry) {
 
   validateIndexedTriangles(name, vertices, vertexIndexes);
   const triangles = getTriangleComponents(vertices, vertexIndexes);
-
-  // We will try to use the normals in the geometry if available.
-  // If not available then we will calculate them based on the
-  // triangles in the model.
-  let normals;
-  const normalLayer = findChildByName(geometry, "LayerElementNormal");
-  if (normalLayer) {
-    normals = findPropertyValueByName(normalLayer, "Normals");
-
-    // NOTE(miguel): the only combination I have seen for reference types
-    // regarding Normals is:
-    // "MappingInformationType": "ByPolygonVertex"
-    // "ReferenceInformationType": "Direct"
-
-    if (findPropertyValueByName(normalLayer, "ReferenceInformationType") === "IndexToDirect") {
-      normals = getTriangleComponents(normals, findPropertyValueByName(normalLayer, "NormalsIndex"));
-    }
-
-    normals = getTriangleComponents(normals, mapIndexByPolygonVertex(polygonVertexIndex));
-  } else {
-    normals = normalizeTriangleVertices(triangles, true);
-  }
 
   let uv;
   const uvLayer = findChildByName(geometry, "LayerElementUV");
@@ -248,9 +248,46 @@ function buildVertexBufferForGeometry(gl, name, geometry) {
     uv = getIndexed2DComponents(uv, mapIndexByPolygonVertex(polygonVertexIndex));
   }
 
+  // Tangent, BiTangent, and Normal vector calculations for normal maps
+  // support. These are vectors that are used in the shaders to correctly
+  // transform vertices and light positions to and from tangent space, which
+  // is the space where normal vectors in normal map textures are defined.
+  let tangents, bitangents, normals;
+  if (uv && uv.length) {
+    const [t,b,n] = getTBNVectorsFromTriangles(triangles, uv);
+    tangents = t;
+    bitangents = b;
+    normals = n;
+  }
+
+  // We will try to use the normals in the geometry if available.
+  // If not available then we will calculate them based on the
+  // triangles in the model.
+  if (!normals) {
+    const normalLayer = findChildByName(geometry, "LayerElementNormal");
+    if (normalLayer) {
+      normals = findPropertyValueByName(normalLayer, "Normals");
+
+      // NOTE(miguel): the only combination I have seen for reference types
+      // regarding Normals is:
+      // "MappingInformationType": "ByPolygonVertex"
+      // "ReferenceInformationType": "Direct"
+
+      if (findPropertyValueByName(normalLayer, "ReferenceInformationType") === "IndexToDirect") {
+        normals = getTriangleComponents(normals, findPropertyValueByName(normalLayer, "NormalsIndex"));
+      }
+
+      normals = getTriangleComponents(normals, mapIndexByPolygonVertex(polygonVertexIndex));
+    } else {
+      normals = normalizeTriangleVertices(triangles, true);
+    }
+  }
+
   return new VertexBuffer({
     positions: new VertexBufferData(gl, triangles),
     normals: new VertexBufferData(gl, normals),
+    tangents: tangents && new VertexBufferData(gl, tangents),
+    bitangents: bitangents && new VertexBufferData(gl, bitangents),
     textureCoords: uv && new TextureVertexBufferData(gl, uv),
   });
 }

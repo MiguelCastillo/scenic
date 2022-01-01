@@ -33,6 +33,14 @@ export class ModelNode extends RenderableSceneNode {
     const {shaderProgram, worldMatrix} = this;
     const {gl, projectionMatrix, sceneManager} = context;
 
+    // Quick hack to make bump lighting configurable in the scene config.
+    // We read from the parent because that's the node that is created
+    // with the scene configuration state. All FBX nodes are created and
+    // added to the scene separately, so they currently don't have their
+    // state configurable in the scene config.
+    const parentNodeState = sceneManager.getNodeStateByName(this.parent.name);
+    const bumpLightingEnabled = parentNodeState.material.bumpLighting === true;
+
     const lightsStates = findParentItemsWithItemType(this, "light")
       .map(({name}) => sceneManager.getNodeStateByName(name));
 
@@ -79,6 +87,11 @@ export class ModelNode extends RenderableSceneNode {
           name: "worldMatrix",
           update: ({index}) => {
             gl.uniformMatrix4fv(index, false, worldMatrix.data);
+          },
+        }, {
+          name: "bumpLighting",
+          update: ({index}) => {
+            gl.uniform1i(index, bumpLightingEnabled);
           },
         },
         ...lightPositions,
@@ -171,11 +184,12 @@ export class MaterialNode extends SceneNode {
 // The code in the TextureNode is basically all lifted from:
 // https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/Tutorial/Using_textures_in_WebGL
 export class TextureNode extends SceneNode {
-  constructor(gl, fileName, textureID, options) {
+  constructor(gl, fileName, textureID, type, options) {
     super(Object.assign({}, options, {type: "fbx-texture"}));
 
     this.textureID = textureID;
     this.texture = gl.createTexture();
+    this.type = type;
     gl.bindTexture(gl.TEXTURE_2D, this.texture);
   
     // Because images have to be downloaded over the internet
@@ -201,6 +215,9 @@ export class TextureNode extends SceneNode {
       srcType,
       pixel);
 
+    // TODO(miguel): preload images and cache them before loading up the
+    // scene. Similar to how we load and cache shaders up front before
+    // building the scene.
     const image = new Image();
     image.onload = () => {
       gl.bindTexture(gl.TEXTURE_2D, this.texture);
@@ -238,28 +255,41 @@ export class TextureNode extends SceneNode {
 
     if (renderable) {
       const {gl} = context;
-      const {textureID} = this;
+      const {textureID, type} = this;
 
-      renderable.shaderProgram.addUniforms([
-        {
-          name: `textures[${textureID}].enabled`,
-          update: ({index}) => {
-            gl.uniform1i(index, 1);
-          },
-        }, {
-          name: `textures[${textureID}].notused`,
-          update: ({index}) => {
-            gl.uniform1i(index, 1);
-          },
-        }, {
-          name: `textures[${textureID}].id`,
-          update: ({index}) => {
-            gl.activeTexture(gl.TEXTURE0 + textureID);
-            gl.bindTexture(gl.TEXTURE_2D, this.texture);
-            gl.uniform1i(index, textureID);
-          },
-        }
-      ]);
+      if (type === "normalmap") {
+        renderable.shaderProgram.addUniforms([
+          {
+            name: `${type}.enabled`,
+            update: ({index}) => {
+              gl.uniform1i(index, 1);
+            },
+          }, {
+            name: `${type}.id`,
+            update: ({index}) => {
+              gl.activeTexture(gl.TEXTURE0 + textureID);
+              gl.bindTexture(gl.TEXTURE_2D, this.texture);
+              gl.uniform1i(index, textureID);
+            },
+          }
+        ]);
+      } else {
+        renderable.shaderProgram.addUniforms([
+          {
+            name: `textures[${textureID}].enabled`,
+            update: ({index}) => {
+              gl.uniform1i(index, 1);
+            },
+          }, {
+            name: `textures[${textureID}].id`,
+            update: ({index}) => {
+              gl.activeTexture(gl.TEXTURE0 + textureID);
+              gl.bindTexture(gl.TEXTURE_2D, this.texture);
+              gl.uniform1i(index, textureID);
+            },
+          }
+        ]);  
+      }
     }
   }
 }

@@ -32,54 +32,79 @@ struct Light {
   bool enabled;
   float intensity;
   vec3 color;
+
+  // We don't use this uniform value in the fragment shader. We use the
+  // lightPosition vectors because those are configured in the vertex
+  // shader to take tangent space into account when bump lighting is
+  // enabled.
   vec3 position;
 };
 
 out vec4 pixelColor;
 
+in vec4 fragmentPosition;
 in vec4 fragmentColor;
 in vec4 fragmentNormal;
 in vec2 fragmentTextureCoord;
 
+in vec3 lightPosition0;
+in vec3 lightPosition1;
+in vec3 lightPosition2;
+in vec3 lightPosition3;
+in vec3 lightPosition4;
+in vec3 lightPosition5;
+
+uniform Texture normalmap;
+uniform bool bumpLighting;
 uniform vec3 ambientColor;
 uniform vec4 materialColor;
 uniform float materialReflectiveness;
 uniform Texture textures[MAX_TEXTURES];
 uniform Light lights[MAX_LIGHTS];
 
-vec3 calculateDiffuseLight(vec3 normal, Light light) {
-  if (light.intensity == 0.0 || light.color.rgb == vec3(0.0)) {
-    return vec3(0.0);
+void main() {
+  vec3 normal;
+
+  if (bumpLighting && normalmap.enabled) {
+    normal = texture(normalmap.id, fragmentTextureCoord).rgb;
+
+    // Image's RGBA colors are [0, 1] ranges, but normal vector values
+    // are [-1, 1]. So we need to convert color range to normal vector
+    // range.
+    normal = (normal * 2.0) - 1.0;
+  } else {
+    normal = normalize(fragmentNormal.xyz);
   }
 
-  return light.color * light.intensity * clamp(dot(normal, light.position), 0.0, 1.0);
-}
+  // We copy to the tangent lights array for eaier access while iterating thru
+  // the lights.
+  vec3 lightPositions[MAX_LIGHTS];
+  lightPositions[0] = lightPosition0;
+  lightPositions[1] = lightPosition1;
+  lightPositions[2] = lightPosition2;
+  lightPositions[3] = lightPosition3;
+  lightPositions[4] = lightPosition4;
+  lightPositions[5] = lightPosition5;
 
-void main() {
+  // Calculate lighting.
   vec3 calculatedLightColor;
-
   if (materialReflectiveness != 0.0) {
-    vec3 normal = normalize(fragmentNormal.xyz);
-
     for (int i = 0; i < MAX_LIGHTS; i++) {
       if (lights[i].enabled) {
-        calculatedLightColor += calculateDiffuseLight(normal, lights[i]);
+        calculatedLightColor += lights[i].intensity * lights[i].color * clamp(dot(normal, lightPositions[i]), 0.0, 1.0);
       }
     }
-    calculatedLightColor *= materialReflectiveness;
 
-    // This gives a great blend of CYM colors to generate RGB colors.
-    // calculatedLightColor += log2((${processDiffuseLighting(lights)}) * materialReflectiveness);
+    calculatedLightColor *= materialReflectiveness;
   }
 
   vec4 texelColor;
   int textureCount = 0;
-
   for (int i = 0; i < MAX_TEXTURES; i++) {
     if (textures[i].enabled) {
       // TODO(miguel): look into more sophisticated texture blending techniques.
-      textureCount++;
       texelColor += texture(textures[i].id, fragmentTextureCoord);
+      textureCount++;
     }
   }
 
@@ -89,5 +114,5 @@ void main() {
     pixelColor = fragmentColor + materialColor;
   }
 
-  pixelColor.rgb *= (calculatedLightColor + ambientColor);
+  pixelColor.rgb *= ambientColor + calculatedLightColor;
 }

@@ -69,6 +69,8 @@ export class VertexBuffer {
       colors=null,
       normals=null,
       textureCoords=null,
+      tangents=null,
+      bitangents=null,
     } = options;
 
     if (indexes) {
@@ -89,6 +91,14 @@ export class VertexBuffer {
 
     if (textureCoords) {
       this.textureCoords = textureCoords;
+    }
+
+    if (tangents) {
+      this.tangents = tangents;
+    }
+
+    if (bitangents) {
+      this.bitangents = bitangents;
     }
   }
 
