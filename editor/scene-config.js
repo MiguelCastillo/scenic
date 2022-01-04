@@ -172,15 +172,6 @@ export const config = {
               "color": [1, 1, 1, 1],
               "reflectiveness": 1,
               "bumpLighting": true,
-
-              // TODO(miguel): also add support for pattern matching.
-              "textures": [{
-                "name": "mainMat_nrm.png",
-                "type": "normalmap",
-              }, {
-                "name": "auxielieryMat_nrm.png",
-                "type": "normalmap",
-              }],
             },
             "transform": {
               "scale": [1, 1, 1],

@@ -56,29 +56,96 @@ export class Loader extends BrinaryFileLoader {
   }
 }
 
-function sceneNodeFromFbxRootNode(gl, fbxRootNode, sceneNodeConfig, sceneManager) {
-  let textureCount = 0;
-  return createSceneNode(fbxRootNode);
+export function buildSceneNode(gl, model, sceneNodeConfig, sceneManager) {
+  const sceneNode = sceneManager.getNodeByName(sceneNodeConfig.name);
 
-  function createSceneNode({fbxNode, fbxChildren}) {
-    const name = nodeName(fbxNode.attributes[1]);
-    const childrenSceneNodes = fbxChildren.map(createSceneNode).filter(Boolean);
-    let node;
+  const nodeWrappersByID = {
+    "0,0": {
+      connections: [],
+    },
+  };
 
-    switch(fbxNode.name) {
-      case "Geometry": {
-        node = new GometryNode({name}, buildVertexBufferForGeometry(gl, name, fbxNode));
+  const objects = findChildByName(model, "Objects");
+  for (const node of objects.children) {
+    nodeWrappersByID[node.attributes[0]] = {
+      node,
+      connections: [],
+    };
+  }
 
-        sceneManager.updateNodeStateByName(name, {
-          transform: {
-            rotation: [0,0,0],
-            position: [0,0,0],
-            scale: [1,1,1],
-          },
-        });
+  const connections = findChildByName(model, "Connections");
+  for (const props of connections.properties) {
+    switch(props.name) {
+      case "C": {
+        const [type, src, dest, pname] = props.value;
+        if (nodeWrappersByID[dest] && nodeWrappersByID[src]) {
+          nodeWrappersByID[dest].connections.push({
+            child: nodeWrappersByID[src],
+            parent: nodeWrappersByID[dest],
+            type,
+            pname,
+          });
+        }
 
         break;
       }
+    }
+  }
+
+  sceneNode.addItems(
+    nodeWrappersByID["0,0"].connections
+      .map(({child}) => sceneNodeFromFbxRootNode(gl, child, sceneManager))
+      .filter(Boolean));
+}
+
+// sceneNodeFromFbxRootNode traverses the fbx tree of nodes breadth first
+// potentially creating scene nodes for each relevant of the fbx file.
+// The traversal of the fbx tree is breadth first so that we can find all
+// information pertaining to the model before we finally create the model
+// node. This is relevant for things like textures where we need to know
+// if the model needs to use a shader that supports texture or not.
+function sceneNodeFromFbxRootNode(gl, fbxRootNodeWrapper, sceneManager) {
+  let textureCount = 0;
+  return processNodeWrapper(fbxRootNodeWrapper);
+
+  // NOTE(miguel):
+  // We do a breadth first traversal of the fbx nodes so that we can process
+  // all the leaf nodes first. This allows us to find all the textures so that
+  // when we get to process the model itself, we can know how many textures
+  // the model has.
+  function processNodeWrapper(fbxNodeWrapper, pname) {
+    const childSceneNodes = fbxNodeWrapper.connections.map(connection => {
+      return processNodeWrapper(connection.child, connection.pname);
+    });
+
+    const sceneNode = createSceneNode(fbxNodeWrapper.node, pname);
+
+    fbxNodeWrapper.connections.forEach((connection, i) => {
+      if (childSceneNodes[i]) {
+        // Only support for OO and OP (partially OP) connections.
+        // TODO(miguel): add support for other types of connections.
+        // https://download.autodesk.com/us/fbx/20112/fbx_sdk_help/index.html
+        switch(connection.type) {
+          case "OO":
+            sceneNode.add(childSceneNodes[i]);
+            break;
+          case "OP":
+            // TODO(miguel): this needs to handle proper mapping of
+            // object to property updates.
+            sceneNode.add(childSceneNodes[i]);
+            break;
+        }
+      }
+    });
+
+    return sceneNode;
+  }
+
+  function createSceneNode(fbxNode, pname) {
+    const name = nodeName(fbxNode.attributes[1]);
+    let sceneNode;
+
+    switch(fbxNode.name) {
       case "Model": {
         // If the model has any textures, then we use phong-texture. We have a
         // separate shader specifically for handling textures because if the
@@ -89,7 +156,7 @@ function sceneNodeFromFbxRootNode(gl, fbxRootNode, sceneNodeConfig, sceneManager
         // if the model has any, otherwise use an equivalent shader without
         // textures.
         const shaderName = textureCount ? "phong-texture" : "phong-lighting";
-        node = new ModelNode({name}, createShaderProgram(gl, shaderName));
+        sceneNode = new ModelNode({name}, createShaderProgram(gl, shaderName));
 
         let rotation = [0,0,0];
         let translation = [0,0,0];
@@ -125,19 +192,32 @@ function sceneNodeFromFbxRootNode(gl, fbxRootNode, sceneNodeConfig, sceneManager
 
         break;
       }
+      case "Geometry": {
+        sceneNode = new GometryNode({name}, buildVertexBufferForGeometry(gl, name, fbxNode));
+
+        sceneManager.updateNodeStateByName(name, {
+          transform: {
+            rotation: [0,0,0],
+            position: [0,0,0],
+            scale: [1,1,1],
+          },
+        });
+
+        break;
+      }
       case "Material": {
-        node = new MaterialNode({name});
+        sceneNode = new MaterialNode({name});
 
         const properties70 = findChildByName(fbxNode, "Properties70");
         if (properties70) {
           for (const property of properties70.properties) {
             switch (property.value[0]) {
               case "AmbientColor": {
-                node.withAmbientColor(property.value.slice(4));
+                sceneNode.withAmbientColor(property.value.slice(4));
                 break;
               }
               case "DiffuseColor": {
-                node.withMaterialColor(property.value.slice(4));
+                sceneNode.withMaterialColor(property.value.slice(4));
                 break;
               }
             }
@@ -148,17 +228,8 @@ function sceneNodeFromFbxRootNode(gl, fbxRootNode, sceneNodeConfig, sceneManager
       }
       case "Texture": {
         const fileName = findPropertyValueByName(fbxNode, "RelativeFilename").split("/").pop();
-        let type = "textures";
-
-        if (sceneNodeConfig.material && sceneNodeConfig.material.textures) {
-          // TODO(miguel): also add support for pattern matching.
-          const textureMetaData = sceneNodeConfig.material.textures.find(t => t.name === fileName);
-          if (textureMetaData) {
-            type = textureMetaData.type;
-          }
-        }
-
-        node = new TextureNode(gl, fileName, textureCount++, type, {name, type: "texture"});
+        let type = pname ? pname.toLowerCase() : "diffusecolor";
+        sceneNode = new TextureNode(gl, fileName, textureCount++, type, {name});
         break;
       }
       default: {
@@ -166,49 +237,8 @@ function sceneNodeFromFbxRootNode(gl, fbxRootNode, sceneNodeConfig, sceneManager
       }
     }
 
-    return node.withMatrix(mat4.Matrix4.identity()).addItems(childrenSceneNodes);
+    return sceneNode.withMatrix(mat4.Matrix4.identity());
   }
-}
-
-export function buildSceneNode(gl, model, sceneNodeConfig, sceneManager) {
-  const sceneNode = sceneManager.getNodeByName(sceneNodeConfig.name);
-
-  const objectsByID = {
-    "0,0": {
-      fbxChildren: [],
-    },
-  };
-
-  const objects = findChildByName(model, "Objects");
-  for (const fbxNode of objects.children) {
-    objectsByID[fbxNode.attributes[0]] = {
-      fbxNode,
-      fbxChildren: [],
-    }
-  }
-
-  const connections = findChildByName(model, "Connections");
-  for (const props of connections.properties) {
-    switch(props.name) {
-      case "C": {
-        const [connectionType, src, dest] = props.value;
-        // Only support for OO and OP (partially OP) connections.
-        // TODO(miguel): add support for other types of connections.
-        // https://download.autodesk.com/us/fbx/20112/fbx_sdk_help/index.html
-        if (connectionType === "OO" || connectionType === "OP") {
-          if (objectsByID[src] && objectsByID[dest]) {
-            objectsByID[dest].fbxChildren.push(objectsByID[src]);
-          }
-        }
-        break;
-      }
-    }
-  }
-
-  sceneNode.addItems(
-    objectsByID["0,0"].fbxChildren
-      .map(root => sceneNodeFromFbxRootNode(gl, root, sceneNodeConfig, sceneManager))
-      .filter(Boolean));
 }
 
 // buildVertexBufferForGeometry builds all the different buffers needed for
