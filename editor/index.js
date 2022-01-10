@@ -186,15 +186,7 @@ function createSceneUpdater(gl, sceneManager) {
   }
 
   function renderScene(ms) {
-    sceneManager.render((node) => {
-      const projectionMatrix = sceneManager.getProjectionMatrixForNode(node);
-
-      node.render({
-        gl,
-        projectionMatrix,
-        sceneManager,
-      })
-    });
+    sceneManager.render(ms, gl);
 
     // Let's write out the number of frames per second that we are able to
     // render.

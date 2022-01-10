@@ -50,21 +50,13 @@ export class SceneManager {
     }
   }
 
-  getProjectionMatrixForNode(node) {
-    let currentNode = node;
+  render(ms, gl) {
+    const context = {
+      gl,
+      ms,
+      sceneManager: this,
+    };
 
-    while (currentNode && !currentNode.projectionMatrix) {
-      currentNode = currentNode.parent;
-    }
-
-    if (currentNode) {
-      return currentNode.projectionMatrix;
-    }
-
-    return mat4.Matrix4.identity();
-  }
-
-  render(renderNode) {
     // When we are traversing the scene graph from the root to its leaf nodes
     // (down), we will multiply all the matrices along the path to convert from
     // local space to world space.
@@ -84,31 +76,35 @@ export class SceneManager {
     const bubbleDown = (node /*, parent*/) => {
       const {parent} = node;
       const nodeState = this.getNodeStateByName(node.name);
-      let modelMatrix = mat4.Matrix4.identity();
+      let modelMatrix;
 
-      node.preRender();
-
-      if (!!nodeState) {
+      if (nodeState) {
         const {transform} = nodeState;
-        modelMatrix = modelMatrix
+        modelMatrix = mat4.Matrix4
           .translation(...transform.position)
           .rotation(...transform.rotation)
           .scale(...transform.scale);
+
+        if (parent) {
+          modelMatrix = parent.worldMatrix.multiply(modelMatrix);
+        }
+      } else {
+        modelMatrix = parent ?
+          parent.worldMatrix :
+          mat4.Matrix4.identity();
       }
 
-      if (!parent) {
-        return node.withMatrix(modelMatrix);
-      }
-
-      return node.withMatrix(parent.worldMatrix.multiply(modelMatrix));
+      node.withMatrix(modelMatrix);
+      node.preRender(context);
+      return node;
     }
 
     // We can render on the way up
     const bubbleUp = (node) => {
-      renderNode(node);
+      node.render(context);
     };
 
-    const traverse = bubbleTraversal(bubbleDown, bubbleUp, () => {});
+    const traverse = bubbleTraversal(bubbleDown, bubbleUp);
     this.rootNodes.map(traverse);
   }
 }

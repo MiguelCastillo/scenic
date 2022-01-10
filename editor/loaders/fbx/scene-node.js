@@ -31,7 +31,8 @@ export class ModelNode extends RenderableSceneNode {
 
   render(context) {
     const {shaderProgram, worldMatrix} = this;
-    const {gl, projectionMatrix, sceneManager} = context;
+    const {gl, sceneManager} = context;
+    const projectionMatrix = this.getProjectionMatrix();
 
     // Quick hack to make bump lighting configurable in the scene config.
     // We read from the parent because that's the node that is created

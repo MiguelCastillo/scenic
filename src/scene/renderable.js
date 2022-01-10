@@ -1,4 +1,5 @@
 import {Node} from "./node.js";
+import {Projection} from "./projection.js";
 
 export class Renderable extends Node {
   constructor({name, type}) {
@@ -13,6 +14,17 @@ export class Renderable extends Node {
   withVertexBuffer(vertexBuffer) {
     this.vertexBuffer = vertexBuffer;
     return this;
+  }
+
+  getProjectionMatrix() {
+    let projectionNode = this;
+    while (projectionNode && !(projectionNode instanceof Projection)) {
+      projectionNode = projectionNode.parent;
+    }
+
+    return projectionNode ?
+      projectionNode.projectionMatrix :  
+      mat4.identity();
   }
 
   // TODO(miguel): make this a class method instead of a static one.

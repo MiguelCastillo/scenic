@@ -9,11 +9,13 @@ import * as vec3 from "../math/vector3.js";
 export class StaticMesh extends Renderable {
   render(context) {
     const {shaderProgram, worldMatrix, vertexBuffer} = this;
-    const {gl, projectionMatrix, sceneManager} = context;
 
     if (!vertexBuffer || !shaderProgram) {
       return;
     }
+
+    const {gl, sceneManager} = context;
+    const projectionMatrix = this.getProjectionMatrix();
 
     const lightsStates = findParentItemsWithItemType(this, "light")
       .map(({name}) => sceneManager.getNodeStateByName(name));
