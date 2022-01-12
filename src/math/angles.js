@@ -4,7 +4,11 @@
 import {fixed7f} from "./float.js";
 
 // Convert degrees to radians which is what Math.sin and Math.cos want.
-export const degToRad = (d) => d * Math.PI / 180;
+const _degToRadMultiplier = fixed7f(Math.PI/180);
+export const degToRad = (d) => d * _degToRadMultiplier;
+
+const _radToDegMultiplier = fixed7f(180/Math.PI);
+export const radToDeg = (r) => r * _radToDegMultiplier;
 
 // Helper function to keep degrees in the range of 0 to 360 where 0 is
 // equivalent to 360 degrees. The reason the range is from 0 to 360 is that 
@@ -43,4 +47,8 @@ export const cos = (degrees) => {
 export const sin = (degrees) => {
 	// return sine[clampDegrees(degrees)];
 	return fixed7f(Math.sin(degToRad(degrees)));
+};
+
+export const atan2 = (degreesA, degreesB) => {
+	return fixed7f(Math.atan2(degToRad(degreesA), degToRad(degreesB)));
 };
