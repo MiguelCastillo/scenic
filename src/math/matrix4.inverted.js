@@ -1,4 +1,5 @@
 // https://www.khanacademy.org/math/linear-algebra/matrix-transformations#lin-trans-examples
+// https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_model_view_projection
 
 import {sin, cos} from "./angles.js";
 import {matrixFloatPrecision} from "./float.js";
@@ -76,18 +77,22 @@ export class Matrix4 {
 
   rotation(degreesX, degreesY, degreesZ) {
     const data = rotate(degreesX, degreesY, degreesZ);
-    data[_30] = this.data[_30];
-    data[_31] = this.data[_31];
-    data[_32] = this.data[_32];
+    data[_03] = this.data[_03];
+    data[_13] = this.data[_13];
+    data[_23] = this.data[_23];
     return new Matrix4(data);
   }
 
   translation(tx, ty, tz) {
     const data = this.data.slice();
-    data[_30] = tx;
-    data[_31] = ty;
-    data[_32] = tz;
+    data[_03] = tx;
+    data[_13] = ty;
+    data[_23] = tz;
     return new Matrix4(data);
+  }
+
+  transpose() {
+    return new Matrix4(transpose(this.data));
   }
 
   scaling(sx, sy, sz) {
@@ -120,8 +125,8 @@ export function rotateX(degrees) {
 
   return [
     1, 0, 0, 0,
-    0, c, s, 0,
-    0, -s, c, 0,
+    0, c, -s, 0,
+    0, s, c, 0,
     0, 0, 0, 1,
   ];
 };
@@ -131,9 +136,9 @@ export function rotateY(degrees) {
   const s = sin(degrees);
 
   return [
-    c, 0, -s, 0,
+    c, 0, s, 0,
     0, 1, 0, 0,
-    s, 0, c, 0,
+    -s, 0, c, 0,
     0, 0, 0, 1,
   ];
 };
@@ -143,8 +148,8 @@ export function rotateZ(degrees) {
   const s = sin(degrees);
 
   return [
-     c, s, 0, 0,
-    -s, c, 0, 0,
+     c, -s, 0, 0,
+     s, c, 0, 0,
      0, 0, 1, 0,
      0, 0, 0, 1,
   ];
@@ -186,48 +191,27 @@ export function multiply(a, b) {
   const a32 = a[_32]; const b32 = b[_32];
   const a33 = a[_33]; const b33 = b[_33];
 
-  // The multiplication here is transpose of A _times_ transpose of B.
-  // This is to take into account the fact that matrix columns are stored with
-  // sequental indexes in the array to make it simpler for webgl to process
-  // translation in the last row with sequential indexes. However, it is more
-  // common in mathematics to represent translation as the last column rather
-  // then the last row as we do here. But that makes it a lil more tricky to
-  // read out of the array translation coordinates, since the indexes are no
-  // longer sequential.
   return [
-    // First row = first row of B times all columns of A
-    b00 * a00 + b01 * a10 + b02 * a20 + b03 * a30,
-    b00 * a01 + b01 * a11 + b02 * a21 + b03 * a31,
-    b00 * a02 + b01 * a12 + b02 * a22 + b03 * a32,
-    b00 * a03 + b01 * a13 + b02 * a23 + b03 * a33,
+    a00 * b00 + a01 * b10 + a02 * b20 + a03 * b30,
+    a00 * b01 + a01 * b11 + a02 * b21 + a03 * b31,
+    a00 * b02 + a01 * b12 + a02 * b22 + a03 * b32,
+    a00 * b03 + a01 * b13 + a02 * b23 + a03 * b33,
 
-    // Second row = second row of B times all columns of A
-    b10 * a00 + b11 * a10 + b12 * a20 + b13 * a30,
-    b10 * a01 + b11 * a11 + b12 * a21 + b13 * a31,
-    b10 * a02 + b11 * a12 + b12 * a22 + b13 * a32,
-    b10 * a03 + b11 * a13 + b12 * a23 + b13 * a33,
+    a10 * b00 + a11 * b10 + a12 * b20 + a13 * b30,
+    a10 * b01 + a11 * b11 + a12 * b21 + a13 * b31,
+    a10 * b02 + a11 * b12 + a12 * b22 + a13 * b32,
+    a10 * b03 + a11 * b13 + a12 * b23 + a13 * b33,
 
-    // Thrid row = third row of B times all columns of A
-    b20 * a00 + b21 * a10 + b22 * a20 + b23 * a30,
-    b20 * a01 + b21 * a11 + b22 * a21 + b23 * a31,
-    b20 * a02 + b21 * a12 + b22 * a22 + b23 * a32,
-    b20 * a03 + b21 * a13 + b22 * a23 + b23 * a33,
+    a20 * b00 + a21 * b10 + a22 * b20 + a23 * b30,
+    a20 * b01 + a21 * b11 + a22 * b21 + a23 * b31,
+    a20 * b02 + a21 * b12 + a22 * b22 + a23 * b32,
+    a20 * b03 + a21 * b13 + a22 * b23 + a23 * b33,
 
-    // Fourth row = fourth row of B times all columns of A
-    b30 * a00 + b31 * a10 + b32 * a20 + b33 * a30,
-    b30 * a01 + b31 * a11 + b32 * a21 + b33 * a31,
-    b30 * a02 + b31 * a12 + b32 * a22 + b33 * a32,
-    b30 * a03 + b31 * a13 + b32 * a23 + b33 * a33,
+    a30 * b00 + a31 * b10 + a32 * b20 + a33 * b30,
+    a30 * b01 + a31 * b11 + a32 * b21 + a33 * b31,
+    a30 * b02 + a31 * b12 + a32 * b22 + a33 * b32,
+    a30 * b03 + a31 * b13 + a32 * b23 + a33 * b33,
   ];
-};
-
-// Multiply multiple matrices, one after the other to compound transformations.
-// One good use case for this is when we have to rotate multiple axis where we
-// apply one rotation at a time on each axis.
-// You can call this as `multiplyMany(m1, m2, m3)` and that will return a
-// single matrix by multiplying `mult(mult(m1, m2), m3)`.
-export function multiplyMany(...matrices) {
-  return matrices.reduce(multiply);
 }
 
 // multiplyVector multiplies a 4x4 matrix A time a vector x.
@@ -254,7 +238,17 @@ export function transpose(a) {
   ];
 }
 
-// Matrix indexes.
+// Multiply multiple matrices, one after the other to compound transformations.
+// One good use case for this is when we have to rotate multiple axis where we
+// apply one rotation at a time on each axis.
+// You can call this as `multiplyMany(m1, m2, m3)` and that will return a
+// single matrix by multiplying `mult(mult(m1, m2), m3)`.
+export function multiplyMany(...matrices) {
+  return matrices.reduce(multiply);
+}
+
+// Matrix indexes for Row by Column (RxC) where the first digit is the
+// row index and the decond digit is the column index.
 // 00 01 02 03
 // 10 11 12 13
 // 20 21 22 23
