@@ -1,3 +1,4 @@
+import * as mat4 from "../../../src/math/matrix4.js";
 import * as vec3 from "../../../src/math/vector3.js";
 
 import {
@@ -12,6 +13,18 @@ import {
   findParentItemsWithItemType,
 } from "../../../src/scene/traversal.js";
 
+import {
+  animateScalar,
+} from "../../../src/animation/keyframe.js";
+
+
+function getTransformAnimation(animation) {
+  const transformIndex = {"d|X": 0, "d|Y": 1, "d|Z": 2};
+  const transform = [0, 0, 0];
+  animation.forEach(([n, v]) => { transform[transformIndex[n]] = v; });
+  return transform;
+}
+
 export class ModelNode extends RenderableSceneNode {
   constructor(options, shaderProgram) {
     super(Object.assign({}, options, {type:"fbx-model"}));
@@ -24,9 +37,54 @@ export class ModelNode extends RenderableSceneNode {
     return this;
   }
 
-  preRender() {
+  preRender(context) {
     this.shaderProgram.setUniforms([]);
     this.vertexBuffers = [];
+    
+    let worldMatrix = mat4.Matrix4.identity();
+    let transform = {};
+
+    const animationNodes = this.items.filter(item => item instanceof AnimationCurveNode)
+    animationNodes.forEach(an => {
+      const [pname, ...result] = an.getValues(context.ms);
+
+      switch(pname) {
+        case "Lcl Translation": {
+          transform.translate = getTransformAnimation(result);
+          break;
+        }
+        case "Lcl Rotation": {
+          transform.rotate = getTransformAnimation(result);
+          break;
+        }
+        case "Lcl Scaling": {
+          transform.scale = getTransformAnimation(result);
+          break;
+        }
+      }
+    });
+
+    if (transform.translate) {
+      worldMatrix = worldMatrix.translate(transform.translate[0], transform.translate[1], transform.translate[2]);
+    }
+
+    if (transform.rotate) {
+      // TODO(miguel): figure out why blender export swaps Y/Z rotation.
+      // Or maybe this is just the right thing todo?
+      worldMatrix = worldMatrix.rotate(transform.rotate[0], transform.rotate[2], transform.rotate[1]);
+    }
+
+    if (transform.scale) {
+      worldMatrix = worldMatrix.scale(transform.scale[0], transform.scale[1], transform.scale[2]);
+    }
+
+    if (Object.keys(transform).length) {
+      if (this.parent) {
+        worldMatrix = this.parent.worldMatrix.multiply(worldMatrix);
+      }
+
+      this.withMatrix(worldMatrix);
+    }
   }
 
   render(context) {
@@ -40,7 +98,11 @@ export class ModelNode extends RenderableSceneNode {
     // added to the scene separately, so they currently don't have their
     // state configurable in the scene config.
     const parentNodeState = sceneManager.getNodeStateByName(this.parent.name);
-    const bumpLightingEnabled = parentNodeState.material.bumpLighting === true;
+    let bumpLightingEnabled = false;
+
+    if (parentNodeState.material) {
+      bumpLightingEnabled = parentNodeState.material.bumpLighting === true;
+    }
 
     const lightsStates = findParentItemsWithItemType(this, "light")
       .map(({name}) => sceneManager.getNodeStateByName(name));
@@ -179,6 +241,43 @@ export class MaterialNode extends SceneNode {
         },
       }]);
     }
+  }
+}
+
+export class AnimationStack extends SceneNode {
+  constructor(options) {
+    super(Object.assign({}, options, {type: "fbx-animation-stack"}));
+  }
+}
+
+export class AnimationLayer extends SceneNode {
+  constructor(options) {
+    super(Object.assign({}, options, {type: "fbx-animation-layer"}));
+  }
+}
+
+export class AnimationCurveNode extends SceneNode {
+  constructor(pname, options) {
+    super(Object.assign({}, options, {type: "fbx-animation-node"}));
+    this.pname = pname;
+  }
+
+  getValues(ms) {
+    return [this.pname, ...this.items.map(item => item.getValue(ms))];
+  }
+}
+
+export class AnimationCurve extends SceneNode {
+  constructor(times, values, pname, options) {
+    super(Object.assign({}, options, {type: "fbx-animation-curve"}));
+    this.times = times;
+    this.values = values;
+    this.pname = pname;
+    this.animate = animateScalar(values);
+  }
+
+  getValue(ms) {
+    return [this.pname, this.animate(ms, 10)];
   }
 }
 

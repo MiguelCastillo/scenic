@@ -27,6 +27,7 @@ import {
 import {
   FbxFile,
   findChildByName,
+  // findChildrenByName,
   findPropertyValueByName,
   triangulatePolygonIndexes,
   mapIndexByPolygonVertex,
@@ -37,7 +38,12 @@ import {
   GometryNode,
   MaterialNode,
   TextureNode,
+  AnimationStack,
+  AnimationLayer,
+  AnimationCurveNode,
+  AnimationCurve,
 } from "./scene-node.js";
+
 
 /**
  * File loader for bfx formatted files.
@@ -68,6 +74,7 @@ export function buildSceneNode(gl, model, sceneNodeConfig, sceneManager) {
   const objects = findChildByName(model, "Objects");
   for (const node of objects.children) {
     nodeWrappersByID[node.attributes[0]] = {
+      name: generateFbxNodeName(node),
       node,
       connections: [],
     };
@@ -96,6 +103,24 @@ export function buildSceneNode(gl, model, sceneNodeConfig, sceneManager) {
     nodeWrappersByID["0,0"].connections
       .map(({child}) => sceneNodeFromFbxRootNode(gl, child, sceneManager))
       .filter(Boolean));
+
+  // TODO(miguel): Enable this when we are ready to support animation of
+  // stacks.
+  //
+  // Build animation stacks tree.
+  // findChildrenByName(objects, "AnimationStack")
+  //   .map(s => s.attributes[0])
+  //   .forEach(stackID => {
+  //     const animationStack = new AnimationStack({
+  //       name: nodeWrappersByID[stackID].name,
+  //     });
+
+  //     sceneNode.add(
+  //       animationStack.addItems(
+  //         nodeWrappersByID[stackID].connections
+  //           .map(({child}) => sceneNodeFromFbxRootNode(gl, child, sceneManager))
+  //           .filter(Boolean)));
+  //   });
 }
 
 const _textureCache = {};
@@ -120,7 +145,11 @@ function sceneNodeFromFbxRootNode(gl, fbxRootNodeWrapper, sceneManager) {
       return processNodeWrapper(connection.child, connection.pname);
     });
 
-    const sceneNode = createSceneNode(fbxNodeWrapper.node, pname);
+    const sceneNode = createSceneNode(fbxNodeWrapper.name, fbxNodeWrapper.node, pname);
+
+    if (!sceneNode) {
+      return;
+    }
 
     fbxNodeWrapper.connections.forEach((connection, i) => {
       if (childSceneNodes[i]) {
@@ -143,8 +172,7 @@ function sceneNodeFromFbxRootNode(gl, fbxRootNodeWrapper, sceneManager) {
     return sceneNode;
   }
 
-  function createSceneNode(fbxNode, pname) {
-    const name = nodeName(fbxNode.attributes[1]);
+  function createSceneNode(name, fbxNode, pname) {
     let sceneNode;
 
     switch(fbxNode.name) {
@@ -196,15 +224,6 @@ function sceneNodeFromFbxRootNode(gl, fbxRootNodeWrapper, sceneManager) {
       }
       case "Geometry": {
         sceneNode = new GometryNode({name}, buildVertexBufferForGeometry(gl, name, fbxNode));
-
-        sceneManager.updateNodeStateByName(name, {
-          transform: {
-            rotation: [0,0,0],
-            position: [0,0,0],
-            scale: [1,1,1],
-          },
-        });
-
         break;
       }
       case "Material": {
@@ -245,12 +264,31 @@ function sceneNodeFromFbxRootNode(gl, fbxRootNodeWrapper, sceneManager) {
         sceneNode = _textureCache[filepath].texture.clone();
         break;
       }
+
+      case "AnimationStack": {
+        sceneNode = new AnimationStack({name});
+        break;
+      }
+      case "AnimationLayer": {
+        sceneNode = new AnimationLayer({name});
+        break;
+      }
+      case "AnimationCurveNode": {
+        sceneNode = new AnimationCurveNode(pname, {name});
+        break;
+      }
+      case "AnimationCurve": {
+        let times = findPropertyValueByName(fbxNode, "KeyTime");
+        let values = findPropertyValueByName(fbxNode, "KeyValueFloat");
+        sceneNode = new AnimationCurve(times, values, pname, {name});
+        break;
+      }
       default: {
         return null;
       }
     }
 
-    return sceneNode.withMatrix(mat4.Matrix4.identity());
+    return sceneNode && sceneNode.withMatrix(mat4.Matrix4.identity());
   }
 }
 
@@ -335,13 +373,21 @@ function buildVertexBufferForGeometry(gl, name, geometry) {
   });
 }
 
+function getFbxNodeName(fbxNode) {
+  const nameparts = fbxNode ? fbxNode.attributes[1].split("\u0000\u0001") : [];
+  // return nameparts.length ? (nameparts[0] ? nameparts[0] : nameparts[1]) : fbxNode.attributes[1];
+  // return nameparts.length ? [nameparts[0], fbxNode.attributes[2]].filter(Boolean).join("_") : "";
+  // return nameparts.length ? [nameparts[0], nameparts[1], fbxNode.attributes[2]].filter(Boolean).join("_") : "";
+  return nameparts.length ? [nameparts[1], nameparts[0], fbxNode.attributes[2]].filter(Boolean).join("_") : "";
+}
+
 let _idxNameMap = {};
-function nodeName(fbxNodeName) {
-  const n = fbxNodeName;
-  if (!_idxNameMap[n]) {
-    _idxNameMap[n] = 1;
+function generateFbxNodeName(fbxNode) {
+  const name = getFbxNodeName(fbxNode);
+  if (!_idxNameMap[name]) {
+    _idxNameMap[name] = 1;
   }
-  return n + "_n" + _idxNameMap[n]++;
+  return name + "_n" + _idxNameMap[name]++;
 }
 
 function validateIndexedTriangles(name, vertices, indexes) {
