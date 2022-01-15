@@ -185,7 +185,7 @@ export class MaterialNode extends SceneNode {
 // The code in the TextureNode is basically all lifted from:
 // https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/Tutorial/Using_textures_in_WebGL
 export class TextureNode extends SceneNode {
-  constructor(gl, fileName, textureID, type, options) {
+  constructor(gl, filename, textureID, type, options) {
     super(Object.assign({}, options, {type: "fbx-texture"}));
 
     this.textureID = textureID;
@@ -216,11 +216,7 @@ export class TextureNode extends SceneNode {
       srcType,
       pixel);
 
-    // TODO(miguel): preload images and cache them before loading up the
-    // scene. Similar to how we load and cache shaders up front before
-    // building the scene.
-    const image = new Image();
-    image.onload = () => {
+    getImage("/resources/textures/" + filename).then(image => {
       gl.bindTexture(gl.TEXTURE_2D, this.texture);
       gl.texImage2D(
         gl.TEXTURE_2D,
@@ -243,9 +239,7 @@ export class TextureNode extends SceneNode {
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
       }
-    };
-
-    image.src = "/resources/textures/" + fileName;
+    });
   }
 
   render(context) {
@@ -297,4 +291,19 @@ export class TextureNode extends SceneNode {
 
 function isPowerOf2(value) {
   return (value & (value - 1)) == 0;
+}
+
+const _imageCache = {};
+function getImage(filepath) {
+  if (!_imageCache[filepath]) {
+    _imageCache[filepath] = new Promise((resolve) => {
+      const image = new Image();
+      image.onload = () => {
+        resolve(image);
+      };
+      image.src = filepath;
+    });
+  }
+
+  return _imageCache[filepath]
 }
