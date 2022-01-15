@@ -98,6 +98,8 @@ export function buildSceneNode(gl, model, sceneNodeConfig, sceneManager) {
       .filter(Boolean));
 }
 
+const _textureCache = {};
+
 // sceneNodeFromFbxRootNode traverses the fbx tree of nodes breadth first
 // potentially creating scene nodes for each relevant of the fbx file.
 // The traversal of the fbx tree is breadth first so that we can find all
@@ -227,9 +229,20 @@ function sceneNodeFromFbxRootNode(gl, fbxRootNodeWrapper, sceneManager) {
         break;
       }
       case "Texture": {
-        const fileName = findPropertyValueByName(fbxNode, "RelativeFilename").split("/").pop();
+        const filename = findPropertyValueByName(fbxNode, "RelativeFilename").split("/").pop();
+        const filepath = "/resources/textures/" + filename;
         let type = pname ? pname.toLowerCase() : "diffusecolor";
-        sceneNode = new TextureNode(gl, fileName, textureCount++, type, {name});
+
+        if (!_textureCache[filepath]) {
+          const textureID = Object.keys(_textureCache).length;
+          _textureCache[filepath] = {
+            id: textureID,
+            texture: new TextureNode(textureID, type, {name}).load(gl, filepath),
+          };
+        }
+
+        textureCount++;
+        sceneNode = _textureCache[filepath].texture.clone();
         break;
       }
       default: {

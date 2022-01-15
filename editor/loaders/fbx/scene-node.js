@@ -185,12 +185,14 @@ export class MaterialNode extends SceneNode {
 // The code in the TextureNode is basically all lifted from:
 // https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/Tutorial/Using_textures_in_WebGL
 export class TextureNode extends SceneNode {
-  constructor(gl, filename, textureID, type, options) {
+  constructor(textureID, type, options) {
     super(Object.assign({}, options, {type: "fbx-texture"}));
-
     this.textureID = textureID;
-    this.texture = gl.createTexture();
     this.type = type;
+  }
+
+  load(gl, filepath) {
+    this.texture = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, this.texture);
   
     // Because images have to be downloaded over the internet
@@ -216,7 +218,7 @@ export class TextureNode extends SceneNode {
       srcType,
       pixel);
 
-    getImage("/resources/textures/" + filename).then(image => {
+    getImage(filepath).then(image => {
       gl.bindTexture(gl.TEXTURE_2D, this.texture);
       gl.texImage2D(
         gl.TEXTURE_2D,
@@ -225,7 +227,7 @@ export class TextureNode extends SceneNode {
         srcFormat,
         srcType,
         image);
-  
+
       // WebGL1 has different requirements for power of 2 images
       // vs non power of 2 images so check if the image is a
       // power of 2 in both dimensions.
@@ -240,6 +242,18 @@ export class TextureNode extends SceneNode {
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
       }
     });
+
+    return this;
+  }
+
+  clone() {
+    const newtexturenode = new TextureNode(
+      this.textureID,
+      this.type,
+      {name: this.name});
+
+    newtexturenode.texture = this.texture;
+    return newtexturenode;
   }
 
   render(context) {
