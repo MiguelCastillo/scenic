@@ -47,8 +47,8 @@ const lerp = (fraction, min, max, ease=(x) => x) => {
   return ease(((max - min) * fraction) + min);
 }
 
-export const animateScalar = (frames, ease) => {
-  const controller = animationCurveController(frames.length);
+export const animateScalar = (frames, times, ease) => {
+  const controller = animationCurveController(frames, times);
 
   return (ms, speed) => {
     const [delta, index] = controller(ms, speed);
@@ -56,8 +56,8 @@ export const animateScalar = (frames, ease) => {
   };
 };
 
-export const animate2v = (frames, ease) => {
-  const controller = animationCurveController(frames.length);
+export const animate2v = (frames, times, ease) => {
+  const controller = animationCurveController(frames, times);
 
   return (ms, speed) => {
     const [delta, index] = controller(ms, speed);
@@ -68,8 +68,8 @@ export const animate2v = (frames, ease) => {
   };
 };
 
-export const animate3v = (frames, ease) => {
-  const controller = animationCurveController(frames.length);
+export const animate3v = (frames, times, ease) => {
+  const controller = animationCurveController(frames, times);
 
   return (ms, speed) => {
     const [delta, index] = controller(ms, speed);
@@ -83,28 +83,60 @@ export const animate3v = (frames, ease) => {
 
 export const keyframe = animate3v;
 
-function animationCurveController(curvePointCount) {
+function animationCurveController(frames, times=[]) {
+  const curvePointCount = frames.length;
   if (curvePointCount < 2) {
     throw new Error("there must be at least 2 markers.");
   }
 
+  const animationLength = times.length ? times[times.length-1] : -1;
+
+  // Number of segments in an animation.
   const segmentCount = curvePointCount - 1;
 
   // The way this works is that ms is time in millisenconds
   // that is always advancing. And every second we will increase
   // or decrease the current frame depending on whether we are
   // going forward or backward with animation.
-  return (ms, speed=1) => {
+  return (tms, speed=1) => {
     // Slow or speed things up! We also take the floor because
     // the decimal points can cause jitters in animations.
-    ms = Math.abs(Math.floor(ms * speed));
+    let ms = Math.abs(Math.floor(tms*speed));
+    let idx, len;
+
+    if (times.length) {
+      const cms = ms % animationLength;
+      if (!cms && ms) {
+        // We are at the very end of the animation.
+        idx = segmentCount;
+        len = times[idx] - times[idx-1];
+      } else {
+        // TODO(miguel): cache index value so that we don't start over the
+        // search everytime.
+        for (idx = 0; idx < times.length; idx++) {
+          if (cms < times[idx]) {
+            break;
+          }
+        }
+
+        // Segment length is how long in milliseconds are segment is.
+        // This tells us when we jump to the next keyframe.
+        len = times[idx] - times[idx-1];
+
+        idx--;
+      }
+
+      ms = cms;
+    } else {
+      idx = Math.floor(ms*0.001), len = 1000;
+    }
 
     // Each second is where markers are for each frame. So dividing
     // milliseconds by 1000 tells us the frame. We normalize the frame
     // number to array indexes tho because these eventually map to arrays
     // with frame data. curvePointIndex always points to the beginning
     // of the segment.
-    let curvePointIndex = Math.floor(ms * 0.001);
+    let curvePointIndex = idx;
 
     // delta tells us where within a frame range we are so that we can
     // interpolate data within frames each second.
@@ -113,9 +145,7 @@ function animationCurveController(curvePointCount) {
     // that causes tests to fail when ms is 9.
     // 9 * 0.001 yields 0.009000000000000001. But it really should be 0.009.
     // https://techformist.com/problems-with-decimal-multiplication-javascript/
-    //
-    // TODO(miguel): handle time spans greater than one second.
-    let delta = (ms % 1000)*0.001;
+    let delta = (ms % len)/len;
 
     //
     //  |----------|----------|

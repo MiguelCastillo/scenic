@@ -280,6 +280,7 @@ function sceneNodeFromFbxRootNode(gl, fbxRootNodeWrapper, sceneManager) {
       case "AnimationCurve": {
         let times = findPropertyValueByName(fbxNode, "KeyTime");
         let values = findPropertyValueByName(fbxNode, "KeyValueFloat");
+        times = times.map(t => parseInt(t));
         sceneNode = new AnimationCurve(times, values, pname, {name});
         break;
       }

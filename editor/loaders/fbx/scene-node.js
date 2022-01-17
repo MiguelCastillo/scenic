@@ -17,19 +17,21 @@ import {
   animateScalar,
 } from "../../../src/animation/keyframe.js";
 
-
-function getTransformAnimation(animation) {
-  const transformIndex = {"d|X": 0, "d|Y": 1, "d|Z": 2};
-  const transform = [0, 0, 0];
-  animation.forEach(([n, v]) => { transform[transformIndex[n]] = v; });
-  return transform;
-}
-
 export class ModelNode extends RenderableSceneNode {
   constructor(options, shaderProgram) {
     super(Object.assign({}, options, {type:"fbx-model"}));
     this.shaderProgram = shaderProgram.clone();
     this.vertexBuffers = [];
+    this.animationNodes = [];
+  }
+
+  add(node) {
+    if (node instanceof AnimationCurveNode) {
+      this.animationNodes.push(node._withParent(this));
+    } else {
+      super.add(node);
+    }
+    return this;
   }
 
   addVertexBuffer(vertexBuffer) {
@@ -40,50 +42,17 @@ export class ModelNode extends RenderableSceneNode {
   preRender(context) {
     this.shaderProgram.setUniforms([]);
     this.vertexBuffers = [];
-    
-    let worldMatrix = mat4.Matrix4.identity();
-    let transform = {};
 
-    const animationNodes = this.items.filter(item => item instanceof AnimationCurveNode)
-    animationNodes.forEach(an => {
-      const [pname, ...result] = an.getValues(context.ms);
+    const {
+      worldMatrix,
+    } = doKeyFrameAnimation(context.ms, this.animationNodes);
 
-      switch(pname) {
-        case "Lcl Translation": {
-          transform.translate = getTransformAnimation(result);
-          break;
-        }
-        case "Lcl Rotation": {
-          transform.rotate = getTransformAnimation(result);
-          break;
-        }
-        case "Lcl Scaling": {
-          transform.scale = getTransformAnimation(result);
-          break;
-        }
-      }
-    });
-
-    if (transform.translate) {
-      worldMatrix = worldMatrix.translate(transform.translate[0], transform.translate[1], transform.translate[2]);
-    }
-
-    if (transform.rotate) {
-      // TODO(miguel): figure out why blender export swaps Y/Z rotation.
-      // Or maybe this is just the right thing todo?
-      worldMatrix = worldMatrix.rotate(transform.rotate[0], transform.rotate[2], transform.rotate[1]);
-    }
-
-    if (transform.scale) {
-      worldMatrix = worldMatrix.scale(transform.scale[0], transform.scale[1], transform.scale[2]);
-    }
-
-    if (Object.keys(transform).length) {
+    if (worldMatrix) {
       if (this.parent) {
-        worldMatrix = this.parent.worldMatrix.multiply(worldMatrix);
+        this.withMatrix(this.parent.worldMatrix.multiply(worldMatrix));
+      } else {
+        this.withMatrix(worldMatrix);
       }
-
-      this.withMatrix(worldMatrix);
     }
   }
 
@@ -273,11 +242,15 @@ export class AnimationCurve extends SceneNode {
     this.times = times;
     this.values = values;
     this.pname = pname;
-    this.animate = animateScalar(values);
+    this.animate = animateScalar(values, times);
   }
 
   getValue(ms) {
-    return [this.pname, this.animate(ms, 10)];
+    // 46186158000 is an FBX second.
+    // #define KTIME_ONE_SECOND KTime (K_LONGLONG(46186158000))
+    // https://github.com/mont29/blender-io-fbx/blob/ea45491a84b64f7396030775536be562bc118c41/io_scene_fbx/export_fbx.py#L2447
+    // https://download.autodesk.com/us/fbx/docs/FBXSDK200611/wwhelp/wwhimpl/common/html/_index.htm?context=FBXSDK_Overview&file=ktime_8h-source.html
+    return [this.pname, this.animate(46186158000*(ms*0.001), 1)];
   }
 }
 
@@ -293,7 +266,7 @@ export class TextureNode extends SceneNode {
   load(gl, filepath) {
     this.texture = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, this.texture);
-  
+
     // Because images have to be downloaded over the internet
     // they might take a moment until they are ready.
     // Until then put a single pixel in the texture so we can
@@ -322,7 +295,7 @@ export class TextureNode extends SceneNode {
       gl.texImage2D(
         gl.TEXTURE_2D,
         level,
-        internalFormat, 
+        internalFormat,
         srcFormat,
         srcType,
         image);
@@ -396,7 +369,7 @@ export class TextureNode extends SceneNode {
               gl.uniform1i(index, textureID);
             },
           }
-        ]);  
+        ]);
       }
     }
   }
@@ -419,4 +392,48 @@ function getImage(filepath) {
   }
 
   return _imageCache[filepath]
+}
+
+// We only support animation transform matrices, which are used for bone
+// animation.
+function doKeyFrameAnimation(ms, animationNodes) {
+  const animationResult = {};
+  let worldMatrix = mat4.Matrix4.identity();
+
+  animationNodes.forEach(animation => {
+    const [pname, ...result] = animation.getValues(ms);
+
+    switch(pname) {
+      case "Lcl Translation": {
+        const translation = getTransformAnimation(result);
+        worldMatrix = worldMatrix.translate(translation[0], translation[1], translation[2]);
+        animationResult.worldMatrix = worldMatrix;
+        break;
+      }
+      case "Lcl Rotation": {
+        const rotation = getTransformAnimation(result);
+
+        // TODO(miguel): figure out why blender export swaps Y/Z rotation.
+        // Or maybe this is just the right thing todo?
+        worldMatrix = worldMatrix.rotate(rotation[0], rotation[2], rotation[1]);
+        animationResult.worldMatrix = worldMatrix;
+        break;
+      }
+      case "Lcl Scaling": {
+        const scaling = getTransformAnimation(result);
+        worldMatrix = worldMatrix.scale(scaling[0], scaling[1], scaling[2]);
+        animationResult.worldMatrix = worldMatrix;
+        break;
+      }
+    }
+  });
+
+  return animationResult;
+}
+
+function getTransformAnimation(animation) {
+  const transformIndex = {"d|X": 0, "d|Y": 1, "d|Z": 2};
+  const transform = [0, 0, 0];
+  animation.forEach(([n, v]) => { transform[transformIndex[n]] = v; });
+  return transform;
 }
