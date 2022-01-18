@@ -17,7 +17,7 @@ import {
   animateScalar,
 } from "../../../src/animation/keyframe.js";
 
-export class ModelNode extends RenderableSceneNode {
+export class Model extends RenderableSceneNode {
   constructor(options, shaderProgram) {
     super(Object.assign({}, options, {type:"fbx-model"}));
     this.shaderProgram = shaderProgram.clone();
@@ -69,7 +69,7 @@ export class ModelNode extends RenderableSceneNode {
     const parentNodeState = sceneManager.getNodeStateByName(this.parent.name);
     let bumpLightingEnabled = false;
 
-    if (parentNodeState.material) {
+    if (parentNodeState && parentNodeState.material) {
       bumpLightingEnabled = parentNodeState.material.bumpLighting === true;
     }
 
@@ -138,25 +138,21 @@ export class ModelNode extends RenderableSceneNode {
   }
 }
 
-export class GometryNode extends SceneNode {
+export class Gometry extends SceneNode {
   constructor(options, vertexBuffer) {
     super(Object.assign({}, options, {type:"fbx-geometry"}));
     this.vertexBuffer = vertexBuffer;
   }
 
   render(/*context*/) {
-    let renderable = this.parent;
-    while (!(renderable instanceof ModelNode)) {
-      renderable = renderable.parent;
-    }
-
-    if (renderable) {
-      renderable.addVertexBuffer(this.vertexBuffer);
+    let model = findParentModel(this);
+    if (model) {
+      model.addVertexBuffer(this.vertexBuffer);
     }
   }
 }
 
-export class MaterialNode extends SceneNode {
+export class Material extends SceneNode {
   constructor(options) {
     super(Object.assign({}, options, {type:"fbx-material"}));
     this.ambientColor = [1, 1, 1];
@@ -185,15 +181,12 @@ export class MaterialNode extends SceneNode {
   }
 
   render(context) {
-    let renderable = this.parent;
-    while (!(renderable instanceof ModelNode)) {
-      renderable = renderable.parent;
-    }
+    const model = findParentModel(this);
 
-    if (renderable) {
+    if (model) {
       const {gl} = context;
 
-      renderable.shaderProgram.addUniforms([{
+      model.shaderProgram.addUniforms([{
         name: "ambientColor",
         update: ({index}) => {
           gl.uniform3fv(index, this.ambientColor);
@@ -254,9 +247,9 @@ export class AnimationCurve extends SceneNode {
   }
 }
 
-// The code in the TextureNode is basically all lifted from:
+// The code in the Texture is basically all lifted from:
 // https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/Tutorial/Using_textures_in_WebGL
-export class TextureNode extends SceneNode {
+export class Texture extends SceneNode {
   constructor(textureID, type, options) {
     super(Object.assign({}, options, {type: "fbx-texture"}));
     this.textureID = textureID;
@@ -319,7 +312,7 @@ export class TextureNode extends SceneNode {
   }
 
   clone() {
-    const newtexturenode = new TextureNode(
+    const newtexturenode = new Texture(
       this.textureID,
       this.type,
       {name: this.name});
@@ -329,17 +322,14 @@ export class TextureNode extends SceneNode {
   }
 
   render(context) {
-    let renderable = this.parent;
-    while (!(renderable instanceof ModelNode)) {
-      renderable = renderable.parent;
-    }
+    let model = findParentModel(this);
 
-    if (renderable) {
+    if (model) {
       const {gl} = context;
       const {textureID, type} = this;
 
       if (type === "normalmap") {
-        renderable.shaderProgram.addUniforms([
+        model.shaderProgram.addUniforms([
           {
             name: `${type}.enabled`,
             update: ({index}) => {
@@ -355,7 +345,7 @@ export class TextureNode extends SceneNode {
           }
         ]);
       } else {
-        renderable.shaderProgram.addUniforms([
+        model.shaderProgram.addUniforms([
           {
             name: `textures[${textureID}].enabled`,
             update: ({index}) => {
@@ -392,6 +382,15 @@ function getImage(filepath) {
   }
 
   return _imageCache[filepath]
+}
+
+function findParentModel(node) {
+  let model = node.parent;
+  while (model && !(model instanceof Model)) {
+    model = model.parent;
+  }
+
+  return model;
 }
 
 // We only support animation transform matrices, which are used for bone

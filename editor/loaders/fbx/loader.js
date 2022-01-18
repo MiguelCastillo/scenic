@@ -34,10 +34,10 @@ import {
 } from "../../../src/formats/fbxfile.js";
 
 import {
-  ModelNode,
-  GometryNode,
-  MaterialNode,
-  TextureNode,
+  Model,
+  Gometry,
+  Material,
+  Texture,
   AnimationStack,
   AnimationLayer,
   AnimationCurveNode,
@@ -186,7 +186,7 @@ function sceneNodeFromFbxRootNode(gl, fbxRootNodeWrapper, sceneManager) {
         // if the model has any, otherwise use an equivalent shader without
         // textures.
         const shaderName = textureCount ? "phong-texture" : "phong-lighting";
-        sceneNode = new ModelNode({name}, createShaderProgram(gl, shaderName));
+        sceneNode = new Model({name}, createShaderProgram(gl, shaderName));
 
         let rotation = [0,0,0];
         let translation = [0,0,0];
@@ -223,11 +223,11 @@ function sceneNodeFromFbxRootNode(gl, fbxRootNodeWrapper, sceneManager) {
         break;
       }
       case "Geometry": {
-        sceneNode = new GometryNode({name}, buildVertexBufferForGeometry(gl, name, fbxNode));
+        sceneNode = new Gometry({name}, buildVertexBufferForGeometry(gl, name, fbxNode));
         break;
       }
       case "Material": {
-        sceneNode = new MaterialNode({name});
+        sceneNode = new Material({name});
 
         const properties70 = findChildByName(fbxNode, "Properties70");
         if (properties70) {
@@ -256,7 +256,7 @@ function sceneNodeFromFbxRootNode(gl, fbxRootNodeWrapper, sceneManager) {
           const textureID = Object.keys(_textureCache).length;
           _textureCache[filepath] = {
             id: textureID,
-            texture: new TextureNode(textureID, type, {name}).load(gl, filepath),
+            texture: new Texture(textureID, type, {name}).load(gl, filepath),
           };
         }
 
