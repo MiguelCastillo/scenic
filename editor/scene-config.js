@@ -157,7 +157,7 @@ export const config = {
         }, {
           "name": "scene objects",
           "type": "transform",
-        
+
           "transform": {
             "scale": [1, 1, 1],
             "position": [0, 0, 0],
@@ -167,7 +167,7 @@ export const config = {
           "items": [{
             "name": "jedi star fighter",
             "type": "static-mesh",
-            "resource": "/resources/fbx/JediStarFighter.fbx",
+            "resource": "/resources/fbx/therocket.fbx",
             "material": {
               "color": [1, 1, 1, 1],
               "reflectiveness": 1,
