@@ -22,16 +22,6 @@ export class Model extends RenderableSceneNode {
     super(Object.assign({}, options, {type:"fbx-model"}));
     this.shaderProgram = shaderProgram.clone();
     this.vertexBuffers = [];
-    this.animationNodes = [];
-  }
-
-  add(node) {
-    if (node instanceof AnimationCurveNode) {
-      this.animationNodes.push(node._withParent(this));
-    } else {
-      super.add(node);
-    }
-    return this;
   }
 
   addVertexBuffer(vertexBuffer) {
@@ -39,21 +29,9 @@ export class Model extends RenderableSceneNode {
     return this;
   }
 
-  preRender(context) {
+  preRender() {
     this.shaderProgram.setUniforms([]);
     this.vertexBuffers = [];
-
-    const {
-      worldMatrix,
-    } = doKeyFrameAnimation(context.ms, this.animationNodes);
-
-    if (worldMatrix) {
-      if (this.parent) {
-        this.withMatrix(this.parent.worldMatrix.multiply(worldMatrix));
-      } else {
-        this.withMatrix(worldMatrix);
-      }
-    }
   }
 
   render(context) {
@@ -135,6 +113,42 @@ export class Model extends RenderableSceneNode {
     this.vertexBuffers.forEach(vb => {
       RenderableSceneNode.render(gl, program, vb);
     });
+  }
+}
+
+export class Armature extends SceneNode {
+  constructor(options) {
+    super(Object.assign({}, options, {type:"fbx-armature"}));
+  }
+}
+
+export class Bone extends SceneNode {
+  constructor(options) {
+    super(Object.assign({}, options, {type:"fbx-bone"}));
+    this.animationNodes = [];
+  }
+
+  add(node) {
+    if (node instanceof AnimationCurveNode) {
+      this.animationNodes.push(node._withParent(this));
+    } else {
+      super.add(node);
+    }
+    return this;
+  }
+
+  preRender(context) {
+    const {
+      worldMatrix,
+    } = doKeyFrameAnimation(context.ms, this.animationNodes);
+
+    if (worldMatrix) {
+      if (this.parent) {
+        this.withMatrix(this.parent.worldMatrix.multiply(worldMatrix));
+      } else {
+        this.withMatrix(worldMatrix);
+      }
+    }
   }
 }
 
