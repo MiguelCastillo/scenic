@@ -1,9 +1,33 @@
 import {
-  getTriangleComponents,
+  getIndexed3DComponents,
   getIndexed2DComponents,
 } from "./geometry.js";
 
-test("getTriangleComponents", () => {
+test("getIndexed3DComponents", () => {
+  const vertices = [
+    0,  0,  0,  // vert 0
+    1,  0,  0,  // vert 1
+    1,  1,  0,  // vert 2
+    0,  1,  0,  // vert 3
+  ];
+
+  const indexes = [
+    0, 1, 2,  // triangle 0
+    0, 2, 3,  // triangle 1
+  ];
+
+  expect(getIndexed3DComponents(vertices, indexes)).toEqual([
+    0,  0,  0,  // vert 0 |
+    1,  0,  0,  // vert 1 | triangle 0
+    1,  1,  0,  // vert 2 |
+
+    0,  0,  0,  // vert 0 |
+    1,  1,  0,  // vert 2 | triangle 1
+    0,  1,  0,  // vert 3 |
+  ]);
+});
+
+test("getIndexed3DComponents", () => {
   const vertices = [
      1,  1,  1,  // vert 0
      1,  1, -1,  // vert 1
@@ -30,7 +54,7 @@ test("getTriangleComponents", () => {
     5, 0, 1,  // triangle 11
   ];
 
-  expect(getTriangleComponents(vertices, indexes)).toEqual([
+  expect(getIndexed3DComponents(vertices, indexes)).toEqual([
      1,  1,  1,  // vert 0 |
     -1,  1,  1,  // vert 4 | triangle 0
     -1, -1,  1,  // vert 6 |
@@ -98,7 +122,7 @@ test("getIndexed2dComponents", () => {
     0.125, 0.75,  // vert 12
     0.625, 0.5,   // vert 13
   ];
-  
+
   const indexes = [
     13, 3,
     11, 4,

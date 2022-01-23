@@ -9,7 +9,7 @@
 // https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/frontFace
 //
 
-import {getTriangleComponents} from "../math/geometry.js";
+import {getIndexed3DComponents} from "../math/geometry.js";
 
 const DEFAULT_GROUP_NAME = "__default_group_" + Math.floor(Math.random() * Math.floor(10000));
 const COMMENT = "#";
@@ -49,10 +49,10 @@ export class ObjFile {
       }
 
       const {faces} = group;
-      const v = getTriangleComponents(obj.vertices, faces.vertices);
-      const vc = getTriangleComponents(obj.colors, faces.vertices);
-      const vn = getTriangleComponents(obj.normals, faces.normals);
-      const vt = getTriangleComponents(obj.textures, faces.textures);
+      const v = getIndexed3DComponents(obj.vertices, faces.vertices);
+      const vc = getIndexed3DComponents(obj.colors, faces.vertices);
+      const vn = getIndexed3DComponents(obj.normals, faces.normals);
+      const vt = getIndexed3DComponents(obj.textures, faces.textures);
 
       return {
         vertices: result.vertices.concat(v),
@@ -80,7 +80,7 @@ export class ObjFile {
         return result;
       }
 
-      return result.concat(getTriangleComponents(objVerts, group.faces.vertices));
+      return result.concat(getIndexed3DComponents(objVerts, group.faces.vertices));
     }, []);
   }
 
@@ -96,7 +96,7 @@ export class ObjFile {
         return result;
       }
 
-      return result.concat(getTriangleComponents(objVerts, group.faces.normals));
+      return result.concat(getIndexed3DComponents(objVerts, group.faces.normals));
     }, []);
   }
 
@@ -112,12 +112,12 @@ export class ObjFile {
         return result;
       }
 
-      return result.concat(getTriangleComponents(objVerts, group.faces.vertices));
+      return result.concat(getIndexed3DComponents(objVerts, group.faces.vertices));
     }, []);
   }
 
-  static getTriangleComponents(vertices, indexes) {
-    return getTriangleComponents(vertices, indexes);
+  static getIndexed3DComponents(vertices, indexes) {
+    return getIndexed3DComponents(vertices, indexes);
   }
 }
 
@@ -257,7 +257,7 @@ function parseFace(line) {
       textures: [],
     });
 
-  return triangulateFaces(faces);  
+  return triangulateFaces(faces);
 }
 
 function getToken(line) {
@@ -361,7 +361,7 @@ function isGroupEmpty(group) {
 //    f 1 2 3
 //    f 4 1 3
 //
-// 3. More than 4 components in a face. In this case, we need to expand the 
+// 3. More than 4 components in a face. In this case, we need to expand the
 //    list of components to generate tripplets of components for triangles.
 //    Consder a face like:
 //    f 1 2 3 4 5 6

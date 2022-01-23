@@ -54,7 +54,7 @@ describe("fbx Loader", () => {
     buildSceneNode(gl, model, sceneNodeFxbCube, sceneManager);
 
     const sceneNode = sceneManager.getNodeByName("fbx cube")
-    expect(sceneNode.items[0].name).toEqual("Cube\u0000\u0001Model_n1");
-    expect(sceneNode.items[0].items[0].name).toEqual("Cube\u0000\u0001Geometry_n1");
+    expect(sceneNode.items[0].name).toEqual("Model_Cube_Mesh_n1");
+    expect(sceneNode.items[0].items[0].name).toEqual("Geometry_Cube_Mesh_n1");
   });
 });

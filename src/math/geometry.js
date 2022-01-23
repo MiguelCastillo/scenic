@@ -39,7 +39,7 @@ function trianglesFromVertices(vertices, offset) {
 // Smoothing is a two main step process, the rest is implementation details:
 // 1. we find all vertices that are the same (shared vertices) and keep
 //    track of their indexes.
-// 2. we find all the normals at those indexes and average them by adding 
+// 2. we find all the normals at those indexes and average them by adding
 //    them all up and dividing them by the number of shared vertices.
 //
 // NOTE(miguel): for effciency purposes, this function will update the
@@ -95,20 +95,20 @@ export function averageVertex(v, offsets) {
   }
 }
 
-// getTriangleComponents returns a new array by reading 3D indexes data
+// getIndexed3DComponents returns a new array by reading 3D indexes data
 // from the provided array of coordinates. This is for processing (mostly)
 // data for XYZ 3D rendering like vertex and normal coordinates. This is
 // very similar to getIndexed2DComponents except that getIndexed3DComponents
 // has a Z (third) coordinate.
 //
-// v2       v3
+// v3       v2
 //  +-------+
 //  |     . |
 //  |   .   |
 //  | .     |
 //  +-------+
 // v0       v1
-// 
+//
 // coordinates:
 //  0, 0, 0, // v0
 //  1, 0, 0, // v1
@@ -129,25 +129,8 @@ export function averageVertex(v, offsets) {
 //  0, 1, 0, // v3 |
 //
 export function getIndexed3DComponents(coordinates, indexes) {
-  if (coordinates.length === 0) {
-    return [];
-  }
-
-  // Items can be vertex coordinates, normal coordinates, or even color
-  // information.
-  const result = [];
-
-  for (let i = 0; i < indexes.length; i++) {
-    const offset = (indexes[i]*3);
-    result.push(coordinates[offset], coordinates[offset+1], coordinates[offset+2]);
-  }
-
-  return result;
+  return getIndexedComponents(coordinates, indexes, 3);
 }
-
-// TODO(miguel): transition everything to use getIndexed3DComponents, but
-// in the meantime we have an alias to make the transition easier.
-export const getTriangleComponents = getIndexed3DComponents;
 
 // getIndexed2DComponents returns a new array by reading 2D indexed data
 // from the provided array of coordinates. Main use cases are UV vertices
@@ -157,7 +140,7 @@ export const getTriangleComponents = getIndexed3DComponents;
 // Consider the 4 vertices (8 coordinates) for the quad below, which is
 // rendered as two triangles. The coordinates are listed counter clockwise.
 //
-// v2       v3
+// v3       v2
 //  +-------+
 //  |     . |
 //  |   .   |
@@ -191,6 +174,10 @@ export const getTriangleComponents = getIndexed3DComponents;
 // less memory.
 //
 export function getIndexed2DComponents(coordinates, indexes) {
+  return getIndexedComponents(coordinates, indexes, 2);
+}
+
+export function getIndexedComponents(coordinates, indexes, componentsPerVertex) {
   if (coordinates.length === 0) {
     return [];
   }
@@ -198,8 +185,12 @@ export function getIndexed2DComponents(coordinates, indexes) {
   const result = [];
 
   for (let i = 0; i < indexes.length; i++) {
-    const offset = indexes[i]*2;
-    result.push(coordinates[offset], coordinates[offset+1]);
+    const coffset = indexes[i]*componentsPerVertex;
+    const ioffset = i*componentsPerVertex;
+
+    for (let j = 0; j < componentsPerVertex; j++) {
+      result[ioffset+j] = coordinates[coffset+j];
+    }
   }
 
   return result;

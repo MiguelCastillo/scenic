@@ -1,6 +1,5 @@
 // https://download.autodesk.com/us/fbx/20112/fbx_sdk_help/index.html
 // https://docs.fileformat.com/3d/fbx/
-// https://banexdevblog.wordpress.com/2014/06/23/a-quick-tutorial-about-the-fbx-ascii-format/
 // https://code.blender.org/2013/08/fbx-binary-file-format-specification/
 // https://stackoverflow.com/questions/57032793/why-is-there-a-long-list-of-polygonvertexindex-without-any-negatives-in-one-fbx
 //
@@ -396,15 +395,17 @@ const byteCountTable = {
 // Support JSON serialization of BigInt
 BigInt.prototype.toJSON = function() { return this.toString(); }
 
-// triangulatePolygonIndexes returns a new array from the provided polygon
-// indexes; PolygonVertexIndex. The new indexes are created from the polygon
-// groups which are delimeted by negative indexes and we use them for creating
-// the triangle coordinates indexes that are returned.
-// 
-// The formula to convert the negative index is formuala `-(x-1)`. We use the
-// first index as the first coordinate index for every triangle we generate.
-// Then we will go thru each pair of subsequent indexes to create the others
-// triangle coordinate indexes.
+// convertPolygonIndexesToTriangleIndexes returns a new array of triangle
+// indexes created from PolygonVertexIndex.
+//
+// Polygon vertex indexes in FBX files are encoded with a negative numbers
+// as a delimeter for the end of a polygon. The negative number itself is
+// also an index that needs to be converted to a positive value with -(x+1).
+// These polygons can be triangles, quads, and other polygons that can be
+// represented with triangles. So we need to remap these polygons to triangle
+// indexes since that's all webgl really supports.
+// And that's exactly what convertPolygonIndexesToTriangleIndexes does.
+//
 // Consider the following PolygonVertexIndex
 // [0, 4, 6, -3]
 //
@@ -416,7 +417,7 @@ BigInt.prototype.toJSON = function() { return this.toString(); }
 //    [0, 6, 2].
 // 4. The final array of indexes
 //    [0, 4, 6, 0, 6, 2]
-export function triangulatePolygonIndexes(indexes) {
+export function convertPolygonIndexesToTriangleIndexes(indexes) {
   let triangleIndexes = [];
 
   for (let i = 0, offset = 0; i < indexes.length; i++) {
@@ -437,7 +438,7 @@ export function triangulatePolygonIndexes(indexes) {
   return triangleIndexes;
 }
 
-// mapIndexByPolygonVertex returns an array of indexes derrived from polygon
+// reindexPolygonVertex returns an array of indexes derrived from polygon
 // vertex indexes; PolygonVertexIndex. The way it works start by finding
 // polygon groups in the indexes, which are delimeted by a negative number.
 // We then create new indexes for those polygons. We do not use the polygon
@@ -446,10 +447,10 @@ export function triangulatePolygonIndexes(indexes) {
 // assumption that geometry data is also expanded out and the vertices for
 // the model are stored in the order in which indexes are iterated so that
 // the first indexed vertex is the first item in the new array of vertices
-// regardless of the indexed value. See triangulatePolygonIndexes that is
-// usually called to do such processing on PolygonVertexIndex where we convert
-// those indexes from N vertex polygons to triangle vertex polygons.
-export function mapIndexByPolygonVertex(indexes) {
+// regardless of the indexed value. See convertPolygonIndexesToTriangleIndexes
+// that is usually called to do such processing on PolygonVertexIndex where
+// we convert those indexes from N vertex polygons to triangle vertex polygons.
+export function reindexPolygonVertex(indexes) {
   let results = [];
 
   for (let i = 0, offset = 0; i < indexes.length; i++) {
@@ -464,4 +465,19 @@ export function mapIndexByPolygonVertex(indexes) {
   }
 
   return results;
+}
+
+export function getNodeName(node) {
+  const nameparts = node ? node.attributes[1].split("\u0000\u0001") : [];
+
+  // Below are different variations that are useful for different
+  // purposes. But general purpose name converts:
+  // Model: [[847290637,0],"upper_arm.R.001\u0000\u0001Model","LimbNode"]
+  // to
+  // Model_upper_arm.R.001_LimbNode
+  //
+  // return nameparts.length ? (nameparts[0] ? nameparts[0] : nameparts[1]) : node.attributes[1];
+  // return nameparts.length ? [nameparts[0], node.attributes[2]].filter(Boolean).join("_") : "";
+  // return nameparts.length ? [nameparts[0], nameparts[1], node.attributes[2]].filter(Boolean).join("_") : "";
+  return nameparts.length ? [nameparts[1], nameparts[0], node.attributes[2]].filter(Boolean).join("_") : "";
 }

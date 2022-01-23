@@ -6,12 +6,12 @@ import {
   findPropertyValueByName,
   findChildByName,
   findChildrenByName,
-  triangulatePolygonIndexes,
-  mapIndexByPolygonVertex,
+  convertPolygonIndexesToTriangleIndexes,
+  reindexPolygonVertex,
 } from "./fbxfile.js";
 
 import {
-  getTriangleComponents,
+  getIndexed3DComponents,
   getIndexed2DComponents,
   normalizeTriangleVertices,
 } from "../math/geometry.js";
@@ -55,9 +55,9 @@ test("parse binary cube", () => {
     5, 4, 0, -2, // ti10, ti11
   ]);
 
-  const triangulatedIndexes = triangulatePolygonIndexes(polygonVertexIndex);
+  const triangulatedIndexes = convertPolygonIndexesToTriangleIndexes(polygonVertexIndex);
   expect(triangulatedIndexes).toEqual([
-    0, 4, 6, // ti0 
+    0, 4, 6, // ti0
     0, 6, 2, // ti1
     3, 2, 6, // ti2
     3, 6, 7, // ti3
@@ -71,7 +71,7 @@ test("parse binary cube", () => {
     5, 0, 1, // ti11
   ]);
 
-  const triangles = getTriangleComponents(vertices, triangulatedIndexes);
+  const triangles = getIndexed3DComponents(vertices, triangulatedIndexes);
   expect(triangles).toEqual([
      1,  1,  1, // v0
     -1,  1,  1, // v4
@@ -157,11 +157,11 @@ test("parse binary cube", () => {
   // usually FBX files will contain smoothed normals.
   // This tests works fine for a cube because smoothing of the normals
   // will yield the same normals as non smoothed ones.
-  const normalIndexes = mapIndexByPolygonVertex(polygonVertexIndex);
-  const triangleNormals = getTriangleComponents(normals, normalIndexes);
+  const normalIndexes = reindexPolygonVertex(polygonVertexIndex);
+  const triangleNormals = getIndexed3DComponents(normals, normalIndexes);
   expect(triangleNormals)
     .toEqual(normalizeTriangleVertices(
-      getTriangleComponents(vertices, triangulatedIndexes)));
+      getIndexed3DComponents(vertices, triangulatedIndexes)));
 
   const UVLayer = findChildByName(geometry, "LayerElementUV");
   expect(UVLayer).not.toBeUndefined();
@@ -239,7 +239,7 @@ test("parse binary cube", () => {
     0.375, 0.5,    // 2
   ]);
 
-  const triangleUVs = getIndexed2DComponents(UVCoordinates, mapIndexByPolygonVertex(polygonVertexIndex));
+  const triangleUVs = getIndexed2DComponents(UVCoordinates, reindexPolygonVertex(polygonVertexIndex));
   expect(triangleUVs).toEqual([
     0.625,  0.5,
     0.875,  0.5,
@@ -315,11 +315,11 @@ test("match calculated normals to normals from file", () => {
     const normals = findPropertyValueByName(normalLayer, "Normals");
 
     const polygonVertexIndex = findPropertyValueByName(geometry, "PolygonVertexIndex");
-    const normalIndexes = mapIndexByPolygonVertex(polygonVertexIndex);
-    const vertexIndexes = triangulatePolygonIndexes(polygonVertexIndex);
+    const normalIndexes = reindexPolygonVertex(polygonVertexIndex);
+    const vertexIndexes = convertPolygonIndexesToTriangleIndexes(polygonVertexIndex);
 
-    const a = getTriangleComponents(normals, normalIndexes);
-    const b = normalizeTriangleVertices(getTriangleComponents(vertices, vertexIndexes));
+    const a = getIndexed3DComponents(normals, normalIndexes);
+    const b = normalizeTriangleVertices(getIndexed3DComponents(vertices, vertexIndexes));
     expect(a).toEqual(b);
   }
 });
@@ -379,7 +379,7 @@ test("parse binary cube7500", () => {
   expect(findPropertyValueByName(geometry, "PolygonVertexIndex")).toEqual([0, 1, 3, -3, 2, 3, 5, -5, 4, 5, 7, -7, 6, 7, 1, -1, 1, 7, 5, -4, 6, 0, 2, -5]);
   expect(findPropertyValueByName(geometry, "Edges")).toEqual([0, 2, 6, 10, 3, 1, 7, 5, 11, 9, 15, 13]);
 
-  const triangulatedIndexes = triangulatePolygonIndexes(findPropertyValueByName(geometry, "PolygonVertexIndex"));
+  const triangulatedIndexes = convertPolygonIndexesToTriangleIndexes(findPropertyValueByName(geometry, "PolygonVertexIndex"));
   expect(triangulatedIndexes).toEqual(
     [
       0, 1, 3,
@@ -396,4 +396,231 @@ test("parse binary cube7500", () => {
       6, 2, 4,
     ]
   )
+});
+
+test("convertPolygonIndexesToTriangleIndexes for a quad", () => {
+  const polygonIndexes = [8,7,3,-7];
+  const triangulatedIndexes = convertPolygonIndexesToTriangleIndexes(polygonIndexes);
+  expect(triangulatedIndexes).toEqual(
+    [
+      8,7,3,
+      8,3,6,
+    ]
+  );
+});
+
+test("convertPolygonIndexesToTriangleIndexes for a cube", () => {
+  const polygonIndexes = [0, 1, 3, -3, 2, 3, 5, -5, 4, 5, 7, -7, 6, 7, 1, -1, 1, 7, 5, -4, 6, 0, 2, -5];
+  const triangulatedIndexes = convertPolygonIndexesToTriangleIndexes(polygonIndexes);
+  expect(triangulatedIndexes).toEqual(
+    [
+      0, 1, 3,
+      0, 3, 2,
+      2, 3, 5,
+      2, 5, 4,
+      4, 5, 7,
+      4, 7, 6,
+      6, 7, 1,
+      6, 1, -0,
+      1, 7, 5,
+      1, 5, 3,
+      6, 0, 2,
+      6, 2, 4,
+    ]
+  );
+});
+
+test("render by unpacked polygon index mind bender", () => {
+  const vertices = [
+     1,  1,  1, // v0
+     1,  1, -1, // v1
+     1, -1,  1, // v2
+     1, -1, -1, // v3
+    -1,  1,  1, // v4
+    -1,  1, -1, // v5
+    -1, -1,  1, // v6
+    -1, -1, -1, // v7
+  ];
+
+  const polygonVertexIndex = [
+    0, 4, 6, -3, // ti0,  ti1
+    3, 2, 6, -8, // ti2,  ti3
+    7, 6, 4, -6, // ti4,  ti5
+    5, 1, 3, -8, // ti6,  ti7
+    1, 0, 2, -4, // ti8,  ti9
+    5, 4, 0, -2, // ti10, ti11
+  ];
+
+  const triangulatedIndexes = convertPolygonIndexesToTriangleIndexes(polygonVertexIndex);
+  expect(triangulatedIndexes).toEqual([
+    0, 4, 6, // ti0
+    0, 6, 2, // ti1
+    3, 2, 6, // ti2
+    3, 6, 7, // ti3
+    7, 6, 4, // ti4
+    7, 4, 5, // ti5
+    5, 1, 3, // ti6
+    5, 3, 7, // ti7
+    1, 0, 2, // ti8
+    1, 2, 3, // ti9
+    5, 4, 0, // ti10
+    5, 0, 1, // ti11
+  ]);
+
+  // When we read these vertices for the triangles, we will store the
+  // vertices in the order in which they are indexed.
+  // So we need to reindex UV and normals coordinates so that the first
+  // vertex points to the correct UV and Normal.
+  const trianglesVertices = getIndexed3DComponents(vertices, triangulatedIndexes);
+  expect(trianglesVertices).toEqual([
+     1,  1,  1, // v0
+    -1,  1,  1, // v4
+    -1, -1,  1, // v6
+
+     1,  1,  1, // v0
+    -1, -1,  1, // v6
+     1, -1,  1, // v2
+
+     1, -1, -1, // v3
+     1, -1,  1, // v2
+    -1, -1,  1, // v6
+
+     1, -1, -1, // v3
+    -1, -1,  1, // v6
+    -1, -1, -1, // v7
+
+    -1, -1, -1, // v7
+    -1, -1,  1, // v6
+    -1,  1,  1, // v4
+
+    -1, -1, -1, // v7
+    -1,  1,  1, // v4
+    -1,  1, -1, // v5
+
+    -1,  1, -1, // v5
+     1,  1, -1, // v1
+     1, -1, -1, // v3
+
+    -1,  1, -1, // v5
+     1, -1, -1, // v3
+    -1, -1, -1, // v7
+
+     1,  1, -1, // v1
+     1,  1,  1, // v0
+     1, -1,  1, // v2
+
+     1,  1, -1, // v1
+     1, -1,  1, // v2
+     1, -1, -1, // v3
+
+    -1,  1, -1, // v5
+    -1,  1,  1, // v4
+     1,  1,  1, // v0
+
+    -1,  1, -1, // v5
+     1,  1,  1, // v0
+     1,  1, -1, // v1
+  ]);
+
+  // These are direct so they will map directly to the vertices in each
+  // polygon.
+  //
+  // Let's take a second to look at this data. This is for a cube so each
+  // side is 90degs. And that also means that each face will share a position
+  // in space but because faces at a 90 angle, normals really cant be indexed
+  // like vertices to maximize sharing data. And that's because while vertex
+  // at 0,0,0 can be shared with multiple triangles, these triangles can face
+  // away from each so lighting will require normals to repsent that if the
+  // surface is not supposed to be a smooth suface.
+  //
+  // To illustrate, take a look at polygon index 2. There is a normal for the
+  // front quad, the bottom quad, and the right quad. All those quads share
+  // coordinate (1, -1,  1), but because the actual faces point in different
+  // directions we have to use a different normal for each one of those
+  // coordinates if we want lighting to make the cube look like a cube.
+  //
+  const normals = [
+  // polygon 1
+  // [0, 4, 6, 2,] // ti0,  ti1
+    0,  0,  1,   // n0
+    0,  0,  1,   // n1
+    0,  0,  1,   // n2
+    0,  0,  1,   // n3
+
+  // Polygon 2
+  // [3, 2, 6, 7,] // ti2,  ti3
+    0, -1,  0,   // n4
+    0, -1,  0,   // n5
+    0, -1,  0,   // n6
+    0, -1,  0,   // n7
+
+  // Polygon 3
+  // [7, 6, 4, 5,] // ti4,  ti5
+   -1,  0,  0,   // n8
+   -1,  0,  0,   // n9
+   -1,  0,  0,   // n10
+   -1,  0,  0,   // n11
+
+  // Polygon 4
+  // [5, 1, 3, 7,] // ti6,  ti7
+    0,  0, -1,   // n12
+    0,  0, -1,   // n13
+    0,  0, -1,   // n14
+    0,  0, -1,   // n15
+
+  // Polygon 5
+  // [1, 0, 2, 3,] // ti8,  ti9
+    1,  0,  0,   // n16
+    1,  0,  0,   // n18
+    1,  0,  0,   // n19
+    1,  0,  0,   // n20
+
+  // Polygon 6
+  // [5, 4, 0, 1,] // ti10, ti11
+    0,  1,  0,   // n21
+    0,  1,  0,   // n22
+    0,  1,  0,   // n23
+    0,  1,  0,   // n24
+  ];
+
+  const remappedTriangleIndexes = reindexPolygonVertex(polygonVertexIndex);
+  const trianglesNormals = getIndexed3DComponents(normals, remappedTriangleIndexes);
+  expect(trianglesNormals).toEqual([
+    0,0,1,
+    0,0,1,
+    0,0,1,
+    0,0,1,
+    0,0,1,
+    0,0,1,
+    0,-1,0,
+    0,-1,0,
+    0,-1,0,
+    0,-1,0,
+    0,-1,0,
+    0,-1,0,
+    -1,0,0,
+    -1,0,0,
+    -1,0,0,
+    -1,0,0,
+    -1,0,0,
+    -1,0,0,
+    0,0,-1,
+    0,0,-1,
+    0,0,-1,
+    0,0,-1,
+    0,0,-1,
+    0,0,-1,
+    1,0,0,
+    1,0,0,
+    1,0,0,
+    1,0,0,
+    1,0,0,
+    1,0,0,
+    0,1,0,
+    0,1,0,
+    0,1,0,
+    0,1,0,
+    0,1,0,
+    0,1,0,
+  ]);
 });

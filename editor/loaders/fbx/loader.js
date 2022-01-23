@@ -5,9 +5,7 @@ import {
 } from "../../../src/math/tbn-matrix.js";
 
 import {
-  getTriangleComponents,
-  getIndexed2DComponents,
-  normalizeTriangleVertices,
+  getIndexedComponents,
 } from "../../../src/math/geometry.js";
 
 import {
@@ -26,11 +24,12 @@ import {
 
 import {
   FbxFile,
+  getNodeName,
   findChildByName,
   // findChildrenByName,
   findPropertyValueByName,
-  triangulatePolygonIndexes,
-  mapIndexByPolygonVertex,
+  convertPolygonIndexesToTriangleIndexes,
+  reindexPolygonVertex,
 } from "../../../src/formats/fbxfile.js";
 
 import {
@@ -45,7 +44,6 @@ import {
   AnimationCurveNode,
   AnimationCurve,
 } from "./scene-node.js";
-
 
 /**
  * File loader for bfx formatted files.
@@ -314,38 +312,55 @@ function sceneNodeFromFbxRootNode(gl, fbxRootNodeWrapper, sceneManager) {
 // rendering a FBX file. This includes UVs, Normals, and Vertices. The
 // semantics include expanding out polygons to triangles to uniformly handle
 // quads, triangle fans, and other polygon types.
+//
+// TODO(miguel): Support triangle fans. It's ultimately less efficient to
+// render each triangle individually, especially if the models are built using
+// triangle fans. However, current implementation in the scene renderer assumes
+// everything is a triangle which is good enough for now.
+// buildVertexBufferForGeometry builds all the different buffers needed for
+// rendering a FBX file. This includes UVs, Normals, and Vertices. The
+// semantics include expanding out polygons to triangles to uniformly handle
+// quads, triangle fans, and other polygon types.
+//
 // TODO(miguel): Support triangle fans. It's ultimately less efficient to
 // render each triangle individually, especially if the models are built using
 // triangle fans. However, current implementation in the scene renderer assumes
 // everything is a triangle which is good enough for now.
 function buildVertexBufferForGeometry(gl, name, geometry) {
-  const vertices = findPropertyValueByName(geometry, "Vertices");
   const polygonVertexIndex = findPropertyValueByName(geometry, "PolygonVertexIndex");
-  const vertexIndexes = triangulatePolygonIndexes(polygonVertexIndex);
+  let vertices = findPropertyValueByName(geometry, "Vertices");
 
+  // [0, 4, 6, -3] => [0, 4, 6, 0, 6, 2]
+  const vertexIndexes = convertPolygonIndexesToTriangleIndexes(polygonVertexIndex);
+
+  // Build out the list of vertices from the triangle indexes. This generates
+  // a lot of duplicated vertices, but this is expected because normal vectors
+  // often can't be shared so indexing the same coordinate will cause the
+  // same normal vertor to be used for polygons that face away from each
+  // other and this causes all sorts of issues with lighting.
+  vertices = getIndexedComponents(vertices, vertexIndexes, 3);
+
+  // When we extract indexed triangles from the polygons, the vertices
+  // are stored in a sequential order. Normals and all the other layers
+  // also get ordered sequentially. So we have to rebuild the polygon
+  // indexes to be sequential so that we can extract data from the
+  // different layers in the correct order.
+  //
+  // TODO(miguel): is there a way to avoid remapping indexes so that
+  // we can just provide `vertexIndexes` to draw elements? Look out for
+  // cube shapes that have normal verctors that cannot be shared; more
+  // generally, any shape that has 90 degree angles where normals just
+  // point in unsharable directions.
+  const triangleVertexIndexes = reindexPolygonVertex(polygonVertexIndex);
+
+  // We do a quick check on the vertices with the generated indexes
+  // to make sure overall things aren't completely broken. This catches
+  // things like out of ranges indexes and so on. It does not validate
+  // the triangles represented by the indexes yet.
   validateIndexedTriangles(name, vertices, vertexIndexes);
-  const triangles = getTriangleComponents(vertices, vertexIndexes);
 
-  let uv;
-  const uvLayer = findChildByName(geometry, "LayerElementUV");
-  if (uvLayer) {
-    uv = findPropertyValueByName(uvLayer, "UV");
-
-    // NOTE(miguel): the only combination I have seen for reference types
-    // regarding UV is:
-    // "MappingInformationType": "ByPolygonVertex"
-    // "ReferenceInformationType": "IndexToDirect"
-
-    if (findPropertyValueByName(uvLayer, "ReferenceInformationType") === "IndexToDirect") {
-      // When IndexToDirect.
-      // 1. We map UV using UVIndex
-      // 2. Then we expand the result of that by mapping ByPolygonVertexIndex
-      uv = getIndexed2DComponents(uv, findPropertyValueByName(uvLayer, "UVIndex"));
-    }
-
-    // Map UV to polygon indexes.
-    uv = getIndexed2DComponents(uv, mapIndexByPolygonVertex(polygonVertexIndex));
-  }
+  // Texture coordinates.
+  let uv = getLayerData(geometry, "UV");
 
   // Tangent, BiTangent, and Normal vector calculations for normal maps
   // support. These are vectors that are used in the shaders to correctly
@@ -353,37 +368,23 @@ function buildVertexBufferForGeometry(gl, name, geometry) {
   // is the space where normal vectors in normal map textures are defined.
   let tangents, bitangents, normals;
   if (uv && uv.length) {
-    const [t,b,n] = getTBNVectorsFromTriangles(triangles, uv);
+    uv = getIndexedComponents(uv, triangleVertexIndexes, 2);
+
+    const [t,b,n] = getTBNVectorsFromTriangles(vertices, uv);
     tangents = t;
     bitangents = b;
     normals = n;
   }
 
-  // We will try to use the normals in the geometry if available.
-  // If not available then we will calculate them based on the
-  // triangles in the model.
   if (!normals) {
-    const normalLayer = findChildByName(geometry, "LayerElementNormal");
-    if (normalLayer) {
-      normals = findPropertyValueByName(normalLayer, "Normals");
-
-      // NOTE(miguel): the only combination I have seen for reference types
-      // regarding Normals is:
-      // "MappingInformationType": "ByPolygonVertex"
-      // "ReferenceInformationType": "Direct"
-
-      if (findPropertyValueByName(normalLayer, "ReferenceInformationType") === "IndexToDirect") {
-        normals = getTriangleComponents(normals, findPropertyValueByName(normalLayer, "NormalsIndex"));
-      }
-
-      normals = getTriangleComponents(normals, mapIndexByPolygonVertex(polygonVertexIndex));
-    } else {
-      normals = normalizeTriangleVertices(triangles, true);
+    normals = getLayerData(geometry, "Normals");
+    if (normals) {
+      normals = getIndexedComponents(normals, triangleVertexIndexes, 3);
     }
   }
 
   return new VertexBuffer({
-    positions: new VertexBufferData(gl, triangles),
+    positions: new VertexBufferData(gl, vertices),
     normals: new VertexBufferData(gl, normals),
     tangents: tangents && new VertexBufferData(gl, tangents),
     bitangents: bitangents && new VertexBufferData(gl, bitangents),
@@ -391,17 +392,9 @@ function buildVertexBufferForGeometry(gl, name, geometry) {
   });
 }
 
-function getFbxNodeName(fbxNode) {
-  const nameparts = fbxNode ? fbxNode.attributes[1].split("\u0000\u0001") : [];
-  // return nameparts.length ? (nameparts[0] ? nameparts[0] : nameparts[1]) : fbxNode.attributes[1];
-  // return nameparts.length ? [nameparts[0], fbxNode.attributes[2]].filter(Boolean).join("_") : "";
-  // return nameparts.length ? [nameparts[0], nameparts[1], fbxNode.attributes[2]].filter(Boolean).join("_") : "";
-  return nameparts.length ? [nameparts[1], nameparts[0], fbxNode.attributes[2]].filter(Boolean).join("_") : "";
-}
-
 let _idxNameMap = {};
 function generateFbxNodeName(fbxNode) {
-  const name = getFbxNodeName(fbxNode);
+  const name = getNodeName(fbxNode);
   if (!_idxNameMap[name]) {
     _idxNameMap[name] = 1;
   }
@@ -439,5 +432,70 @@ function validateIndexedTriangles(name, vertices, indexes) {
   }
 
   // eslint-disable-next-line
-  console.log("====> index min", min, "index max", max);
+  console.log("===> index min", min, "index max", max);
+}
+
+const layerMap = {
+  "UV": {
+    layer: "LayerElementUV",
+    index: "UVIndex",
+    data: "UV",
+    componentsPerVertex: 2,
+  },
+  "Normals": {
+    layer: "LayerElementNormal",
+    index: "NormalsIndex",
+    data: "Normals",
+    componentsPerVertex: 3,
+  },
+  "Colors": {
+    layer: "LayerElementColor",
+    index: "ColorIndex",
+    data: "Colors",
+    componentsPerVertex: 4,
+  }
+}
+
+function getLayerData(geometry, layerDataName) {
+  const layer = findChildByName(geometry, layerMap[layerDataName].layer);
+  if (!layer) {
+    return null;
+  }
+
+  const componentsPerVertex = layerMap[layerDataName].componentsPerVertex;
+  let components = findPropertyValueByName(layer, layerDataName);
+
+  // NOTE(miguel):
+  // For UV, I have only observed in blender exported models:
+  // "MappingInformationType": "ByPolygonVertex"
+  // "ReferenceInformationType": "IndexToDirect"
+  //
+  // For Normals, I have only observed in blender exported models:
+  // "MappingInformationType": "ByPolygonVertex"
+  // "ReferenceInformationType": "Direct"
+  //
+  // Reference and Index mapping information:
+  // https://banexdevblog.wordpress.com/2014/06/23/a-quick-tutorial-about-the-fbx-ascii-format/
+
+  const referenceInformationType = findPropertyValueByName(layer, "ReferenceInformationType");
+  if (referenceInformationType === "IndexToDirect") {
+    const indexes = findPropertyValueByName(layer, layerMap[layerDataName].index);
+    components = getIndexedComponents(components, indexes, componentsPerVertex);
+  }
+
+  /*
+  // We do not need to deal with ByPolygonVertex here because things are
+  // reindexed later on.
+  const mappingInformationType = findPropertyValueByName(layer, "MappingInformationType");
+  if (mappingInformationType === "ByPolygonVertex") {
+    const polygonVertexIndex = findPropertyValueByName(geometry, "PolygonVertexIndex");
+    components = toPolygonVertexIndex(components, polygonVertexIndex, componentsPerVertex);
+  } else if (mappingInformationType === "ByPolygon") {
+    // NOTE(miguel): I have yet to see this around! We'll add support when
+    // we need to.
+    console.error("===> FBX MappingInformationType ByPolygon is not supported.");
+  }
+  */
+
+  return components;
 }
