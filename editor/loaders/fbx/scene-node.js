@@ -20,8 +20,16 @@ import {
 export class Model extends RenderableSceneNode {
   constructor(options, shaderProgram) {
     super(Object.assign({}, options, {type:"fbx-model"}));
-    this.shaderProgram = shaderProgram.clone();
     this.vertexBuffers = [];
+
+    if (shaderProgram) {
+      this.shaderProgram = shaderProgram.clone();
+    }
+  }
+
+  withShaderProgram(shaderProgram) {
+    this.shaderProgram = shaderProgram.clone();
+    return this;
   }
 
   addVertexBuffer(vertexBuffer) {
@@ -449,4 +457,41 @@ function getTransformAnimation(animation) {
   const transform = [0, 0, 0];
   animation.forEach(([n, v]) => { transform[transformIndex[n]] = v; });
   return transform;
+}
+
+export function findModels(sceneNode) {
+  const models = [];
+
+  function traverse(node) {
+    if (!node) {
+      return;
+    }
+
+    if (node instanceof Model) {
+      models.push(node);
+    }
+
+    node.items.forEach(traverse);
+  }
+
+  traverse(sceneNode);
+  return models;
+}
+
+export function findModelTextures(model) {
+  const textures = [];
+  function traverse(node) {
+    if (!node || node instanceof Model) {
+      return;
+    }
+
+    if (node instanceof Texture) {
+      textures.push(node);
+    }
+
+    node.items.forEach(traverse);
+  }
+
+  model.items.forEach(traverse);
+  return textures;
 }

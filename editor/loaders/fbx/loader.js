@@ -43,6 +43,9 @@ import {
   AnimationLayer,
   AnimationCurveNode,
   AnimationCurve,
+
+  findModels,
+  findModelTextures,
 } from "./scene-node.js";
 
 /**
@@ -123,6 +126,7 @@ export function buildSceneNode(gl, model, sceneNodeConfig, sceneManager) {
   //   });
 }
 
+
 const _textureCache = {};
 
 // sceneNodeFromFbxRootNode traverses the fbx tree of nodes breadth first
@@ -132,38 +136,31 @@ const _textureCache = {};
 // node. This is relevant for things like textures where we need to know
 // if the model needs to use a shader that supports texture or not.
 function sceneNodeFromFbxRootNode(gl, fbxRootNodeWrapper, sceneManager) {
-  let textureCount = 0;
-  return processNodeWrapper(fbxRootNodeWrapper);
+  const sceneNode = processNodeWrapper(fbxRootNodeWrapper);
+  initShaderProgram(gl, sceneNode);
+  return sceneNode;
 
-  // NOTE(miguel):
-  // We do a breadth first traversal of the fbx nodes so that we can process
-  // all the leaf nodes first. This allows us to find all the textures so that
-  // when we get to process the model itself, we can know how many textures
-  // the model has.
   function processNodeWrapper(fbxNodeWrapper, pname) {
-    const childSceneNodes = fbxNodeWrapper.connections.map(connection => {
-      return processNodeWrapper(connection.child, connection.pname);
-    });
-
     const sceneNode = createSceneNode(fbxNodeWrapper.name, fbxNodeWrapper.node, pname);
 
     if (!sceneNode) {
       return;
     }
 
-    fbxNodeWrapper.connections.forEach((connection, i) => {
-      if (childSceneNodes[i]) {
+    fbxNodeWrapper.connections.forEach((connection) => {
+      const childSceneNode = processNodeWrapper(connection.child, connection.pname);
+      if (childSceneNode) {
         // Only support for OO and OP (partially OP) connections.
         // TODO(miguel): add support for other types of connections.
         // https://download.autodesk.com/us/fbx/20112/fbx_sdk_help/index.html
         switch(connection.type) {
           case "OO":
-            sceneNode.add(childSceneNodes[i]);
+            sceneNode.add(childSceneNode);
             break;
           case "OP":
             // TODO(miguel): this needs to handle proper mapping of
             // object to property updates.
-            sceneNode.add(childSceneNodes[i]);
+            sceneNode.add(childSceneNode);
             break;
         }
       }
@@ -180,16 +177,7 @@ function sceneNodeFromFbxRootNode(gl, fbxRootNodeWrapper, sceneManager) {
         const modelType = fbxNode.attributes[2];
 
         if (modelType === "Mesh") {
-          // If the model has any textures, then we use phong-texture. We have a
-          // separate shader specifically for handling textures because if the
-          // a shader defined a sample2D type and does not call the `texture`
-          // method in the shader then we get the warning:
-          // "there is no texture bound to the unit 0".
-          // So we want to make sure we pick a shader that can handle texture
-          // if the model has any, otherwise use an equivalent shader without
-          // textures.
-          const shaderName = textureCount ? "phong-texture" : "phong-lighting";
-          sceneNode = new Model({name}, createShaderProgram(gl, shaderName));
+          sceneNode = new Model({name});
         } else if (modelType === "LimbNode") {
           sceneNode = new Bone({name});
         } else if (modelType === "Null") {
@@ -275,7 +263,6 @@ function sceneNodeFromFbxRootNode(gl, fbxRootNodeWrapper, sceneManager) {
           };
         }
 
-        textureCount++;
         sceneNode = _textureCache[filepath].texture.clone();
         break;
       }
@@ -498,4 +485,21 @@ function getLayerData(geometry, layerDataName) {
   */
 
   return components;
+}
+
+function initShaderProgram(gl, sceneNode) {
+  findModels(sceneNode).forEach(model => {
+    const textures = findModelTextures(model);
+
+    // If the model has any textures, then we use phong-texture. We have a
+    // separate shader specifically for handling textures because if the
+    // a shader defined a sample2D type and does not call the `texture`
+    // method in the shader then we get the warning:
+    // "there is no texture bound to the unit 0".
+    // So we want to make sure we pick a shader that can handle texture
+    // if the model has any, otherwise use an equivalent shader without
+    // textures.
+    const shaderName = textures.length ? "phong-texture" : "phong-lighting";
+    model.withShaderProgram(createShaderProgram(gl, shaderName));
+  });
 }
