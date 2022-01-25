@@ -90,8 +90,8 @@ export function buildSceneNode(gl, model, sceneNodeConfig, sceneManager) {
         const [type, src, dest, pname] = props.value;
         if (nodeWrappersByID[dest] && nodeWrappersByID[src]) {
           nodeWrappersByID[dest].connections.push({
-            child: nodeWrappersByID[src],
-            parent: nodeWrappersByID[dest],
+            src: nodeWrappersByID[src],
+            dest: nodeWrappersByID[dest],
             type,
             pname,
           });
@@ -104,7 +104,7 @@ export function buildSceneNode(gl, model, sceneNodeConfig, sceneManager) {
 
   sceneNode.addItems(
     nodeWrappersByID["0,0"].connections
-      .map(({child}) => sceneNodeFromFbxRootNode(gl, child, sceneManager))
+      .map(connection => sceneNodeFromConnection(gl, connection, sceneManager))
       .filter(Boolean));
 
   // TODO(miguel): Enable this when we are ready to support animation of
@@ -121,7 +121,7 @@ export function buildSceneNode(gl, model, sceneNodeConfig, sceneManager) {
   //     sceneNode.add(
   //       animationStack.addItems(
   //         nodeWrappersByID[stackID].connections
-  //           .map(({child}) => sceneNodeFromFbxRootNode(gl, child, sceneManager))
+  //           .map((connection) => sceneNodeFromConnection(gl, connection, sceneManager))
   //           .filter(Boolean)));
   //   });
 }
@@ -129,31 +129,21 @@ export function buildSceneNode(gl, model, sceneNodeConfig, sceneManager) {
 
 const _textureCache = {};
 
-// sceneNodeFromFbxRootNode traverses the fbx tree of nodes breadth first
-// potentially creating scene nodes for each relevant of the fbx file.
-// The traversal of the fbx tree is breadth first so that we can find all
-// information pertaining to the model before we finally create the model
-// node. This is relevant for things like textures where we need to know
-// if the model needs to use a shader that supports texture or not.
-function sceneNodeFromFbxRootNode(gl, fbxRootNodeWrapper, sceneManager) {
-  const sceneNode = processNodeWrapper(fbxRootNodeWrapper);
-  initShaderProgram(gl, sceneNode);
-  return sceneNode;
+// sceneNodeFromConnection traverses the fbx tree of nodes depth first
+// creating scene nodes for each relevant of the fbx file.
+function sceneNodeFromConnection(gl, rootConnection, sceneManager) {
+  const sceneNode = createSceneNode(rootConnection);
+  const nodeStack = [{sceneNode, connection: rootConnection}];
 
-  function processNodeWrapper(fbxNodeWrapper, pname) {
-    const sceneNode = createSceneNode(fbxNodeWrapper.name, fbxNodeWrapper.node, pname);
-
-    if (!sceneNode) {
-      return;
-    }
-
-    fbxNodeWrapper.connections.forEach((connection) => {
-      const childSceneNode = processNodeWrapper(connection.child, connection.pname);
+  // Traverse the fbx tree in a breadth first order.
+  for (const {sceneNode, connection} of nodeStack) {
+    for (const c of connection.src.connections) {
+      const childSceneNode = createSceneNode(c);
       if (childSceneNode) {
         // Only support for OO and OP (partially OP) connections.
         // TODO(miguel): add support for other types of connections.
         // https://download.autodesk.com/us/fbx/20112/fbx_sdk_help/index.html
-        switch(connection.type) {
+        switch(c.type) {
           case "OO":
             sceneNode.add(childSceneNode);
             break;
@@ -163,13 +153,18 @@ function sceneNodeFromFbxRootNode(gl, fbxRootNodeWrapper, sceneManager) {
             sceneNode.add(childSceneNode);
             break;
         }
-      }
-    });
 
-    return sceneNode;
+        nodeStack.push({sceneNode: childSceneNode, connection: c});
+      }
+    }
   }
 
-  function createSceneNode(name, fbxNode, pname) {
+  initShaderPrograms(gl, sceneNode);
+  return sceneNode;
+
+  function createSceneNode(connection) {
+    const {src, pname} = connection;
+    const {node: fbxNode, name} = src;
     let sceneNode;
 
     switch(fbxNode.name) {
@@ -487,7 +482,7 @@ function getLayerData(geometry, layerDataName) {
   return components;
 }
 
-function initShaderProgram(gl, sceneNode) {
+function initShaderPrograms(gl, sceneNode) {
   findModels(sceneNode).forEach(model => {
     const textures = findModelTextures(model);
 
