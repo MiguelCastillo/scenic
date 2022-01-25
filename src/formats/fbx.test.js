@@ -55,73 +55,6 @@ test("parse binary cube", () => {
     5, 4, 0, -2, // ti10, ti11
   ]);
 
-  const triangulatedIndexes = convertPolygonIndexesToTriangleIndexes(polygonVertexIndex);
-  expect(triangulatedIndexes).toEqual([
-    0, 4, 6, // ti0
-    0, 6, 2, // ti1
-    3, 2, 6, // ti2
-    3, 6, 7, // ti3
-    7, 6, 4, // ti4
-    7, 4, 5, // ti5
-    5, 1, 3, // ti6
-    5, 3, 7, // ti7
-    1, 0, 2, // ti8
-    1, 2, 3, // ti9
-    5, 4, 0, // ti10
-    5, 0, 1, // ti11
-  ]);
-
-  const triangles = getIndexed3DComponents(vertices, triangulatedIndexes);
-  expect(triangles).toEqual([
-     1,  1,  1, // v0
-    -1,  1,  1, // v4
-    -1, -1,  1, // v6
-
-     1,  1,  1, // v0
-    -1, -1,  1, // v6
-     1, -1,  1, // v2
-
-     1, -1, -1, // v3
-     1, -1,  1, // v2
-    -1, -1,  1, // v6
-
-     1, -1, -1, // v3
-    -1, -1,  1, // v6
-    -1, -1, -1, // v7
-
-    -1, -1, -1, // v7
-    -1, -1,  1, // v6
-    -1,  1,  1, // v4
-
-    -1, -1, -1, // v7
-    -1,  1,  1, // v4
-    -1,  1, -1, // v5
-
-    -1,  1, -1, // v5
-     1,  1, -1, // v1
-     1, -1, -1, // v3
-
-    -1,  1, -1, // v5
-     1, -1, -1, // v3
-    -1, -1, -1, // v7
-
-     1,  1, -1, // v1
-     1,  1,  1, // v0
-     1, -1,  1, // v2
-
-     1,  1, -1, // v1
-     1, -1,  1, // v2
-     1, -1, -1, // v3
-
-    -1,  1, -1, // v5
-    -1,  1,  1, // v4
-     1,  1,  1, // v0
-
-    -1,  1, -1, // v5
-     1,  1,  1, // v0
-     1,  1, -1, // v1
-  ]);
-
   const normalLayer = findChildByName(geometry, "LayerElementNormal");
   expect(normalLayer).not.toBeUndefined();
 
@@ -152,16 +85,6 @@ test("parse binary cube", () => {
     0,1,0,
     0,1,0,
   ]);
-
-  // NOTE: normalizeTriangleVertices returns non smoothed normals, but
-  // usually FBX files will contain smoothed normals.
-  // This tests works fine for a cube because smoothing of the normals
-  // will yield the same normals as non smoothed ones.
-  const normalIndexes = reindexPolygonVertex(polygonVertexIndex);
-  const triangleNormals = getIndexed3DComponents(normals, normalIndexes);
-  expect(triangleNormals)
-    .toEqual(normalizeTriangleVertices(
-      getIndexed3DComponents(vertices, triangulatedIndexes)));
 
   const UVLayer = findChildByName(geometry, "LayerElementUV");
   expect(UVLayer).not.toBeUndefined();
@@ -238,62 +161,6 @@ test("parse binary cube", () => {
     0.625, 0.5,    // 13
     0.375, 0.5,    // 2
   ]);
-
-  const triangleUVs = getIndexed2DComponents(UVCoordinates, reindexPolygonVertex(polygonVertexIndex));
-  expect(triangleUVs).toEqual([
-    0.625,  0.5,
-    0.875,  0.5,
-    0.875, 0.75,
-
-    0.625,  0.5,
-    0.875, 0.75,
-    0.625, 0.75,
-
-    0.375, 0.75,
-    0.625, 0.75,
-    0.625,    1,
-
-    0.375, 0.75,
-    0.625,    1,
-    0.375,    1,
-
-    0.375,    0,
-    0.625,    0,
-    0.625, 0.25,
-
-    0.375,    0,
-    0.625, 0.25,
-    0.375, 0.25,
-
-    0.125,  0.5,
-    0.375,  0.5,
-    0.375, 0.75,
-
-    0.125,  0.5,
-    0.375, 0.75,
-    0.125, 0.75,
-
-    0.375,  0.5,
-    0.625,  0.5,
-    0.625, 0.75,
-
-    0.375,  0.5,
-    0.625, 0.75,
-    0.375, 0.75,
-
-    0.375, 0.25,
-    0.625, 0.25,
-    0.625,  0.5,
-
-    0.375, 0.25,
-    0.625,  0.5,
-    0.375,  0.5,
-  ]);
-
-  expect(triangles.length).toEqual(triangleNormals.length);
-
-  // UVs are 2 dimensional so that they will have 1 less coordinate per vertex.
-  expect(triangles.length - triangles.length/3).toEqual(triangleUVs.length);
 });
 
 test("match calculated normals to normals from file", () => {
@@ -467,6 +334,22 @@ test("render by unpacked polygon index mind bender", () => {
     5, 0, 1, // ti11
   ]);
 
+  const reindexedPolygonIndexes = reindexPolygonVertex(polygonVertexIndex);
+  expect(reindexedPolygonIndexes).toEqual([
+     0,  1,  2,  // ti0
+     0,  2,  3,  // ti1
+     4,  5,  6,  // ti2
+     4,  6,  7,  // ti3
+     8,  9, 10,  // ti4
+     8, 10, 11,  // ti5
+    12, 13, 14,  // ti6
+    12, 14, 15,  // ti7
+    16, 17, 18,  // ti8
+    16, 18, 19,  // ti9
+    20, 21, 22,  // ti10
+    20, 22, 23,  // ti11
+  ]);
+
   // When we read these vertices for the triangles, we will store the
   // vertices in the order in which they are indexed.
   // So we need to reindex UV and normals coordinates so that the first
@@ -583,8 +466,7 @@ test("render by unpacked polygon index mind bender", () => {
     0,  1,  0,   // n24
   ];
 
-  const remappedTriangleIndexes = reindexPolygonVertex(polygonVertexIndex);
-  const trianglesNormals = getIndexed3DComponents(normals, remappedTriangleIndexes);
+  const trianglesNormals = getIndexed3DComponents(normals, reindexedPolygonIndexes);
   expect(trianglesNormals).toEqual([
     0,0,1,
     0,0,1,
@@ -622,5 +504,95 @@ test("render by unpacked polygon index mind bender", () => {
     0,1,0,
     0,1,0,
     0,1,0,
+  ]);
+
+
+  const UVCoordinates = [
+    0.625, 0.5,    // 13
+    0.875, 0.5,    // 3
+
+    0.875, 0.75,   // 11
+    0.625, 0.75,   // 4
+
+    0.375, 0.75,   // 6
+    0.625, 0.75,   // 4
+
+    0.625, 1,      // 0
+    0.375, 1,      // 5
+
+    0.375, 0,      // 8
+    0.625, 0,      // 7
+
+    0.625, 0.25,   // 1
+    0.375, 0.25,   // 9
+
+    0.125, 0.5,    // 10
+    0.375, 0.5,    // 2
+
+    0.375, 0.75,   // 6
+    0.125, 0.75,   // 12
+
+    0.375, 0.5,    // 2
+    0.625, 0.5,    // 13
+
+    0.625, 0.75,   // 4
+    0.375, 0.75,   // 6
+
+    0.375, 0.25,   // 9
+    0.625, 0.25,   // 1
+
+    0.625, 0.5,    // 13
+    0.375, 0.5,    // 2
+  ];
+
+  const triangleUVs = getIndexed2DComponents(UVCoordinates, reindexedPolygonIndexes);
+  expect(triangleUVs).toEqual([
+    0.625,  0.5,
+    0.875,  0.5,
+    0.875, 0.75,
+
+    0.625,  0.5,
+    0.875, 0.75,
+    0.625, 0.75,
+
+    0.375, 0.75,
+    0.625, 0.75,
+    0.625,    1,
+
+    0.375, 0.75,
+    0.625,    1,
+    0.375,    1,
+
+    0.375,    0,
+    0.625,    0,
+    0.625, 0.25,
+
+    0.375,    0,
+    0.625, 0.25,
+    0.375, 0.25,
+
+    0.125,  0.5,
+    0.375,  0.5,
+    0.375, 0.75,
+
+    0.125,  0.5,
+    0.375, 0.75,
+    0.125, 0.75,
+
+    0.375,  0.5,
+    0.625,  0.5,
+    0.625, 0.75,
+
+    0.375,  0.5,
+    0.625, 0.75,
+    0.375, 0.75,
+
+    0.375, 0.25,
+    0.625, 0.25,
+    0.625,  0.5,
+
+    0.375, 0.25,
+    0.625,  0.5,
+    0.375,  0.5,
   ]);
 });
