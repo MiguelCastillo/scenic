@@ -38,13 +38,9 @@ export class VertexBufferData extends VertexBufferArray {
 }
 
 // VertexBufferIndexes are indexes for rendering triangles based on indexes.
-// The buffer is a 16 bit unsigned int array.
 export class VertexBufferIndexes extends VertexBufferArray {
   constructor(gl, data) {
-    // Indexes are Unsigned Integers of 16 bits to match gl.UNSIGNED_SHORT
-    // in the render method. And unsigned shorts give us a range of
-    // 0 to 65,535.
-    super(gl, new Uint16Array(data), gl.ELEMENT_ARRAY_BUFFER);
+    super(gl, new Uint32Array(data), gl.ELEMENT_ARRAY_BUFFER);
   }
 }
 
@@ -138,20 +134,20 @@ export class VertexBuffer {
     if (indexes) {
       const {data} = indexes;
       const vertexOffset = 0;
-  
+
       indexes.bind();
-  
+
       gl.drawElements(
         primitiveType,
         data.length,
-        gl.UNSIGNED_SHORT,
+        gl.UNSIGNED_INT,
         vertexOffset);
     } else if (positions) {
       const {data, componentsPerVertex} = positions;
       const vertexOffset = 0;
-  
+
       positions.bind();
-  
+
       gl.drawArrays(
         primitiveType,
         vertexOffset,
@@ -167,4 +163,3 @@ export class VertexBuffer {
     return new VertexBuffer(options);
   }
 }
-
