@@ -161,16 +161,54 @@ export class Bone extends SceneNode {
 }
 
 export class Gometry extends SceneNode {
-  constructor(options, vertexBuffer) {
+  constructor(options, vertexBuffer, polygonVertexIndexes) {
     super(Object.assign({}, options, {type:"fbx-geometry"}));
     this.vertexBuffer = vertexBuffer;
+    this.polygonVertexIndexes = polygonVertexIndexes;
+    this.skinDeformers = [];
+    this.enableSkinning = false;
   }
 
-  render(/*context*/) {
+  add(node) {
+    if (node instanceof SkinDeformer) {
+      this.skinDeformers.push(node._withParent(this));
+    } else {
+      super.add(node);
+    }
+    return this;
+  }
+
+  render() {
     let model = findParentModel(this);
     if (model) {
-      model.addVertexBuffer(this.vertexBuffer);
+      if (this.enableSkinning === true && this.skinDeformers.length) {
+        // These deformers are things like a skin deformer which has
+        // cluster deformers as children nodes. These clusters are the
+        // things that have the indexes to vertices that are affected
+        // by the deformations.
+        for (const skin of this.skinDeformers) {
+          for (const cluster of skin.items) {
+            model.addVertexBuffer(this.vertexBuffer.clone().withIndexes(cluster.indexes));
+          }
+        };
+      } else {
+        model.addVertexBuffer(this.vertexBuffer);
+      }
     }
+  }
+}
+
+export class SkinDeformer extends SceneNode {
+  constructor(options) {
+    super(Object.assign({}, options, {type:"fbx-skin-deformer"}));
+  }
+}
+
+export class SkinDeformerCluster extends SceneNode {
+  constructor(options, indexes, weights) {
+    super(Object.assign({}, options, {type:"fbx-skin-deformer-cluster"}));
+    this.indexes = indexes;
+    this.weights = weights;
   }
 }
 
@@ -406,15 +444,6 @@ function getImage(filepath) {
   return _imageCache[filepath]
 }
 
-function findParentModel(node) {
-  let model = node.parent;
-  while (model && !(model instanceof Model)) {
-    model = model.parent;
-  }
-
-  return model;
-}
-
 // We only support animation transform matrices, which are used for bone
 // animation.
 function doKeyFrameAnimation(ms, animationNodes) {
@@ -457,6 +486,15 @@ function getTransformAnimation(animation) {
   const transform = [0, 0, 0];
   animation.forEach(([n, v]) => { transform[transformIndex[n]] = v; });
   return transform;
+}
+
+function findParentModel(node) {
+  let model = node.parent;
+  while (model && !(model instanceof Model)) {
+    model = model.parent;
+  }
+
+  return model;
 }
 
 export function findModels(sceneNode) {

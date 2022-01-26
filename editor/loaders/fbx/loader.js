@@ -16,6 +16,7 @@ import {
   VertexBuffer,
   VertexBufferData,
   TextureVertexBufferData,
+  VertexBufferIndexes,
 } from "../../../src/renderer/vertexbuffer.js";
 
 import {
@@ -35,6 +36,8 @@ import {
 import {
   Model,
   Gometry,
+  SkinDeformer,
+  SkinDeformerCluster,
   Material,
   Texture,
   Armature,
@@ -47,6 +50,7 @@ import {
   findModels,
   findModelTextures,
 } from "./scene-node.js";
+
 
 /**
  * File loader for bfx formatted files.
@@ -138,7 +142,8 @@ function sceneNodeFromConnection(gl, rootConnection, sceneManager) {
   // Traverse the fbx tree in a breadth first order.
   for (const {sceneNode, connection} of nodeStack) {
     for (const c of connection.src.connections) {
-      const childSceneNode = createSceneNode(c);
+      c.pconnection = connection;
+      const childSceneNode = createSceneNode(c, connection);
       if (childSceneNode) {
         // Only support for OO and OP (partially OP) connections.
         // TODO(miguel): add support for other types of connections.
@@ -221,7 +226,60 @@ function sceneNodeFromConnection(gl, rootConnection, sceneManager) {
         break;
       }
       case "Geometry": {
-        sceneNode = new Gometry({name}, buildVertexBufferForGeometry(gl, name, fbxNode));
+        const {
+          vertices,
+          indexes,
+          tangents,
+          bitangents,
+          uv,
+          normals,
+          polygonIndexes,
+        } = buildGeometryLayers(fbxNode);
+
+        // We do a quick check on the vertices with the generated indexes
+        // to make sure overall things aren't completely broken. This catches
+        // things like out of ranges indexes and so on. It does not validate
+        // the triangles represented by the indexes yet.
+        validateIndexedTriangles(name, vertices, indexes);
+
+        connection.polygonIndexMap = traingleIndexesByPolygonVertex(polygonIndexes);
+
+        const vbo = new VertexBuffer({
+          positions: new VertexBufferData(gl, vertices),
+          normals: new VertexBufferData(gl, normals),
+          tangents: tangents && new VertexBufferData(gl, tangents),
+          bitangents: bitangents && new VertexBufferData(gl, bitangents),
+          textureCoords: uv && new TextureVertexBufferData(gl, uv),
+          // indexes: polygonIndexes && new VertexBufferIndexes(gl, polygonIndexes),
+        });
+
+        sceneNode = new Gometry({name}, vbo);
+        break;
+      }
+      case "Deformer": {
+        const type = fbxNode.attributes[2];
+
+        if (type === "Skin") {
+          sceneNode = new SkinDeformer({name});
+        } else if (type === "Cluster") {
+          let indexes = findPropertyValueByName(fbxNode, "Indexes");
+          const weights = findPropertyValueByName(fbxNode, "Weights");
+
+          if (!indexes) {
+            break;
+          }
+
+          // Current connection is for the cluster, the parent is for the
+          // skin deformer, and the parent of that is for the geometry, which
+          // is where the vertices are, including all calculated geometric
+          // artifacts that clusters rely on.
+          const geometryConnection = connection.pconnection.pconnection;
+          indexes = indexes.map(idx => geometryConnection.polygonIndexMap[idx]);
+
+          sceneNode = new SkinDeformerCluster({name},
+            indexes && new VertexBufferIndexes(gl, indexes),
+            weights);
+        }
         break;
       }
       case "Material": {
@@ -282,7 +340,7 @@ function sceneNodeFromConnection(gl, rootConnection, sceneManager) {
         break;
       }
       default: {
-        return null;
+        break;
       }
     }
 
@@ -290,7 +348,7 @@ function sceneNodeFromConnection(gl, rootConnection, sceneManager) {
   }
 }
 
-// buildVertexBufferForGeometry builds all the different buffers needed for
+// parseGeometryLayers builds all the different buffers needed for
 // rendering a FBX file. This includes UVs, Normals, and Vertices. The
 // semantics include expanding out polygons to triangles to uniformly handle
 // quads, triangle fans, and other polygon types.
@@ -299,7 +357,7 @@ function sceneNodeFromConnection(gl, rootConnection, sceneManager) {
 // render each triangle individually, especially if the models are built using
 // triangle fans. However, current implementation in the scene renderer assumes
 // everything is a triangle which is good enough for now.
-// buildVertexBufferForGeometry builds all the different buffers needed for
+// parseGeometryLayers builds all the different buffers needed for
 // rendering a FBX file. This includes UVs, Normals, and Vertices. The
 // semantics include expanding out polygons to triangles to uniformly handle
 // quads, triangle fans, and other polygon types.
@@ -308,19 +366,19 @@ function sceneNodeFromConnection(gl, rootConnection, sceneManager) {
 // render each triangle individually, especially if the models are built using
 // triangle fans. However, current implementation in the scene renderer assumes
 // everything is a triangle which is good enough for now.
-function buildVertexBufferForGeometry(gl, name, geometry) {
-  const polygonVertexIndex = findPropertyValueByName(geometry, "PolygonVertexIndex");
-  let vertices = findPropertyValueByName(geometry, "Vertices");
+function buildGeometryLayers(fbxGeometry) {
+  const polygonVertexIndex = findPropertyValueByName(fbxGeometry, "PolygonVertexIndex");
+  let polygonVertices = findPropertyValueByName(fbxGeometry, "Vertices");
 
   // [0, 4, 6, -3] => [0, 4, 6, 0, 6, 2]
-  const vertexIndexes = convertPolygonIndexesToTriangleIndexes(polygonVertexIndex);
+  const polygonIndexes = convertPolygonIndexesToTriangleIndexes(polygonVertexIndex);
 
   // Build out the list of vertices from the triangle indexes. This generates
   // a lot of duplicated vertices, but this is expected because normal vectors
   // often can't be shared so indexing the same coordinate will cause the
   // same normal vertor to be used for polygons that face away from each
   // other and this causes all sorts of issues with lighting.
-  vertices = getIndexedComponents(vertices, vertexIndexes, 3);
+  const vertices = getIndexedComponents(polygonVertices, polygonIndexes, 3);
 
   // When we extract indexed triangles from the polygons, the vertices
   // are stored in a sequential order. Normals and all the other layers
@@ -329,20 +387,14 @@ function buildVertexBufferForGeometry(gl, name, geometry) {
   // different layers in the correct order.
   //
   // TODO(miguel): is there a way to avoid remapping indexes so that
-  // we can just provide `vertexIndexes` to draw elements? Look out for
-  // cube shapes that have normal verctors that cannot be shared; more
-  // generally, any shape that has 90 degree angles where normals just
+  // we can just provide `polygonIndexes` to draw elements? Look
+  // out for cube shapes that have normal verctors that cannot be shared;
+  // more generally, any shape that has 90 degree angles where normals just
   // point in unsharable directions.
-  const triangleVertexIndexes = reindexPolygonVertex(polygonVertexIndex);
-
-  // We do a quick check on the vertices with the generated indexes
-  // to make sure overall things aren't completely broken. This catches
-  // things like out of ranges indexes and so on. It does not validate
-  // the triangles represented by the indexes yet.
-  validateIndexedTriangles(name, vertices, vertexIndexes);
+  const indexes = reindexPolygonVertex(polygonVertexIndex);
 
   // Texture coordinates.
-  let uv = getLayerData(geometry, "UV");
+  let uv = getLayerData(fbxGeometry, "UV");
 
   // Tangent, BiTangent, and Normal vector calculations for normal maps
   // support. These are vectors that are used in the shaders to correctly
@@ -350,7 +402,10 @@ function buildVertexBufferForGeometry(gl, name, geometry) {
   // is the space where normal vectors in normal map textures are defined.
   let tangents, bitangents, normals;
   if (uv && uv.length) {
-    uv = getIndexedComponents(uv, triangleVertexIndexes, 2);
+    // Reindex direct polygon indexes to triangle indexes. This changes
+    // the items so that they align with triangles vertices which are
+    // sequentially stored.
+    uv = getIndexedComponents(uv, indexes, 2);
 
     const [t,b,n] = getTBNVectorsFromTriangles(vertices, uv);
     tangents = t;
@@ -359,19 +414,24 @@ function buildVertexBufferForGeometry(gl, name, geometry) {
   }
 
   if (!normals) {
-    normals = getLayerData(geometry, "Normals");
+    normals = getLayerData(fbxGeometry, "Normals");
     if (normals) {
-      normals = getIndexedComponents(normals, triangleVertexIndexes, 3);
+      // Reindex direct polygon indexes to triangle indexes. This changes
+      // the items so that they align with triangles vertices which are
+      // sequentially stored.
+      normals = getIndexedComponents(normals, indexes, 3);
     }
   }
 
-  return new VertexBuffer({
-    positions: new VertexBufferData(gl, vertices),
-    normals: new VertexBufferData(gl, normals),
-    tangents: tangents && new VertexBufferData(gl, tangents),
-    bitangents: bitangents && new VertexBufferData(gl, bitangents),
-    textureCoords: uv && new TextureVertexBufferData(gl, uv),
-  });
+  return {
+    vertices,
+    indexes,
+    tangents,
+    bitangents,
+    uv, normals,
+    polygonVertices,
+    polygonIndexes,
+  };
 }
 
 let _idxNameMap = {};
@@ -497,4 +557,26 @@ function initShaderPrograms(gl, sceneNode) {
     const shaderName = textures.length ? "phong-texture" : "phong-lighting";
     model.withShaderProgram(createShaderProgram(gl, shaderName));
   });
+}
+
+// traingleIndexesByPolygonVertex maps polygon indexes (decoded fbx
+// geometry indexes PolygonVertexIndex) to indexes that map to the vertices
+// we give webgl for rendering. This needs to happen because when we
+// process the geometry layers from an FBX file all the vertices are stored
+// as sequential vertex coordinates for triangles, which means lots of
+// duplicate data. Unlike the decoded PolygonVertexIndex which are not
+// sequential and are optimized for sharing vertex coordinates.
+export function traingleIndexesByPolygonVertex(indexes) {
+  const results = {};
+
+  for (let i = 0; i < indexes.length; i++) {
+    let vindex = indexes[i];
+
+    // We just pick the first index since these point to the same vertex.
+    if (!results.hasOwnProperty(vindex)) {
+      results[vindex] = i;
+    }
+  }
+
+  return results;
 }
