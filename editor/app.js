@@ -55,8 +55,13 @@ onReady(() => {
   app.init();
 
   window.scene.doRenderLoop(gl)
-    .then(({resourceLoader, sceneManager, refreshProjection}) => {
+    .then(({registerRefreshRateUpdater, resourceLoader, sceneManager, refreshProjection}) => {
       app.ready({resourceLoader, sceneManager, refreshProjection});
+
+      const fpsEl = document.querySelector("#fps");
+      registerRefreshRateUpdater((fps) => {
+        fpsEl.innerHTML = fps;
+      });
     })
     .catch(ex => {
       // Report error

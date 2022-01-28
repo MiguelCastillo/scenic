@@ -5,6 +5,14 @@ body {
   background-color: #000000;
 }
 
+#fps {
+  position: absolute;
+  top: 0;
+  left: 0;
+  color: white;
+  z-index: 100000;
+}
+
 #container {
   display: flex;
   height: 100vh;

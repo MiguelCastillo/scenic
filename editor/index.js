@@ -54,7 +54,6 @@ function applyWorldTranslation(sceneManager, translateX, translateY, translateZ)
 // Helper function for providing the ability to update a scene and to also
 // render it.
 function createSceneUpdater(gl, sceneManager) {
-  // eslint-disable-next-line no-unused-vars
   const getFrameRate = createFrameRateCounter();
 
   let axisProjectionMatrix, perspectiveProjectionMatrix;
@@ -183,22 +182,27 @@ function createSceneUpdater(gl, sceneManager) {
     }
   }
 
+  let lastFps = 0;
+  let refreshRateUpdater = () => {};
+  const registerRefreshRateUpdater = (cb) => {refreshRateUpdater = cb};
+
   function renderScene(ms) {
     sceneManager.render(ms, gl);
 
     // Let's write out the number of frames per second that we are able to
     // render.
-    // const {frameRate, lapsedMs} = getFrameRate(ms);
-    // if (lapsedMs > 1000) {
-    //   // eslint-disable-next-line
-    //   console.log(frameRate);
-    // }
+    const {frameRate, lapsedMs} = getFrameRate(ms);
+    if (lapsedMs > 1000 && lastFps !== frameRate) {
+      lastFps = frameRate;
+      refreshRateUpdater(frameRate);
+    }
   }
 
   return {
     updateScene,
     renderScene,
     refreshProjection,
+    registerRefreshRateUpdater,
   };
 }
 
@@ -243,6 +247,7 @@ export const doRenderLoop = (gl) => {
     updateScene,
     renderScene,
     refreshProjection,
+    registerRefreshRateUpdater,
   } = createSceneUpdater(gl, sceneManager);
 
   // This starts the render loop to render the scene!
@@ -256,6 +261,6 @@ export const doRenderLoop = (gl) => {
       // eslint-disable-next-line
       console.log(`Load time: ${(Date.now() - start)/1000} secs`)
 
-      return {resourceLoader, sceneManager, refreshProjection};
+      return {resourceLoader, sceneManager, refreshProjection, registerRefreshRateUpdater};
     });
 };
