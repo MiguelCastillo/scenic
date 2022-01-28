@@ -17,7 +17,37 @@ import {
   animateScalar,
 } from "../../../src/animation/keyframe.js";
 
-export class Model extends RenderableSceneNode {
+class Animatable extends RenderableSceneNode {
+  constructor(options) {
+    super(options);
+    this.animationNodes = [];
+  }
+
+  add(node) {
+    if (node instanceof AnimationCurveNode) {
+      this.animationNodes.push(node._withParent(this));
+    } else {
+      super.add(node);
+    }
+    return this;
+  }
+
+  preRender(context) {
+    const {
+      worldMatrix,
+    } = doKeyFrameAnimation(context.ms, this.animationNodes);
+
+    if (worldMatrix) {
+      if (this.parent) {
+        this.withMatrix(this.parent.worldMatrix.multiply(worldMatrix));
+      } else {
+        this.withMatrix(worldMatrix);
+      }
+    }
+  }
+}
+
+export class Model extends Animatable {
   constructor(options, shaderProgram) {
     super(Object.assign({}, options, {type:"fbx-model"}));
     this.vertexBuffers = [];
@@ -37,9 +67,10 @@ export class Model extends RenderableSceneNode {
     return this;
   }
 
-  preRender() {
+  preRender(context) {
     this.shaderProgram.setUniforms([]);
     this.vertexBuffers = [];
+    super.preRender(context);
   }
 
   render(context) {
@@ -124,39 +155,15 @@ export class Model extends RenderableSceneNode {
   }
 }
 
-export class Armature extends SceneNode {
+export class Armature extends Animatable {
   constructor(options) {
     super(Object.assign({}, options, {type:"fbx-armature"}));
   }
 }
 
-export class Bone extends SceneNode {
+export class Bone extends Animatable {
   constructor(options) {
     super(Object.assign({}, options, {type:"fbx-bone"}));
-    this.animationNodes = [];
-  }
-
-  add(node) {
-    if (node instanceof AnimationCurveNode) {
-      this.animationNodes.push(node._withParent(this));
-    } else {
-      super.add(node);
-    }
-    return this;
-  }
-
-  preRender(context) {
-    const {
-      worldMatrix,
-    } = doKeyFrameAnimation(context.ms, this.animationNodes);
-
-    if (worldMatrix) {
-      if (this.parent) {
-        this.withMatrix(this.parent.worldMatrix.multiply(worldMatrix));
-      } else {
-        this.withMatrix(worldMatrix);
-      }
-    }
   }
 }
 
