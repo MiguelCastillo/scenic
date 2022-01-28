@@ -122,22 +122,18 @@ function createSceneUpdater(gl, sceneManager) {
     })
     .on("mousemove", (evt) => {
       if (document.pointerLockElement === mousetrapEl) {
-        const {devicePixelRatio} = window;
+        const devicePixelRatio = window.devicePixelRatio;
+        const translationRatio = devicePixelRatio*6;
+        const rotationRatio = devicePixelRatio;
 
-        if (enableWorldTranslation || evt.ctrlKey) {
-          const translationRatio = devicePixelRatio*6;
-          worldTranslation.start([
-            evt.movementX/translationRatio,
-            -evt.movementY/translationRatio,
-            0,
-          ]);
-        }
-        else {
-          const rotationRatio = devicePixelRatio;
-          worldRotation.start([
-            evt.movementY/rotationRatio,
-            evt.movementX/rotationRatio,
-          ]);
+        if (enableWorldTranslation || evt.shiftKey && evt.ctrlKey) {
+          worldTranslation.start([evt.movementX/translationRatio, -evt.movementY/translationRatio, 0]);
+        } else if (evt.shiftKey) {
+          worldTranslation.start([0, -evt.movementY/translationRatio, 0]);
+        } else if (evt.ctrlKey) {
+          worldTranslation.start([0, 0, evt.movementY/translationRatio]);
+        } else {
+          worldRotation.start([evt.movementY/rotationRatio, evt.movementX/rotationRatio]);
         }
       }
     })
@@ -146,9 +142,18 @@ function createSceneUpdater(gl, sceneManager) {
       evt.preventDefault();
 
       if (document.pointerLockElement === mousetrapEl) {
-        const {devicePixelRatio} = window;
+        const devicePixelRatio = window.devicePixelRatio;
         const rotationRatio = devicePixelRatio*6;
-        applyWorldTranslation(sceneManager, 0, 0, -(evt.deltaY/rotationRatio));
+
+        if (evt.shiftKey && evt.ctrlKey) {
+          applyWorldTranslation(sceneManager, -(evt.deltaX/rotationRatio), (evt.deltaY/rotationRatio), 0);
+        } else if (evt.shiftKey) {
+          applyWorldTranslation(sceneManager, 0, (evt.deltaY/rotationRatio), 0);
+        } else if (evt.ctrlKey) {
+          applyWorldTranslation(sceneManager, 0, 0, -(evt.deltaY/rotationRatio));
+        } else {
+          applyWorldRotation(sceneManager, -evt.deltaY/devicePixelRatio, -evt.deltaX/devicePixelRatio);
+        }
       }
     });
 
