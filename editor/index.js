@@ -54,6 +54,7 @@ function applyWorldTranslation(sceneManager, translateX, translateY, translateZ)
 // Helper function for providing the ability to update a scene and to also
 // render it.
 function createSceneUpdater(gl, sceneManager) {
+  // eslint-disable-next-line no-unused-vars
   const getFrameRate = createFrameRateCounter();
 
   let axisProjectionMatrix, perspectiveProjectionMatrix;
@@ -154,7 +155,7 @@ function createSceneUpdater(gl, sceneManager) {
 
   // This is the logic for updating the scene state and the scene graph with the
   // new scene state. This is the logic for the game itself.
-  function updateScene(ms) {
+  function updateScene(/*ms*/) {
     const worldProjectionName = "world projection";
     sceneManager
       .getNodeByName(worldProjectionName)
@@ -187,11 +188,11 @@ function createSceneUpdater(gl, sceneManager) {
 
     // Let's write out the number of frames per second that we are able to
     // render.
-    const {frameRate, lapsedMs} = getFrameRate(ms);
-    if (lapsedMs > 1000) {
-      // eslint-disable-next-line
-      //console.log(frameRate);
-    }
+    // const {frameRate, lapsedMs} = getFrameRate(ms);
+    // if (lapsedMs > 1000) {
+    //   // eslint-disable-next-line
+    //   console.log(frameRate);
+    // }
   }
 
   return {
