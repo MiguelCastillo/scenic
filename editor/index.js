@@ -4,8 +4,6 @@
 // https://www.tutorialspoint.com/webgl/webgl_drawing_points.htm
 //
 
-import {App} from "./app.js";
-import webgl from "../src/webgl.js";
 import {
   PerspectiveProjectionMatrix,
   OrthographicProjectionMatrix,
@@ -13,7 +11,6 @@ import {
 import * as vec3 from "../src/math/vector3.js";
 import * as easings from "../src/math/easings.js";
 import {Subscription} from "../src/dom/events.js";
-import {onReady} from "../src/dom/ready.js";
 
 import {createSplitPanel} from "./split-panel.js";
 import {createScene} from "./scene-factory.js";
@@ -229,52 +226,35 @@ function createOrthographicProjectionMatrix(width, height, far=1000) {
   return OrthographicProjectionMatrix.create(width, height, far);
 }
 
-// Whenever the DOM is ready is when we want to start doing work. That's
-// because the canvas where we render stuff needs to be ready for creating the
-// webgl context and be ready for rendering.
-onReady(() => {
+export const doRenderLoop = (gl) => {
   const start = Date.now();
-  const app = new App();
 
-  try {
-    app.init();
+  // Let's create the scene, which is made up of a scene manager and a
+  // state manager.
+  const sceneManager = createScene(config);
 
-    // webgl context! There is where we render all the stuff. This is
-    // the thing that renders to screen.
-    const gl = webgl.createContext(document.querySelector("#glCanvas"));
+  // API for loading resources for scene nodes.
+  const resourceLoader = createResourceLoader(gl, sceneManager);
 
-    // Let's create the scene, which is made up of a scene manager and a
-    // state manager.
-    const sceneManager = createScene(config);
+  // Two functions to update the scene state and another for actually render
+  // the scene based on the updated scene state.
+  const {
+    updateScene,
+    renderScene,
+    refreshProjection,
+  } = createSceneUpdater(gl, sceneManager);
 
-    // API for loading resources for scene nodes.
-    const resourceLoader = createResourceLoader(gl, sceneManager);
+  // This starts the render loop to render the scene!
+  startRenderLoop(gl, updateScene, renderScene);
 
-    // Two functions to update the scene state and another for actually render
-    // the scene based on the updated scene state.
-    const {
-      updateScene,
-      renderScene,
-      refreshProjection,
-    } = createSceneUpdater(gl, sceneManager);
+  // First thing is to load the shaders so that loading renderable
+  // resources have them when they are getting built.
+  return loadShaders(config.preload.shaders)
+    .then(() => resourceLoader.loadMany(getResourcesFromConfig(config)))
+    .then(() => {
+      // eslint-disable-next-line
+      console.log(`Load time: ${(Date.now() - start)/1000} secs`)
 
-    // This starts the render loop to render the scene!
-    startRenderLoop(gl, updateScene, renderScene);
-
-    // First thing is to load the shaders so that loading renderable
-    // resources have them when they are getting built.
-    loadShaders(config.preload.shaders)
-      .then(() => resourceLoader.loadMany(getResourcesFromConfig(config)))
-      .then(() => {
-        app.ready({resourceLoader, sceneManager, refreshProjection});
-
-        // eslint-disable-next-line
-        console.log(`Load time: ${(Date.now() - start)/1000} secs`)
-      });
-  }
-  catch(ex) {
-    // Report error
-    app.error(ex);
-    throw ex;
-  }
-});
+      return {resourceLoader, sceneManager, refreshProjection};
+    });
+};

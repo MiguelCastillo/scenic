@@ -6,9 +6,10 @@
   "scripts": {
     "test": "jest",
     "serve": "3dub",
-    "editor": "pakit --config editor/.pakit.js",
+    "editor": "pakit --config editor/.pakit-editor.js",
+    "scene": "pakit --config editor/.pakit-scene.js",
     "fileformats": "pakit --config editor/.pakit-fileformats.js",
-    "build": "npm run editor & npm run fileformats"
+    "build": "npm run scene & npm run editor & npm run fileformats"
   },
   "author": "Miguel Castillo",
   "license": "MIT",

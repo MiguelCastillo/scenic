@@ -1,8 +1,9 @@
 module.exports = {
   "root": "./",
   "watch": [
-    "editor",
-    "resources",
-    "dist"
+    "editor/*.html",
+    "editor/*.css",
+    "editor/dist",
+    "resources"
   ]
 };
