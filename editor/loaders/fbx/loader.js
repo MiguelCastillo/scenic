@@ -27,7 +27,7 @@ import {
   FbxFile,
   getNodeName,
   findChildByName,
-  // findChildrenByName,
+  findChildrenByName,
   findPropertyValueByName,
   convertPolygonIndexesToTriangleIndexes,
   reindexPolygonVertex,
@@ -108,26 +108,22 @@ export function buildSceneNode(gl, model, sceneNodeConfig, sceneManager) {
 
   sceneNode.addItems(
     nodeWrappersByID["0,0"].connections
-      .map(connection => sceneNodeFromConnection(gl, connection, sceneManager))
+      .map(connection => sceneNodeFromConnection(gl, connection, sceneManager, sceneNode))
       .filter(Boolean));
 
-  // TODO(miguel): Enable this when we are ready to support animation of
-  // stacks.
-  //
-  // Build animation stacks tree.
-  // findChildrenByName(objects, "AnimationStack")
-  //   .map(s => s.attributes[0])
-  //   .forEach(stackID => {
-  //     const animationStack = new AnimationStack({
-  //       name: nodeWrappersByID[stackID].name,
-  //     });
+  findChildrenByName(objects, "AnimationStack")
+    .map(s => s.attributes[0])
+    .forEach(stackID => {
+      const animationStack = new AnimationStack({
+        name: nodeWrappersByID[stackID].name,
+      });
 
-  //     sceneNode.add(
-  //       animationStack.addItems(
-  //         nodeWrappersByID[stackID].connections
-  //           .map((connection) => sceneNodeFromConnection(gl, connection, sceneManager))
-  //           .filter(Boolean)));
-  //   });
+      sceneNode.add(
+        animationStack.addItems(
+          nodeWrappersByID[stackID].connections
+            .map((connection) => sceneNodeFromConnection(gl, connection, sceneManager))
+            .filter(Boolean)));
+    });
 }
 
 
@@ -135,15 +131,15 @@ const _textureCache = {};
 
 // sceneNodeFromConnection traverses the fbx tree of nodes depth first
 // creating scene nodes for each relevant of the fbx file.
-function sceneNodeFromConnection(gl, rootConnection, sceneManager) {
-  const sceneNode = createSceneNode(rootConnection);
+function sceneNodeFromConnection(gl, rootConnection, sceneManager, relativeRootSceneNode) {
+  const sceneNode = createSceneNode(rootConnection, relativeRootSceneNode);
   const nodeStack = [{sceneNode, connection: rootConnection}];
 
   // Traverse the fbx tree in a breadth first order.
   for (const {sceneNode, connection} of nodeStack) {
     for (const c of connection.src.connections) {
       c.pconnection = connection;
-      const childSceneNode = createSceneNode(c, connection);
+      const childSceneNode = createSceneNode(c, connection, relativeRootSceneNode);
       if (childSceneNode) {
         // Only support for OO and OP (partially OP) connections.
         // TODO(miguel): add support for other types of connections.
@@ -344,7 +340,12 @@ function sceneNodeFromConnection(gl, rootConnection, sceneManager) {
       }
     }
 
-    return sceneNode && sceneNode.withMatrix(mat4.Matrix4.identity());
+    if (!sceneNode) {
+      return null;
+    }
+
+    sceneNode.relativeRoot = relativeRootSceneNode;
+    return sceneNode.withMatrix(mat4.Matrix4.identity());
   }
 }
 

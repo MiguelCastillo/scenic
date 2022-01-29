@@ -33,9 +33,33 @@ class Animatable extends RenderableSceneNode {
   }
 
   preRender(context) {
+    const {sceneManager} = context;
+    const state = sceneManager.getNodeStateByName(this.relativeRoot.name);
+
+    const animationState = state && state.animation;
+    if (!animationState || !animationState.stackName) {
+      return;
+    }
+
+    let animationStack = this.currentAnimationStack;
+    if (!animationStack || animationStack.name !== animationState.stackName) {
+      animationStack = this.relativeRoot.items.find(item => item.name === animationState.stackName);
+      this.currentAnimationStack = animationStack;
+    }
+
+    if (!animationStack) {
+      return;
+    }
+
+    // TODO(miguel): figure out semantics for dealing with multiple
+    // layers. Perhaps blend them? Override?
+    // For now, pick first layer for now.
+    const animationLayer = animationStack.animationLayers[0];
+    const animationNodes = this.animationNodes.filter(n => animationLayer.animationCurveNodesByName[n.name]);
+
     const {
       worldMatrix,
-    } = doKeyFrameAnimation(context.ms, this.animationNodes);
+    } = doKeyFrameAnimation(context.ms, animationNodes);
 
     if (worldMatrix) {
       if (this.parent) {
@@ -276,12 +300,32 @@ export class Material extends SceneNode {
 export class AnimationStack extends SceneNode {
   constructor(options) {
     super(Object.assign({}, options, {type: "fbx-animation-stack"}));
+    this.animationLayers = [];
+  }
+
+  add(node) {
+    this.animationLayers.push(node);
+    return this;
   }
 }
 
 export class AnimationLayer extends SceneNode {
   constructor(options) {
     super(Object.assign({}, options, {type: "fbx-animation-layer"}));
+    this.animationCurveNodesByName = {};
+    this.animationCurveNodes = [];
+  }
+
+  add(node) {
+    if (this.animationCurveNodesByName[node.name]) {
+      // eslint-disable-next-line
+      console.warn(`animation node ${node.name} already exists in ${this.name}`);
+    } else {
+      this.animationCurveNodesByName[node.name] = node.name;
+    }
+
+    this.animationCurveNodes.push(node);
+    return this;
   }
 }
 

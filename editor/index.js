@@ -236,12 +236,14 @@ function createOrthographicProjectionMatrix(width, height, far=1000) {
   return OrthographicProjectionMatrix.create(width, height, far);
 }
 
+export let sceneManager;
+
 export const doRenderLoop = (gl) => {
   const start = Date.now();
 
   // Let's create the scene, which is made up of a scene manager and a
   // state manager.
-  const sceneManager = createScene(config);
+  sceneManager = createScene(config);
 
   // API for loading resources for scene nodes.
   const resourceLoader = createResourceLoader(gl, sceneManager);
