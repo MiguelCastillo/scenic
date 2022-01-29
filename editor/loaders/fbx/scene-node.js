@@ -64,10 +64,11 @@ class Animatable extends RenderableSceneNode {
     // For now, pick first layer for now.
     const animationLayer = animationStack.animationLayers[0];
     const animationNodes = this.animationNodes.filter(n => animationLayer.animationCurveNodesByName[n.name]);
+    const animationSpeed = animationState.speed == null ? 1 : animationState.speed;
 
     const {
       worldMatrix,
-    } = doKeyFrameAnimation(context.ms, animationNodes);
+    } = doKeyFrameAnimation(context.ms, animationNodes, animationSpeed);
 
     if (worldMatrix) {
       if (this.parent) {
@@ -343,8 +344,8 @@ export class AnimationCurveNode extends SceneNode {
     this.pname = pname;
   }
 
-  getValues(ms) {
-    return [this.pname, ...this.items.map(item => item.getValue(ms))];
+  getValues(ms, speed) {
+    return [this.pname, ...this.items.map(item => item.getValue(ms, speed))];
   }
 }
 
@@ -357,12 +358,12 @@ export class AnimationCurve extends SceneNode {
     this.animate = animateScalar(values, times);
   }
 
-  getValue(ms) {
+  getValue(ms, speed) {
     // 46186158000 is an FBX second.
     // #define KTIME_ONE_SECOND KTime (K_LONGLONG(46186158000))
     // https://github.com/mont29/blender-io-fbx/blob/ea45491a84b64f7396030775536be562bc118c41/io_scene_fbx/export_fbx.py#L2447
     // https://download.autodesk.com/us/fbx/docs/FBXSDK200611/wwhelp/wwhimpl/common/html/_index.htm?context=FBXSDK_Overview&file=ktime_8h-source.html
-    return [this.pname, this.animate(46186158000*(ms*0.001), 1)];
+    return [this.pname, this.animate(46186158000*(ms*0.001), speed)];
   }
 }
 
@@ -505,12 +506,12 @@ function getImage(filepath) {
 
 // We only support animation transform matrices, which are used for bone
 // animation.
-function doKeyFrameAnimation(ms, animationNodes) {
+function doKeyFrameAnimation(ms, animationNodes, animationSpeed) {
   const animationResult = {};
   let worldMatrix = mat4.Matrix4.identity();
 
   animationNodes.forEach(animation => {
-    const [pname, ...result] = animation.getValues(ms);
+    const [pname, ...result] = animation.getValues(ms, animationSpeed);
 
     switch(pname) {
       case "Lcl Translation": {
