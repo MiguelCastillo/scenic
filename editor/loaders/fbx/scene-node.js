@@ -6,6 +6,10 @@ import {
 } from "../../../src/scene/node.js";
 
 import {
+  Animation as AnimationSceneNode,
+} from "../../../src/scene/animation.js"
+
+import {
   Renderable as RenderableSceneNode,
 } from "../../../src/scene/renderable.js";
 
@@ -43,8 +47,12 @@ class Animatable extends RenderableSceneNode {
 
     let animationStack = this.currentAnimationStack;
     if (!animationStack || animationStack.name !== animationState.stackName) {
-      animationStack = this.relativeRoot.items.find(item => item.name === animationState.stackName);
-      this.currentAnimationStack = animationStack;
+      const animation = this.relativeRoot.items.find(item => item instanceof AnimationSceneNode);
+
+      if (animation) {
+        animationStack = animation.items.find(item => item.name === animationState.stackName);
+        this.currentAnimationStack = animationStack;
+      }
     }
 
     if (!animationStack) {

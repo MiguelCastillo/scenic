@@ -34,6 +34,10 @@ import {
 } from "../../../src/formats/fbxfile.js";
 
 import {
+  Animation as AnimationSceneNode,
+} from "../../../src/scene/animation.js";
+
+import {
   Mesh,
   Gometry,
   SkinDeformer,
@@ -111,6 +115,8 @@ export function buildSceneNode(gl, fbxDocument, sceneNodeConfig, sceneManager) {
       .map(connection => sceneNodeFromConnection(gl, connection, sceneManager, sceneNode))
       .filter(Boolean));
 
+  // TODO(miguel): we need to start working with unique ids.
+  const animationNode = new AnimationSceneNode({name: "Animation"});
   findChildrenByName(objects, "AnimationStack")
     .map(s => s.attributes[0])
     .forEach(stackID => {
@@ -118,12 +124,16 @@ export function buildSceneNode(gl, fbxDocument, sceneNodeConfig, sceneManager) {
         name: nodeWrappersByID[stackID].name,
       });
 
-      sceneNode.add(
+      animationNode.add(
         animationStack.addItems(
           nodeWrappersByID[stackID].connections
             .map((connection) => sceneNodeFromConnection(gl, connection, sceneManager))
             .filter(Boolean)));
     });
+
+  if (animationNode.items.length) {
+    sceneNode.add(animationNode);
+  }
 }
 
 
