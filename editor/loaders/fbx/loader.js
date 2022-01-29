@@ -34,7 +34,7 @@ import {
 } from "../../../src/formats/fbxfile.js";
 
 import {
-  Model,
+  Mesh,
   Gometry,
   SkinDeformer,
   SkinDeformerCluster,
@@ -47,8 +47,8 @@ import {
   AnimationCurveNode,
   AnimationCurve,
 
-  findModels,
-  findModelTextures,
+  findMeshes,
+  findMeshTextures,
 } from "./scene-node.js";
 
 
@@ -69,7 +69,7 @@ export class Loader extends BrinaryFileLoader {
   }
 }
 
-export function buildSceneNode(gl, model, sceneNodeConfig, sceneManager) {
+export function buildSceneNode(gl, fbxDocument, sceneNodeConfig, sceneManager) {
   const sceneNode = sceneManager.getNodeByName(sceneNodeConfig.name);
 
   const nodeWrappersByID = {
@@ -78,7 +78,7 @@ export function buildSceneNode(gl, model, sceneNodeConfig, sceneManager) {
     },
   };
 
-  const objects = findChildByName(model, "Objects");
+  const objects = findChildByName(fbxDocument, "Objects");
   for (const node of objects.children) {
     nodeWrappersByID[node.attributes[0]] = {
       name: generateFbxNodeName(node),
@@ -87,7 +87,7 @@ export function buildSceneNode(gl, model, sceneNodeConfig, sceneManager) {
     };
   }
 
-  const connections = findChildByName(model, "Connections");
+  const connections = findChildByName(fbxDocument, "Connections");
   for (const props of connections.properties) {
     switch(props.name) {
       case "C": {
@@ -173,7 +173,7 @@ function sceneNodeFromConnection(gl, rootConnection, sceneManager, relativeRootS
         const modelType = fbxNode.attributes[2];
 
         if (modelType === "Mesh") {
-          sceneNode = new Model({name});
+          sceneNode = new Mesh({name});
         } else if (modelType === "LimbNode") {
           sceneNode = new Bone({name});
         } else if (modelType === "Null") {
@@ -350,23 +350,18 @@ function sceneNodeFromConnection(gl, rootConnection, sceneManager, relativeRootS
 }
 
 // parseGeometryLayers builds all the different buffers needed for
-// rendering a FBX file. This includes UVs, Normals, and Vertices. The
+// rendering an FBX file. This includes UVs, Normals, and Vertices. The
 // semantics include expanding out polygons to triangles to uniformly handle
 // quads, triangle fans, and other polygon types.
 //
 // TODO(miguel): Support triangle fans. It's ultimately less efficient to
-// render each triangle individually, especially if the models are built using
+// render each triangle individually, especially if the meshes are built using
 // triangle fans. However, current implementation in the scene renderer assumes
 // everything is a triangle which is good enough for now.
 // parseGeometryLayers builds all the different buffers needed for
 // rendering a FBX file. This includes UVs, Normals, and Vertices. The
 // semantics include expanding out polygons to triangles to uniformly handle
 // quads, triangle fans, and other polygon types.
-//
-// TODO(miguel): Support triangle fans. It's ultimately less efficient to
-// render each triangle individually, especially if the models are built using
-// triangle fans. However, current implementation in the scene renderer assumes
-// everything is a triangle which is good enough for now.
 function buildGeometryLayers(fbxGeometry) {
   const polygonVertexIndex = findPropertyValueByName(fbxGeometry, "PolygonVertexIndex");
   let polygonVertices = findPropertyValueByName(fbxGeometry, "Vertices");
@@ -544,19 +539,19 @@ function getLayerData(geometry, layerDataName) {
 }
 
 function initShaderPrograms(gl, sceneNode) {
-  findModels(sceneNode).forEach(model => {
-    const textures = findModelTextures(model);
+  findMeshes(sceneNode).forEach(mesh => {
+    const textures = findMeshTextures(mesh);
 
-    // If the model has any textures, then we use phong-texture. We have a
+    // If the mesh has any textures, then we use phong-texture. We have a
     // separate shader specifically for handling textures because if the
     // a shader defined a sample2D type and does not call the `texture`
     // method in the shader then we get the warning:
     // "there is no texture bound to the unit 0".
     // So we want to make sure we pick a shader that can handle texture
-    // if the model has any, otherwise use an equivalent shader without
+    // if the mesh has any, otherwise use an equivalent shader without
     // textures.
     const shaderName = textures.length ? "phong-texture" : "phong-lighting";
-    model.withShaderProgram(createShaderProgram(gl, shaderName));
+    mesh.withShaderProgram(createShaderProgram(gl, shaderName));
   });
 }
 

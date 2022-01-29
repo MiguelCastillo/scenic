@@ -71,9 +71,9 @@ class Animatable extends RenderableSceneNode {
   }
 }
 
-export class Model extends Animatable {
+export class Mesh extends Animatable {
   constructor(options, shaderProgram) {
-    super(Object.assign({}, options, {type:"fbx-model"}));
+    super(Object.assign({}, options, {type:"fbx-mesh"}));
     this.vertexBuffers = [];
 
     if (shaderProgram) {
@@ -210,8 +210,8 @@ export class Gometry extends SceneNode {
   }
 
   render() {
-    let model = findParentModel(this);
-    if (model) {
+    let mesh = findParentMesh(this);
+    if (mesh) {
       if (this.enableSkinning === true && this.skinDeformers.length) {
         // These deformers are things like a skin deformer which has
         // cluster deformers as children nodes. These clusters are the
@@ -219,11 +219,11 @@ export class Gometry extends SceneNode {
         // by the deformations.
         for (const skin of this.skinDeformers) {
           for (const cluster of skin.items) {
-            model.addVertexBuffer(this.vertexBuffer.clone().withIndexes(cluster.indexes));
+            mesh.addVertexBuffer(this.vertexBuffer.clone().withIndexes(cluster.indexes));
           }
         };
       } else {
-        model.addVertexBuffer(this.vertexBuffer);
+        mesh.addVertexBuffer(this.vertexBuffer);
       }
     }
   }
@@ -272,12 +272,12 @@ export class Material extends SceneNode {
   }
 
   render(context) {
-    const model = findParentModel(this);
+    const mesh = findParentMesh(this);
 
-    if (model) {
+    if (mesh) {
       const {gl} = context;
 
-      model.shaderProgram.addUniforms([{
+      mesh.shaderProgram.addUniforms([{
         name: "ambientColor",
         update: ({index}) => {
           gl.uniform3fv(index, this.ambientColor);
@@ -433,14 +433,14 @@ export class Texture extends SceneNode {
   }
 
   render(context) {
-    let model = findParentModel(this);
+    let mesh = findParentMesh(this);
 
-    if (model) {
+    if (mesh) {
       const {gl} = context;
       const {textureID, type} = this;
 
       if (type === "normalmap") {
-        model.shaderProgram.addUniforms([
+        mesh.shaderProgram.addUniforms([
           {
             name: `${type}.enabled`,
             update: ({index}) => {
@@ -456,7 +456,7 @@ export class Texture extends SceneNode {
           }
         ]);
       } else {
-        model.shaderProgram.addUniforms([
+        mesh.shaderProgram.addUniforms([
           {
             name: `textures[${textureID}].enabled`,
             update: ({index}) => {
@@ -539,38 +539,38 @@ function getTransformAnimation(animation) {
   return transform;
 }
 
-function findParentModel(node) {
-  let model = node.parent;
-  while (model && !(model instanceof Model)) {
-    model = model.parent;
+function findParentMesh(node) {
+  let mesh = node.parent;
+  while (mesh && !(mesh instanceof Mesh)) {
+    mesh = mesh.parent;
   }
 
-  return model;
+  return mesh;
 }
 
-export function findModels(sceneNode) {
-  const models = [];
+export function findMeshes(sceneNode) {
+  const meshes = [];
 
   function traverse(node) {
     if (!node) {
       return;
     }
 
-    if (node instanceof Model) {
-      models.push(node);
+    if (node instanceof Mesh) {
+      meshes.push(node);
     }
 
     node.items.forEach(traverse);
   }
 
   traverse(sceneNode);
-  return models;
+  return meshes;
 }
 
-export function findModelTextures(model) {
+export function findMeshTextures(mesh) {
   const textures = [];
   function traverse(node) {
-    if (!node || node instanceof Model) {
+    if (!node || node instanceof Mesh) {
       return;
     }
 
@@ -581,6 +581,6 @@ export function findModelTextures(model) {
     node.items.forEach(traverse);
   }
 
-  model.items.forEach(traverse);
+  mesh.items.forEach(traverse);
   return textures;
 }
