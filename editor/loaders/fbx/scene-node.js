@@ -48,6 +48,9 @@ class Animatable extends RenderableSceneNode {
 
     const animationState = context.sceneManager.getNodeStateByName(animation.name);
     if (!animationState || !animationState.stackName) {
+      if (this.currentAnimationStack) {
+        this.currentAnimationStack = null;
+      }
       return;
     }
 
