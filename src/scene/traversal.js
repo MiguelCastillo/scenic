@@ -51,10 +51,10 @@ export function treeGetMatches(matcher) {
 }
 
 export const findParentItemsWithItemType = (node, type) => {
-  const typeKey = type + "s";
+  const typeKey = type;
 
   let currentNode = node;
-  while (currentNode && !currentNode.byType[typeKey]) {
+  while (currentNode && !currentNode.childrenByType[typeKey]) {
     currentNode = currentNode.parent;
   }
 
@@ -62,5 +62,5 @@ export const findParentItemsWithItemType = (node, type) => {
     return [];
   }
 
-  return currentNode.byType[typeKey];
-};  
+  return currentNode.childrenByType[typeKey];
+};
