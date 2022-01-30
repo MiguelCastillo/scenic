@@ -133,6 +133,15 @@ export function buildSceneNode(gl, fbxDocument, sceneNodeConfig, sceneManager) {
 
   if (animationNode.items.length) {
     sceneNode.add(animationNode);
+
+    // Initialize the state for the animation node
+    const {animation={}} = sceneManager.getNodeStateByName(sceneNode.name);
+    sceneManager.updateNodeStateByName(animationNode.name, {
+      ...animation,
+      name: animationNode.name,
+      type: animationNode.type,
+      stackNames: animationNode.items.map(item => item.name),
+    });
   }
 }
 
@@ -168,6 +177,15 @@ function sceneNodeFromConnection(gl, rootConnection, sceneManager, relativeRootS
         nodeStack.push({sceneNode: childSceneNode, connection: c});
       }
     }
+
+    const state = sceneManager.getNodeStateByName(sceneNode.name);
+    sceneManager.updateNodeStateByName(
+      sceneNode.name,
+      Object.assign({
+        name: sceneNode.name,
+        type: sceneNode.type,
+      }, state),
+    );
   }
 
   initShaderPrograms(gl, sceneNode);
