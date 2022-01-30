@@ -33,8 +33,6 @@ class Animatable extends RenderableSceneNode {
   }
 
   preRender(context) {
-    const {sceneManager} = context;
-
     // Right now the relativeRoot would have the animation node where
     // all the animation information exists. That's where we find
     // the animation stacks and the layers that determine the animation
@@ -48,7 +46,7 @@ class Animatable extends RenderableSceneNode {
       return;
     }
 
-    const animationState = sceneManager.getNodeStateByName(animation.name);
+    const animationState = context.sceneManager.getNodeStateByName(animation.name);
     if (!animationState || !animationState.stackName) {
       return;
     }
@@ -57,6 +55,10 @@ class Animatable extends RenderableSceneNode {
     if (!animationStack || animationStack.name !== animationState.stackName) {
       animationStack = animation.items.find(item => item.name === animationState.stackName);
       this.currentAnimationStack = animationStack;
+
+      // This offset is to make sure animation starts from the very beginning
+      // each time a new animation is activated.
+      this.msOffset = context.ms;
     }
     if (!animationStack) {
       return;
@@ -71,7 +73,7 @@ class Animatable extends RenderableSceneNode {
 
     const {
       worldMatrix,
-    } = doKeyFrameAnimation(context.ms, animationNodes, animationSpeed);
+    } = doKeyFrameAnimation(context.ms - this.msOffset, animationNodes, animationSpeed);
 
     if (worldMatrix) {
       if (this.parent) {
