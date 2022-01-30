@@ -78,8 +78,8 @@ export class SceneManager {
       const nodeState = this.getNodeStateByName(node.name);
       let modelMatrix;
 
-      if (nodeState) {
-        const {transform} = nodeState;
+      if (nodeState && nodeState.transform) {
+        const transform = nodeState.transform;
         modelMatrix = mat4.Matrix4
           .translation(...transform.position)
           .rotation(...transform.rotation)
