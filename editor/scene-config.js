@@ -168,6 +168,7 @@ export const config = {
             "name": "jedi star fighter",
             "type": "static-mesh",
             "resource": "/resources/fbx/therocket.fbx",
+            "normalSmoothing": true,
             "animation": {
               "speed": 1,
             },

@@ -25,7 +25,7 @@ export function calculateTangentVector(factor, edge1, edge2, euv1, euv2) {
   ];
 }
 
-export function calculateBiTangentVector(factor, edge1, edge2, euv1, euv2) {  
+export function calculateBiTangentVector(factor, edge1, edge2, euv1, euv2) {
   return [
     factor * (-euv2[0] * edge1[0] + euv1[0] * edge2[0]),
     factor * (-euv2[0] * edge1[1] + euv1[0] * edge2[1]),
@@ -77,7 +77,7 @@ function getTriangleUV(uvs, offset) {
   return [uvs[offset], uvs[offset+1]];
 }
 
-export function getTBNVectorsFromTriangles(vertices, uvs) {
+export function getTBNVectorsFromTriangles(vertices, uvs, normalSmoothing=true) {
   if (uvs.length !== vertices.length - vertices.length/3) {
     throw new Error("vertices and uvs length do not match!");
   }
@@ -101,7 +101,9 @@ export function getTBNVectorsFromTriangles(vertices, uvs) {
     normals.push(...n); normals.push(...n); normals.push(...n);
   }
 
-  smoothTBN(vertices, tangents, bitangents, normals);
+  if (normalSmoothing) {
+    smoothTBN(vertices, tangents, bitangents, normals);
+  }
 
   return [
     tangents.map(_fixZeros),

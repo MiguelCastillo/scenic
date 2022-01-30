@@ -128,7 +128,7 @@ export function buildSceneNode(gl, fbxDocument, sceneNodeConfig, sceneManager) {
       animationNode.add(
         animationStack.addItems(
           nodeWrappersByID[stackID].connections
-            .map((connection) => sceneNodeFromConnection(gl, connection, sceneManager))
+            .map((connection) => sceneNodeFromConnection(gl, connection, sceneManager, sceneNode))
             .filter(Boolean)));
     });
 
@@ -183,13 +183,12 @@ function sceneNodeFromConnection(gl, rootConnection, sceneManager, relativeRootS
       }
     }
 
-    const state = sceneManager.getNodeStateByName(sceneNode.name);
     sceneManager.updateNodeStateByName(
       sceneNode.name,
       Object.assign({
         name: sceneNode.name,
         type: sceneNode.type,
-      }, state),
+      }, sceneManager.getNodeStateByName(sceneNode.name)),
     );
   }
 
@@ -259,6 +258,8 @@ function sceneNodeFromConnection(gl, rootConnection, sceneManager, relativeRootS
         break;
       }
       case "Geometry": {
+        const rootState = sceneManager.getNodeStateByName(relativeRootSceneNode.name);
+
         const {
           vertices,
           indexes,
@@ -267,7 +268,7 @@ function sceneNodeFromConnection(gl, rootConnection, sceneManager, relativeRootS
           uv,
           normals,
           polygonIndexes,
-        } = buildGeometryLayers(fbxNode);
+        } = buildGeometryLayers(fbxNode, rootState.normalSmoothing);
 
         // We do a quick check on the vertices with the generated indexes
         // to make sure overall things aren't completely broken. This catches
@@ -399,7 +400,7 @@ function sceneNodeFromConnection(gl, rootConnection, sceneManager, relativeRootS
 // rendering a FBX file. This includes UVs, Normals, and Vertices. The
 // semantics include expanding out polygons to triangles to uniformly handle
 // quads, triangle fans, and other polygon types.
-function buildGeometryLayers(fbxGeometry) {
+function buildGeometryLayers(fbxGeometry, normalSmoothing) {
   const polygonVertexIndex = findPropertyValueByName(fbxGeometry, "PolygonVertexIndex");
   let polygonVertices = findPropertyValueByName(fbxGeometry, "Vertices");
 
@@ -440,7 +441,7 @@ function buildGeometryLayers(fbxGeometry) {
     // sequentially stored.
     uv = getIndexedComponents(uv, indexes, 2);
 
-    const [t,b,n] = getTBNVectorsFromTriangles(vertices, uv);
+    const [t,b,n] = getTBNVectorsFromTriangles(vertices, uv, normalSmoothing);
     tangents = t;
     bitangents = b;
     normals = n;
