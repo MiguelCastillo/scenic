@@ -6,10 +6,6 @@ import {
 } from "../../../src/scene/node.js";
 
 import {
-  Animation as AnimationSceneNode,
-} from "../../../src/scene/animation.js"
-
-import {
   Renderable as RenderableSceneNode,
 } from "../../../src/scene/renderable.js";
 
@@ -38,23 +34,30 @@ class Animatable extends RenderableSceneNode {
 
   preRender(context) {
     const {sceneManager} = context;
-    const state = sceneManager.getNodeStateByName(this.relativeRoot.name);
 
-    const animationState = state && state.animation;
+    // Right now the relativeRoot would have the animation node where
+    // all the animation information exists. That's where we find
+    // the animation stacks and the layers that determine the animation
+    // to run. There is only _ONE_ animation node.
+    // Ideally each mesh would have their own animation node, but FBX
+    // doesn't seem to work that way. Instead we have all the animation
+    // stacks in a single animation node and all the renderables can
+    // look up their own animation data based on the current stack.
+    const animation = this.relativeRoot.childrenByType["animation"] && this.relativeRoot.childrenByType["animation"][0];
+    if (!animation) {
+      return;
+    }
+
+    const animationState = sceneManager.getNodeStateByName(animation.name);
     if (!animationState || !animationState.stackName) {
       return;
     }
 
     let animationStack = this.currentAnimationStack;
     if (!animationStack || animationStack.name !== animationState.stackName) {
-      const animation = this.relativeRoot.items.find(item => item instanceof AnimationSceneNode);
-
-      if (animation) {
-        animationStack = animation.items.find(item => item.name === animationState.stackName);
-        this.currentAnimationStack = animationStack;
-      }
+      animationStack = animation.items.find(item => item.name === animationState.stackName);
+      this.currentAnimationStack = animationStack;
     }
-
     if (!animationStack) {
       return;
     }
@@ -553,7 +556,6 @@ function findParentMesh(node) {
   while (mesh && !(mesh instanceof Mesh)) {
     mesh = mesh.parent;
   }
-
   return mesh;
 }
 
