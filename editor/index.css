@@ -258,18 +258,28 @@ body {
   padding-top: 10px;
 }
 
-.scene-node-details .node-properties input[type="number"] {
-  text-align: center;
-}
-
+.scene-node-details .node-properties select,
+.scene-node-details .node-properties input[type="color"],
 .scene-node-details .node-properties input[type="number"],
 .scene-node-details .node-properties input[type="text"] {
-  margin-left: 1em;
   padding: .25em;
+  width: 100%;
 
   background-color: #a9a9a9;
   border: 1px solid;
   border-radius: 4px;
+}
+
+.scene-node-details .node-properties label {
+  padding-right:1em;
+}
+
+.scene-node-details .node-properties input[type="number"] {
+  text-align: center;
+}
+
+.scene-node-details .node-properties input[type="color"] {
+  padding: 0;
 }
 
 .color-picker {

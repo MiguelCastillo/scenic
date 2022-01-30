@@ -10,7 +10,7 @@ export class ColorChannels extends React.Component {
     const {data} = this.props;
     return (
       <div className="color-picker">
-        <label>rgb({data[0]}, {data[1]}, {data[2]})</label>&nbsp;
+        {/* <label>rgb({data[0]}, {data[1]}, {data[2]})</label> */}
         <input type="color" onInput={(evt) => this.handleChange(evt)} value={rgbToHex(...data)} />
       </div>
     );
