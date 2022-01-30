@@ -9,6 +9,7 @@ import path from "path";
 import {
   FbxFile,
   findChildByName,
+  getNodeName,
 } from "../src/formats/fbxfile.js";
 
 let _indentCache = {};
@@ -18,11 +19,6 @@ function _indent(indent, char="\t") {
     _indentCache[k] = Array(indent).fill().join(char);
   }
   return _indentCache[k];
-}
-
-function getName(node) {
-  const nameparts = node ? node.attributes[1].split("\u0000\u0001") : [];
-  return nameparts.length ? [nameparts[1], nameparts[0], node.attributes[2]].filter(Boolean).join("_") : "";
 }
 
 function getObjectsByID(model) {
@@ -67,8 +63,8 @@ function getObjectsByID(model) {
         switch(props.name) {
           case "C": {
             const [_, src, dest] = props.value;
-            const srcName = getName(objectsByID[src].node);
-            const destName = getName(objectsByID[dest].node) || "root";
+            const srcName = getNodeName(objectsByID[src].node);
+            const destName = getNodeName(objectsByID[dest].node) || "root";
             const line = _indent(indent+1) + `${props.name}: ${JSON.stringify(props.value)}`;
 
             const commentIndent = 60 - line.length;

@@ -474,10 +474,12 @@ export function getNodeName(node) {
   // purposes. But general purpose name converts:
   // Model: [[847290637,0],"upper_arm.R.001\u0000\u0001Model","LimbNode"]
   // to
-  // Model_upper_arm.R.001_LimbNode
+  // upper_arm.R.001 - Model_LimbNode
   //
   // return nameparts.length ? (nameparts[0] ? nameparts[0] : nameparts[1]) : node.attributes[1];
   // return nameparts.length ? [nameparts[0], node.attributes[2]].filter(Boolean).join("_") : "";
   // return nameparts.length ? [nameparts[0], nameparts[1], node.attributes[2]].filter(Boolean).join("_") : "";
-  return nameparts.length ? [nameparts[1], nameparts[0], node.attributes[2]].filter(Boolean).join("_") : "";
+  return nameparts.length ?
+    (nameparts[0] ? nameparts[0] + " - ":"") + [nameparts[1], node.attributes[2]].filter(Boolean).join("_"):
+    "";
 }
