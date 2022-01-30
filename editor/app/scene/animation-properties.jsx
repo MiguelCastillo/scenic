@@ -25,7 +25,7 @@ export class AnimationProperties extends WithNodeState {
         {animationState.stackNames && animationState.stackNames.length &&
           <div className="animation-stack">
             <label>Stack</label>
-            <AnimationStackSelect options={animationState.stackNames} onChange={this.selectAnimationStack}/>
+            <AnimationStackSelect options={animationState.stackNames} selected={animationState.stackName} onChange={this.selectAnimationStack}/>
           </div>
         }
         <div className="speed">
@@ -40,23 +40,12 @@ export class AnimationProperties extends WithNodeState {
 const SELECT_STACK = "__select";
 
 class AnimationStackSelect extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      selectedValue: SELECT_STACK,
-    };
-  }
-
   handleStackChange = (evt) => {
     const selectedValue = evt.target.value;
-    this.setState({
-      selectedValue,
-    });
-
     const {onChange} = this.props;
     if (onChange) {
       if (selectedValue === SELECT_STACK) {
-        onChange(null);
+        onChange(undefined);
       } else {
         onChange(selectedValue);
       }
@@ -64,17 +53,12 @@ class AnimationStackSelect extends React.Component {
   }
 
   render() {
-    const {options=[]} = this.props;
-    const {selectedValue} = this.state;
+    const {options=[], selected} = this.props;
     return (
-      <select name="animation" onChange={this.handleStackChange} value={selectedValue}>
+      <select name="animation" onChange={this.handleStackChange} value={selected}>
         <option value={SELECT_STACK}>Select</option>
         {options.map((o, i) => {
-          if (selectedValue === o) {
-            return <option value={o} key={o+"_"+i} selected>{o}</option>;
-          } else {
-            return <option value={o} key={o+"_"+i}>{o}</option>;
-          }
+          return <option value={o} key={o+"_"+i}>{o}</option>;
         })}
       </select>
     )

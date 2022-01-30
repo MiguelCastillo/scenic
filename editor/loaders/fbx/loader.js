@@ -73,6 +73,8 @@ export class Loader extends BrinaryFileLoader {
   }
 }
 
+let animationID = 0;
+
 export function buildSceneNode(gl, fbxDocument, sceneNodeConfig, sceneManager) {
   const sceneNode = sceneManager.getNodeByName(sceneNodeConfig.name);
 
@@ -116,7 +118,7 @@ export function buildSceneNode(gl, fbxDocument, sceneNodeConfig, sceneManager) {
       .filter(Boolean));
 
   // TODO(miguel): we need to start working with unique ids.
-  const animationNode = new AnimationSceneNode({name: "Animation"});
+  const animationNode = new AnimationSceneNode({name: `Animation_n${animationID++}`});
   findChildrenByName(objects, "AnimationStack")
     .map(s => s.attributes[0])
     .forEach(stackID => {
