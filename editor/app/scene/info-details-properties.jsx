@@ -89,7 +89,7 @@ export class InfoDetailsProperties extends WithNodeState {
                 id="resource_file_loader"
                 name="resource_file_loader"
                 type="file"
-                accept=".obj"
+                accept=".obj,.fbx"
                 onChange={(evt) => this.handleResourceSelection(evt)} />
             </div>
           </div>
