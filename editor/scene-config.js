@@ -111,7 +111,7 @@ export const config = {
 
           "transform": {
             "scale": [1, 1, 1],
-            "position": [0, 20, 10],
+            "position": [0, 0, 20],
             "rotation": [0, 0, 0],
           },
         }, {
@@ -165,10 +165,10 @@ export const config = {
           },
 
           "items": [{
-            "name": "jedi star fighter",
+            "name": "cube animated",
             "type": "static-mesh",
-            "resource": "/resources/fbx/therocket.fbx",
-            "normalSmoothing": true,
+            "resource": "/resources/fbx/cubeanimated.fbx",
+            "normalSmoothing": false,
             "animation": {
               "speed": 1,
             },
