@@ -363,7 +363,18 @@ function sceneNodeFromConnection(gl, rootConnection, sceneManager, relativeRootS
         break;
       }
       case "AnimationCurveNode": {
-        sceneNode = new AnimationCurveNode(pname, {name});
+        const defaultValues = [];
+        const properties70 = findChildByName(fbxNode, "Properties70");
+        if (properties70) {
+          const transformIndex = {"d|X": 0, "d|Y": 1, "d|Z": 2};
+          for (const property of properties70.properties) {
+            if (transformIndex.hasOwnProperty(property.value[0])) {
+              defaultValues[transformIndex[property.value[0]]] = property.value[4];
+            }
+          }
+        }
+
+        sceneNode = new AnimationCurveNode(pname, defaultValues, {name});
         break;
       }
       case "AnimationCurve": {

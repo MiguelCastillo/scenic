@@ -347,9 +347,10 @@ export class AnimationLayer extends SceneNode {
 }
 
 export class AnimationCurveNode extends SceneNode {
-  constructor(pname, options) {
+  constructor(pname, defaultValues, options) {
     super(Object.assign({}, options, {type: "fbx-animation-node"}));
     this.pname = pname;
+    this.defaultValues = defaultValues;
   }
 
   getValues(ms, speed) {
@@ -523,22 +524,19 @@ function doKeyFrameAnimation(ms, animationNodes, animationSpeed) {
 
     switch(pname) {
       case "Lcl Translation": {
-        const translation = getTransformAnimation(result);
+        const translation = getTransformAnimation(result, animation.defaultValues);
         worldMatrix = worldMatrix.translate(translation[0], translation[1], translation[2]);
         animationResult.worldMatrix = worldMatrix;
         break;
       }
       case "Lcl Rotation": {
-        const rotation = getTransformAnimation(result);
-
-        // TODO(miguel): figure out why blender export swaps Y/Z rotation.
-        // Or maybe this is just the right thing todo?
+        const rotation = getTransformAnimation(result, animation.defaultValues);
         worldMatrix = worldMatrix.rotate(rotation[0], rotation[2], rotation[1]);
         animationResult.worldMatrix = worldMatrix;
         break;
       }
       case "Lcl Scaling": {
-        const scaling = getTransformAnimation(result);
+        const scaling = getTransformAnimation(result, animation.defaultValues);
         worldMatrix = worldMatrix.scale(scaling[0], scaling[1], scaling[2]);
         animationResult.worldMatrix = worldMatrix;
         break;
@@ -549,10 +547,12 @@ function doKeyFrameAnimation(ms, animationNodes, animationSpeed) {
   return animationResult;
 }
 
-function getTransformAnimation(animation) {
-  const transformIndex = {"d|X": 0, "d|Y": 1, "d|Z": 2};
-  const transform = [0, 0, 0];
-  animation.forEach(([n, v]) => { transform[transformIndex[n]] = v; });
+const transformIndex = {"d|X": 0, "d|Y": 1, "d|Z": 2};
+function getTransformAnimation(animation, defaultValues) {
+  const transform = [...defaultValues];
+  for (let i = 0; i < animation.length; i++) {
+    transform[transformIndex[animation[i][0]]] = animation[i][1];
+  }
   return transform;
 }
 
