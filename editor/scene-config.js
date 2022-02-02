@@ -111,7 +111,7 @@ export const config = {
 
           "transform": {
             "scale": [1, 1, 1],
-            "position": [0, 0, 20],
+            "position": [0, 0, 30],
             "rotation": [0, 0, 0],
           },
         }, {
