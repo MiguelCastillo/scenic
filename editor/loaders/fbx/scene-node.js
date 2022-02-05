@@ -260,60 +260,6 @@ export class SkinDeformerCluster extends SceneNode {
   }
 }
 
-export class Material extends SceneNode {
-  constructor(options) {
-    super(Object.assign({}, options, {type:"fbx-material"}));
-    this.ambientColor = [1, 1, 1];
-    this.materialColor = [1, 1, 1, 1];
-    this.reflectionFactor = 1;
-  }
-
-  withAmbientColor(ambientColor) {
-    this.ambientColor = ambientColor;
-    return this;
-  }
-
-  withMaterialColor(materialColor) {
-    this.materialColor = materialColor;
-
-    if (materialColor.length === 3) {
-      this.materialColor[3] = 1;
-    }
-
-    return this;
-  }
-
-  withReflectionFactor(reflectionFactor) {
-    this.reflectionFactor = reflectionFactor;
-    return this;
-  }
-
-  render(context) {
-    const mesh = findParentMesh(this);
-
-    if (mesh) {
-      const {gl} = context;
-
-      mesh.shaderProgram.addUniforms([{
-        name: "ambientColor",
-        update: ({index}) => {
-          gl.uniform3fv(index, this.ambientColor);
-        }
-      }, {
-        name: "materialReflectiveness",
-        update: ({index}) => {
-          gl.uniform1f(index, this.reflectionFactor);
-        },
-      }, {
-        name: "materialColor",
-        update: ({index}) => {
-          gl.uniform4fv(index, this.materialColor);
-        },
-      }]);
-    }
-  }
-}
-
 export class AnimationStack extends SceneNode {
   constructor(options) {
     super(Object.assign({}, options, {type: "fbx-animation-stack"}));
@@ -373,6 +319,60 @@ export class AnimationCurve extends SceneNode {
     // https://github.com/mont29/blender-io-fbx/blob/ea45491a84b64f7396030775536be562bc118c41/io_scene_fbx/export_fbx.py#L2447
     // https://download.autodesk.com/us/fbx/docs/FBXSDK200611/wwhelp/wwhimpl/common/html/_index.htm?context=FBXSDK_Overview&file=ktime_8h-source.html
     return [this.pname, this.animate(46186158000*(ms*0.001), speed)];
+  }
+}
+
+export class Material extends SceneNode {
+  constructor(options, materialColor=[0.5,0.5,0.5,1], ambientColor=[1,1,1], reflectionFactor=1) {
+    super(Object.assign({}, options, {type:"fbx-material"}));
+    this.materialColor = materialColor;
+    this.ambientColor = ambientColor;
+    this.reflectionFactor = reflectionFactor;
+  }
+
+  withAmbientColor(ambientColor) {
+    this.ambientColor = ambientColor;
+    return this;
+  }
+
+  withMaterialColor(materialColor) {
+    this.materialColor = materialColor;
+
+    if (materialColor.length === 3) {
+      this.materialColor[3] = 1;
+    }
+
+    return this;
+  }
+
+  withReflectionFactor(reflectionFactor) {
+    this.reflectionFactor = reflectionFactor;
+    return this;
+  }
+
+  render(context) {
+    const mesh = findParentMesh(this);
+
+    if (mesh) {
+      const {gl} = context;
+
+      mesh.shaderProgram.addUniforms([{
+        name: "ambientColor",
+        update: ({index}) => {
+          gl.uniform3fv(index, this.ambientColor);
+        }
+      }, {
+        name: "materialReflectiveness",
+        update: ({index}) => {
+          gl.uniform1f(index, this.reflectionFactor);
+        },
+      }, {
+        name: "materialColor",
+        update: ({index}) => {
+          gl.uniform4fv(index, this.materialColor);
+        },
+      }]);
+    }
   }
 }
 
@@ -583,20 +583,20 @@ export function findMeshes(sceneNode) {
   return meshes;
 }
 
-export function findMeshTextures(mesh) {
-  const textures = [];
+export function findMeshChildrenByType(mesh, ChildType) {
+  const children = [];
   function traverse(node) {
     if (!node || node instanceof Mesh) {
       return;
     }
 
-    if (node instanceof Texture) {
-      textures.push(node);
+    if (node instanceof ChildType) {
+      children.push(node);
     }
 
     node.items.forEach(traverse);
   }
 
   mesh.items.forEach(traverse);
-  return textures;
+  return children;
 }

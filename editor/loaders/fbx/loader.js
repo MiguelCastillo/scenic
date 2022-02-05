@@ -52,7 +52,7 @@ import {
   AnimationCurve,
 
   findMeshes,
-  findMeshTextures,
+  findMeshChildrenByType,
 } from "./scene-node.js";
 
 
@@ -589,7 +589,8 @@ function getLayerData(geometry, layerDataName) {
 
 function initShaderPrograms(gl, sceneNode) {
   findMeshes(sceneNode).forEach(mesh => {
-    const textures = findMeshTextures(mesh);
+    const textures = findMeshChildrenByType(mesh, Texture);
+    const materials = findMeshChildrenByType(mesh, Material);
 
     // If the mesh has any textures, then we use phong-texture. We have a
     // separate shader specifically for handling textures because if the
@@ -601,6 +602,12 @@ function initShaderPrograms(gl, sceneNode) {
     // textures.
     const shaderName = textures.length ? "phong-texture" : "phong-lighting";
     mesh.withShaderProgram(createShaderProgram(gl, shaderName));
+
+    // We add a default texture so that objects can be seen by default
+    // in a scene. Without this, meshes will be rendered completely black.
+    if (!materials.length) {
+      mesh.add(new Material({name: "default material"}));
+    }
   });
 }
 
