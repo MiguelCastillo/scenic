@@ -1,12 +1,13 @@
 import * as React from "react";
 
 export class Coordinates extends React.Component {
-  handleChange = (which, evt) => {
-    this.props.onChange(which, evt.target.value);
+  handleChange = (evt) => {
+    this.props.onChange(evt.target.name, evt.target.value);
   }
 
   render() {
     const {data, step="0.1", min, max} = this.props;
+
     return (
       <div className="coordinates">
         <div className="x">
@@ -16,8 +17,9 @@ export class Coordinates extends React.Component {
             step={step}
             min={min}
             max={max}
-            onChange={(evt) => this.handleChange("x", evt)}
-            value={data[0]} />
+            name="x"
+            onChange={this.handleChange}
+            value={data[0].toString()} />
         </div>
         <div className="y">
           <label>y</label>
@@ -26,8 +28,9 @@ export class Coordinates extends React.Component {
             step={step}
             min={min}
             max={max}
-            onChange={(evt) => this.handleChange("y", evt)}
-            value={data[1]} />
+            name="y"
+            onChange={this.handleChange}
+            value={data[1].toString()} />
         </div>
         <div className="z">
           <label>z</label>
@@ -36,8 +39,9 @@ export class Coordinates extends React.Component {
             step={step}
             min={min}
             max={max}
-            onChange={(evt) => this.handleChange("z", evt)}
-            value={data[2]} />
+            name="z"
+            onChange={this.handleChange}
+            value={data[2].toString()} />
         </div>
       </div>
     );
