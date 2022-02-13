@@ -1,8 +1,19 @@
 import * as React from "react";
 
+const _indexMap = {x: 0, y: 1, z: 2};
+
 export class Coordinates extends React.Component {
   handleChange = (evt) => {
-    this.props.onChange(evt.target.name, evt.target.value);
+    let value = evt.target.value;
+
+    // Inserting a `-` anywhere in the number field inverts the
+    // sign of the current value.
+    if (evt.nativeEvent.data === "-") {
+      const currentValue = this.props.data[_indexMap[evt.target.name]];
+      value = (-currentValue).toString();
+    }
+
+    this.props.onChange(evt.target.name, value);
   }
 
   render() {
