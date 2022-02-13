@@ -1,4 +1,3 @@
-import * as mat4 from "./math/matrix4.js";
 import {bubbleTraversal} from "./scene/traversal.js";
 
 export class SceneManager {
@@ -74,27 +73,6 @@ export class SceneManager {
     // detection. It can also allows to render any object we need without
     // concerns about depencies on other objects' location in space.
     const bubbleDown = (node /*, parent*/) => {
-      const {parent} = node;
-      const nodeState = this.getNodeStateByName(node.name);
-      let modelMatrix;
-
-      if (nodeState && nodeState.transform) {
-        const transform = nodeState.transform;
-        modelMatrix = mat4.Matrix4
-          .translation(...transform.position)
-          .rotation(...transform.rotation)
-          .scale(...transform.scale);
-
-        if (parent) {
-          modelMatrix = parent.worldMatrix.multiply(modelMatrix);
-        }
-      } else {
-        modelMatrix = parent ?
-          parent.worldMatrix :
-          mat4.Matrix4.identity();
-      }
-
-      node.withMatrix(modelMatrix);
       node.preRender(context);
       return node;
     }

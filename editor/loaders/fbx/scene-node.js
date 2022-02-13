@@ -43,6 +43,7 @@ class Animatable extends RenderableSceneNode {
     // look up their own animation data based on the current stack.
     const animation = this.relativeRoot.childrenByType["animation"] && this.relativeRoot.childrenByType["animation"][0];
     if (!animation) {
+      super.preRender(context);
       return;
     }
 
@@ -51,6 +52,7 @@ class Animatable extends RenderableSceneNode {
       if (this.currentAnimationStack) {
         this.currentAnimationStack = null;
       }
+      super.preRender(context);
       return;
     }
 
@@ -64,6 +66,7 @@ class Animatable extends RenderableSceneNode {
       this.msOffset = context.ms;
     }
     if (!animationStack) {
+      super.preRender(context);
       return;
     }
 
@@ -84,6 +87,8 @@ class Animatable extends RenderableSceneNode {
       } else {
         this.withMatrix(worldMatrix);
       }
+    } else {
+      super.preRender(context);
     }
   }
 }
