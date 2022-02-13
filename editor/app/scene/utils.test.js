@@ -7,6 +7,9 @@ describe("normalizeLeadingZero", () => {
   it("-0", () => {
     expect(normalizeLeadingZero("-0")).toEqual("-0")
   });
+  it("with no whole number with decimal point", () => {
+    expect(normalizeLeadingZero(".345")).toEqual("0.345")
+  });
   it("value is multiple zeros", () => {
     expect(normalizeLeadingZero("0000")).toEqual("0");
   });

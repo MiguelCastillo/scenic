@@ -13,7 +13,7 @@ export function normalizeLeadingZero(value) {
     return "0";
   }
 
-  let [_, negativeNumber="", whole, decimalPoint, decimal] = value.match(/^(?:(-)?-*)(\d+)(?:(\.)(\d+))?$/);
+  let [_, negativeNumber="", whole, decimalPoint, decimal] = value.match(/^(?:(-)?-*)(\d+)?(?:(\.)(\d+))?$/);
 
   if (!whole) {
     return _buildNumber(negativeNumber, "0", decimalPoint, decimal);
@@ -26,7 +26,7 @@ export function normalizeLeadingZero(value) {
 
   whole = whole.substr(index) || "0";
   if (whole === "0" && !decimalPoint) {
-    return negativeNumber + "0";
+    return (negativeNumber||"") + "0";
   }
 
   const result = _buildNumber(negativeNumber, whole, decimalPoint, decimal);
