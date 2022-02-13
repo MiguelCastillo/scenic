@@ -6,7 +6,7 @@ export class AnimationPanel extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      selectedView: "info-details",
+      selectedView: "animation",
     };
   }
 

@@ -18,6 +18,15 @@ export class AnimationProperties extends WithNodeState {
     });
   }
 
+  handletAnimationMSChange = (evt) => {
+    const ms = evt.target.value === "" ? null : evt.target.value;
+    const nodeState = this.getNodeState();
+    this.updateNodeState({
+      ...nodeState,
+      ms,
+    });
+  }
+
   render() {
     const animationState = this.getNodeState();
     return (
@@ -31,6 +40,10 @@ export class AnimationProperties extends WithNodeState {
         <div className="speed">
           <label>Speed</label>
           <input type="number" step=".1" onChange={this.handletAnimationSpeedChange} value={animationState.speed} />
+        </div>
+        <div className="ms">
+          <label>ms</label>
+          <input type="number" step="10" onChange={this.handletAnimationMSChange} value={animationState.ms||""} />
         </div>
       </div>
     )

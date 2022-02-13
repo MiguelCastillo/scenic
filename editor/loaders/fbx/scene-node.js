@@ -76,10 +76,11 @@ class Animatable extends RenderableSceneNode {
     const animationLayer = animationStack.animationLayers[0];
     const animationNodes = this.animationNodes.filter(n => animationLayer.animationCurveNodesByName[n.name]);
     const animationSpeed = animationState.speed == null ? 1 : animationState.speed;
+    const animationMS = animationState.ms == null ? context.ms : animationState.ms;
 
     const {
       worldMatrix,
-    } = doKeyFrameAnimation(context.ms - this.msOffset, animationNodes, animationSpeed);
+    } = doKeyFrameAnimation(animationMS - this.msOffset, animationNodes, animationSpeed);
 
     if (worldMatrix) {
       if (this.parent) {
