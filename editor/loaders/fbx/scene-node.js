@@ -21,6 +21,7 @@ class Animatable extends RenderableSceneNode {
   constructor(options) {
     super(options);
     this.animationNodes = [];
+    this.msOffset = 0;
   }
 
   add(node) {
@@ -33,63 +34,49 @@ class Animatable extends RenderableSceneNode {
   }
 
   preRender(context) {
-    // Right now the relativeRoot would have the animation node where
-    // all the animation information exists. That's where we find
-    // the animation stacks and the layers that determine the animation
-    // to run. There is only _ONE_ animation node.
-    // Ideally each mesh would have their own animation node, but FBX
-    // doesn't seem to work that way. Instead we have all the animation
-    // stacks in a single animation node and all the renderables can
-    // look up their own animation data based on the current stack.
-    const animation = this.relativeRoot.childrenByType["animation"] && this.relativeRoot.childrenByType["animation"][0];
-    if (!animation) {
+    const animation = getAnimation(context, this);
+    if (!animation?.nodes.length) {
+      this.currentAnimationStack = null;
       super.preRender(context);
       return;
     }
 
-    const animationState = context.sceneManager.getNodeStateByName(animation.name);
-    if (!animationState || !animationState.stackName) {
-      if (this.currentAnimationStack) {
-        this.currentAnimationStack = null;
-      }
-      super.preRender(context);
-      return;
-    }
-
-    let animationStack = this.currentAnimationStack;
-    if (!animationStack || animationStack.name !== animationState.stackName) {
-      animationStack = animation.items.find(item => item.name === animationState.stackName);
-      this.currentAnimationStack = animationStack;
+    // If it's a new animation, then we reset the animation state
+    if (this?.currentAnimationStack?.name !== animation.stack.name) {
+      this.currentAnimationStack = animation.stack;
 
       // This offset is to make sure animation starts from the very beginning
       // each time a new animation is activated.
-      this.msOffset = context.ms;
+      this.msOffset = animation.ms;
     }
-    if (!animationStack) {
+
+    const {
+      translation, rotation, scale,
+    } = doKeyFrameAnimation(animation.ms, animation.nodes, animation.speed);
+
+    if (!translation && !rotation && !scale) {
       super.preRender(context);
       return;
     }
 
-    // TODO(miguel): figure out semantics for dealing with multiple
-    // layers. Perhaps blend them? Override?
-    // For now, pick first layer for now.
-    const animationLayer = animationStack.animationLayers[0];
-    const animationNodes = this.animationNodes.filter(n => animationLayer.animationCurveNodesByName[n.name]);
-    const animationSpeed = animationState.speed == null ? 1 : animationState.speed;
-    const animationMS = animationState.ms == null ? context.ms : animationState.ms;
+    // https://help.autodesk.com/view/FBX/2017/ENU/?guid=__cpp_ref__transformations_2main_8cxx_example_html
+    let animationMatrix = mat4.Matrix4.identity();
 
-    const {
-      worldMatrix,
-    } = doKeyFrameAnimation(animationMS - this.msOffset, animationNodes, animationSpeed);
+    if (translation) {
+      animationMatrix = animationMatrix.translate(translation[0], translation[1], translation[2]);
+    }
+    if (rotation) {
+      animationMatrix = animationMatrix.rotate(rotation[0], rotation[1], rotation[2]);
+    }
+    if (scale) {
+      animationMatrix = animationMatrix.scale(scale[0], scale[1], scale[2]);
+    }
 
-    if (worldMatrix) {
-      if (this.parent) {
-        this.withMatrix(this.parent.worldMatrix.multiply(worldMatrix));
-      } else {
-        this.withMatrix(worldMatrix);
-      }
+    const parent = this.parent;
+    if (parent) {
+      this.withMatrix(parent.worldMatrix.multiply(animationMatrix));
     } else {
-      super.preRender(context);
+      this.withMatrix(animationMatrix);
     }
   }
 }
@@ -298,6 +285,7 @@ export class AnimationLayer extends SceneNode {
   }
 }
 
+// https://download.autodesk.com/us/fbx/20112/FBX_SDK_HELP/index.html?url=WS1a9193826455f5ff45564f421269b08a8e9-56a4.htm,topicNumber=d0e6863
 export class AnimationCurveNode extends SceneNode {
   constructor(pname, defaultValues, options) {
     super(Object.assign({}, options, {type: "fbx-animation-node"}));
@@ -523,32 +511,29 @@ function getImage(filepath) {
 // animation.
 function doKeyFrameAnimation(ms, animationNodes, animationSpeed) {
   const animationResult = {};
-  let worldMatrix = mat4.Matrix4.identity();
 
+  const animationChannels = {};
   animationNodes.forEach(animation => {
     const [pname, ...result] = animation.getValues(ms, animationSpeed);
-
-    switch(pname) {
-      case "Lcl Translation": {
-        const translation = getTransformAnimation(result, animation.defaultValues);
-        worldMatrix = worldMatrix.translate(translation[0], translation[1], translation[2]);
-        animationResult.worldMatrix = worldMatrix;
-        break;
-      }
-      case "Lcl Rotation": {
-        const rotation = getTransformAnimation(result, animation.defaultValues);
-        worldMatrix = worldMatrix.rotate(rotation[0], rotation[2], rotation[1]);
-        animationResult.worldMatrix = worldMatrix;
-        break;
-      }
-      case "Lcl Scaling": {
-        const scaling = getTransformAnimation(result, animation.defaultValues);
-        worldMatrix = worldMatrix.scale(scaling[0], scaling[1], scaling[2]);
-        animationResult.worldMatrix = worldMatrix;
-        break;
-      }
-    }
+    animationChannels[pname] = {
+      result, defaults: animation.defaultValues,
+    };
   });
+
+  const translation = animationChannels["Lcl Translation"];
+  if (translation) {
+    animationResult["translation"] = getTransformAnimation(translation.result, translation.defaults);
+  }
+
+  const rotation = animationChannels["Lcl Rotation"];
+  if (rotation) {
+    animationResult["rotation"] = getTransformAnimation(rotation.result, rotation.defaults);
+  }
+
+  const scaling = animationChannels["Lcl Scaling"];
+  if (scaling) {
+    animationResult["scale"] = getTransformAnimation(scaling.result, scaling.defaults);
+  }
 
   return animationResult;
 }
@@ -560,6 +545,46 @@ function getTransformAnimation(animation, defaultValues) {
     transform[transformIndex[animation[i][0]]] = animation[i][1];
   }
   return transform;
+}
+
+function getAnimation(context, node) {
+  // Right now the relativeRoot would have the animation node where
+  // all the animation information exists. That's where we find
+  // the animation stacks and the layers that determine the animation
+  // to run. There is only _ONE_ animation node.
+  // Ideally each mesh would have their own animation node, but FBX
+  // doesn't seem to work that way. Instead we have all the animation
+  // stacks in a single animation node and all the renderables can
+  // look up their own animation data based on the current stack.
+  const animationNode = node.relativeRoot.animation;
+  if (!animationNode?.items.length) {
+    return;
+  }
+
+  const animationState = context.sceneManager.getNodeStateByName(animationNode.name);
+  if (!animationState?.stackName) {
+    return;
+  }
+
+  let stack = node.currentAnimationStack;
+  if (stack?.name !== animationState.stackName) {
+    stack = animationNode.items.find(item => item.name === animationState.stackName);
+    if (!stack) {
+      return;
+    }
+  }
+
+  // TODO(miguel): figure out semantics for dealing with multiple
+  // layers. Perhaps blend them? Override?
+  // For now, pick first layer for now.
+  const layer = stack.animationLayers[0];
+  const nodes = node.animationNodes.filter(n => layer.animationCurveNodesByName[n.name]);
+  const speed = animationState.speed == null ? 1 : animationState.speed;
+  const ms = animationState.ms == null ? context.ms : animationState.ms;
+
+  return {
+    stack, nodes, speed, ms,
+  };
 }
 
 function findParentMesh(node) {

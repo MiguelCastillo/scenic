@@ -3,6 +3,8 @@ import fs from "fs";
 import path from "path";
 import "webgl-mock";
 
+import * as mat4 from "../../../src/math/matrix4.js";
+
 import {
   getIndexed3DComponents,
 } from "../../../src/math/geometry.js";
@@ -26,8 +28,9 @@ import {
   createScene,
 } from "../../scene-factory.js";
 
-
-const cubdeFilePath = path.join(__dirname, "../../../resources/fbx/cube.fbx");
+import {
+  bubbleTraversal,
+} from "../../../src/scene/traversal.js";
 
 function mockShaders(shaders) {
   shaders.forEach(s => {
@@ -41,7 +44,8 @@ function mockShaders(shaders) {
 
 describe("fbx Loader", () => {
   test("loading cube.fbx", () => {
-    const file = fs.readFileSync(cubdeFilePath);
+    const filepath = path.join(__dirname, "../../../resources/fbx/cube.fbx");
+    const file = fs.readFileSync(filepath);
     const model = FbxFile.fromBinary(file.buffer);
     expect(model).toBeInstanceOf(FbxNode);
 
@@ -59,9 +63,129 @@ describe("fbx Loader", () => {
     mockShaders(["phong-lighting"]);
     buildSceneNode(gl, model, sceneNodeFxbCube, sceneManager);
 
-    const sceneNode = sceneManager.getNodeByName("fbx cube")
-    expect(sceneNode.items[0].name).toEqual("Model_Cube_Mesh_n1");
-    expect(sceneNode.items[0].items[0].name).toEqual("Geometry_Cube_Mesh_n1");
+    const sceneNode = sceneManager.getNodeByName("fbx cube");
+    expect(sceneNode.items[0].name).toEqual("Cube - Model_Mesh_n1");
+    expect(sceneNode.items[0].items[0].name).toEqual("Cube - Geometry_Mesh_n1");
+  });
+
+  test("cube armature animation", () => {
+    const filepath = path.join(__dirname, "../../../resources/fbx/cubearmature_simple.fbx");
+    const file = fs.readFileSync(filepath);
+    const model = FbxFile.fromBinary(file.buffer);
+    const sceneNodeConfig = {
+      items: [{
+        name: "cube armature",
+        type: "group",
+      }]
+    };
+    const sceneManager = createScene(sceneNodeConfig);
+    const canvas = new HTMLCanvasElement(500, 500);
+    const gl = canvas.getContext("webgl");
+
+    mockShaders(["phong-lighting"]);
+    buildSceneNode(gl, model, sceneNodeConfig.items[0], sceneManager);
+
+    sceneManager.updateNodeStateByName("Animation_n1", {
+      stackName: "Armature|ArmatureAction - AnimStack_n1",
+    });
+
+    const bubbleDown = (context) => {
+      return (node /*, parent*/) => {
+        node.preRender(context);
+        const _tdata = testData[node.name];
+
+        if (!_tdata) {
+          return node;
+        }
+
+        _tdata.node = node;
+      };
+    };
+
+    const testData = {
+      "Armature - Model_Null_n1": {
+        "rotation": [-90,0,0],
+        "position": [0,0,0],
+        "scale": [6,6,6]
+      },
+      "Bottom Bone - Model_LimbNode_n1": {
+        "rotation": [90,0,0],
+        "position": [0,0,0],
+        "scale": [1,1,1]
+      },
+      "Bottom Cube - Model_Mesh_n1": {
+        "rotation": [-90,0,0],
+        "position": [0,0,0],
+        "scale": [1,1,1]
+      },
+      "Bottom Cube - Geometry_Mesh_n1": {
+        "position": [0,0,0],
+        "rotation": [0,0,0],
+        "scale": [1,1,1]
+      },
+      "Right Bone - Model_LimbNode_n1": {
+        "rotation": [0,0,-90],
+        "position": [0,1,0],
+        "scale": [1,1,1]
+      },
+      "Right Cube - Model_Mesh_n1": {
+        "rotation": [-90,0,90],
+        "position": [0,1,0],
+        "scale": [1,1,1]
+      },
+      "Right Cube - Geometry_Mesh_n1": {
+        "position": [0,0,0],
+        "rotation": [0,0,0],
+        "scale": [1,1,1]
+      }
+    };
+
+    const sceneNode = sceneManager.getNodeByName("cube armature");
+
+    // The first animation pass we are rendering at 0 seconds. So
+    // he very first frame should align with the default transforms.
+    // The default transforms are in local space, which get converted
+    // to world space in the down traversal of the scene where the
+    // bone hierarchy is animated and its transforms are propagated
+    // to the meshes (skins) they animate.
+    let context = {gl, sceneManager, ms: 0};
+    bubbleTraversal(bubbleDown(context), () => {})(sceneNode);
+
+    for (const tdata of Object.values(testData)) {
+      let actual = mat4.Matrix4.identity()
+        .translate(...tdata.position)
+        .rotate(...tdata.rotation)
+        .scale(...tdata.scale);
+
+      actual = tdata.node.parent.worldMatrix.multiply(actual);
+      const expected = tdata.node.worldMatrix;
+
+      expect(expected.data).toHaveLength(16);
+      expect(actual.data).toHaveLength(16);
+      expect(expected.data).toEqual(actual.data);
+    }
+
+    // At second 1, we have that the right bone is translated 180
+    // degrees. This tests a use case where not using quaternions
+    // for rotation will cause a test failure.
+    context = {gl, sceneManager, ms: 1000};
+    bubbleTraversal(bubbleDown(context), () => {})(sceneNode);
+    const tdata = testData["Right Bone - Model_LimbNode_n1"];
+
+    let actual = mat4.Matrix4.identity()
+      .translate(...tdata.position)
+      .rotate(...tdata.rotation)
+      // This 180 rotation on Y is from the animation frame at
+      // 1 second of animation.
+      .rotate(0, 180, 0)
+      .scale(...tdata.scale);
+
+    actual = tdata.node.parent.worldMatrix.multiply(actual);
+    const expected = tdata.node.worldMatrix;
+
+    expect(expected.data).toHaveLength(16);
+    expect(actual.data).toHaveLength(16);
+    expect(expected.data).toEqual(actual.data);
   });
 });
 

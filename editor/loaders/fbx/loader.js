@@ -134,6 +134,7 @@ export function buildSceneNode(gl, fbxDocument, sceneNodeConfig, sceneManager) {
 
   if (animationNode.items.length) {
     sceneNode.add(animationNode);
+    sceneNode.animation = animationNode;
 
     // Initialize the state for the animation node
     const {animation={}} = sceneManager.getNodeStateByName(sceneNode.name);
