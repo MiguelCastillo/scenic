@@ -3,7 +3,11 @@ import {
   multiplyVector,
   transpose,
   multiply,
+  invert,
+  adjoint,
+  determinant,
 } from "./matrix4.js";
+import {matrixFloatPrecision} from "./float.js";
 
 test("Identity has the correct values", () => {
   expect(Matrix4.identity().data).toEqual([
@@ -132,6 +136,191 @@ test("Transpose 4x4 matrix", () => {
      7, 3, 10, 3,
      9, 3,  2, 4,
     10, 8,  3, 8,
+  ]);
+});
+
+test("adjoint", () => {
+  expect(adjoint([], [
+    1, 1, 1, -1,
+    1, 1, -1, 1,
+    1, -1, 1, 1,
+    -1, 1, 1, 1,
+  ])).toEqual([
+    -4, -4, -4, 4,
+    -4, -4, 4, -4,
+    -4, 4, -4, -4,
+    4, -4, -4, -4,
+  ]);
+});
+
+test("determinant is -16", () => {
+  expect(determinant([
+    1, 1, 1, -1,
+    1, 1, -1, 1,
+    1, -1, 1, 1,
+    -1, 1, 1, 1,
+  ])).toEqual(-16);
+});
+
+test("invert", () => {
+  expect(
+    invert([], [
+      2, 1, 2, 1,
+      3, 2, 3, 1,
+      1, 4, 2, 1,
+      1, 3, 2, 1,
+    ]).map(_fixZeros)
+  ).toEqual([
+    1, 0, 2, -3,
+    0, 0, 1, -1,
+    -2, 1, -3, 4,
+    3, -2, 1, -1,
+  ]);
+
+  expect(
+    invert([], [
+      1, 2, -1, 7,
+      -3, 1, 1, 2,
+      1, -5, 2, 1,
+      3, 3, 2, 1,
+    ]).map(_fixZeros).map(matrixFloatPrecision)
+  ).toEqual([
+    0.04255, -0.21277, 0.03191, 0.09574,
+    -0.01064, 0.05319, -0.13298, 0.10106,
+    -0.10993, 0.21631, 0.12589, 0.21099,
+    0.12411, 0.0461, 0.05142, -0.01241,
+  ]);
+});
+
+describe("Matrix invert", () => {
+  test("matrix rotated on X", () => {
+    const R = Matrix4.rotation(13, 0, 0);
+    expect(R.invert().multiply(R).data).toEqual(Matrix4.identity().data);
+  });
+
+  test("matrix rotated on Y", () => {
+    const R = Matrix4.rotation(0, 13, 0);
+    expect(R.invert().multiply(R).data).toEqual(Matrix4.identity().data);
+  });
+
+  test("matrix rotated on Z", () => {
+    const R = Matrix4.rotation(0, 0, 13);
+    expect(R.invert().multiply(R).data).toEqual(Matrix4.identity().data);
+  });
+
+  test("matrix with translation", () => {
+    const T = Matrix4.translation(10, 15, 20);
+    expect(T.invert().multiply(T).data).toEqual(Matrix4.identity().data);
+  });
+
+  test("matrix with rotation and translation", () => {
+    const transform = Matrix4
+      .translation(10, 15, 20)
+      .rotation(13, 0, 0);
+
+    expect(
+      transform.multiplyInverse(transform).data.map(_fixZeros),
+    ).toEqual(Matrix4.identity().data);
+
+    expect(
+      transform.invert().multiply(transform).data.map(Math.round).map(_fixZeros),
+    ).toEqual(Matrix4.identity().data);
+  });
+
+  test("lots of transformations", () => {
+    const transform = Matrix4
+      .translation(10, 15, 20)
+      .rotation(0, 90, 0);
+
+    const transform2 = transform
+      .translate(2, 0, 0)
+      .rotate(0, 90, 0);
+
+    expect(transform2.data.map(_fixZeros)).toEqual([
+      -1, 0, 0, 0,
+      0, 1, 0, 0,
+      0, 0, -1, 0,
+      10, 15, 18, 1,
+    ]);
+
+    const transform4 = Matrix4
+      .rotation(0, 90, 0)
+      .scale(2, 2, 2);
+
+    expect(transform4.data.map(_fixZeros)).toEqual([
+      0, 0, -2, 0,
+      0, 2, 0, 0,
+      2, 0, 0, 0,
+      0, 0, 0, 1,
+    ]);
+
+    // This inverse multiplication clears the original transformaion
+    // only leaving behind the last translation and rotation
+    expect(transform.multiplyInverse(transform2).data).toEqual([
+      0, 0, -1, 0,
+      0, 1, 0, 0,
+      1, 0, 0, 0,
+      2, 0, 0, 1,
+    ]);
+
+    // Inverting here means that we undo all the things in transform
+    // and only leave the things from transform2.
+    expect(transform.multiplyInverse(transform2.translate(2, 0, 2).scale(2, 2, 2)).data).toEqual([
+      0, 0, -2, 0,
+      0, 2, 0, 0,
+      2, 0, 0, 0,
+      4, 0, -2, 1,
+    ]);
+
+    expect(transform2.multiplyInverse(transform).data).toEqual([
+      0, 0, 1, 0,
+      0, 1, 0, 0,
+      -1, 0, 0, 0,
+      0, 0, -2, 1,
+    ]);
+  });
+});
+
+describe("determinant X", () => {
+  test("for rotation should be 49", () => {
+    expect(determinant([
+      2, -3, 1, 0,
+      2, 0, -1, 0,
+      1, 4, 5, 0,
+      0, 0, 0, 1,
+    ])).toEqual(49);
+  });
+
+  test("for rotation should be (-15)", () => {
+    expect(determinant([
+      1, 3, 2, 0,
+      -3, -1, -3, 0,
+      2, 3, 1, 0,
+      0, 0, 0, 1,
+    ])).toEqual(-15);
+  });
+
+  test("for rotation should be (-40)", () => {
+    expect(determinant([
+      -5, 0, -1, 0,
+      1, 2, -1, 0,
+      -3, 4, 1, 0,
+      0, 0, 0, 1,
+    ])).toEqual(-40);
+  });
+});
+
+test("Rotation Adjoint",  () => {
+  expect(adjoint([], [
+    2, -1, 3, 0,
+    0, 5, 2, 0,
+    1, -1, -2, 0,
+    0, 0, 0, 1,
+  ]).map(_fixZeros)).toEqual([
+    -8, -5, -17, 0,
+    2, -7, -4, 0,
+    -5, 1, 10, 0,
+    0, 0, 0, -33,
   ]);
 });
 
