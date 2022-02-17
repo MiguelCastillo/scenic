@@ -120,25 +120,60 @@ export class Matrix4 {
 // https://semath.info/src/inverse-cofactor-ex4.html
 // https://www.mathsisfun.com/algebra/matrix-inverse.html
 export function invert(dest, data) {
-  adjoint(dest, data);
-  const factor = 1/determinant(data);
+  const a11 = data[_00], a12 = data[_01], a13 = data[_02], a14 = data[_03];
+  const a21 = data[_10], a22 = data[_11], a23 = data[_12], a24 = data[_13];
+  const a31 = data[_20], a32 = data[_21], a33 = data[_22], a34 = data[_23];
+  const a41 = data[_30], a42 = data[_31], a43 = data[_32], a44 = data[_33];
 
-  dest[0] *= factor;
-  dest[1] *= factor;
-  dest[2] *= factor;
-  dest[3] *= factor;
-  dest[4] *= factor;
-  dest[5] *= factor;
-  dest[6] *= factor;
-  dest[7] *= factor;
-  dest[8] *= factor;
-  dest[9] *= factor;
-  dest[10] *= factor;
-  dest[11] *= factor;
-  dest[12] *= factor;
-  dest[13] *= factor;
-  dest[14] *= factor;
-  dest[15] *= factor;
+  const x1 = a33*a44;
+  const x2 = a34*a42;
+  const x3 = a32*a43;
+  const x4 = a33*a42;
+  const x5 = a32*a44;
+  const x6 = a34*a43;
+  const x7 = a12*a23
+  const x8 = a13*a24;
+  const x9 = a14*a22;
+  const x10 = a14*a23;
+  const x11 = a13*a22;
+  const x12 = a12*a24;
+  const x13 = a34*a41;
+  const x14 = a31*a43;
+  const x15 = a33*a41;
+  const x16 = a31*a44;
+  const x17 = a11*a23;
+  const x18 = a14*a21;
+  const x19 = a13*a21;
+  const x20 = a11*a24;
+  const x21 = a31*a42;
+  const x22 = a32*a41;
+  const x23 = a12*a21;
+  const x24 = a11*a22;
+
+  let d11 = a22*(x1 - x6) + a23*(x2 - x5) + a24*(x3 - x4);
+  let d22 = a14*(x4 - x3) + a13*(x5 - x2) + a12*(x6 - x1);
+  let d33 = a44*(x7 - x11) + a42*(x8 - x10) + a43*(x9 - x12);
+  let d44 = a32*(x10 - x8) + a34*(x11 - x7) + a33*(x12 - x9);
+
+  const factor = 1/(a11*d11 + a21*d22 + a31*d33 + a41*d44);
+
+  dest[0] = d11*factor;
+  dest[1] = d22*factor;
+  dest[2] = d33*factor;
+  dest[3] = d44*factor;
+  dest[4] = (a24*(x15 - x14) + a23*(x16 - x13) + a21*(x6 - x1))*factor;
+  dest[5] = (a11*(x1 - x6) + a13*(x13 - x16) + a14*(x14 - x15))*factor;
+  dest[6] = (a41*(x10 - x8) + a44*(x19 - x17) + a43*(x20 - x18))*factor;
+  dest[7] = (a34*(x17 - x19) + a31*(x8 - x10) + a33*(x18 - x20))*factor;
+  dest[8] = (a21*(x5 - x2) + a22*(x13 - x16) + a24*(x21 - x22))*factor;
+  dest[9] = (a14*(x22 - x21) + a12*(x16 - x13) + a11*(x2 - x5))*factor;
+  dest[10] = (a44*(x24 - x23) + a41*(x12 - x9) + a42*(x18 - x20))*factor;
+  dest[11] = (a31*(x9 - x12) + a34*(x23 - x24) + a32*(x20 - x18))*factor;
+  dest[12] = (a23*(x22 - x21) + a22*(x14 - x15) + a21*(x4 - x3))*factor;
+  dest[13] = (a11*(x3 - x4) + a12*(x15 - x14) + a13*(x21 - x22))*factor;
+  dest[14] = (a41*(x11 - x7) + a43*(x23 - x24) + a42*(x17 - x19))*factor;
+  dest[15] = (a33*(x24 - x23) + a31*(x7 - x11) + a32*(x19 - x17))*factor;
+
   return dest;
 }
 
