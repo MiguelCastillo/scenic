@@ -10,10 +10,14 @@ export class Matrix4 {
     }
 
     if (data instanceof Matrix4) {
-      this.data = data.data.slice();
+      this._data = data._data.slice();
     } else {
-      this.data = data.map(matrixFloatPrecision);
+      this._data = data;
     }
+  }
+
+  get data() {
+    return this._data.map(v => _fixZeros(matrixFloatPrecision(v)));
   }
 
   static identity() {
@@ -21,7 +25,7 @@ export class Matrix4 {
   }
 
   static rotation(degreesX, degreesY, degreesZ) {
-    return new Matrix4(rotate(degreesX, degreesY, degreesZ));
+    return new Matrix4(rotate([], degreesX, degreesY, degreesZ));
   }
 
   static translation(tx, ty, tz) {
@@ -33,57 +37,49 @@ export class Matrix4 {
   }
 
   rotateX(degrees) {
-    return new Matrix4(
-      multiply(this.data, rotateX(degrees))
-    );
+    const r = rotateX(degrees);
+    return new Matrix4(multiply(r, this._data, r));
   }
 
   rotateY(degrees) {
-    return new Matrix4(
-      multiply(this.data, rotateY(degrees))
-    );
+    const r = rotateY(degrees);
+    return new Matrix4(multiply(r, this._data, r));
   }
 
   rotateZ(degrees) {
-    return new Matrix4(
-      multiply(this.data, rotateZ(degrees))
-    );
+    const r = rotateZ(degrees);
+    return new Matrix4(multiply(r, this._data, r));
   }
 
   rotate(degreesX, degreesY, degreesZ) {
-    return new Matrix4(
-      multiply(this.data, rotate(degreesX, degreesY, degreesZ))
-    );
+    const r = rotate([], degreesX, degreesY, degreesZ);
+    return new Matrix4(multiply(r, this._data, r));
   }
 
   scale(sx, sy, sz) {
-    return new Matrix4(
-      multiply(this.data, scale(sx, sy, sz))
-    );
+    const r = scale(sx, sy, sz);
+    return new Matrix4(multiply(r, this._data, r));
   }
 
   translate(tx, ty, tz) {
-    return new Matrix4(
-      multiply(this.data, translate(tx, ty, tz))
-    );
+    const r = translate(tx, ty, tz);
+    return new Matrix4(multiply(r, this._data, r));
   }
 
   multiply(mat4) {
-    return new Matrix4(
-      multiply(this.data, mat4.data)
-    );
+    return new Matrix4(multiply([], this._data, mat4._data));
   }
 
   rotation(degreesX, degreesY, degreesZ) {
-    const data = rotate(degreesX, degreesY, degreesZ);
-    data[_30] = this.data[_30];
-    data[_31] = this.data[_31];
-    data[_32] = this.data[_32];
+    const data = rotate([], degreesX, degreesY, degreesZ);
+    data[_30] = this._data[_30];
+    data[_31] = this._data[_31];
+    data[_32] = this._data[_32];
     return new Matrix4(data);
   }
 
   translation(tx, ty, tz) {
-    const data = this.data.slice();
+    const data = this._data.slice();
     data[_30] = tx;
     data[_31] = ty;
     data[_32] = tz;
@@ -91,7 +87,7 @@ export class Matrix4 {
   }
 
   scaling(sx, sy, sz) {
-    const data = this.data.slice();
+    const data = this._data.slice();
     data[_00] = sx;
     data[_11] = sy;
     data[_22] = sz;
@@ -99,21 +95,24 @@ export class Matrix4 {
   }
 
   transpose() {
-    return new Matrix4(transpose(this.data));
+    return new Matrix4(transpose(this._data));
   }
 
   invert() {
-    return new Matrix4(invert([], this.data));
+    return new Matrix4(invert([], this._data));
   }
 
   multiplyInverse(m) {
-    return new Matrix4(multiply(
-      invert([], this.data),
-      m.data));
+    const r = [];
+    return new Matrix4(multiply(r, invert(r, this._data), m._data));
+  }
+
+  clone() {
+    return new Matrix4(this);
   }
 
   equal(m) {
-    return this.data.every((d, i) => d === m.data[i]);
+    return this._data.every((d, i) => d === m._data[i]);
   }
 };
 
@@ -230,9 +229,8 @@ export function identity() {
 }
 
 // TODO(miguel): use quaternions instead of rotating one axis at a time.
-export function rotate(degreesX, degreesY, degreesZ) {
-  // return multiply(multiply(rotateX(degreesX), rotateY(degreesY)), rotateZ(degreesZ));
-  return multiplyMany(rotateX(degreesX), rotateY(degreesY), rotateZ(degreesZ));
+export function rotate(dest, degreesX, degreesY, degreesZ) {
+  return multiply(dest, multiply(dest, rotateX(degreesX), rotateY(degreesY)), rotateZ(degreesZ));
 }
 
 export function rotateX(degrees) {
@@ -289,7 +287,7 @@ export function scale(sx, sy=sx, sz=sx) {
   ];
 }
 
-export function multiply(a, b) {
+export function multiply(dest, a, b) {
   const a00 = a[_00]; const b00 = b[_00];
   const a01 = a[_01]; const b01 = b[_01];
   const a02 = a[_02]; const b02 = b[_02];
@@ -315,41 +313,32 @@ export function multiply(a, b) {
   // then the last row as we do here. But that makes it a lil more tricky to
   // read out of the array translation coordinates, since the indexes are no
   // longer sequential.
-  return [
-    // First row = first row of B times all columns of A
-    b00 * a00 + b01 * a10 + b02 * a20 + b03 * a30,
-    b00 * a01 + b01 * a11 + b02 * a21 + b03 * a31,
-    b00 * a02 + b01 * a12 + b02 * a22 + b03 * a32,
-    b00 * a03 + b01 * a13 + b02 * a23 + b03 * a33,
 
-    // Second row = second row of B times all columns of A
-    b10 * a00 + b11 * a10 + b12 * a20 + b13 * a30,
-    b10 * a01 + b11 * a11 + b12 * a21 + b13 * a31,
-    b10 * a02 + b11 * a12 + b12 * a22 + b13 * a32,
-    b10 * a03 + b11 * a13 + b12 * a23 + b13 * a33,
+  // First row = first row of B times all columns of A
+  dest[0] = b00 * a00 + b01 * a10 + b02 * a20 + b03 * a30;
+  dest[1] = b00 * a01 + b01 * a11 + b02 * a21 + b03 * a31;
+  dest[2] = b00 * a02 + b01 * a12 + b02 * a22 + b03 * a32;
+  dest[3] = b00 * a03 + b01 * a13 + b02 * a23 + b03 * a33,
 
-    // Thrid row = third row of B times all columns of A
-    b20 * a00 + b21 * a10 + b22 * a20 + b23 * a30,
-    b20 * a01 + b21 * a11 + b22 * a21 + b23 * a31,
-    b20 * a02 + b21 * a12 + b22 * a22 + b23 * a32,
-    b20 * a03 + b21 * a13 + b22 * a23 + b23 * a33,
+  // Second row = second row of B times all columns of A
+  dest[4] = b10 * a00 + b11 * a10 + b12 * a20 + b13 * a30;
+  dest[5] = b10 * a01 + b11 * a11 + b12 * a21 + b13 * a31;
+  dest[6] = b10 * a02 + b11 * a12 + b12 * a22 + b13 * a32;
+  dest[7] = b10 * a03 + b11 * a13 + b12 * a23 + b13 * a33;
 
-    // Fourth row = fourth row of B times all columns of A
-    b30 * a00 + b31 * a10 + b32 * a20 + b33 * a30,
-    b30 * a01 + b31 * a11 + b32 * a21 + b33 * a31,
-    b30 * a02 + b31 * a12 + b32 * a22 + b33 * a32,
-    b30 * a03 + b31 * a13 + b32 * a23 + b33 * a33,
-  ];
+  // Thrid row = third row of B times all columns of A
+  dest[8] = b20 * a00 + b21 * a10 + b22 * a20 + b23 * a30;
+  dest[9] = b20 * a01 + b21 * a11 + b22 * a21 + b23 * a31;
+  dest[10] = b20 * a02 + b21 * a12 + b22 * a22 + b23 * a32;
+  dest[11] = b20 * a03 + b21 * a13 + b22 * a23 + b23 * a33;
+
+  // Fourth row = fourth row of B times all columns of A
+  dest[12] = b30 * a00 + b31 * a10 + b32 * a20 + b33 * a30;
+  dest[13] = b30 * a01 + b31 * a11 + b32 * a21 + b33 * a31;
+  dest[14] = b30 * a02 + b31 * a12 + b32 * a22 + b33 * a32;
+  dest[15] = b30 * a03 + b31 * a13 + b32 * a23 + b33 * a33;
+  return dest;
 };
-
-// Multiply multiple matrices, one after the other to compound transformations.
-// One good use case for this is when we have to rotate multiple axis where we
-// apply one rotation at a time on each axis.
-// You can call this as `multiplyMany(m1, m2, m3)` and that will return a
-// single matrix by multiplying `mult(mult(m1, m2), m3)`.
-export function multiplyMany(...matrices) {
-  return matrices.reduce(multiply);
-}
 
 // multiplyVector multiplies a 4x4 matrix A time a vector x.
 //
@@ -400,3 +389,7 @@ const _00 = 0;  const _01 = 1;  const _02 = 2;  const _03 = 3;
 const _10 = 4;  const _11 = 5;  const _12 = 6;  const _13 = 7;
 const _20 = 8;  const _21 = 9;  const _22 = 10; const _23 = 11;
 const _30 = 12; const _31 = 13; const _32 = 14; const _33 = 15;
+
+function _fixZeros(v) {
+  return v === -0 ? 0 : v;
+}

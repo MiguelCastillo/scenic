@@ -21,11 +21,7 @@ test("Identity has the correct values", () => {
 test("Rotating 1 and then -1 results in the same matrix before rotation", () => {
   const mat4 = Matrix4.identity();
   const actual = mat4.rotate(-1, 0, 0).rotate(1, 0, 0);
-
-  // TODO(miguel): fix negative zero values in matrix. Not urgent since
-  // in practice -0 and 0 mean the same thing in JS math; different
-  // numbers but generate the same results in practice.
-  expect(mat4.data).toEqual(actual.data.map(n => n === -0 ? 0 : n));
+  expect(mat4.data).toEqual(actual.data);
 });
 
 test("Multiply two 4x4 matrices", () => {
@@ -43,7 +39,7 @@ test("Multiply two 4x4 matrices", () => {
     3,  12,  4, 10,
   ];
 
-  expect(multiply(b, a)).toEqual([
+  expect(multiply([], b, a)).toEqual([
     210, 267, 236, 271,
      93, 149, 104, 149,
     171, 146, 172, 268,
@@ -85,7 +81,7 @@ test("Matrix translation", () => {
 
   // Same as above but matrix steps are explicit rather
   // then accumulated over the course of multiple transformations.
-  expect(identity.translate(1,2,3).rotate(180, 0, 0).data.map(_fixZeros)).toEqual([
+  expect(identity.translate(1,2,3).rotate(180, 0, 0).data).toEqual([
     1,  0,  0, 0,
     0, -1,  0, 0,
     0,  0, -1, 0,
@@ -183,7 +179,7 @@ test("invert", () => {
       -3, 1, 1, 2,
       1, -5, 2, 1,
       3, 3, 2, 1,
-    ]).map(_fixZeros).map(matrixFloatPrecision)
+    ]).map(matrixFloatPrecision).map(_fixZeros)
   ).toEqual([
     0.04255, -0.21277, 0.03191, 0.09574,
     -0.01064, 0.05319, -0.13298, 0.10106,
@@ -219,11 +215,11 @@ describe("Matrix invert", () => {
       .rotation(13, 0, 0);
 
     expect(
-      transform.multiplyInverse(transform).data.map(_fixZeros),
+      transform.multiplyInverse(transform).data,
     ).toEqual(Matrix4.identity().data);
 
     expect(
-      transform.invert().multiply(transform).data.map(Math.round).map(_fixZeros),
+      transform.invert().multiply(transform).data.map(Math.round),
     ).toEqual(Matrix4.identity().data);
   });
 
@@ -236,7 +232,7 @@ describe("Matrix invert", () => {
       .translate(2, 0, 0)
       .rotate(0, 90, 0);
 
-    expect(transform2.data.map(_fixZeros)).toEqual([
+    expect(transform2.data).toEqual([
       -1, 0, 0, 0,
       0, 1, 0, 0,
       0, 0, -1, 0,
@@ -247,7 +243,7 @@ describe("Matrix invert", () => {
       .rotation(0, 90, 0)
       .scale(2, 2, 2);
 
-    expect(transform4.data.map(_fixZeros)).toEqual([
+    expect(transform4.data).toEqual([
       0, 0, -2, 0,
       0, 2, 0, 0,
       2, 0, 0, 0,
