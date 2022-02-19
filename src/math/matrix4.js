@@ -25,7 +25,7 @@ export class Matrix4 {
   }
 
   static rotation(degreesX, degreesY, degreesZ) {
-    return new Matrix4(rotate([], degreesX, degreesY, degreesZ));
+    return new Matrix4(rotate(identity(), degreesX, degreesY, degreesZ));
   }
 
   static translation(tx, ty, tz) {
@@ -52,7 +52,7 @@ export class Matrix4 {
   }
 
   rotate(degreesX, degreesY, degreesZ) {
-    const r = rotate([], degreesX, degreesY, degreesZ);
+    const r = rotate(identity(), degreesX, degreesY, degreesZ);
     return new Matrix4(multiply(r, this._data, r));
   }
 
@@ -67,11 +67,11 @@ export class Matrix4 {
   }
 
   multiply(mat4) {
-    return new Matrix4(multiply([], this._data, mat4._data));
+    return new Matrix4(multiply(identity(), this._data, mat4._data));
   }
 
   rotation(degreesX, degreesY, degreesZ) {
-    const data = rotate([], degreesX, degreesY, degreesZ);
+    const data = rotate(identity(), degreesX, degreesY, degreesZ);
     data[_30] = this._data[_30];
     data[_31] = this._data[_31];
     data[_32] = this._data[_32];
@@ -265,7 +265,15 @@ export function identity() {
 
 // TODO(miguel): use quaternions instead of rotating one axis at a time.
 export function rotate(dest, degreesX, degreesY, degreesZ) {
-  return multiply(dest, multiply(dest, rotateX(degreesX), rotateY(degreesY)), rotateZ(degreesZ));
+  let sx = sin(degreesX), cx = cos(degreesX);
+  let sy = sin(degreesY), cy = cos(degreesY);
+  let sz = sin(degreesZ), cz = cos(degreesZ);
+  return multiply(dest, dest, [
+    cz*cy, cz*sy*sx+sz*cx, -(cz*(sy*cx))+sz*sx, 0,
+    -(sz*cy), -(sz*sy*sx)+cz*cx, sz*(sy*cx)+cz*sx, 0,
+    sy, -(cy*sx), cy*cx, 0,
+    0, 0, 0, 1,
+  ]);
 }
 
 export function rotateX(degrees) {
@@ -428,3 +436,113 @@ const _30 = 12; const _31 = 13; const _32 = 14; const _33 = 15;
 function _fixZeros(v) {
   return v === -0 ? 0 : v;
 }
+
+// This generates a matrix my multiplying matrix a and b and it generates
+// another matrix that you use in your code with variables. This is a helpful
+// way to auto generate matrices for stuff like rotation on X, Y, and Z.
+//
+// generateRotationMatrix([], [
+//   1,   0,  0, 0,
+//   0,  "cx", "sx", 0,
+//   0, "-sx", "cx", 0,
+//   0,   0,  0, 1,
+// ], [
+//   "cy", 0, "-sy", 0,
+//   0, 1,   0, 0,
+//   "sy", 0,  "cy", 0,
+//   0, 0,   0, 1,
+// ], [
+//   "cz", "sz", 0, 0,
+//   "-sz", "cz", 0, 0,
+//   0, 0, 1, 0,
+//   0, 0, 0, 1,
+// ]);
+//
+// Will return:
+// [
+//   cz*cy, cz*sy*sx+sz*cx, -(cz*(sy*cx))+sz*sx, 0,
+//   -(sz*cy), -(sz*sy*sx)+cz*cx, sz*(sy*cx)+cz*sx, 0,
+//   sy, -(cy*sx), cy*cx, 0,
+//   0, 0, 0, 1,
+// ]
+export function generateRotationMatrix(dest, ...mats) {
+  return mats.reduce((a, b) => multiplyRotationMatrix(dest, a, b));
+}
+
+function multiplyRotationMatrix(dest, a, b) {
+  const a00 = a[_00]; const b00 = b[_00];
+  const a01 = a[_01]; const b01 = b[_01];
+  const a02 = a[_02]; const b02 = b[_02];
+  const a03 = a[_03]; const b03 = b[_03];
+  const a10 = a[_10]; const b10 = b[_10];
+  const a11 = a[_11]; const b11 = b[_11];
+  const a12 = a[_12]; const b12 = b[_12];
+  const a13 = a[_13]; const b13 = b[_13];
+  const a20 = a[_20]; const b20 = b[_20];
+  const a21 = a[_21]; const b21 = b[_21];
+  const a22 = a[_22]; const b22 = b[_22];
+  const a23 = a[_23]; const b23 = b[_23];
+  const a30 = a[_30]; const b30 = b[_30];
+  const a31 = a[_31]; const b31 = b[_31];
+  const a32 = a[_32]; const b32 = b[_32];
+  const a33 = a[_33]; const b33 = b[_33];
+
+  const multiplyString = (a, b) => {
+    if (!a || !b) {
+      return 0;
+    }
+    if (a === 1) {
+      return b;
+    }
+    if (b === 1) {
+      return a;
+    }
+    if (a[0] === "-" && b[0] === "-") {
+      return a.substr(1) + "*" + b.substr(1);
+    }
+    if (a[0] === "-") {
+      return "-(" + a.substr(1) + "*" + b + ")";
+    }
+    if (b[0] === "-") {
+      return "-(" + a + "*" + b.substr(1) + ")";
+    }
+    return a + "*" + b;
+  }
+
+  const fixResult = (s) => {
+    if (!s) {
+      return 0;
+    }
+    if (s === "1") {
+      return 1;
+    }
+    return s;
+  }
+
+  // First row = first row of B times all columns of A
+  dest[0] = [multiplyString(b00, a00), multiplyString(b01, a10), multiplyString(b02, a20), multiplyString(b03, a30)].filter(Boolean).join("+");
+  dest[1] = [multiplyString(b00, a01), multiplyString(b01, a11), multiplyString(b02, a21), multiplyString(b03, a31)].filter(Boolean).join("+");
+  dest[2] = [multiplyString(b00, a02), multiplyString(b01, a12), multiplyString(b02, a22), multiplyString(b03, a32)].filter(Boolean).join("+");
+  dest[3] = [multiplyString(b00, a03), multiplyString(b01, a13), multiplyString(b02, a23), multiplyString(b03, a33)].filter(Boolean).join("+");
+
+  // Second row = second row of B times all columns of A
+  dest[4] = [multiplyString(b10, a00), multiplyString(b11, a10), multiplyString(b12, a20), multiplyString(b13, a30)].filter(Boolean).join("+");
+  dest[5] = [multiplyString(b10, a01), multiplyString(b11, a11), multiplyString(b12, a21), multiplyString(b13, a31)].filter(Boolean).join("+");
+  dest[6] = [multiplyString(b10, a02), multiplyString(b11, a12), multiplyString(b12, a22), multiplyString(b13, a32)].filter(Boolean).join("+");
+  dest[7] = [multiplyString(b10, a03), multiplyString(b11, a13), multiplyString(b12, a23), multiplyString(b13, a33)].filter(Boolean).join("+");
+
+
+  // Thrid row = third row of B times all columns of A
+  dest[8] = [multiplyString(b20, a00), multiplyString(b21, a10), multiplyString(b22, a20), multiplyString(b23, a30)].filter(Boolean).join("+");
+  dest[9] = [multiplyString(b20, a01), multiplyString(b21, a11), multiplyString(b22, a21), multiplyString(b23, a31)].filter(Boolean).join("+");
+  dest[10] = [multiplyString(b20, a02), multiplyString(b21, a12), multiplyString(b22, a22), multiplyString(b23, a32)].filter(Boolean).join("+");
+  dest[11] = [multiplyString(b20, a03), multiplyString(b21, a13), multiplyString(b22, a23), multiplyString(b23, a33)].filter(Boolean).join("+");
+
+  // Fourth row = fourth row of B times all columns of A
+  dest[12] = [multiplyString(b30, a00), multiplyString(b31, a10), multiplyString(b32, a20), multiplyString(b33, a30)].filter(Boolean).join("+");
+  dest[13] = [multiplyString(b30, a01), multiplyString(b31, a11), multiplyString(b32, a21), multiplyString(b33, a31)].filter(Boolean).join("+");
+  dest[14] = [multiplyString(b30, a02), multiplyString(b31, a12), multiplyString(b32, a22), multiplyString(b33, a32)].filter(Boolean).join("+");
+  dest[15] = [multiplyString(b30, a03), multiplyString(b31, a13), multiplyString(b32, a23), multiplyString(b33, a33)].filter(Boolean).join("+");
+
+  return dest.map(fixResult);
+};

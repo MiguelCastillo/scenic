@@ -18,10 +18,77 @@ test("Identity has the correct values", () => {
   ]);
 });
 
-test("Rotating 1 and then -1 results in the same matrix before rotation", () => {
-  const mat4 = Matrix4.identity();
-  const actual = mat4.rotate(-1, 0, 0).rotate(1, 0, 0);
-  expect(mat4.data).toEqual(actual.data);
+describe("rotation", () => {
+  test("Rotating 1 and then -1 results in the same matrix before rotation", () => {
+    const m = Matrix4.identity();
+    const actual = m.rotate(-1, 0, 0).rotate(1, 0, 0);
+    expect(m.data).toEqual(actual.data);
+  });
+
+  test.skip("rotate XYZ", () => {
+    const expected = Matrix4.rotation(60, 30, 45).data;
+    expect(expected).toEqual([
+      -0.30619, 0.88388, -0.35355, 0,
+      -0.91856, -0.17678, 0.61237, 0,
+      0.25, 0.43301, 0.86603, 0,
+      0, 0, 0, 1
+    ]);
+  });
+
+  test("rotate 45 on X", () => {
+    // ROLL
+    const expected = Matrix4.rotation(45, 0, 0).data;
+    expect(expected).toEqual([
+      1, 0, 0, 0,
+      0, 0.70711, 0.70711, 0,
+      0, -0.70711, 0.70711, 0,
+      0, 0, 0, 1,
+    ]);
+  });
+
+  test("rotate 45 on Y", () => {
+    // PITCH
+    const expected = Matrix4.rotation(0, 45, 0).data;
+    expect(expected).toEqual([
+      0.70711, 0, -0.70711, 0,
+      0, 1, 0, 0,
+      0.70711, 0, 0.70711, 0,
+      0, 0, 0, 1,
+    ]);
+  });
+
+  test("rotate 45 on Z", () => {
+    // YAW
+    const expected = Matrix4.rotation(0, 0, 45).data;
+    expect(expected).toEqual([
+      0.70711, 0.70711, 0, 0,
+      -0.70711, 0.70711, 0, 0,
+      0, 0, 1, 0,
+      0, 0, 0, 1,
+    ]);
+  });
+
+  test("rotate 45 on XY", () => {
+    // ROLL & PITCH
+    const expected = Matrix4.rotation(45, 45, 0).data;
+    expect(expected).toEqual([
+      0.70711, 0.5, -0.5, 0,
+      0, 0.70711, 0.70711, 0,
+      0.70711, -0.5, 0.5, 0,
+      0, 0, 0, 1
+    ]);
+  });
+
+  test("rotate 45 on XYZ", () => {
+    // ROLL & PITCH & YAW
+    const expected = Matrix4.rotation(45, 45, 45).data;
+    expect(expected).toEqual([
+      0.5, 0.85355, 0.14645, 0,
+      -0.5, 0.14645, 0.85355, 0,
+      0.70711, -0.5, 0.5, 0,
+      0, 0, 0, 1,
+    ]);
+  });
 });
 
 test("Multiply two 4x4 matrices", () => {
