@@ -28,7 +28,7 @@ export class Light extends Renderable {
         }, {
           name: "worldMatrix",
           update: ({index}) => {
-            gl.uniformMatrix4fv(index, false, worldMatrix.data);
+            gl.uniformMatrix4fv(index, true, worldMatrix.data);
           }
         }, {
           name: "materialColor",

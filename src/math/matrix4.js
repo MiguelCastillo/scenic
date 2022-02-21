@@ -1,4 +1,97 @@
+// This file contains functionality for 4x4 matrices to support matrix
+// transformation such as translation, rotation, and scaling for 3D
+// rendering.
+//
+// A transformation matrix in this module looks like:
+// a, b, c, tx,
+// d, e, f, ty,
+// g, h, i, tz,
+// 0, 0, 0, 1
+//
+// From a-i we have the rotation matrix with scale in the diagonal with
+// a, e, and i. Lastly, we have tx, ty, and tz in the last column for
+// translation.
+//
+// So why is translation the last column in the transformation matrix?
+// This hugely dependents on the order in which we multiply view matrices by
+// vertex vectors in the vertex shader, and how we cascade matrix
+// multiplication in the scene graph from parent to children nodes.
+// So let's discuss.
+//
+// Matrix multiplication occurs left to right, so we cascade multiplications
+// from matrices from the left most matrix to the right most matrix. E.g
+// A*B*C mean A times B time C and we multiply them in that order.
+// To multiply a matrix with a vertex vector, we have the choice to treat
+// the vector as a row major matrix or a column major matrix.
+//
+// Column major matrix is 3 rows 1 column such as:
+// | x |
+// | y |
+// | z |
+//
+// Row major matrix is 1 row and 3 columns such as:
+// [ x, y, z ]
+//
+// To multiply a matrix by column major matrix we apply a transformation matrix
+// from the left as in:
+//
+// |a, b, c|   |x|
+// |d, e, f| * |y| = transformed vector.  (B = A*v)
+// |g, h, i|   |z|
+//
+// To multiply a matrix by a row major matrix we apply the vector from the left
+// as in:
+//
+//             |a, d, g|
+// |x, y, z| * |b, e, h| = transformed vector.  (B = v*A)
+//             |c, f, i|
+//
+// In row major order where the matrix is on the right, the matrix needs to be
+// transposed for the multiplication to yield the same result as column
+// major multiplication. So depending on the order in which you multiply your
+// transform matrices and your vertex vectors, you will need to ensure that
+// matrix multiplication in the scene graph is done consistently or chaos and
+// bugs will take over. The most painful part of this is in the rotation
+// matrices where having the wrong ordering will generate the wrong
+// transformations with results that are very hard to debug.
+//
+// The reason I have chosen to put the translation on the last column is that
+// most math literature and tools you find online align with column major
+// ordering; remember that row major requires you to use transpose matrices
+// when multiplying with a vector. So if you are implementing your own matrix
+// rotation functionality or just fixing a bug, most literature and tools you
+// find will use matrices to rotate each axis based on column major
+// multiplication, which aligns better with the translation on the last column.
+// Otherwise, placing translation in the last row means that most stuff you
+// read about matrices will innevitably generate a good amount of friction
+// because rotation matrices are transposed.
+//
+// quaternion rotation is also an important factor here. quaternion rotation
+// in its conventional ordering will generate rotation matrices that are
+// aligned with column major ordering. And "Alternative conventions" are
+// actually discouraged!
+// https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation
+//
+// The mental load is significant enough that I chose to use column major
+// (translation on the last column).
+//
+// The only tricky part is that in column major where you specify your
+// transofmation matrix on the left and the vertex vector on the right in
+// vertex shaders, you will need to transpose the matrix when calling
+// uniformMatrix4fv. The reason is that the way GLSL in webgl iterates the
+// matrix is transposed. So be sure to specify `true` in your call to
+// uniformMatrix4fv or transpose the matrix yourself before calling
+// uniformMatrix4fv.
+//
+// The rotation matrix in this module are the combined form of Tait–Bryan
+// angles ZYX, so rotating is done in a single matrix multiplication operation.
+// For details on Tait–Bryan angles ZYX, check out
+// https://en.wikipedia.org/wiki/Euler_angles
+//
 // https://www.khanacademy.org/math/linear-algebra/matrix-transformations#lin-trans-examples
+// http://extranet.nmrfam.wisc.edu/nmrfam_documents/bchm800/notes/chapt4.pdf
+// https://danceswithcode.net/engineeringnotes/rotations_in_3d/rotations_in_3d_part1.html
+//
 
 import {sin, cos} from "./angles.js";
 import {matrixFloatPrecision} from "./float.js";
@@ -36,21 +129,6 @@ export class Matrix4 {
     return new Matrix4(scale(sx, sy, sz));
   }
 
-  rotateX(degrees) {
-    const r = rotateX(degrees);
-    return new Matrix4(multiply(r, this._data, r));
-  }
-
-  rotateY(degrees) {
-    const r = rotateY(degrees);
-    return new Matrix4(multiply(r, this._data, r));
-  }
-
-  rotateZ(degrees) {
-    const r = rotateZ(degrees);
-    return new Matrix4(multiply(r, this._data, r));
-  }
-
   rotate(degreesX, degreesY, degreesZ) {
     const r = rotate(identity(), degreesX, degreesY, degreesZ);
     return new Matrix4(multiply(r, this._data, r));
@@ -71,18 +149,19 @@ export class Matrix4 {
   }
 
   rotation(degreesX, degreesY, degreesZ) {
+    // TODO(miguel): this looks like it clears scaling. Let's fix.
     const data = rotate(identity(), degreesX, degreesY, degreesZ);
-    data[_30] = this._data[_30];
-    data[_31] = this._data[_31];
-    data[_32] = this._data[_32];
+    data[_03] = this._data[_03];
+    data[_13] = this._data[_13];
+    data[_23] = this._data[_23];
     return new Matrix4(data);
   }
 
   translation(tx, ty, tz) {
     const data = this._data.slice();
-    data[_30] = tx;
-    data[_31] = ty;
-    data[_32] = tz;
+    data[_03] = tx;
+    data[_13] = ty;
+    data[_23] = tz;
     return new Matrix4(data);
   }
 
@@ -115,6 +194,139 @@ export class Matrix4 {
     return this._data.every((d, i) => d === m._data[i]);
   }
 };
+
+export function identity() {
+  return [
+    1, 0, 0, 0,
+    0, 1, 0, 0,
+    0, 0, 1, 0,
+    0, 0, 0, 1,
+  ];
+}
+
+export function translate(tx, ty, tz) {
+  return [
+    1,  0,  0,  tx,
+    0,  1,  0,  ty,
+    0,  0,  1,  tz,
+    0,  0,  0,  1,
+  ];
+};
+
+export function scale(sx, sy=sx, sz=sx) {
+  return [
+    sx, 0,  0,  0,
+    0, sy,  0,  0,
+    0,  0, sz,  0,
+    0,  0,  0,  1,
+  ];
+}
+
+// TODO(miguel): use quaternions instead of rotating one axis at a time.
+//
+// Rotation matices are auto generate with generateRotationMatrix
+// as below.
+// const rotationMatrix = generateRotationMatrix([], onZ, onY, onX);
+//
+// https://danceswithcode.net/engineeringnotes/rotations_in_3d/rotations_in_3d_part1.html
+export function rotate(dest, degreesX, degreesY, degreesZ) {
+  let sx = sin(degreesX), cx = cos(degreesX);
+  let sy = sin(degreesY), cy = cos(degreesY);
+  let sz = sin(degreesZ), cz = cos(degreesZ);
+
+  // NOTE(miguel): Tait–Bryan yaw, pitch, roll, around the z, y and x axes
+  // respectively is usually how rotation matrices are setup.
+  // Usually the mental model for a rotation matrix is to apply X, Y, and Z
+  // axis rotations in that order to some vector, or even another matrix.
+  // However, rotation matrix multiplication is unintuitively done from right
+  // to left (ZYX) in practice. That's assuming that the things (vector or
+  // matrix) we are affecting is on the right side of the rotation matrix. E.g
+  // (x', y', z') = Az*Ay*Ax*v(x, y, z)
+  // The reason for that is that we want to first rotate the vector on X, so
+  // the first multiplication is the rotation X matrix times the vector. Then
+  // Y, and then Z. What can make this counter intuitive is that it is easy
+  // to think of applying the rotation to subsequent rotation matrices, but
+  // in reality we are really applying the rotation on the vector.
+  // Tait–Bryan angles ZYX
+  dest[0] = cz*cy;
+  dest[1] = cz*sy*sx-(sz*cx);
+  dest[2] = sz*sx+cz*sy*cx;
+  dest[4] = sz*cy;
+  dest[5] = cz*cx+sz*sy*sx;
+  dest[6] = sz*sy*cx-(cz*sx);
+  dest[8] = -sy;
+  dest[9] = cy*sx;
+  dest[10] = cy*cx;
+  return dest;
+}
+
+export function multiply(dest, a, b) {
+  const a00 = a[_00]; const b00 = b[_00];
+  const a01 = a[_01]; const b01 = b[_01];
+  const a02 = a[_02]; const b02 = b[_02];
+  const a03 = a[_03]; const b03 = b[_03];
+  const a10 = a[_10]; const b10 = b[_10];
+  const a11 = a[_11]; const b11 = b[_11];
+  const a12 = a[_12]; const b12 = b[_12];
+  const a13 = a[_13]; const b13 = b[_13];
+  const a20 = a[_20]; const b20 = b[_20];
+  const a21 = a[_21]; const b21 = b[_21];
+  const a22 = a[_22]; const b22 = b[_22];
+  const a23 = a[_23]; const b23 = b[_23];
+  const a30 = a[_30]; const b30 = b[_30];
+  const a31 = a[_31]; const b31 = b[_31];
+  const a32 = a[_32]; const b32 = b[_32];
+  const a33 = a[_33]; const b33 = b[_33];
+
+  // First row = first row of B times all columns of A
+  dest[0] = a00 * b00 + a01 * b10 + a02 * b20 + a03 * b30;
+  dest[1] = a00 * b01 + a01 * b11 + a02 * b21 + a03 * b31;
+  dest[2] = a00 * b02 + a01 * b12 + a02 * b22 + a03 * b32;
+  dest[3] = a00 * b03 + a01 * b13 + a02 * b23 + a03 * b33,
+
+  // Second row = second row of B times all columns of A
+  dest[4] = a10 * b00 + a11 * b10 + a12 * b20 + a13 * b30;
+  dest[5] = a10 * b01 + a11 * b11 + a12 * b21 + a13 * b31;
+  dest[6] = a10 * b02 + a11 * b12 + a12 * b22 + a13 * b32;
+  dest[7] = a10 * b03 + a11 * b13 + a12 * b23 + a13 * b33;
+
+  // Thrid row = third row of B times all columns of A
+  dest[8] = a20 * b00 + a21 * b10 + a22 * b20 + a23 * b30;
+  dest[9] = a20 * b01 + a21 * b11 + a22 * b21 + a23 * b31;
+  dest[10] = a20 * b02 + a21 * b12 + a22 * b22 + a23 * b32;
+  dest[11] = a20 * b03 + a21 * b13 + a22 * b23 + a23 * b33;
+
+  // Fourth row = fourth row of B times all columns of A
+  dest[12] = a30 * b00 + a31 * b10 + a32 * b20 + a33 * b30;
+  dest[13] = a30 * b01 + a31 * b11 + a32 * b21 + a33 * b31;
+  dest[14] = a30 * b02 + a31 * b12 + a32 * b22 + a33 * b32;
+  dest[15] = a30 * b03 + a31 * b13 + a32 * b23 + a33 * b33;
+  return dest;
+};
+
+// multiplyVector multiplies a 4x4 matrix A time a vector x.
+//
+// a11 a12 a13 a14 | x1
+// a21 a22 a23 a24 | x2
+// a31 a32 a33 a34 | x3
+// a41 a42 a43 a44 | x4
+export function multiplyVector(a, vec4) {
+  return [
+    a[_00] * vec4[0] + a[_01] * vec4[1] + a[_02] * vec4[2] + a[_03] * vec4[3],
+    a[_10] * vec4[0] + a[_11] * vec4[1] + a[_12] * vec4[2] + a[_13] * vec4[3],
+    a[_20] * vec4[0] + a[_21] * vec4[1] + a[_22] * vec4[2] + a[_23] * vec4[3],
+    a[_30] * vec4[0] + a[_31] * vec4[1] + a[_32] * vec4[2] + a[_33] * vec4[3],
+  ];
+}
+
+export function transpose(a) {
+  return [
+    a[_00], a[_10], a[_20], a[_30],
+    a[_01], a[_11], a[_21], a[_31],
+    a[_02], a[_12], a[_22], a[_32],
+    a[_03], a[_13], a[_23], a[_33],
+  ];
+}
 
 // https://www.chilimath.com/lessons/advanced-algebra/determinant-3x3-matrix/
 // https://semath.info/src/inverse-cofactor-ex4.html
@@ -254,159 +466,6 @@ export function determinant(data) {
   return a11*d11 + a21*d22 + a31*d33 + a41*d44;
 }
 
-export function identity() {
-  return [
-    1, 0, 0, 0,
-    0, 1, 0, 0,
-    0, 0, 1, 0,
-    0, 0, 0, 1,
-  ];
-}
-
-// TODO(miguel): use quaternions instead of rotating one axis at a time.
-export function rotate(dest, degreesX, degreesY, degreesZ) {
-  let sx = sin(degreesX), cx = cos(degreesX);
-  let sy = sin(degreesY), cy = cos(degreesY);
-  let sz = sin(degreesZ), cz = cos(degreesZ);
-  return multiply(dest, dest, [
-    cz*cy, cz*sy*sx+sz*cx, -(cz*(sy*cx))+sz*sx, 0,
-    -(sz*cy), -(sz*sy*sx)+cz*cx, sz*(sy*cx)+cz*sx, 0,
-    sy, -(cy*sx), cy*cx, 0,
-    0, 0, 0, 1,
-  ]);
-}
-
-export function rotateX(degrees) {
-  const c = cos(degrees);
-  const s = sin(degrees);
-
-  return [
-    1, 0, 0, 0,
-    0, c, s, 0,
-    0, -s, c, 0,
-    0, 0, 0, 1,
-  ];
-};
-
-export function rotateY(degrees) {
-  const c = cos(degrees);
-  const s = sin(degrees);
-
-  return [
-    c, 0, -s, 0,
-    0, 1, 0, 0,
-    s, 0, c, 0,
-    0, 0, 0, 1,
-  ];
-};
-
-export function rotateZ(degrees) {
-  const c = cos(degrees);
-  const s = sin(degrees);
-
-  return [
-     c, s, 0, 0,
-    -s, c, 0, 0,
-     0, 0, 1, 0,
-     0, 0, 0, 1,
-  ];
-};
-
-export function translate(tx, ty, tz) {
-  return [
-    1,  0,  0,  0,
-    0,  1,  0,  0,
-    0,  0,  1,  0,
-    tx, ty, tz, 1,
-  ];
-};
-
-export function scale(sx, sy=sx, sz=sx) {
-  return [
-    sx, 0,  0,  0,
-    0, sy,  0,  0,
-    0,  0, sz,  0,
-    0,  0,  0,  1,
-  ];
-}
-
-export function multiply(dest, a, b) {
-  const a00 = a[_00]; const b00 = b[_00];
-  const a01 = a[_01]; const b01 = b[_01];
-  const a02 = a[_02]; const b02 = b[_02];
-  const a03 = a[_03]; const b03 = b[_03];
-  const a10 = a[_10]; const b10 = b[_10];
-  const a11 = a[_11]; const b11 = b[_11];
-  const a12 = a[_12]; const b12 = b[_12];
-  const a13 = a[_13]; const b13 = b[_13];
-  const a20 = a[_20]; const b20 = b[_20];
-  const a21 = a[_21]; const b21 = b[_21];
-  const a22 = a[_22]; const b22 = b[_22];
-  const a23 = a[_23]; const b23 = b[_23];
-  const a30 = a[_30]; const b30 = b[_30];
-  const a31 = a[_31]; const b31 = b[_31];
-  const a32 = a[_32]; const b32 = b[_32];
-  const a33 = a[_33]; const b33 = b[_33];
-
-  // The multiplication here is transpose of A _times_ transpose of B.
-  // This is to take into account the fact that matrix columns are stored with
-  // sequental indexes in the array to make it simpler for webgl to process
-  // translation in the last row with sequential indexes. However, it is more
-  // common in mathematics to represent translation as the last column rather
-  // then the last row as we do here. But that makes it a lil more tricky to
-  // read out of the array translation coordinates, since the indexes are no
-  // longer sequential.
-
-  // First row = first row of B times all columns of A
-  dest[0] = b00 * a00 + b01 * a10 + b02 * a20 + b03 * a30;
-  dest[1] = b00 * a01 + b01 * a11 + b02 * a21 + b03 * a31;
-  dest[2] = b00 * a02 + b01 * a12 + b02 * a22 + b03 * a32;
-  dest[3] = b00 * a03 + b01 * a13 + b02 * a23 + b03 * a33,
-
-  // Second row = second row of B times all columns of A
-  dest[4] = b10 * a00 + b11 * a10 + b12 * a20 + b13 * a30;
-  dest[5] = b10 * a01 + b11 * a11 + b12 * a21 + b13 * a31;
-  dest[6] = b10 * a02 + b11 * a12 + b12 * a22 + b13 * a32;
-  dest[7] = b10 * a03 + b11 * a13 + b12 * a23 + b13 * a33;
-
-  // Thrid row = third row of B times all columns of A
-  dest[8] = b20 * a00 + b21 * a10 + b22 * a20 + b23 * a30;
-  dest[9] = b20 * a01 + b21 * a11 + b22 * a21 + b23 * a31;
-  dest[10] = b20 * a02 + b21 * a12 + b22 * a22 + b23 * a32;
-  dest[11] = b20 * a03 + b21 * a13 + b22 * a23 + b23 * a33;
-
-  // Fourth row = fourth row of B times all columns of A
-  dest[12] = b30 * a00 + b31 * a10 + b32 * a20 + b33 * a30;
-  dest[13] = b30 * a01 + b31 * a11 + b32 * a21 + b33 * a31;
-  dest[14] = b30 * a02 + b31 * a12 + b32 * a22 + b33 * a32;
-  dest[15] = b30 * a03 + b31 * a13 + b32 * a23 + b33 * a33;
-  return dest;
-};
-
-// multiplyVector multiplies a 4x4 matrix A time a vector x.
-//
-// a11 a12 a13 a14 | x1
-// a21 a22 a23 a24 | x2
-// a31 a32 a33 a34 | x3
-// a41 a42 a43 a44 | x4
-export function multiplyVector(a, vec4) {
-  return [
-    a[_00] * vec4[0] + a[_01] * vec4[1] + a[_02] * vec4[2] + a[_03] * vec4[3],
-    a[_10] * vec4[0] + a[_11] * vec4[1] + a[_12] * vec4[2] + a[_13] * vec4[3],
-    a[_20] * vec4[0] + a[_21] * vec4[1] + a[_22] * vec4[2] + a[_23] * vec4[3],
-    a[_30] * vec4[0] + a[_31] * vec4[1] + a[_32] * vec4[2] + a[_33] * vec4[3],
-  ];
-}
-
-export function transpose(a) {
-  return [
-    a[_00], a[_10], a[_20], a[_30],
-    a[_01], a[_11], a[_21], a[_31],
-    a[_02], a[_12], a[_22], a[_32],
-    a[_03], a[_13], a[_23], a[_33],
-  ];
-}
-
 // Matrix indexes.
 // 00 01 02 03
 // 10 11 12 13
@@ -498,7 +557,8 @@ function multiplyRotationMatrix(dest, a, b) {
       return a;
     }
     if (a[0] === "-" && b[0] === "-") {
-      return a.substr(1) + "*" + b.substr(1);
+      a = a.substr(1);
+      b = b.substr(1);
     }
     if (a[0] === "-") {
       return "-(" + a.substr(1) + "*" + b + ")";
@@ -507,6 +567,12 @@ function multiplyRotationMatrix(dest, a, b) {
       return "-(" + a + "*" + b.substr(1) + ")";
     }
     return a + "*" + b;
+  }
+
+  const concatRow = (row) => {
+    const add = row.filter(Boolean).filter(a => a[0] !== "-").join("+");
+    const sub = row.filter(Boolean).filter(a => a[0] === "-").join("");
+    return [...add, ...sub].join("");
   }
 
   const fixResult = (s) => {
@@ -520,29 +586,48 @@ function multiplyRotationMatrix(dest, a, b) {
   }
 
   // First row = first row of B times all columns of A
-  dest[0] = [multiplyString(b00, a00), multiplyString(b01, a10), multiplyString(b02, a20), multiplyString(b03, a30)].filter(Boolean).join("+");
-  dest[1] = [multiplyString(b00, a01), multiplyString(b01, a11), multiplyString(b02, a21), multiplyString(b03, a31)].filter(Boolean).join("+");
-  dest[2] = [multiplyString(b00, a02), multiplyString(b01, a12), multiplyString(b02, a22), multiplyString(b03, a32)].filter(Boolean).join("+");
-  dest[3] = [multiplyString(b00, a03), multiplyString(b01, a13), multiplyString(b02, a23), multiplyString(b03, a33)].filter(Boolean).join("+");
+  dest[0] = [multiplyString(a00, b00), multiplyString(a01, b10), multiplyString(a02, b20), multiplyString(a03, b30)];
+  dest[1] = [multiplyString(a00, b01), multiplyString(a01, b11), multiplyString(a02, b21), multiplyString(a03, b31)];
+  dest[2] = [multiplyString(a00, b02), multiplyString(a01, b12), multiplyString(a02, b22), multiplyString(a03, b32)];
+  dest[3] = [multiplyString(a00, b03), multiplyString(a01, b13), multiplyString(a02, b23), multiplyString(a03, b33)];
 
   // Second row = second row of B times all columns of A
-  dest[4] = [multiplyString(b10, a00), multiplyString(b11, a10), multiplyString(b12, a20), multiplyString(b13, a30)].filter(Boolean).join("+");
-  dest[5] = [multiplyString(b10, a01), multiplyString(b11, a11), multiplyString(b12, a21), multiplyString(b13, a31)].filter(Boolean).join("+");
-  dest[6] = [multiplyString(b10, a02), multiplyString(b11, a12), multiplyString(b12, a22), multiplyString(b13, a32)].filter(Boolean).join("+");
-  dest[7] = [multiplyString(b10, a03), multiplyString(b11, a13), multiplyString(b12, a23), multiplyString(b13, a33)].filter(Boolean).join("+");
+  dest[4] = [multiplyString(a10, b00), multiplyString(a11, b10), multiplyString(a12, b20), multiplyString(a13, b30)];
+  dest[5] = [multiplyString(a10, b01), multiplyString(a11, b11), multiplyString(a12, b21), multiplyString(a13, b31)];
+  dest[6] = [multiplyString(a10, b02), multiplyString(a11, b12), multiplyString(a12, b22), multiplyString(a13, b32)];
+  dest[7] = [multiplyString(a10, b03), multiplyString(a11, b13), multiplyString(a12, b23), multiplyString(a13, b33)];
 
 
   // Thrid row = third row of B times all columns of A
-  dest[8] = [multiplyString(b20, a00), multiplyString(b21, a10), multiplyString(b22, a20), multiplyString(b23, a30)].filter(Boolean).join("+");
-  dest[9] = [multiplyString(b20, a01), multiplyString(b21, a11), multiplyString(b22, a21), multiplyString(b23, a31)].filter(Boolean).join("+");
-  dest[10] = [multiplyString(b20, a02), multiplyString(b21, a12), multiplyString(b22, a22), multiplyString(b23, a32)].filter(Boolean).join("+");
-  dest[11] = [multiplyString(b20, a03), multiplyString(b21, a13), multiplyString(b22, a23), multiplyString(b23, a33)].filter(Boolean).join("+");
+  dest[8] = [multiplyString(a20, b00), multiplyString(a21, b10), multiplyString(a22, b20), multiplyString(a23, b30)];
+  dest[9] = [multiplyString(a20, b01), multiplyString(a21, b11), multiplyString(a22, b21), multiplyString(a23, b31)];
+  dest[10] = [multiplyString(a20, b02), multiplyString(a21, b12), multiplyString(a22, b22), multiplyString(a23, b32)];
+  dest[11] = [multiplyString(a20, b03), multiplyString(a21, b13), multiplyString(a22, b23), multiplyString(a23, b33)];
 
   // Fourth row = fourth row of B times all columns of A
-  dest[12] = [multiplyString(b30, a00), multiplyString(b31, a10), multiplyString(b32, a20), multiplyString(b33, a30)].filter(Boolean).join("+");
-  dest[13] = [multiplyString(b30, a01), multiplyString(b31, a11), multiplyString(b32, a21), multiplyString(b33, a31)].filter(Boolean).join("+");
-  dest[14] = [multiplyString(b30, a02), multiplyString(b31, a12), multiplyString(b32, a22), multiplyString(b33, a32)].filter(Boolean).join("+");
-  dest[15] = [multiplyString(b30, a03), multiplyString(b31, a13), multiplyString(b32, a23), multiplyString(b33, a33)].filter(Boolean).join("+");
+  dest[12] = [multiplyString(a30, b00), multiplyString(a31, b10), multiplyString(a32, b20), multiplyString(a33, b30)];
+  dest[13] = [multiplyString(a30, b01), multiplyString(a31, b11), multiplyString(a32, b21), multiplyString(a33, b31)];
+  dest[14] = [multiplyString(a30, b02), multiplyString(a31, b12), multiplyString(a32, b22), multiplyString(a33, b32)];
+  dest[15] = [multiplyString(a30, b03), multiplyString(a31, b13), multiplyString(a32, b23), multiplyString(a33, b33)];
 
-  return dest.map(fixResult);
+  return dest.map(concatRow).map(fixResult);
 };
+
+const onX = [
+  1,   0,  0, 0,
+  0,  "cx", "-sx", 0,
+  0, "sx", "cx", 0,
+  0,   0,  0, 1,
+];
+const onY = [
+  "cy", 0, "sy", 0,
+  0, 1,   0, 0,
+  "-sy", 0,  "cy", 0,
+  0, 0,   0, 1,
+];
+const onZ = [
+  "cz", "-sz", 0, 0,
+  "sz", "cz", 0, 0,
+  0, 0, 1, 0,
+  0, 0, 0, 1,
+];

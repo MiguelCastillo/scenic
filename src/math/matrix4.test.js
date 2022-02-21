@@ -18,79 +18,6 @@ test("Identity has the correct values", () => {
   ]);
 });
 
-describe("rotation", () => {
-  test("Rotating 1 and then -1 results in the same matrix before rotation", () => {
-    const m = Matrix4.identity();
-    const actual = m.rotate(-1, 0, 0).rotate(1, 0, 0);
-    expect(m.data).toEqual(actual.data);
-  });
-
-  test.skip("rotate XYZ", () => {
-    const expected = Matrix4.rotation(60, 30, 45).data;
-    expect(expected).toEqual([
-      -0.30619, 0.88388, -0.35355, 0,
-      -0.91856, -0.17678, 0.61237, 0,
-      0.25, 0.43301, 0.86603, 0,
-      0, 0, 0, 1
-    ]);
-  });
-
-  test("rotate 45 on X", () => {
-    // ROLL
-    const expected = Matrix4.rotation(45, 0, 0).data;
-    expect(expected).toEqual([
-      1, 0, 0, 0,
-      0, 0.70711, 0.70711, 0,
-      0, -0.70711, 0.70711, 0,
-      0, 0, 0, 1,
-    ]);
-  });
-
-  test("rotate 45 on Y", () => {
-    // PITCH
-    const expected = Matrix4.rotation(0, 45, 0).data;
-    expect(expected).toEqual([
-      0.70711, 0, -0.70711, 0,
-      0, 1, 0, 0,
-      0.70711, 0, 0.70711, 0,
-      0, 0, 0, 1,
-    ]);
-  });
-
-  test("rotate 45 on Z", () => {
-    // YAW
-    const expected = Matrix4.rotation(0, 0, 45).data;
-    expect(expected).toEqual([
-      0.70711, 0.70711, 0, 0,
-      -0.70711, 0.70711, 0, 0,
-      0, 0, 1, 0,
-      0, 0, 0, 1,
-    ]);
-  });
-
-  test("rotate 45 on XY", () => {
-    // ROLL & PITCH
-    const expected = Matrix4.rotation(45, 45, 0).data;
-    expect(expected).toEqual([
-      0.70711, 0.5, -0.5, 0,
-      0, 0.70711, 0.70711, 0,
-      0.70711, -0.5, 0.5, 0,
-      0, 0, 0, 1
-    ]);
-  });
-
-  test("rotate 45 on XYZ", () => {
-    // ROLL & PITCH & YAW
-    const expected = Matrix4.rotation(45, 45, 45).data;
-    expect(expected).toEqual([
-      0.5, 0.85355, 0.14645, 0,
-      -0.5, 0.14645, 0.85355, 0,
-      0.70711, -0.5, 0.5, 0,
-      0, 0, 0, 1,
-    ]);
-  });
-});
-
 test("Multiply two 4x4 matrices", () => {
   const a = [
     5,   7,  9,  10,
@@ -106,7 +33,7 @@ test("Multiply two 4x4 matrices", () => {
     3,  12,  4, 10,
   ];
 
-  expect(multiply([], b, a)).toEqual([
+  expect(multiply([], a, b)).toEqual([
     210, 267, 236, 271,
      93, 149, 104, 149,
     171, 146, 172, 268,
@@ -114,61 +41,221 @@ test("Multiply two 4x4 matrices", () => {
   ]);
 });
 
-test("Matrix translation", () => {
+describe("rotation", () => {
+  test("Rotating 1 and then -1 results in the same matrix before rotation", () => {
+    const m = Matrix4.identity();
+    const actual = m.rotate(-1, 0, 0).rotate(1, 0, 0);
+    expect(m.data).toEqual(actual.data);
+  });
+
+  test("rotate and multiply from FBX animation", () => {
+    const a = new Matrix4([
+      6, 0, 0, 3,
+      0, 6.000000638552494, 0, 0,
+      0, 0, 6.000000638552494, 0,
+      0, 0, 0, 1,
+    ]);
+
+    const b = Matrix4.identity()
+      .translate(0,1,0)
+      .rotate(90, 90, 0)
+      .scale(0.9999997615814209, 1, 0.9999997615814209);
+
+    const expected = a.multiply(b).data;
+    expect(expected).toEqual([
+      0, 6, 0, 3,
+      0, 0, -6, 6,
+      -6, 0, 0, 0,
+      0, 0, 0, 1,
+    ]);
+  });
+
+  test("rotate XYZ", () => {
+    // ROLL 60
+    // PITCH 30
+    // YAW 45
+    const expected = Matrix4.rotation(60, 30, 45).data;
+    expect(expected).toEqual([
+      // Rotation Tait–Bryan angles XYZ
+      0.61237, -0.04737, 0.78915, 0,
+      0.61237, 0.65974, -0.4356, 0,
+      -0.5, 0.75, 0.43301, 0,
+      0, 0, 0, 1,
+    ]);
+  });
+
+  test("rotate 90 on X", () => {
+    // ROLL
+    const expected = Matrix4.rotation(90, 0, 0).data;
+    expect(expected).toEqual([
+      // Rotation Tait–Bryan angles XYZ
+      1, 0, 0, 0,
+      0, 0, -1, 0,
+      0, 1, 0, 0,
+      0, 0, 0, 1
+    ]);
+  });
+
+  test("rotate 90 on Y", () => {
+    // PITCH
+    const expected = Matrix4.rotation(0, 90, 0).data;
+    expect(expected).toEqual([
+      // Rotation Tait–Bryan angles XYZ
+      0, 0, 1, 0,
+      0, 1, 0, 0,
+      -1, 0, 0, 0,
+      0, 0, 0, 1,
+    ]);
+  });
+
+  test("rotate 90 on Z", () => {
+    // YAW
+    const expected = Matrix4.rotation(0, 0, 90).data;
+    expect(expected).toEqual([
+      // Rotation Tait–Bryan angles XYZ
+      0, -1, 0, 0,
+      1, 0, 0, 0,
+      0, 0, 1, 0,
+      0, 0, 0, 1,
+    ]);
+  });
+
+  test("rotate 45 on X", () => {
+    // ROLL
+    const expected = Matrix4.rotation(45, 0, 0).data;
+    expect(expected).toEqual([
+      // Rotation Tait–Bryan angles XYZ
+      1, 0, 0, 0,
+      0, 0.70711, -0.70711, 0,
+      0, 0.70711, 0.70711, 0,
+      0, 0, 0, 1,
+    ]);
+  });
+
+  test("rotate 45 on Y", () => {
+    // PITCH
+    const expected = Matrix4.rotation(0, 45, 0).data;
+    expect(expected).toEqual([
+      // Rotation Tait–Bryan angles XYZ
+      0.70711, 0, 0.70711, 0,
+      0, 1, 0, 0,
+      -0.70711, 0, 0.70711, 0,
+      0, 0, 0, 1,
+    ]);
+  });
+
+  test("rotate 45 on Z", () => {
+    // YAW
+    const expected = Matrix4.rotation(0, 0, 45).data;
+    expect(expected).toEqual([
+      // Rotation Tait–Bryan angles XYZ
+      0.70711, -0.70711, 0, 0,
+      0.70711, 0.70711, 0, 0,
+      0, 0, 1, 0,
+      0, 0, 0, 1,
+    ]);
+  });
+
+  test("rotate 45 on XY", () => {
+    // ROLL & PITCH
+    const expected = Matrix4.rotation(45, 45, 0).data;
+    expect(expected).toEqual([
+      // Rotation Tait–Bryan angles XYZ
+      0.70711, 0.5, 0.5, 0,
+      0, 0.70711, -0.70711, 0,
+      -0.70711, 0.5, 0.5, 0,
+      0, 0, 0, 1,
+    ]);
+  });
+
+  test("rotate 45 on XYZ", () => {
+    // ROLL & PITCH & YAW
+    const expected = Matrix4.rotation(45, 45, 45).data;
+    expect(expected).toEqual([
+      // Rotation Tait–Bryan angles XYZ
+      0.5, -0.14645, 0.85355, 0,
+      0.5, 0.85355, -0.14645, 0,
+      -0.70711, 0.5, 0.5, 0,
+      0, 0, 0, 1,
+    ]);
+  });
+});
+
+describe("identity", () => {
+  test("translation multiplication should stay unchanged", () => {
+    const identity = Matrix4.identity();
+    const a = identity.translate(1, 2, 3);
+
+    expect(a.multiply(identity).data).toEqual(a.data);
+    expect(identity.multiply(a).data).toEqual(a.data);
+  });
+
+  test("rotation multiplication should stay unchanged", () => {
+    const identity = Matrix4.identity();
+    const a = identity.rotate(60, 45, 30);
+
+    expect(a.multiply(identity).data).toEqual(a.data);
+    expect(identity.multiply(a).data).toEqual(a.data);
+  });
+
+  test("scaling multiplication should stay unchanged", () => {
+    const identity = Matrix4.identity();
+    const a = identity.scale(2, 2, 2);
+
+    expect(a.multiply(identity).data).toEqual(a.data);
+    expect(identity.multiply(a).data).toEqual(a.data);
+  });
+});
+
+test("translation and rotation", () => {
   const identity = Matrix4.identity();
-  const a = new Matrix4([
-    1, 0, 0, 0,
-    0, 1, 0, 0,
-    0, 0, 1, 0,
-    1, 2, 3, 1,
-  ]);
-
-  let b = identity;
-  // Identity matrix multiplication results in the same matrix.
-  expect(a.multiply(b).data).toEqual(a.data);
-  expect(b.multiply(a).data).toEqual(a.data);
-
-  b = b.rotate(90, 0, 0);
+  const a = identity.translate(1, 2, 3);
+  const b = identity.rotate(90, 0, 0);
 
   // translation with 90 degree rotation
-  expect(a.multiply(b).data).toEqual([
-    1,  0, 0, 0,
-    0,  0, 1, 0,
-    0, -1, 0, 0,
-    1,  2, 3, 1,
+  let expected = a.multiply(b).data;
+  expect(expected).toEqual([
+    1, 0,  0, 1,
+    0, 0, -1, 2,
+    0, 1,  0, 3,
+    0, 0,  0, 1,
   ]);
 
   // translation with 180 degree rotation
-  expect(a.multiply(b).multiply(b).data).toEqual([
-    1,  0,  0, 0,
-    0, -1,  0, 0,
-    0,  0, -1, 0,
-    1,  2,  3, 1,
+  expected = a.multiply(b).multiply(b).data;
+  expect(expected).toEqual([
+    1,  0,  0, 1,
+    0, -1,  0, 2,
+    0,  0, -1, 3,
+    0,  0,  0, 1,
   ]);
 
   // Same as above but matrix steps are explicit rather
   // then accumulated over the course of multiple transformations.
-  expect(identity.translate(1,2,3).rotate(180, 0, 0).data).toEqual([
-    1,  0,  0, 0,
-    0, -1,  0, 0,
-    0,  0, -1, 0,
-    1,  2,  3, 1,
+  expected = identity.translate(1,2,3).rotate(180, 0, 0).data;
+  expect(expected).toEqual([
+    1,  0,  0, 1,
+    0, -1,  0, 2,
+    0,  0, -1, 3,
+    0,  0,  0, 1,
   ]);
 
   // translation then 90 degree rotation
-  expect(b.multiply(a).data).toEqual([
-    1,  0,  0, 0,
-    0,  0,  1, 0,
-    0, -1,  0, 0,
-    1, -3,  2, 1,
+  expected = b.multiply(a).data;
+  expect(expected).toEqual([
+    1, 0, 0, 1,
+    0, 0, -1, -3,
+    0, 1, 0, 2,
+    0, 0, 0, 1
   ]);
 
   // 2 translations then 90 degree rotation
-  expect(b.multiply(a).multiply(a).data).toEqual([
-    1,  0, 0, 0,
-    0,  0, 1, 0,
-    0, -1, 0, 0,
-    2, -6, 4, 1,
+  expected = b.multiply(a).multiply(a).data;
+  expect(expected).toEqual([
+    1, 0, 0, 2,
+    0, 0, -1, -6,
+    0, 1, 0, 4,
+    0, 0, 0, 1,
   ]);
 });
 
@@ -255,7 +342,7 @@ test("invert", () => {
   ]);
 });
 
-describe("Matrix invert", () => {
+describe("invert", () => {
   test("matrix rotated on X", () => {
     const R = Matrix4.rotation(13, 0, 0);
     expect(R.invert().multiply(R).data).toEqual(Matrix4.identity().data);
@@ -295,51 +382,51 @@ describe("Matrix invert", () => {
       .translation(10, 15, 20)
       .rotation(0, 90, 0);
 
+    // This illustrates an important aspect of rotation matrices.
+    // When we translate 2 units on the X axis, the translation
+    // occurs on the rotated object along the Y axis.
+    // So the final result for the position isn't 10+2 = 12 units
+    // on the X axis. It is 2 units on the object that rotated so
+    // the translation occurs in that direction.
+    // The highlight here is that transformations are cumulative.
     const transform2 = transform
       .translate(2, 0, 0)
       .rotate(0, 90, 0);
 
-    expect(transform2.data).toEqual([
-      -1, 0, 0, 0,
-      0, 1, 0, 0,
-      0, 0, -1, 0,
-      10, 15, 18, 1,
-    ]);
-
-    const transform4 = Matrix4
-      .rotation(0, 90, 0)
-      .scale(2, 2, 2);
-
-    expect(transform4.data).toEqual([
-      0, 0, -2, 0,
-      0, 2, 0, 0,
-      2, 0, 0, 0,
+    let expected = transform2.data;
+    expect(expected).toEqual([
+      -1, 0, 0, 10,
+      0, 1, 0, 15,
+      0, 0, -1, 18,
       0, 0, 0, 1,
     ]);
 
     // This inverse multiplication clears the original transformaion
     // only leaving behind the last translation and rotation
-    expect(transform.multiplyInverse(transform2).data).toEqual([
-      0, 0, -1, 0,
+    expected = transform.multiplyInverse(transform2).data;
+    expect(expected).toEqual([
+      0, 0, 1, 2,
       0, 1, 0, 0,
-      1, 0, 0, 0,
-      2, 0, 0, 1,
+      -1, 0, 0, 0,
+      0, 0, 0, 1,
     ]);
 
     // Inverting here means that we undo all the things in transform
     // and only leave the things from transform2.
-    expect(transform.multiplyInverse(transform2.translate(2, 0, 2).scale(2, 2, 2)).data).toEqual([
-      0, 0, -2, 0,
+    expected = transform.multiplyInverse(transform2.translate(2, 0, 2).scale(2, 2, 2)).data;
+    expect(expected).toEqual([
+      0, 0, 2, 4,
       0, 2, 0, 0,
-      2, 0, 0, 0,
-      4, 0, -2, 1,
+      -2, 0, 0, -2,
+      0, 0, 0, 1
     ]);
 
-    expect(transform2.multiplyInverse(transform).data).toEqual([
-      0, 0, 1, 0,
+    expected = transform2.multiplyInverse(transform).data;
+    expect(expected).toEqual([
+      0, 0, -1, 0,
       0, 1, 0, 0,
-      -1, 0, 0, 0,
-      0, 0, -2, 1,
+      1, 0, 0, -2,
+      0, 0, 0, 1,
     ]);
   });
 });
