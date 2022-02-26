@@ -3,6 +3,7 @@ import fs from "fs";
 import path from "path";
 import "webgl-mock";
 
+import {fixedFloat} from "../../../src/math/float.js";
 import * as mat4 from "../../../src/math/matrix4.js";
 
 import {
@@ -31,6 +32,8 @@ import {
 import {
   bubbleTraversal,
 } from "../../../src/scene/traversal.js";
+
+const float1 = fixedFloat(1);
 
 function mockShaders(shaders) {
   shaders.forEach(s => {
@@ -68,7 +71,7 @@ describe("fbx Loader", () => {
     expect(sceneNode.items[0].items[0].name).toEqual("Cube - Geometry_Mesh_n1");
   });
 
-  test("cube armature animation", () => {
+  describe("cube armature animation", () => {
     const filepath = path.join(__dirname, "../../../resources/fbx/cubearmature_simple.fbx");
     const file = fs.readFileSync(filepath);
     const model = FbxFile.fromBinary(file.buffer);
@@ -85,7 +88,7 @@ describe("fbx Loader", () => {
     mockShaders(["phong-lighting"]);
     buildSceneNode(gl, model, sceneNodeConfig.items[0], sceneManager);
 
-    sceneManager.updateNodeStateByName("Animation_n1", {
+    sceneManager.updateNodeStateByName("Animation_n0", {
       stackName: "Armature|ArmatureAction - AnimStack_n1",
     });
 
@@ -93,99 +96,118 @@ describe("fbx Loader", () => {
       return (node /*, parent*/) => {
         node.preRender(context);
         const _tdata = testData[node.name];
-
-        if (!_tdata) {
-          return node;
+        if (_tdata) {
+          _tdata.node = node;
         }
-
-        _tdata.node = node;
       };
     };
 
-    const testData = {
-      "Armature - Model_Null_n1": {
-        "rotation": [-90,0,0],
-        "position": [0,0,0],
-        "scale": [6,6,6]
-      },
-      "Bottom Bone - Model_LimbNode_n1": {
-        "rotation": [90,0,0],
-        "position": [0,0,0],
-        "scale": [1,1,1]
-      },
-      "Bottom Cube - Model_Mesh_n1": {
-        "rotation": [-90,0,0],
-        "position": [0,0,0],
-        "scale": [1,1,1]
-      },
-      "Bottom Cube - Geometry_Mesh_n1": {
-        "position": [0,0,0],
-        "rotation": [0,0,0],
-        "scale": [1,1,1]
-      },
-      "Right Bone - Model_LimbNode_n1": {
-        "rotation": [0,0,-90],
-        "position": [0,1,0],
-        "scale": [1,1,1]
-      },
-      "Right Cube - Model_Mesh_n1": {
-        "rotation": [-90,0,90],
-        "position": [0,1,0],
-        "scale": [1,1,1]
-      },
-      "Right Cube - Geometry_Mesh_n1": {
-        "position": [0,0,0],
-        "rotation": [0,0,0],
-        "scale": [1,1,1]
-      }
-    };
+    let testData;
+
+    beforeEach(() => {
+      testData = {
+        "Armature - Model_Null_n1": {
+          "rotation": [-90,0,0],
+          "position": [0,0,0],
+          "scale": [6,6,6]
+        },
+        "Bottom Bone - Model_LimbNode_n1": {
+          "rotation": [90,0,0],
+          "position": [0,0,0],
+          "scale": [1,1,1]
+        },
+        "Bottom Cube - Model_Mesh_n1": {
+          "rotation": [-90,0,0],
+          "position": [0,0,0],
+          "scale": [1,1,1]
+        },
+        "Bottom Cube - Geometry_Mesh_n1": {
+          "position": [0,0,0],
+          "rotation": [0,0,0],
+          "scale": [1,1,1]
+        },
+        "Right Bone - Model_LimbNode_n1": {
+          "rotation": [0,0,-90],
+          "position": [0,1,0],
+          "scale": [1,1,1]
+        },
+        "Right Cube - Model_Mesh_n1": {
+          "rotation": [-90,0,90],
+          "position": [0,1,0],
+          "scale": [1,1,1]
+        },
+        "Right Cube - Geometry_Mesh_n1": {
+          "position": [0,0,0],
+          "rotation": [0,0,0],
+          "scale": [1,1,1]
+        }
+      };
+    });
 
     const sceneNode = sceneManager.getNodeByName("cube armature");
 
-    // The first animation pass we are rendering at 0 seconds. So
-    // he very first frame should align with the default transforms.
-    // The default transforms are in local space, which get converted
-    // to world space in the down traversal of the scene where the
-    // bone hierarchy is animated and its transforms are propagated
-    // to the meshes (skins) they animate.
-    let context = {gl, sceneManager, ms: 0};
-    bubbleTraversal(bubbleDown(context), () => {})(sceneNode);
+    test("all transforms at first framge at 0sec of animation", () => {
+      let actual, expected;
 
-    for (const tdata of Object.values(testData)) {
-      let actual = mat4.Matrix4.identity()
-        .translate(...tdata.position)
-        .rotate(...tdata.rotation)
-        .scale(...tdata.scale);
+      // The first animation pass we are rendering at 0 seconds. So
+      // the very first frame should align with the default transforms.
+      // The default transforms are in local space, which get converted
+      // to world space in the down traversal of the scene where the
+      // bone hierarchy is animated and its transforms are propagated
+      // to the meshes (skins) they animate.
+      let context = {gl, sceneManager, ms: 0};
+      bubbleTraversal(bubbleDown(context), () => {})(sceneNode);
 
-      actual = tdata.node.parent.worldMatrix.multiply(actual);
-      const expected = tdata.node.worldMatrix;
+      for (const tdata of Object.values(testData)) {
+        actual = mat4.Matrix4.identity()
+          .translate(...tdata.position)
+          .rotate(...tdata.rotation)
+          .scale(...tdata.scale);
 
-      expect(expected.data).toHaveLength(16);
-      expect(actual.data).toHaveLength(16);
-      expect(expected.data).toEqual(actual.data);
-    }
+        // We shorten to 1 floating point because there is a small
+        // discrepancy when rotation a matrix via quaternions vs
+        // matrix rotation with euler. The difference is just due to
+        // floating point subtleties and capping it to 1 is good
+        // enough to ensure the values match while avoiding small
+        // and insignificant variations.
+        actual = tdata.node.parent.worldMatrix.multiply(actual).data.map(float1).map(_fixZeros);
+        expected = tdata.node.worldMatrix.data.map(float1).map(_fixZeros);
+        expect(expected).toEqual(actual);
+      }
+    });
 
-    // At second 1, we have that the right bone is translated 180
-    // degrees. This tests a use case where not using quaternions
-    // for rotation will cause a test failure.
-    context = {gl, sceneManager, ms: 1000};
-    bubbleTraversal(bubbleDown(context), () => {})(sceneNode);
-    const tdata = testData["Right Bone - Model_LimbNode_n1"];
+    test("right bone transforms at different times in the animation", () => {
+      let actual, expected;
 
-    let actual = mat4.Matrix4.identity()
-      .translate(...tdata.position)
-      .rotate(...tdata.rotation)
-      // This 180 rotation on Y is from the animation frame at
-      // 1 second of animation.
-      .rotate(0, 180, 0)
-      .scale(...tdata.scale);
+      // I extrapolated these time to rotation numbers from the keyframes in
+      // blender by looking at the rotation values at these times.
+      const timerotation = [
+        [250, 28],
+        [500, 90],
+        [750, 152],
+        [1000, 180],
+      ];
 
-    actual = tdata.node.parent.worldMatrix.multiply(actual);
-    const expected = tdata.node.worldMatrix;
+      // The right bone is rotated along with Y axis. The tricky things about
+      // this animation is that the bone is rotated 90 degrees on its Z axis
+      // so if there are issues with animation transform logic then rotating on
+      // Y will likely break.
+      for (const [ms, degrees] of timerotation) {
+        let context = {gl, sceneManager, ms};
+        bubbleTraversal(bubbleDown(context), () => {})(sceneNode);
+        let tdata = testData["Right Bone - Model_LimbNode_n1"];
 
-    expect(expected.data).toHaveLength(16);
-    expect(actual.data).toHaveLength(16);
-    expect(expected.data).toEqual(actual.data);
+        actual = mat4.Matrix4.identity()
+          .translate(...tdata.position)
+          .rotate(...tdata.rotation)
+          .rotate(0, degrees, 0)
+          .scale(...tdata.scale);
+
+        actual = tdata.node.parent.worldMatrix.multiply(actual).data.map(float1).map(_fixZeros);
+        expected = tdata.node.worldMatrix.data.map(float1).map(_fixZeros);
+        expect(expected).toEqual(actual);
+      }
+    });
   });
 });
 
@@ -293,3 +315,7 @@ test("unpacked polygon indexes mapped to triangle indexes", () => {
     "7": 11,
   });
 });
+
+function _fixZeros(v) {
+  return v === -0 ? 0 : v;
+}
