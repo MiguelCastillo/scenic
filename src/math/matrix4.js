@@ -93,7 +93,7 @@
 // https://danceswithcode.net/engineeringnotes/rotations_in_3d/rotations_in_3d_part1.html
 //
 
-import {sin, cos} from "./angles.js";
+import {degToRad} from "./angles.js";
 import {matrixFloatPrecision} from "./float.js";
 
 export class Matrix4 {
@@ -230,9 +230,9 @@ export function scale(sx, sy=sx, sz=sx) {
 //
 // https://danceswithcode.net/engineeringnotes/rotations_in_3d/rotations_in_3d_part1.html
 export function rotate(dest, degreesX, degreesY, degreesZ) {
-  let sx = sin(degreesX), cx = cos(degreesX);
-  let sy = sin(degreesY), cy = cos(degreesY);
-  let sz = sin(degreesZ), cz = cos(degreesZ);
+  let sx = Math.sin(degToRad(degreesX)), cx = Math.cos(degToRad(degreesX));
+  let sy = Math.sin(degToRad(degreesY)), cy = Math.cos(degToRad(degreesY));
+  let sz = Math.sin(degToRad(degreesZ)), cz = Math.cos(degToRad(degreesZ));
 
   // NOTE(miguel): Tait–Bryan yaw, pitch, roll, around the z, y and x axes
   // respectively is usually how rotation matrices are setup.
