@@ -11,7 +11,7 @@ const _radToDegMultiplier = fixed7f(180/Math.PI);
 export const radToDeg = (r) => r * _radToDegMultiplier;
 
 // Helper function to keep degrees in the range of 0 to 360 where 0 is
-// equivalent to 360 degrees. The reason the range is from 0 to 360 is that 
+// equivalent to 360 degrees. The reason the range is from 0 to 360 is that
 // those are the indexes into the sine and cosine tables. The sin and cos
 // functions automatically clamp degrees. But feel free to use in any client
 // code if you wish to constrain angles you store so that they don't grow in
@@ -41,14 +41,18 @@ export const sine = [...new Array(361).keys()].map(degToRad).map(Math.sin).map(f
 // precomputed table of angles.
 export const cos = (degrees) => {
 	// return cosine[clampDegrees(degrees)];
-	return fixed7f(Math.cos(degToRad(degrees)));
+	return (Math.cos(degToRad(degrees)));
+};
+
+export const acos = (degrees) => {
+	return (Math.acos(degToRad(degrees)));
 };
 
 export const sin = (degrees) => {
 	// return sine[clampDegrees(degrees)];
-	return fixed7f(Math.sin(degToRad(degrees)));
+	return (Math.sin(degToRad(degrees)));
 };
 
 export const atan2 = (degreesA, degreesB) => {
-	return fixed7f(Math.atan2(degToRad(degreesA), degToRad(degreesB)));
+	return (Math.atan2(degToRad(degreesA), degToRad(degreesB)));
 };
