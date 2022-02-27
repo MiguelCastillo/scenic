@@ -84,12 +84,12 @@ export const config = {
       "projection": {
         "near": 1,
         "far": 1000,
-        "fov": 90,
+        "fov": 35,
       },
 
       "transform": {
         "scale": [1, 1, 1],
-        "position": [0, 0, -20],
+        "position": [0, 0, -300],
         "rotation": [0, 0, 0],
       },
 
@@ -111,7 +111,7 @@ export const config = {
 
           "transform": {
             "scale": [1, 1, 1],
-            "position": [0, 0, 30],
+            "position": [0, 0, 330],
             "rotation": [0, 0, 0],
           },
         }, {
@@ -131,7 +131,7 @@ export const config = {
 
           "transform": {
             "scale": [1, 1, 1],
-            "position": [-35, 5, 0],
+            "position": [-100, 0, 0],
             "rotation": [0, 0, 0],
           },
         }, {
@@ -151,7 +151,7 @@ export const config = {
 
           "transform": {
             "scale": [1, 1, 1],
-            "position": [35, 5, 0],
+            "position": [100, 0, 0],
             "rotation": [0, 0, 0],
           },
         }, {

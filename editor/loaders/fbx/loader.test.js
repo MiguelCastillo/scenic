@@ -109,7 +109,7 @@ describe("fbx Loader", () => {
         "Armature - Model_Null_n1": {
           "rotation": [-90,0,0],
           "position": [0,0,0],
-          "scale": [6,6,6]
+          "scale": [30,30,30]
         },
         "Bottom Bone - Model_LimbNode_n1": {
           "rotation": [90,0,0],
