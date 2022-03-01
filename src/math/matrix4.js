@@ -12,17 +12,17 @@
 // a, e, and i. Lastly, we have tx, ty, and tz in the last column for
 // translation.
 //
-// So why is translation the last column in the transformation matrix?
-// This hugely dependents on the order in which we multiply view matrices by
-// vertex vectors in the vertex shader, and how we cascade matrix
+// With transform matrices, you usually have the choice to have your
+// translation data as the last column (column major) or last row (row major),
+// and your choice hugely dependents on the order in which we multiply view
+// matrices by vectors in the vertex shader, and how we cascade matrix
 // multiplication in the scene graph from parent to children nodes.
 // So let's discuss.
 //
-// Matrix multiplication occurs left to right, so we cascade multiplications
-// from matrices from the left most matrix to the right most matrix. E.g
-// A*B*C mean A times B time C and we multiply them in that order.
-// To multiply a matrix with a vertex vector, we have the choice to treat
-// the vector as a row major matrix or a column major matrix.
+// Matrix multiplication occurs left to right. E.g A*B*C mean A times B times
+// C, and we multiply them in that order. To multiply a matrix with a vector,
+// we have the choice to treat the vector as a row major matrix or a column
+// major matrix.
 //
 // Column major matrix is 3 rows 1 column such as:
 // | x |
@@ -48,15 +48,17 @@
 //
 // In row major order where the matrix is on the right, the matrix needs to be
 // transposed for the multiplication to yield the same result as column
-// major multiplication. So depending on the order in which you multiply your
-// transform matrices and your vertex vectors, you will need to ensure that
-// matrix multiplication in the scene graph is done consistently or chaos and
-// bugs will take over. The most painful part of this is in the rotation
-// matrices where having the wrong ordering will generate the wrong
-// transformations with results that are very hard to debug.
+// major multiplication. And so the order in which you multiply your transform
+// matrices and your vertex vectors is how you determine if translation goes
+// in the last column or in the last row and whether or not you need to
+// transpose matrices before handing them over to WebGL. Whichever way you
+// chose, you will need to ensure that matrix multiplication in the scene graph
+// is done consistently or chaos and bugs will take over. The most painful part
+// of this is in the rotation matrices where having the wrong ordering will
+// generate the wrong transformations with results that are very hard to debug.
 //
-// The reason I have chosen to put the translation on the last column is that
-// most math literature and tools you find online align with column major
+// I have chosen to put the translation on the last column and the reason is
+// that most math literature and tools you find online align with column major
 // ordering; remember that row major requires you to use transpose matrices
 // when multiplying with a vector. So if you are implementing your own matrix
 // rotation functionality or just fixing a bug, most literature and tools you
@@ -76,7 +78,7 @@
 // (translation on the last column).
 //
 // The only tricky part is that in column major where you specify your
-// transofmation matrix on the left and the vertex vector on the right in
+// transformation matrix on the left and the vertex vector on the right in
 // vertex shaders, you will need to transpose the matrix when calling
 // uniformMatrix4fv. The reason is that the way GLSL in webgl iterates the
 // matrix is transposed. So be sure to specify `true` in your call to
@@ -247,7 +249,8 @@ export function rotate(dest, degreesX, degreesY, degreesZ) {
   // Y, and then Z. What can make this counter intuitive is that it is easy
   // to think of applying the rotation to subsequent rotation matrices, but
   // in reality we are really applying the rotation on the vector.
-  // Tait–Bryan angles ZYX
+  // Tait–Bryan angles ZYX. What we want for rotating objects such as during
+  // animation.
   dest[0] = cz*cy;
   dest[1] = cz*sy*sx-(sz*cx);
   dest[2] = sz*sx+cz*sy*cx;
@@ -257,6 +260,19 @@ export function rotate(dest, degreesX, degreesY, degreesZ) {
   dest[8] = -sy;
   dest[9] = cy*sx;
   dest[10] = cy*cx;
+
+  /*
+  // XYZ rotation. What we want for rotating systems.
+  dest[0] = cy*cz;
+  dest[1] = -(cy*sz);
+  dest[2] = sy;
+  dest[4] = sx*sy*cz+cx*sz;
+  dest[5] = cx*cz-(sx*sy*sz)
+  dest[6] = -(sx*cy);
+  dest[8] = sx*sz-((cx*sy)*cz);
+  dest[9] = (cx*sy)*sz+sx*cz;
+  dest[10] = cx*cy;
+  */
   return dest;
 }
 
