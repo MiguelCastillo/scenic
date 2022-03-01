@@ -124,12 +124,10 @@ function createSceneUpdater(gl, sceneManager) {
       if (document.pointerLockElement === mousetrapEl) {
         const devicePixelRatio = window.devicePixelRatio;
         const translationRatio = devicePixelRatio*6;
-        const rotationRatio = devicePixelRatio;
+        const rotationRatio = devicePixelRatio*2;
 
-        if (enableWorldTranslation || evt.shiftKey && evt.ctrlKey) {
+        if (enableWorldTranslation || evt.shiftKey) {
           worldTranslation.start([evt.movementX/translationRatio, -evt.movementY/translationRatio, 0]);
-        } else if (evt.shiftKey) {
-          worldTranslation.start([0, -evt.movementY/translationRatio, 0]);
         } else if (evt.ctrlKey) {
           worldTranslation.start([0, 0, evt.movementY/translationRatio]);
         } else {
@@ -145,10 +143,8 @@ function createSceneUpdater(gl, sceneManager) {
         const devicePixelRatio = window.devicePixelRatio;
         const rotationRatio = devicePixelRatio*6;
 
-        if (evt.shiftKey && evt.ctrlKey) {
+        if (evt.shiftKey) {
           applyWorldTranslation(sceneManager, -(evt.deltaX/rotationRatio), (evt.deltaY/rotationRatio), 0);
-        } else if (evt.shiftKey) {
-          applyWorldTranslation(sceneManager, 0, (evt.deltaY/rotationRatio), 0);
         } else if (evt.ctrlKey) {
           applyWorldTranslation(sceneManager, 0, 0, -(evt.deltaY/rotationRatio));
         } else {
