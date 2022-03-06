@@ -1,4 +1,8 @@
 import * as React from "react";
+import {
+  PlayOutline,
+  PauseOutline,
+} from "iconoir-react";
 import {WithNodeState} from "./with-node-state.jsx";
 
 export class AnimationProperties extends WithNodeState {
@@ -7,6 +11,7 @@ export class AnimationProperties extends WithNodeState {
     this.updateNodeState({
       ...nodeState,
       stackName,
+      state: "paused",
     });
   }
 
@@ -18,12 +23,19 @@ export class AnimationProperties extends WithNodeState {
     });
   }
 
-  handletAnimationMSChange = (evt) => {
-    const ms = evt.target.value === "" ? null : evt.target.value;
+  handlePlay = () => {
     const nodeState = this.getNodeState();
     this.updateNodeState({
       ...nodeState,
-      ms,
+      state: "play",
+    });
+  }
+
+  handlePause = () => {
+    const nodeState = this.getNodeState();
+    this.updateNodeState({
+      ...nodeState,
+      state: "paused",
     });
   }
 
@@ -41,27 +53,21 @@ export class AnimationProperties extends WithNodeState {
           <label>Speed</label>
           <input type="number" step=".1" onChange={this.handletAnimationSpeedChange} value={animationState.speed} />
         </div>
-        <div className="ms">
-          <label>ms</label>
-          <input type="number" step="10" onChange={this.handletAnimationMSChange} value={animationState.ms||""} />
+        <div className="animaton-controls">
+          {animationState.state !== "play" ? <button name="play" onClick={this.handlePlay}><PlayOutline /></button> : null}
+          {animationState.state === "play" ? <button name="pause" onClick={this.handlePause}><PauseOutline /></button> : null}
         </div>
       </div>
     )
   }
 }
 
-const SELECT_STACK = "__select";
-
 class AnimationStackSelect extends React.Component {
   handleStackChange = (evt) => {
     const selectedValue = evt.target.value;
     const {onChange} = this.props;
     if (onChange) {
-      if (selectedValue === SELECT_STACK) {
-        onChange(undefined);
-      } else {
-        onChange(selectedValue);
-      }
+      onChange(selectedValue);
     }
   }
 
@@ -69,7 +75,6 @@ class AnimationStackSelect extends React.Component {
     const {options=[], selected} = this.props;
     return (
       <select name="animation" onChange={this.handleStackChange} value={selected}>
-        <option value={SELECT_STACK}>Select</option>
         {options.map((o, i) => {
           return <option value={o} key={o+"_"+i}>{o}</option>;
         })}

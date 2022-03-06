@@ -17,11 +17,15 @@ import {
   animateScalar,
 } from "../../../src/animation/keyframe.js";
 
+import {
+  Playback as AnimationPlayback,
+} from "../../../src/animation/timer.js";
+
 class Animatable extends RenderableSceneNode {
   constructor(options) {
     super(options);
     this.animationNodes = [];
-    this.msOffset = 0;
+    this.playback = new AnimationPlayback();
   }
 
   add(node) {
@@ -44,15 +48,28 @@ class Animatable extends RenderableSceneNode {
     // If it's a new animation, then we reset the animation state
     if (this?.currentAnimationStack?.name !== animation.stack.name) {
       this.currentAnimationStack = animation.stack;
-
-      // This offset is to make sure animation starts from the very beginning
-      // each time a new animation is activated.
-      this.msOffset = animation.ms;
+      // We restart the animation every time we select a new animation track.
+      this.playback.reset(context.ms);
     }
+
+    const animationState = animation.animationState;
+    if (animationState.state && this.playback.state !== animationState.state) {
+      switch(animationState.state) {
+        case "paused":
+          this.playback.pause(context.ms);
+          break;
+        case "play":
+          this.playback.play(context.ms);
+          break;
+      }
+    }
+
+    const speed = animationState.speed == null ? 1 : animationState.speed;
+    const ms = this.playback.elapsed(context.ms);
 
     const {
       translation, rotation, scale,
-    } = doKeyFrameAnimation(animation.ms, animation.nodes, animation.speed);
+    } = doKeyFrameAnimation(ms, animation.nodes, speed);
 
     if (!translation && !rotation && !scale) {
       super.preRender(context);
@@ -562,28 +579,28 @@ function getAnimation(context, node) {
   }
 
   const animationState = context.sceneManager.getNodeStateByName(animationNode.name);
-  if (!animationState?.stackName) {
-    return;
+  const stackName = animationState?.stackName;
+  let stack = node.currentAnimationStack;
+
+  if (!stackName) {
+    stack = animationNode.items[0];
+  } else if (stack?.name !== stackName) {
+    stack = animationNode.items.find(item => item.name === stackName);
   }
 
-  let stack = node.currentAnimationStack;
-  if (stack?.name !== animationState.stackName) {
-    stack = animationNode.items.find(item => item.name === animationState.stackName);
-    if (!stack) {
-      return;
-    }
+  if (!stack) {
+    return;
   }
 
   // TODO(miguel): figure out semantics for dealing with multiple
   // layers. Perhaps blend them? Override?
   // For now, pick first layer for now.
   const layer = stack.animationLayers[0];
-  const nodes = node.animationNodes.filter(n => layer.animationCurveNodesByName[n.name]);
-  const speed = animationState.speed == null ? 1 : animationState.speed;
-  const ms = animationState.ms == null ? context.ms : animationState.ms;
 
   return {
-    stack, nodes, speed, ms,
+    stack,
+    nodes: node.animationNodes.filter(n => layer.animationCurveNodesByName[n.name]),
+    animationState,
   };
 }
 

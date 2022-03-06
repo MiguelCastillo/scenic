@@ -282,6 +282,13 @@ body {
   padding: 0;
 }
 
+.scene-node-details .node-properties .animaton-controls {
+  display: flex;
+  flex-direction: row;
+  font-size: 1.5em;
+  justify-content: center;
+}
+
 .color-picker {
   text-align: end;
 }
