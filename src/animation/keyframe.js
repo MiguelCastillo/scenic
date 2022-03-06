@@ -22,7 +22,7 @@
 // and so on. We can think of this also in terms of percentages where 250
 // milliseconds is 25% of the segment, 500 milliseconds is 50% of the segment
 // and so on. So 20% of a second is 0.2 milliseconds.
-// 
+//
 // More concretely as illustrated below, `s` denotes a segment and we have 3
 // of them. So segment 1 starts at 0 seconds and ends at 1 second. Segment
 // 2 starts at 1 second and ends at 2 seconds. And so on. Now imagine that
@@ -47,65 +47,36 @@ const lerp = (fraction, min, max, ease=(x) => x) => {
   return ease(((max - min) * fraction) + min);
 }
 
-export const animateScalar = (frames, times, ease) => {
-  const controller = animationCurveController(frames, times);
+export class KeyController {
+  constructor(frames, times=[]) {
+    // Number of frames (segments) in an animation.
+    const frameCount = frames.length;
+    if (frameCount < 2) {
+      throw new Error("there must be at least 2 frames.");
+    }
 
-  return (ms, speed) => {
-    const [delta, index] = controller(ms, speed);
-    return lerp(delta, frames[index], frames[index+1], ease);
-  };
-};
-
-export const animate2v = (frames, times, ease) => {
-  const controller = animationCurveController(frames, times);
-
-  return (ms, speed) => {
-    const [delta, index] = controller(ms, speed);
-    return [
-      lerp(delta, frames[index][0], frames[index+1][0], ease),
-      lerp(delta, frames[index][1], frames[index+1][1], ease),
-    ];
-  };
-};
-
-export const animate3v = (frames, times, ease) => {
-  const controller = animationCurveController(frames, times);
-
-  return (ms, speed) => {
-    const [delta, index] = controller(ms, speed);
-    return [
-      lerp(delta, frames[index][0], frames[index+1][0], ease),
-      lerp(delta, frames[index][1], frames[index+1][1], ease),
-      lerp(delta, frames[index][2], frames[index+1][2], ease),
-    ];
-  };
-};
-
-export const keyframe = animate3v;
-
-function animationCurveController(frames, times=[]) {
-  const curvePointCount = frames.length;
-  if (curvePointCount < 2) {
-    throw new Error("there must be at least 2 markers.");
+    this.frames = frames;
+    this.times = times;
+    this.animationLength = times.length ? times[times.length-1] : -1;
+    this.segmentCount = frameCount - 1;
   }
-
-  const animationLength = times.length ? times[times.length-1] : -1;
-
-  // Number of segments in an animation.
-  const segmentCount = curvePointCount - 1;
 
   // The way this works is that ms is time in millisenconds
   // that is always advancing. And every second we will increase
   // or decrease the current frame depending on whether we are
   // going forward or backward with animation.
-  return (tms, speed=1) => {
+  getFrameIndex = (tms, speed=1) => {
+    const segmentCount = this.segmentCount;
+
     // Slow or speed things up! We also take the floor because
     // the decimal points can cause jitters in animations.
     let ms = Math.abs(Math.floor(tms*speed));
-    let idx, len;
+    let idx = Math.floor(ms*0.001)
+    let len = 1000;
 
-    if (times.length) {
-      const cms = ms % animationLength;
+    if (this.times.length) {
+      const times = this.times;
+      const cms = ms % this.animationLength;
       if (!cms && ms) {
         // We are at the very end of the animation.
         idx = segmentCount;
@@ -119,24 +90,14 @@ function animationCurveController(frames, times=[]) {
           }
         }
 
-        // Segment length is how long in milliseconds are segment is.
+        // Segment length is how long in milliseconds a segment is.
         // This tells us when we jump to the next keyframe.
         len = times[idx] - times[idx-1];
-
         idx--;
       }
 
       ms = cms;
-    } else {
-      idx = Math.floor(ms*0.001), len = 1000;
     }
-
-    // Each second is where markers are for each frame. So dividing
-    // milliseconds by 1000 tells us the frame. We normalize the frame
-    // number to array indexes tho because these eventually map to arrays
-    // with frame data. curvePointIndex always points to the beginning
-    // of the segment.
-    let curvePointIndex = idx;
 
     // delta tells us where within a frame range we are so that we can
     // interpolate data within frames each second.
@@ -151,25 +112,95 @@ function animationCurveController(frames, times=[]) {
     //  |----------|----------|
     // cp0        cp1        cp2
     //
-    if (!delta && curvePointIndex) {
+    if (!delta && idx) {
       // This adjustment allows us to access all the data in the very
       // last frame. Basically instead of taking frame X with delta
       // 0, we take frame - X with delta of 1. It will yield the same
-      // result, but we do this adjusment so that we can access the very
+      // result, but we do this adjustment so that we can access the very
       // last datapoint in a frame while staying withing range in the
-      // array of frame data. 
+      // array of frame data.
       delta = 1;
-      curvePointIndex--;
+      idx--;
     }
 
-    curvePointIndex = curvePointIndex % segmentCount;
+    idx = idx % segmentCount;
 
     if (speed < 0) {
       // If we are in reverse mode then we just invert the current state.
-      curvePointIndex = segmentCount - curvePointIndex - 1;
+      idx = segmentCount - idx - 1;
       delta = 1-delta;
     }
 
-    return [delta, curvePointIndex];
+    return [delta, idx];
   }
 }
+
+export class AnimateScalar {
+  constructor(frames, times=[]) {
+    this.frames = frames;
+    this.times = times;
+    this.controller = new KeyController(frames, times);
+  }
+
+  animate = (ms, speed, ease) => {
+    const [delta, index] = this.controller.getFrameIndex(ms, speed);
+    return lerp(delta, this.frames[index], this.frames[index+1], ease);
+  }
+}
+
+export class Animate2v {
+  constructor(frames, times=[]) {
+    this.frames = frames;
+    this.times = times;
+    this.controller = new KeyController(frames, times);
+  }
+
+  animate = (ms, speed, ease) => {
+    const [delta, index] = this.controller.getFrameIndex(ms, speed);
+    const frames = this.frames;
+    return [
+      lerp(delta, frames[index][0], frames[index+1][0], ease),
+      lerp(delta, frames[index][1], frames[index+1][1], ease),
+    ];
+  }
+}
+
+export class Animate3v {
+  constructor(frames, times=[]) {
+    this.frames = frames;
+    this.times = times;
+    this.controller = new KeyController(frames, times);
+  }
+
+  animate = (ms, speed, ease) => {
+    const [delta, index] = this.controller.getFrameIndex(ms, speed);
+    return [
+      lerp(delta, this.frames[index][0], this.frames[index+1][0], ease),
+      lerp(delta, this.frames[index][1], this.frames[index+1][1], ease),
+      lerp(delta, this.frames[index][2], this.frames[index+1][2], ease),
+    ];
+  }
+}
+
+export const animateScalar = (frames, times, ease) => {
+  const animator = new AnimateScalar(frames, times);
+  return (ms, speed) => {
+    return animator.animate(ms, speed, ease);
+  };
+};
+
+export const animate2v = (frames, times, ease) => {
+  const animator = new Animate2v(frames, times);
+  return (ms, speed) => {
+    return animator.animate(ms, speed, ease);
+  };
+};
+
+export const animate3v = (frames, times, ease) => {
+  const animator = new Animate3v(frames, times);
+  return (ms, speed) => {
+    return animator.animate(ms, speed, ease);
+  };
+};
+
+export const keyframe = animate3v;
