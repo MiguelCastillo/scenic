@@ -97,6 +97,11 @@
 
 import {degToRad} from "./angles.js";
 import {matrixFloatPrecision} from "./float.js";
+import {
+  generateRotationMatrix,
+  generateRotationFunctionWithDest,
+  rotX, rotY, rotZ,
+} from "./matrix4-utils.js";
 
 export class Matrix4 {
   constructor(data) {
@@ -119,8 +124,8 @@ export class Matrix4 {
     return new Matrix4(identity());
   }
 
-  static rotation(degreesX, degreesY, degreesZ) {
-    return new Matrix4(rotate(identity(), degreesX, degreesY, degreesZ));
+  static rotation(degreesX, degreesY, degreesZ, rotation=rotate) {
+    return new Matrix4(rotation(identity(), degreesX, degreesY, degreesZ));
   }
 
   static translation(tx, ty, tz) {
@@ -131,8 +136,8 @@ export class Matrix4 {
     return new Matrix4(scale(sx, sy, sz));
   }
 
-  rotate(degreesX, degreesY, degreesZ) {
-    const r = rotate(identity(), degreesX, degreesY, degreesZ);
+  rotate(degreesX, degreesY, degreesZ, rotation=rotate) {
+    const r = rotation(identity(), degreesX, degreesY, degreesZ);
     return new Matrix4(multiply(r, this._data, r));
   }
 
@@ -150,9 +155,9 @@ export class Matrix4 {
     return new Matrix4(multiply(identity(), this._data, mat4._data));
   }
 
-  rotation(degreesX, degreesY, degreesZ) {
+  rotation(degreesX, degreesY, degreesZ, rotation=rotate) {
     // TODO(miguel): this looks like it clears scaling. Let's fix.
-    const data = rotate(identity(), degreesX, degreesY, degreesZ);
+    const data = rotation(identity(), degreesX, degreesY, degreesZ);
     data[_03] = this._data[_03];
     data[_13] = this._data[_13];
     data[_23] = this._data[_23];
@@ -226,9 +231,8 @@ export function scale(sx, sy=sx, sz=sx) {
 
 // TODO(miguel): use quaternions instead of rotating one axis at a time.
 //
-// Rotation matices are auto generate with generateRotationMatrix
-// as below.
-// const rotationMatrix = generateRotationMatrix([], onZ, onY, onX);
+// Matrix 4x4 rotation with Tait–Bryan yaw, pitch, roll, around the z, y
+// and x axes. This is the more common rotation convention in 3d.
 //
 // https://danceswithcode.net/engineeringnotes/rotations_in_3d/rotations_in_3d_part1.html
 export function rotate(dest, degreesX, degreesY, degreesZ) {
@@ -260,19 +264,6 @@ export function rotate(dest, degreesX, degreesY, degreesZ) {
   dest[8] = -sy;
   dest[9] = cy*sx;
   dest[10] = cy*cx;
-
-  /*
-  // XYZ rotation. What we want for rotating systems.
-  dest[0] = cy*cz;
-  dest[1] = -(cy*sz);
-  dest[2] = sy;
-  dest[4] = sx*sy*cz+cx*sz;
-  dest[5] = cx*cz-(sx*sy*sz)
-  dest[6] = -(sx*cy);
-  dest[8] = sx*sz-((cx*sy)*cz);
-  dest[9] = (cx*sy)*sz+sx*cz;
-  dest[10] = cx*cy;
-  */
   return dest;
 }
 
@@ -512,138 +503,6 @@ function _fixZeros(v) {
   return v === -0 ? 0 : v;
 }
 
-// This generates a matrix my multiplying matrix a and b and it generates
-// another matrix that you use in your code with variables. This is a helpful
-// way to auto generate matrices for stuff like rotation on X, Y, and Z.
-//
-// generateRotationMatrix([], [
-//   1,   0,  0, 0,
-//   0,  "cx", "sx", 0,
-//   0, "-sx", "cx", 0,
-//   0,   0,  0, 1,
-// ], [
-//   "cy", 0, "-sy", 0,
-//   0, 1,   0, 0,
-//   "sy", 0,  "cy", 0,
-//   0, 0,   0, 1,
-// ], [
-//   "cz", "sz", 0, 0,
-//   "-sz", "cz", 0, 0,
-//   0, 0, 1, 0,
-//   0, 0, 0, 1,
-// ]);
-//
-// Will return:
-// [
-//   cz*cy, cz*sy*sx+sz*cx, -(cz*(sy*cx))+sz*sx, 0,
-//   -(sz*cy), -(sz*sy*sx)+cz*cx, sz*(sy*cx)+cz*sx, 0,
-//   sy, -(cy*sx), cy*cx, 0,
-//   0, 0, 0, 1,
-// ]
-export function generateRotationMatrix(dest, ...mats) {
-  return mats.reduce((a, b) => multiplyRotationMatrix(dest, a, b));
-}
-
-function multiplyRotationMatrix(dest, a, b) {
-  const a00 = a[_00]; const b00 = b[_00];
-  const a01 = a[_01]; const b01 = b[_01];
-  const a02 = a[_02]; const b02 = b[_02];
-  const a03 = a[_03]; const b03 = b[_03];
-  const a10 = a[_10]; const b10 = b[_10];
-  const a11 = a[_11]; const b11 = b[_11];
-  const a12 = a[_12]; const b12 = b[_12];
-  const a13 = a[_13]; const b13 = b[_13];
-  const a20 = a[_20]; const b20 = b[_20];
-  const a21 = a[_21]; const b21 = b[_21];
-  const a22 = a[_22]; const b22 = b[_22];
-  const a23 = a[_23]; const b23 = b[_23];
-  const a30 = a[_30]; const b30 = b[_30];
-  const a31 = a[_31]; const b31 = b[_31];
-  const a32 = a[_32]; const b32 = b[_32];
-  const a33 = a[_33]; const b33 = b[_33];
-
-  const multiplyString = (a, b) => {
-    if (!a || !b) {
-      return 0;
-    }
-    if (a === 1) {
-      return b;
-    }
-    if (b === 1) {
-      return a;
-    }
-    if (a[0] === "-" && b[0] === "-") {
-      a = a.substr(1);
-      b = b.substr(1);
-    }
-    if (a[0] === "-") {
-      return "-(" + a.substr(1) + "*" + b + ")";
-    }
-    if (b[0] === "-") {
-      return "-(" + a + "*" + b.substr(1) + ")";
-    }
-    return a + "*" + b;
-  }
-
-  const concatRow = (row) => {
-    const add = row.filter(Boolean).filter(a => a[0] !== "-").join("+");
-    const sub = row.filter(Boolean).filter(a => a[0] === "-").join("");
-    return [...add, ...sub].join("");
-  }
-
-  const fixResult = (s) => {
-    if (!s) {
-      return 0;
-    }
-    if (s === "1") {
-      return 1;
-    }
-    return s;
-  }
-
-  // First row = first row of B times all columns of A
-  dest[0] = [multiplyString(a00, b00), multiplyString(a01, b10), multiplyString(a02, b20), multiplyString(a03, b30)];
-  dest[1] = [multiplyString(a00, b01), multiplyString(a01, b11), multiplyString(a02, b21), multiplyString(a03, b31)];
-  dest[2] = [multiplyString(a00, b02), multiplyString(a01, b12), multiplyString(a02, b22), multiplyString(a03, b32)];
-  dest[3] = [multiplyString(a00, b03), multiplyString(a01, b13), multiplyString(a02, b23), multiplyString(a03, b33)];
-
-  // Second row = second row of B times all columns of A
-  dest[4] = [multiplyString(a10, b00), multiplyString(a11, b10), multiplyString(a12, b20), multiplyString(a13, b30)];
-  dest[5] = [multiplyString(a10, b01), multiplyString(a11, b11), multiplyString(a12, b21), multiplyString(a13, b31)];
-  dest[6] = [multiplyString(a10, b02), multiplyString(a11, b12), multiplyString(a12, b22), multiplyString(a13, b32)];
-  dest[7] = [multiplyString(a10, b03), multiplyString(a11, b13), multiplyString(a12, b23), multiplyString(a13, b33)];
-
-
-  // Thrid row = third row of B times all columns of A
-  dest[8] = [multiplyString(a20, b00), multiplyString(a21, b10), multiplyString(a22, b20), multiplyString(a23, b30)];
-  dest[9] = [multiplyString(a20, b01), multiplyString(a21, b11), multiplyString(a22, b21), multiplyString(a23, b31)];
-  dest[10] = [multiplyString(a20, b02), multiplyString(a21, b12), multiplyString(a22, b22), multiplyString(a23, b32)];
-  dest[11] = [multiplyString(a20, b03), multiplyString(a21, b13), multiplyString(a22, b23), multiplyString(a23, b33)];
-
-  // Fourth row = fourth row of B times all columns of A
-  dest[12] = [multiplyString(a30, b00), multiplyString(a31, b10), multiplyString(a32, b20), multiplyString(a33, b30)];
-  dest[13] = [multiplyString(a30, b01), multiplyString(a31, b11), multiplyString(a32, b21), multiplyString(a33, b31)];
-  dest[14] = [multiplyString(a30, b02), multiplyString(a31, b12), multiplyString(a32, b22), multiplyString(a33, b32)];
-  dest[15] = [multiplyString(a30, b03), multiplyString(a31, b13), multiplyString(a32, b23), multiplyString(a33, b33)];
-
-  return dest.map(concatRow).map(fixResult);
-};
-
-const onX = [
-  1,   0,  0, 0,
-  0,  "cx", "-sx", 0,
-  0, "sx", "cx", 0,
-  0,   0,  0, 1,
-];
-const onY = [
-  "cy", 0, "sy", 0,
-  0, 1,   0, 0,
-  "-sy", 0,  "cy", 0,
-  0, 0,   0, 1,
-];
-const onZ = [
-  "cz", "-sz", 0, 0,
-  "sz", "cz", 0, 0,
-  0, 0, 1, 0,
-  0, 0, 0, 1,
-];
+// Auto generate rotation functions.
+export const rotateZYX = generateRotationFunctionWithDest(generateRotationMatrix([], rotZ, rotY, rotX));
+export const rotateXYZ = generateRotationFunctionWithDest(generateRotationMatrix([], rotX, rotY, rotZ));
