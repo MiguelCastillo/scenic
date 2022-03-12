@@ -21,11 +21,16 @@ import {
   Playback as AnimationPlayback,
 } from "../../../src/animation/timer.js";
 
+// 46186158000 is an FBX second.
+// #define KTIME_ONE_SECOND KTime (K_LONGLONG(46186158000))
+// https://github.com/mont29/blender-io-fbx/blob/ea45491a84b64f7396030775536be562bc118c41/io_scene_fbx/export_fbx.py#L2447
+// https://download.autodesk.com/us/fbx/docs/FBXSDK200611/wwhelp/wwhimpl/common/html/_index.htm?context=FBXSDK_Overview&file=ktime_8h-source.html
+const KTIME_ONE_SECOND = 46186158000;
+
 class Animatable extends RenderableSceneNode {
   constructor(options) {
     super(options);
     this.animationNodes = [];
-    this.playback = new AnimationPlayback();
   }
 
   add(node) {
@@ -38,38 +43,44 @@ class Animatable extends RenderableSceneNode {
   }
 
   preRender(context) {
-    const animation = getAnimation(context, this);
-    if (!animation?.nodes.length) {
-      this.currentAnimationStack = null;
+    const animation = this.relativeRoot.animation;
+    if (!animation?.items.length) {
       super.preRender(context);
       return;
     }
 
-    // If it's a new animation, then we reset the animation state
-    if (this?.currentAnimationStack?.name !== animation.stack.name) {
-      this.currentAnimationStack = animation.stack;
-      // We restart the animation every time we select a new animation track.
-      this.playback.reset(context.ms);
+    const animationState = context.sceneManager.getNodeStateByName(animation.name);
+    const stackName = animationState?.stackName;
+    let stack = this.currentAnimationStack;
+
+    if (!stackName) {
+      // The only children that an animation node has are animation stacks.
+      // If there is no stack active, we just pick the firs one.
+      stack = animation.items[0];
+    } else if (stack?.name !== stackName) {
+      // If a particular stack is selected, then that's what we are using
+      // for animation.
+      stack = animation.items.find(item => item.name === stackName);
     }
 
-    const animationState = animation.animationState;
-    if (animationState.state && this.playback.state !== animationState.state) {
-      switch(animationState.state) {
-        case "paused":
-          this.playback.pause(context.ms);
-          break;
-        case "play":
-          this.playback.play(context.ms);
-          break;
-      }
+    if (!stack) {
+      super.preRender(context);
+      return;
+    }
+
+    if (this.currentAnimationStack !== stack) {
+      this.currentAnimationStack = stack;
+      stack.playback.reset(context.ms);
     }
 
     const speed = animationState.speed == null ? 1 : animationState.speed;
-    const ms = this.playback.elapsed(context.ms);
+    const ms = stack.playback.elapsed(context.ms);
+    const layer = stack.animationLayers[0];
+    // TODO(miguel): cache these so that we don't have to reprocess
+    // this array every frame.
+    const curves = this.animationNodes.filter(n => layer.animationCurveNodesByName[n.name]);
 
-    const {
-      translation, rotation, scale,
-    } = doKeyFrameAnimation(ms, animation.nodes, speed);
+    const {translation, rotation, scale} = evaluateAnimation(ms, speed, curves);
 
     if (!translation && !rotation && !scale) {
       super.preRender(context);
@@ -274,6 +285,58 @@ export class AnimationStack extends SceneNode {
   constructor(options) {
     super(Object.assign({}, options, {type: "fbx-animation-stack"}));
     this.animationLayers = [];
+    this.playback = new AnimationPlayback();
+  }
+
+  preRender(context) {
+    // TOOD(miguel): fps comes from the FBX file. We should also make this
+    // configurable in the UI
+    const fps = 24;
+    const playback = this.playback;
+    const animationNode = this.parent;
+    const animationState = context.sceneManager.getNodeStateByName(animationNode.name);
+
+    const stackName = animationState?.stackName;
+    if (stackName && this.name !== stackName) {
+      return;
+    }
+
+    if (animationState.state && playback.state !== animationState.state) {
+      switch(animationState.state) {
+        case "paused":
+          playback.pause(context.ms);
+          break;
+        case "play":
+          playback.play(context.ms);
+          break;
+        case "prev":
+          if (playback.state === "play") {
+            playback.pause(context.ms);
+          }
+
+          context.sceneManager.updateNodeStateByName(
+            animationNode.name, {
+              ...animationState,
+              state: playback.state,
+            });
+
+          playback.skip(-1000/fps);
+          break;
+        case "next":
+          if (playback.state === "play") {
+            playback.pause(context.ms);
+          }
+
+          context.sceneManager.updateNodeStateByName(
+            animationNode.name, {
+              ...animationState,
+              state: playback.state,
+            });
+
+          playback.skip(1000/fps);
+          break;
+      }
+    }
   }
 
   add(node) {
@@ -325,11 +388,7 @@ export class AnimationCurve extends SceneNode {
   }
 
   getValue(ms, speed) {
-    // 46186158000 is an FBX second.
-    // #define KTIME_ONE_SECOND KTime (K_LONGLONG(46186158000))
-    // https://github.com/mont29/blender-io-fbx/blob/ea45491a84b64f7396030775536be562bc118c41/io_scene_fbx/export_fbx.py#L2447
-    // https://download.autodesk.com/us/fbx/docs/FBXSDK200611/wwhelp/wwhimpl/common/html/_index.htm?context=FBXSDK_Overview&file=ktime_8h-source.html
-    return [this.pname, this.animate(46186158000*(ms*0.001), speed)];
+    return [this.pname, this.animate(ms, speed)];
   }
 }
 
@@ -524,37 +583,6 @@ function getImage(filepath) {
   return _imageCache[filepath]
 }
 
-// We only support animation transform matrices, which are used for bone
-// animation.
-function doKeyFrameAnimation(ms, animationNodes, animationSpeed) {
-  const animationResult = {};
-
-  const animationChannels = {};
-  animationNodes.forEach(animation => {
-    const [pname, ...result] = animation.getValues(ms, animationSpeed);
-    animationChannels[pname] = {
-      result, defaults: animation.defaultValues,
-    };
-  });
-
-  const translation = animationChannels["Lcl Translation"];
-  if (translation) {
-    animationResult["translation"] = getTransformAnimation(translation.result, translation.defaults);
-  }
-
-  const rotation = animationChannels["Lcl Rotation"];
-  if (rotation) {
-    animationResult["rotation"] = getTransformAnimation(rotation.result, rotation.defaults);
-  }
-
-  const scaling = animationChannels["Lcl Scaling"];
-  if (scaling) {
-    animationResult["scale"] = getTransformAnimation(scaling.result, scaling.defaults);
-  }
-
-  return animationResult;
-}
-
 const transformIndex = {"d|X": 0, "d|Y": 1, "d|Z": 2};
 function getTransformAnimation(animation, defaultValues) {
   const transform = [...defaultValues];
@@ -564,45 +592,35 @@ function getTransformAnimation(animation, defaultValues) {
   return transform;
 }
 
-function getAnimation(context, node) {
-  // Right now the relativeRoot would have the animation node where
-  // all the animation information exists. That's where we find
-  // the animation stacks and the layers that determine the animation
-  // to run. There is only _ONE_ animation node.
-  // Ideally each mesh would have their own animation node, but FBX
-  // doesn't seem to work that way. Instead we have all the animation
-  // stacks in a single animation node and all the renderables can
-  // look up their own animation data based on the current stack.
-  const animationNode = node.relativeRoot.animation;
-  if (!animationNode?.items.length) {
-    return;
+const evaluateAnimation = (ms, speed, curveNodes) => {
+  const result = {};
+  const channels = {};
+  const ktime = KTIME_ONE_SECOND*ms*0.001;
+
+  curveNodes.forEach(curveNode => {
+    const [pname, ...values] = curveNode.getValues(ktime, speed);
+    channels[pname] = {
+      values, defaults: curveNode.defaultValues,
+    };
+  });
+
+  const translation = channels["Lcl Translation"];
+  if (translation) {
+    result["translation"] = getTransformAnimation(translation.values, translation.defaults);
   }
 
-  const animationState = context.sceneManager.getNodeStateByName(animationNode.name);
-  const stackName = animationState?.stackName;
-  let stack = node.currentAnimationStack;
-
-  if (!stackName) {
-    stack = animationNode.items[0];
-  } else if (stack?.name !== stackName) {
-    stack = animationNode.items.find(item => item.name === stackName);
+  const rotation = channels["Lcl Rotation"];
+  if (rotation) {
+    result["rotation"] = getTransformAnimation(rotation.values, rotation.defaults);
   }
 
-  if (!stack) {
-    return;
+  const scaling = channels["Lcl Scaling"];
+  if (scaling) {
+    result["scale"] = getTransformAnimation(scaling.values, scaling.defaults);
   }
 
-  // TODO(miguel): figure out semantics for dealing with multiple
-  // layers. Perhaps blend them? Override?
-  // For now, pick first layer for now.
-  const layer = stack.animationLayers[0];
-
-  return {
-    stack,
-    nodes: node.animationNodes.filter(n => layer.animationCurveNodesByName[n.name]),
-    animationState,
-  };
-}
+  return result;
+};
 
 function findParentMesh(node) {
   let mesh = node.parent;

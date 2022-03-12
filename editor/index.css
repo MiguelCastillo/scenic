@@ -287,6 +287,22 @@ body {
   flex-direction: row;
   font-size: 1.5em;
   justify-content: center;
+  padding-top: 1.25em;
+  gap: 0.5em;
+}
+
+.scene-node-details .node-properties .animaton-controls .play,
+.scene-node-details .node-properties .animaton-controls .pause {
+  width: 4em;
+  height: 4em;
+  border-radius: 2em;
+}
+
+.scene-node-details .node-properties .animaton-controls .prev,
+.scene-node-details .node-properties .animaton-controls .next {
+  width: 3em;
+  height: 3em;
+  border-radius: 2em;
 }
 
 .color-picker {

@@ -2,6 +2,8 @@ import * as React from "react";
 import {
   PlayOutline,
   PauseOutline,
+  SkipNextOutline,
+  SkipPrevOutline,
 } from "iconoir-react";
 import {WithNodeState} from "./with-node-state.jsx";
 
@@ -23,20 +25,28 @@ export class AnimationProperties extends WithNodeState {
     });
   }
 
-  handlePlay = () => {
+  handlePlaybackState = (type) => {
     const nodeState = this.getNodeState();
     this.updateNodeState({
       ...nodeState,
-      state: "play",
+      state: type,
     });
   }
 
+  handlePlay = () => {
+    this.handlePlaybackState("play");
+  }
+
   handlePause = () => {
-    const nodeState = this.getNodeState();
-    this.updateNodeState({
-      ...nodeState,
-      state: "paused",
-    });
+    this.handlePlaybackState("paused");
+  }
+
+  handlePrevFrame = () => {
+    this.handlePlaybackState("prev");
+  }
+
+  handleNextFrame = () => {
+    this.handlePlaybackState("next");
   }
 
   render() {
@@ -54,8 +64,10 @@ export class AnimationProperties extends WithNodeState {
           <input type="number" step=".1" onChange={this.handletAnimationSpeedChange} value={animationState.speed} />
         </div>
         <div className="animaton-controls">
-          {animationState.state !== "play" ? <button name="play" onClick={this.handlePlay}><PlayOutline /></button> : null}
-          {animationState.state === "play" ? <button name="pause" onClick={this.handlePause}><PauseOutline /></button> : null}
+          <button className="prev" name="prev" onClick={this.handlePrevFrame}><SkipPrevOutline /></button>
+          {animationState.state !== "play" ? <button className="play" name="play" onClick={this.handlePlay}><PlayOutline /></button> : null}
+          {animationState.state === "play" ? <button className="pause" name="pause" onClick={this.handlePause}><PauseOutline /></button> : null}
+          <button className="next" name="next" onClick={this.handleNextFrame}><SkipNextOutline /></button>
         </div>
       </div>
     )

@@ -39,6 +39,11 @@ export class Timer {
     return this;
   }
 
+  skip = (abdms) => {
+    this._current += abdms;
+    return this;
+  }
+
   // absms is the absolute time starting from T0.
   resume = (absms) => {
     this.pause(absms);
@@ -94,6 +99,11 @@ export class Playback {
 
   start = () => {
     this.state = "play";
+    return this;
+  }
+
+  skip = (absms) => {
+    this.timer.skip(absms);
     return this;
   }
 
