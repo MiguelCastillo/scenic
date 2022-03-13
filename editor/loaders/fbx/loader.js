@@ -304,12 +304,17 @@ function sceneNodeFromConnection(gl, rootConnection, sceneManager, relativeRootS
             break;
           }
 
-          // Current connection is for the cluster, the parent is for the
-          // skin deformer, and the parent of that is for the geometry, which
-          // is where the vertices are, including all calculated geometric
-          // artifacts that clusters rely on.
-          const geometryConnection = connection.pconnection.pconnection;
-          indexes = indexes.map(idx => geometryConnection.polygonIndexMap[idx]);
+          // Traverse up parent connections until we find the first
+          // polygonIndexMap. We do this because clusters can be children
+          // or Geometry or Skin Deformers.
+          let geometryConnection = connection;
+          while (geometryConnection && !geometryConnection.polygonIndexMap) {
+            geometryConnection = geometryConnection.pconnection;
+          }
+
+          if (geometryConnection) {
+            indexes = indexes.map(idx => geometryConnection.polygonIndexMap[idx]);
+          }
 
           sceneNode = new SkinDeformerCluster({name},
             indexes && new VertexBufferIndexes(gl, indexes),
