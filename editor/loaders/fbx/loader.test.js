@@ -67,8 +67,8 @@ describe("fbx Loader", () => {
     buildSceneNode(gl, model, sceneNodeFxbCube, sceneManager);
 
     const sceneNode = sceneManager.getNodeByName("fbx cube");
-    expect(sceneNode.items[0].name).toEqual("Cube - Model_Mesh_n1");
-    expect(sceneNode.items[0].items[0].name).toEqual("Cube - Geometry_Mesh_n1");
+    expect(sceneNode.items[0].name).toEqual("Cube - Model_Mesh");
+    expect(sceneNode.items[0].items[0].name).toEqual("Cube - Geometry_Mesh");
   });
 
   describe("cube armature animation", () => {
@@ -89,7 +89,7 @@ describe("fbx Loader", () => {
     buildSceneNode(gl, model, sceneNodeConfig.items[0], sceneManager);
 
     sceneManager.updateNodeStateByName("Animation_n0", {
-      stackName: "Armature|ArmatureAction - AnimStack_n1",
+      stackName: "Armature|ArmatureAction - AnimStack",
     });
 
     const bubbleDown = (context) => {
@@ -106,37 +106,37 @@ describe("fbx Loader", () => {
 
     beforeEach(() => {
       testData = {
-        "Armature - Model_Null_n1": {
+        "Armature - Model_Null": {
           "rotation": [-90,0,0],
           "position": [0,0,0],
           "scale": [30,30,30]
         },
-        "Bottom Bone - Model_LimbNode_n1": {
+        "Bottom Bone - Model_LimbNode": {
           "rotation": [90,0,0],
           "position": [0,0,0],
           "scale": [1,1,1]
         },
-        "Bottom Cube - Model_Mesh_n1": {
+        "Bottom Cube - Model_Mesh": {
           "rotation": [-90,0,0],
           "position": [0,0,0],
           "scale": [1,1,1]
         },
-        "Bottom Cube - Geometry_Mesh_n1": {
+        "Bottom Cube - Geometry_Mesh": {
           "position": [0,0,0],
           "rotation": [0,0,0],
           "scale": [1,1,1]
         },
-        "Right Bone - Model_LimbNode_n1": {
+        "Right Bone - Model_LimbNode": {
           "rotation": [0,0,-90],
           "position": [0,1,0],
           "scale": [1,1,1]
         },
-        "Right Cube - Model_Mesh_n1": {
+        "Right Cube - Model_Mesh": {
           "rotation": [-90,0,90],
           "position": [0,1,0],
           "scale": [1,1,1]
         },
-        "Right Cube - Geometry_Mesh_n1": {
+        "Right Cube - Geometry_Mesh": {
           "position": [0,0,0],
           "rotation": [0,0,0],
           "scale": [1,1,1]
@@ -195,7 +195,7 @@ describe("fbx Loader", () => {
       for (const [ms, degrees] of timerotation) {
         let context = {gl, sceneManager, ms};
         bubbleTraversal(bubbleDown(context), () => {})(sceneNode);
-        let tdata = testData["Right Bone - Model_LimbNode_n1"];
+        let tdata = testData["Right Bone - Model_LimbNode"];
 
         actual = mat4.Matrix4.identity()
           .translate(...tdata.position)

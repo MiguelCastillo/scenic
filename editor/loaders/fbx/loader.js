@@ -488,10 +488,14 @@ function buildGeometryLayers(fbxGeometry, normalSmoothing) {
 let _idxNameMap = {};
 function generateFbxNodeName(fbxNode) {
   const name = getNodeName(fbxNode);
-  if (!_idxNameMap[name]) {
-    _idxNameMap[name] = 1;
+  if (_idxNameMap[name] == null) {
+    _idxNameMap[name] = 0;
+  } else {
+    _idxNameMap[name]++;
   }
-  return name + "_n" + _idxNameMap[name]++;
+
+  const index = _idxNameMap[name] === 0 ? "" : "_n" + _idxNameMap[name];
+  return name + index;
 }
 
 function validateIndexedTriangles(name, vertices, indexes) {
