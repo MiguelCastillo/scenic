@@ -45,52 +45,64 @@ function mockShaders(shaders) {
   });
 };
 
+function loadModel(filename) {
+  const filepath = path.join(__dirname, filename);
+  const file = fs.readFileSync(filepath);
+  return FbxFile.fromBinary(file.buffer);
+}
+
+function createSceneContextForTests(...sceneConfigItems) {
+  const sceneNodeConfig = {
+    items: [...sceneConfigItems]
+  };
+  const sceneManager = createScene(sceneNodeConfig);
+  const canvas = new HTMLCanvasElement(500, 500);
+  const gl = canvas.getContext("webgl");
+  return {
+    gl, sceneManager,
+  };
+}
+
 describe("fbx Loader", () => {
   test("loading cube.fbx", () => {
-    const filepath = path.join(__dirname, "../../../resources/fbx/cube.fbx");
-    const file = fs.readFileSync(filepath);
-    const model = FbxFile.fromBinary(file.buffer);
+    const model = loadModel("../../../resources/fbx/cube.fbx");
     expect(model).toBeInstanceOf(FbxNode);
 
     const sceneNodeFxbCube = {
       name: "fbx cube",
       type: "group",
     };
-    const sceneNodeConfig = {
-      items: [sceneNodeFxbCube]
-    };
-    const sceneManager = createScene(sceneNodeConfig);
-    const canvas = new HTMLCanvasElement(500, 500);
-    const gl = canvas.getContext("webgl");
+
+    const {
+      gl, sceneManager
+    } = createSceneContextForTests(sceneNodeFxbCube);
 
     mockShaders(["phong-lighting"]);
     buildSceneNode(gl, model, sceneNodeFxbCube, sceneManager);
 
-    const sceneNode = sceneManager.getNodeByName("fbx cube");
+    const sceneNode = sceneManager.getNodeByName(sceneNodeFxbCube.name);
     expect(sceneNode.items[0].name).toEqual("Cube - Model_Mesh");
     expect(sceneNode.items[0].items[0].name).toEqual("Cube - Geometry_Mesh");
   });
 
   describe("cube armature animation", () => {
-    const filepath = path.join(__dirname, "../../../resources/fbx/cubearmature_simple.fbx");
-    const file = fs.readFileSync(filepath);
-    const model = FbxFile.fromBinary(file.buffer);
+    const model = loadModel("../../../resources/fbx/cubearmature_simple.fbx");
     const sceneNodeConfig = {
-      items: [{
-        name: "cube armature",
-        type: "group",
-      }]
+      name: "cube armature",
+      type: "group",
     };
-    const sceneManager = createScene(sceneNodeConfig);
-    const canvas = new HTMLCanvasElement(500, 500);
-    const gl = canvas.getContext("webgl");
+    const {
+      gl, sceneManager,
+    } = createSceneContextForTests(sceneNodeConfig);
 
     mockShaders(["phong-lighting"]);
-    buildSceneNode(gl, model, sceneNodeConfig.items[0], sceneManager);
+    buildSceneNode(gl, model, sceneNodeConfig, sceneManager);
 
     sceneManager.updateNodeStateByName("Animation_n0", {
       stackName: "Armature|ArmatureAction - AnimStack",
     });
+
+    const sceneNode = sceneManager.getNodeByName(sceneNodeConfig.name);
 
     const bubbleDown = (context) => {
       return (node /*, parent*/) => {
@@ -143,8 +155,6 @@ describe("fbx Loader", () => {
         }
       };
     });
-
-    const sceneNode = sceneManager.getNodeByName("cube armature");
 
     test("all transforms at first framge at 0sec of animation", () => {
       let actual, expected;
