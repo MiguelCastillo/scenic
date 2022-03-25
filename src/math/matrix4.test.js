@@ -9,39 +9,7 @@ import {
 } from "./matrix4.js";
 import {matrixFloatPrecision} from "./float.js";
 
-test("Identity has the correct values", () => {
-  expect(Matrix4.identity().data).toEqual([
-    1, 0, 0, 0,
-    0, 1, 0, 0,
-    0, 0, 1, 0,
-    0, 0, 0, 1,
-  ]);
-});
-
-test("Multiply two 4x4 matrices", () => {
-  const a = [
-    5,   7,  9,  10,
-    2,   3,  3,   8,
-    8,  10,  2,   3,
-    3,   3,  4,   8,
-  ];
-
-  const b = [
-    3,  10, 12, 18,
-   12,   1,  4,  9,
-    9,  10, 12,  2,
-    3,  12,  4, 10,
-  ];
-
-  expect(multiply([], a, b)).toEqual([
-    210, 267, 236, 271,
-     93, 149, 104, 149,
-    171, 146, 172, 268,
-    105, 169, 128, 169,
-  ]);
-});
-
-describe("rotation", () => {
+describe("Matrix rotation", () => {
   test("Rotating 1 and then -1 results in the same matrix before rotation", () => {
     const m = Matrix4.identity();
     const actual = m.rotate(-1, 0, 0).rotate(1, 0, 0);
@@ -57,11 +25,25 @@ describe("rotation", () => {
     ]);
 
     const b = Matrix4.identity()
-      .translate(0,1,0)
+      .translate(0, 1, 0)
       .rotate(90, 90, 0)
       .scale(0.9999997615814209, 1, 0.9999997615814209);
 
-    const expected = a.multiply(b).data;
+    let expected = a.multiply(b).data;
+    expect(expected).toEqual([
+      0, 6, 0, 3,
+      0, 0, -6, 6,
+      -6, 0, 0, 0,
+      0, 0, 0, 1,
+    ]);
+
+    const c = Matrix4.trs(
+      [0, 1, 0],
+      [90, 90, 0],
+      [0.9999997615814209, 1, 0.9999997615814209],
+    );
+
+    expected = a.multiply(c).data;
     expect(expected).toEqual([
       0, 6, 0, 3,
       0, 0, -6, 6,
@@ -181,7 +163,16 @@ describe("rotation", () => {
   });
 });
 
-describe("identity", () => {
+describe("Matrix identity", () => {
+  test("default values", () => {
+    expect(Matrix4.identity().data).toEqual([
+      1, 0, 0, 0,
+      0, 1, 0, 0,
+      0, 0, 1, 0,
+      0, 0, 0, 1,
+    ]);
+  });
+
   test("translation multiplication should stay unchanged", () => {
     const identity = Matrix4.identity();
     const a = identity.translate(1, 2, 3);
@@ -207,7 +198,44 @@ describe("identity", () => {
   });
 });
 
-test("translation and rotation", () => {
+describe("Matrix trs", () => {
+  test("rotation 90,90,0", () => {
+    const a = Matrix4.trs(
+      [0, 0, 0],
+      [90, 90, 0],
+      [1, 1, 1],
+    );
+    const b = Matrix4.rotation(90, 90, 0);
+    expect(a.data).toEqual(b.data);
+  });
+
+  test("translation 10,34,0 and rotation 125,80,30", () => {
+    const a = Matrix4.trs(
+      [10,34,0],
+      [125,80,30],
+      [1,1,1],
+    );
+    const b = Matrix4
+      .translation(10,34,0)
+      .rotation(125,80,30);
+    expect(a.data).toEqual(b.data);
+  });
+
+  test("translation 51,0,93 and rotation 90,120,30 and scale 3,2,5", () => {
+    const a = Matrix4.trs(
+      [51,0,93],
+      [90,120,30],
+      [3,2,5],
+    );
+    const b = Matrix4
+      .translation(51,0,93)
+      .rotation(90,120,30)
+      .scale(3,2,5);
+    expect(a.data).toEqual(b.data);
+  });
+});
+
+test("Matrix translation, rotation, and multiplication", () => {
   const identity = Matrix4.identity();
   const a = identity.translate(1, 2, 3);
   const b = identity.rotate(90, 0, 0);
@@ -259,90 +287,7 @@ test("translation and rotation", () => {
   ]);
 });
 
-test("Multiply vector times 4x4 matrices", () => {
-  const a = [
-    5,   7,  9,  10,
-    2,   3,  3,   8,
-    8,  10,  2,   3,
-    3,   3,  4,   8,
-  ];
-
-  expect(multiplyVector(a, [ 3, 12,  9,  3])).toEqual([210,  93, 171, 105]);
-  expect(multiplyVector(a, [10,  1, 10, 12])).toEqual([267, 149, 146, 169]);
-  expect(multiplyVector(a, [12,  4, 12,  4])).toEqual([236, 104, 172, 128]);
-  expect(multiplyVector(a, [18,  9,  2, 10])).toEqual([271, 149, 268, 169]);
-});
-
-test("Transpose 4x4 matrix", () => {
-  const a = [
-    5,   7,  9,  10,
-    2,   3,  3,   8,
-    8,  10,  2,   3,
-    3,   3,  4,   8,
-  ];
-
-  expect(transpose(a)).toEqual([
-     5, 2,  8, 3,
-     7, 3, 10, 3,
-     9, 3,  2, 4,
-    10, 8,  3, 8,
-  ]);
-});
-
-test("adjoint", () => {
-  expect(adjoint([], [
-    1, 1, 1, -1,
-    1, 1, -1, 1,
-    1, -1, 1, 1,
-    -1, 1, 1, 1,
-  ])).toEqual([
-    -4, -4, -4, 4,
-    -4, -4, 4, -4,
-    -4, 4, -4, -4,
-    4, -4, -4, -4,
-  ]);
-});
-
-test("determinant is -16", () => {
-  expect(determinant([
-    1, 1, 1, -1,
-    1, 1, -1, 1,
-    1, -1, 1, 1,
-    -1, 1, 1, 1,
-  ])).toEqual(-16);
-});
-
-test("invert", () => {
-  expect(
-    invert([], [
-      2, 1, 2, 1,
-      3, 2, 3, 1,
-      1, 4, 2, 1,
-      1, 3, 2, 1,
-    ]).map(_fixZeros)
-  ).toEqual([
-    1, 0, 2, -3,
-    0, 0, 1, -1,
-    -2, 1, -3, 4,
-    3, -2, 1, -1,
-  ]);
-
-  expect(
-    invert([], [
-      1, 2, -1, 7,
-      -3, 1, 1, 2,
-      1, -5, 2, 1,
-      3, 3, 2, 1,
-    ]).map(matrixFloatPrecision).map(_fixZeros)
-  ).toEqual([
-    0.04255, -0.21277, 0.03191, 0.09574,
-    -0.01064, 0.05319, -0.13298, 0.10106,
-    -0.10993, 0.21631, 0.12589, 0.21099,
-    0.12411, 0.0461, 0.05142, -0.01241,
-  ]);
-});
-
-describe("invert", () => {
+describe("Matrix invert", () => {
   test("matrix rotated on X", () => {
     const R = Matrix4.rotation(13, 0, 0);
     expect(R.invert().multiply(R).data).toEqual(Matrix4.identity().data);
@@ -431,7 +376,129 @@ describe("invert", () => {
   });
 });
 
-describe("determinant X", () => {
+test("Multiply function", () => {
+  const a = [
+    5,   7,  9,  10,
+    2,   3,  3,   8,
+    8,  10,  2,   3,
+    3,   3,  4,   8,
+  ];
+
+  const b = [
+    3,  10, 12, 18,
+   12,   1,  4,  9,
+    9,  10, 12,  2,
+    3,  12,  4, 10,
+  ];
+
+  expect(multiply([], a, b)).toEqual([
+    210, 267, 236, 271,
+     93, 149, 104, 149,
+    171, 146, 172, 268,
+    105, 169, 128, 169,
+  ]);
+});
+
+test("Multiply vector function", () => {
+  const a = [
+    5,   7,  9,  10,
+    2,   3,  3,   8,
+    8,  10,  2,   3,
+    3,   3,  4,   8,
+  ];
+
+  expect(multiplyVector(a, [ 3, 12,  9,  3])).toEqual([210,  93, 171, 105]);
+  expect(multiplyVector(a, [10,  1, 10, 12])).toEqual([267, 149, 146, 169]);
+  expect(multiplyVector(a, [12,  4, 12,  4])).toEqual([236, 104, 172, 128]);
+  expect(multiplyVector(a, [18,  9,  2, 10])).toEqual([271, 149, 268, 169]);
+});
+
+test("Transpose function", () => {
+  const a = [
+    5,   7,  9,  10,
+    2,   3,  3,   8,
+    8,  10,  2,   3,
+    3,   3,  4,   8,
+  ];
+
+  expect(transpose(a)).toEqual([
+     5, 2,  8, 3,
+     7, 3, 10, 3,
+     9, 3,  2, 4,
+    10, 8,  3, 8,
+  ]);
+});
+
+describe("Adjoint function", () => {
+  test("with rotaion and translation", () => {
+    expect(adjoint([], [
+      1, 1, 1, -1,
+      1, 1, -1, 1,
+      1, -1, 1, 1,
+      -1, 1, 1, 1,
+    ])).toEqual([
+      -4, -4, -4, 4,
+      -4, -4, 4, -4,
+      -4, 4, -4, -4,
+      4, -4, -4, -4,
+    ]);
+  });
+
+  test("with rotation, translation, and scale", () => {
+    expect(adjoint([], [
+      2, -1, 3, 0,
+      0, 5, 2, 0,
+      1, -1, -2, 0,
+      0, 0, 0, 1,
+    ]).map(_fixZeros)).toEqual([
+      -8, -5, -17, 0,
+      2, -7, -4, 0,
+      -5, 1, 10, 0,
+      0, 0, 0, -33,
+    ]);
+  });
+});
+
+test("Determinant function", () => {
+  expect(determinant([
+    1, 1, 1, -1,
+    1, 1, -1, 1,
+    1, -1, 1, 1,
+    -1, 1, 1, 1,
+  ])).toEqual(-16);
+});
+
+test("Invert function", () => {
+  expect(
+    invert([], [
+      2, 1, 2, 1,
+      3, 2, 3, 1,
+      1, 4, 2, 1,
+      1, 3, 2, 1,
+    ]).map(_fixZeros)
+  ).toEqual([
+    1, 0, 2, -3,
+    0, 0, 1, -1,
+    -2, 1, -3, 4,
+    3, -2, 1, -1,
+  ]);
+
+  expect(
+    invert([], [
+      1, 2, -1, 7,
+      -3, 1, 1, 2,
+      1, -5, 2, 1,
+      3, 3, 2, 1,
+    ]).map(matrixFloatPrecision).map(_fixZeros)
+  ).toEqual([
+    0.04255, -0.21277, 0.03191, 0.09574,
+    -0.01064, 0.05319, -0.13298, 0.10106,
+    -0.10993, 0.21631, 0.12589, 0.21099,
+    0.12411, 0.0461, 0.05142, -0.01241,
+  ]);
+});
+
+describe("Determinant function", () => {
   test("for rotation should be 49", () => {
     expect(determinant([
       2, -3, 1, 0,
@@ -458,20 +525,6 @@ describe("determinant X", () => {
       0, 0, 0, 1,
     ])).toEqual(-40);
   });
-});
-
-test("Rotation Adjoint",  () => {
-  expect(adjoint([], [
-    2, -1, 3, 0,
-    0, 5, 2, 0,
-    1, -1, -2, 0,
-    0, 0, 0, 1,
-  ]).map(_fixZeros)).toEqual([
-    -8, -5, -17, 0,
-    2, -7, -4, 0,
-    -5, 1, 10, 0,
-    0, 0, 0, -33,
-  ]);
 });
 
 function _fixZeros(v) {

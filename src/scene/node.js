@@ -1,5 +1,7 @@
 import * as mat4 from "../math/matrix4.js";
 
+const identityMatrix4 = mat4.Matrix4.identity();
+
 export class Node {
   constructor({type, name}) {
     Object.assign(this, {
@@ -18,32 +20,51 @@ export class Node {
   preRender(context) {
     const node = this;
     const nodeState = context.sceneManager.getNodeStateByName(node.name);
-    let modelMatrix;
+
+    // LocalMatrix is also known as a ModelMatrix. This matrix is a transform
+    // matrix with origin at [0,0,0] and relies on the parent world matrix
+    // to determine the locaton in world space. That is, absolute position
+    // so that coordinates can be rendered without depending on ancestry. That
+    // absolute matrix is the world matrix.
+    let localMatrix = identityMatrix4;
+    let worldMatrix;
 
     if (nodeState?.transform) {
       const transform = nodeState.transform;
-      modelMatrix = mat4.Matrix4.identity()
-        .translate(transform.position[0], transform.position[1], transform.position[2])
-        .rotate(transform.rotation[0], transform.rotation[1], transform.rotation[2])
-        .scale(transform.scale[0], transform.scale[1], transform.scale[2]);
-
-      if (node.parent) {
-        modelMatrix = node.parent.worldMatrix.multiply(modelMatrix);
-      }
-    } else {
-      modelMatrix = node.parent ?
-        node.parent.worldMatrix :
-        mat4.Matrix4.identity();
+      localMatrix = mat4.Matrix4.trs(
+        transform.position,
+        transform.rotation,
+        transform.scale);
     }
 
-    node.withMatrix(modelMatrix);
+    if (node.parent?.worldMatrix) {
+      worldMatrix = localMatrix === identityMatrix4 ?
+        node.parent.worldMatrix :
+        node.parent.worldMatrix.multiply(localMatrix);
+    } else {
+      worldMatrix = localMatrix;
+    }
+
+    node
+      .withLocalMatrix(localMatrix)
+      .withWorldMatrix(worldMatrix);
   }
 
   render() {}
 
-  withMatrix(matrix) {
+  withLocalMatrix(matrix) {
+    this.localMatrix = matrix;
+    return this;
+  }
+
+  withWorldMatrix(matrix) {
     this.worldMatrix = matrix;
     return this;
+  }
+
+  // withMatrix set the world matrix also known as global matrix.
+  withMatrix(matrix) {
+    return this.withWorldMatrix(matrix);
   }
 
   add(node) {

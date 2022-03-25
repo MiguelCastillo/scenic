@@ -124,6 +124,20 @@ export class Matrix4 {
     return new Matrix4(identity());
   }
 
+  static trs(translation, rotation, scaling) {
+    // We want to rotate before we scale. Otherwise rotation will be
+    // amplified by the scale as a factor.
+    let result = rotate(identity(), rotation[0], rotation[1], rotation[2]);
+    multiply(result, result, scale(scaling[0], scaling[1], scaling[2]));
+
+    // Translation is its own thing that is not affected by rotation
+    // or scale _when_ creating a matrix.
+    result[_03] = translation[0];
+    result[_13] = translation[1];
+    result[_23] = translation[2];
+    return new Matrix4(result);
+  }
+
   static rotation(degreesX, degreesY, degreesZ, rotation=rotate) {
     return new Matrix4(rotation(identity(), degreesX, degreesY, degreesZ));
   }
