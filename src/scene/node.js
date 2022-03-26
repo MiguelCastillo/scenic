@@ -86,3 +86,50 @@ export class Node {
     return this;
   }
 }
+
+export function findParentByType(sceneNode, ParentType) {
+  let parent = sceneNode.parent;
+  while (parent && !(parent instanceof ParentType)) {
+    parent = parent.parent;
+  }
+  return parent;
+}
+
+export function findChildrenByType(sceneNode, ChildType) {
+  const result = [];
+
+  function traverse(node) {
+    if (!node) {
+      return;
+    }
+
+    if (node instanceof ChildType) {
+      result.push(node);
+    }
+
+    node.items.forEach(traverse);
+  }
+
+  sceneNode.items.forEach(traverse);
+  return result;
+}
+
+export function findChildByType(sceneNode, ChildType) {
+  let found;
+
+  function traverse(node) {
+    if (!node || found) {
+      return;
+    }
+
+    if (node instanceof ChildType) {
+      found = node;
+      return;
+    }
+
+    node.items.forEach(traverse);
+  }
+
+  sceneNode.items.forEach(traverse);
+  return found;
+}

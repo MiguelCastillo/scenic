@@ -13,6 +13,10 @@ import {
 } from "../../shader-factory.js";
 
 import {
+  findChildrenByType,
+} from "../../../src/scene/node.js";
+
+import {
   VertexBuffer,
   VertexBufferData,
   TextureVertexBufferData,
@@ -50,11 +54,7 @@ import {
   AnimationLayer,
   AnimationCurveNode,
   AnimationCurve,
-
-  findMeshes,
-  findMeshChildrenByType,
 } from "./scene-node.js";
-
 
 /**
  * File loader for bfx formatted files.
@@ -145,8 +145,10 @@ export function buildSceneNode(gl, fbxDocument, sceneNodeConfig, sceneManager) {
       stackNames: animationNode.items.map(item => item.name),
     });
   }
-}
 
+  // We want to find all the meshes and initialize shader programs for each.
+  initShaderProgramsForMeshes(gl, sceneNode);
+}
 
 const _textureCache = {};
 
@@ -193,7 +195,6 @@ function sceneNodeFromConnection(gl, rootConnection, sceneManager, relativeRootS
     );
   }
 
-  initShaderPrograms(gl, sceneNode);
   return sceneNode;
 
   function createSceneNode(connection) {
@@ -597,19 +598,19 @@ function getLayerData(geometry, layerDataName) {
   return components;
 }
 
-function initShaderPrograms(gl, sceneNode) {
-  findMeshes(sceneNode).forEach(mesh => {
-    const textures = findMeshChildrenByType(mesh, Texture);
-    const materials = findMeshChildrenByType(mesh, Material);
+function initShaderProgramsForMeshes(gl, sceneNode) {
+  findChildrenByType(sceneNode, Mesh).forEach(mesh => {
+    const textures = findChildrenByType(mesh, Texture);
+    const materials = findChildrenByType(mesh, Material);
 
     // If the mesh has any textures, then we use phong-texture. We have a
     // separate shader specifically for handling textures because if the
     // a shader defined a sample2D type and does not call the `texture`
     // method in the shader then we get the warning:
     // "there is no texture bound to the unit 0".
-    // So we want to make sure we pick a shader that can handle texture
+    // So we want to make sure we pick a shader that can handle textures
     // if the mesh has any, otherwise use an equivalent shader without
-    // textures.
+    // texturing.
     const shaderName = textures.length ? "phong-texture" : "phong-lighting";
     mesh.withShaderProgram(createShaderProgram(gl, shaderName));
 

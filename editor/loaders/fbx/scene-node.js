@@ -3,6 +3,7 @@ import * as vec3 from "../../../src/math/vector3.js";
 
 import {
   Node as SceneNode,
+  findParentByType,
 } from "../../../src/scene/node.js";
 
 import {
@@ -248,7 +249,7 @@ export class Gometry extends SceneNode {
   }
 
   render() {
-    let mesh = findParentMesh(this);
+    let mesh = findParentByType(this, Mesh);
     if (mesh) {
       if (this.enableSkinning === true && this.skinDeformers.length) {
         // These deformers are things like a skin deformer which has
@@ -421,7 +422,7 @@ export class Material extends SceneNode {
   }
 
   render(context) {
-    const mesh = findParentMesh(this);
+    const mesh = findParentByType(this, Mesh);
 
     if (mesh) {
       const {gl} = context;
@@ -521,7 +522,7 @@ export class Texture extends SceneNode {
   }
 
   render(context) {
-    let mesh = findParentMesh(this);
+    let mesh = findParentByType(this, Mesh);
 
     if (mesh) {
       const {gl} = context;
@@ -621,48 +622,3 @@ const evaluateAnimation = (ms, speed, curveNodes) => {
 
   return result;
 };
-
-function findParentMesh(node) {
-  let mesh = node.parent;
-  while (mesh && !(mesh instanceof Mesh)) {
-    mesh = mesh.parent;
-  }
-  return mesh;
-}
-
-export function findMeshes(sceneNode) {
-  const meshes = [];
-
-  function traverse(node) {
-    if (!node) {
-      return;
-    }
-
-    if (node instanceof Mesh) {
-      meshes.push(node);
-    }
-
-    node.items.forEach(traverse);
-  }
-
-  traverse(sceneNode);
-  return meshes;
-}
-
-export function findMeshChildrenByType(mesh, ChildType) {
-  const children = [];
-  function traverse(node) {
-    if (!node || node instanceof Mesh) {
-      return;
-    }
-
-    if (node instanceof ChildType) {
-      children.push(node);
-    }
-
-    node.items.forEach(traverse);
-  }
-
-  mesh.items.forEach(traverse);
-  return children;
-}
