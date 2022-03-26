@@ -44,48 +44,19 @@ class Animatable extends RenderableSceneNode {
   }
 
   preRender(context) {
-    const animation = this.relativeRoot.animation;
-    if (!animation?.items.length) {
+    const animation = getAnimation(context, this);
+    if (!animation) {
       super.preRender(context);
       return;
     }
 
-    const animationState = context.sceneManager.getNodeStateByName(animation.name);
-    const stackName = animationState?.stackName;
-    let stack = this.currentAnimationStack;
-
-    if (!stackName) {
-      // The only children that an animation node has are animation stacks.
-      // If there is no stack active, we just pick the firs one.
-      stack = animation.items[0];
-    } else if (stack?.name !== stackName) {
-      // If a particular stack is selected, then that's what we are using
-      // for animation.
-      stack = animation.items.find(item => item.name === stackName);
-    }
-
-    if (!stack) {
-      super.preRender(context);
-      return;
-    }
+    const {
+      translation, rotation, scale, stack,
+    } = animation;
 
     if (this.currentAnimationStack !== stack) {
       this.currentAnimationStack = stack;
       stack.playback.reset(context.ms);
-    }
-
-    const speed = animationState.speed == null ? 1 : animationState.speed;
-    const ms = stack.playback.elapsed(context.ms);
-    const layer = stack.animationLayers[0];
-    // TODO(miguel): cache these so that we don't have to reprocess
-    // this array every frame.
-    const curves = this.animationNodes.filter(n => layer.animationCurveNodesByName[n.name]);
-
-    const {translation, rotation, scale} = evaluateAnimation(ms, speed, curves);
-
-    if (!translation && !rotation && !scale) {
-      super.preRender(context);
-      return;
     }
 
     // https://help.autodesk.com/view/FBX/2017/ENU/?guid=__cpp_ref__transformations_2main_8cxx_example_html
@@ -593,7 +564,52 @@ function getTransformAnimation(animation, defaultValues) {
   return transform;
 }
 
-const evaluateAnimation = (ms, speed, curveNodes) => {
+function getAnimation(context, animatableNode) {
+  const animation = animatableNode.relativeRoot.animation;
+  if (!animation?.items.length) {
+    return;
+  }
+
+  const animationState = context.sceneManager.getNodeStateByName(animation.name);
+  const stackName = animationState?.stackName;
+  let stack = animatableNode.currentAnimationStack;
+
+  if (!stackName) {
+    // The only children that an animation node has are animation stacks.
+    // If there is no stack active, we just pick the firs one.
+    stack = animation.items[0];
+  } else if (stack?.name !== stackName) {
+    // If a particular stack is selected, then that's what we are using
+    // for animation.
+    stack = animation.items.find(item => item.name === stackName);
+  }
+
+  if (!stack) {
+    return;
+  }
+
+  const speed = animationState.speed == null ? 1 : animationState.speed;
+  const ms = stack.playback.elapsed(context.ms);
+  const curves = findCurveNodesInLayer(
+    stack.animationLayers[0],
+    animatableNode.animationNodes);
+
+  const {
+    translation,
+    rotation,
+    scale,
+  } = evaluateAnimation(ms, speed, curves);
+
+  if (!translation && !rotation && !scale) {
+    return;
+  }
+
+  return {
+    translation, rotation, scale, stack,
+  };
+}
+
+function evaluateAnimation(ms, speed, curveNodes) {
   const result = {};
   const channels = {};
   const ktime = KTIME_ONE_SECOND*ms*0.001;
@@ -621,4 +637,8 @@ const evaluateAnimation = (ms, speed, curveNodes) => {
   }
 
   return result;
-};
+}
+
+function findCurveNodesInLayer(layer, animationNodes) {
+  return animationNodes.filter(n => layer.animationCurveNodesByName[n.name]);
+}
