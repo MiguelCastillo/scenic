@@ -51,7 +51,10 @@ class Animatable extends RenderableSceneNode {
     }
 
     const {
-      translation, rotation, scale, stack,
+      translation=[0,0,0],
+      rotation=[0,0,0],
+      scale=[1,1,1],
+      stack,
     } = animation;
 
     if (this.currentAnimationStack !== stack) {
@@ -60,17 +63,11 @@ class Animatable extends RenderableSceneNode {
     }
 
     // https://help.autodesk.com/view/FBX/2017/ENU/?guid=__cpp_ref__transformations_2main_8cxx_example_html
-    let animationMatrix = mat4.Matrix4.identity();
-
-    if (translation) {
-      animationMatrix = animationMatrix.translate(translation[0], translation[1], translation[2]);
-    }
-    if (rotation) {
-      animationMatrix = animationMatrix.rotate(rotation[0], rotation[1], rotation[2]);
-    }
-    if (scale) {
-      animationMatrix = animationMatrix.scale(scale[0], scale[1], scale[2]);
-    }
+    let animationMatrix = mat4.Matrix4.trs(
+      translation,
+      rotation,
+      scale,
+    );
 
     const parent = this.parent;
     if (parent) {
