@@ -3,7 +3,7 @@ module.exports = {
   "watch": [
     "editor/*.html",
     "editor/*.css",
-    "editor/dist",
-    "resources"
+    "editor/dist/*.js",
+    "resources/**/?(*.fbx|*.obj)"
   ]
 };
