@@ -1,3 +1,4 @@
+import * as mat4 from "../math/matrix4.js";
 import {Node} from "./node.js";
 import {Projection} from "./projection.js";
 
@@ -23,13 +24,13 @@ export class Renderable extends Node {
     }
 
     return projectionNode ?
-      projectionNode.projectionMatrix :  
-      mat4.identity();
+      projectionNode.projectionMatrix :
+      mat4.Matrix4.identity();
   }
 
   // TODO(miguel): make this a class method instead of a static one.
   // Make sure to use the program and vertexBuffer in the node instance.
-  static render(gl, program, vertexBuffer) {
+  static render(gl, program, vertexBuffer, primitiveType) {
     if (!program) {
       throw new Error("Must provide a shader program");
     }
@@ -56,6 +57,6 @@ export class Renderable extends Node {
         }
       });
 
-    vertexBuffer.render(gl);
+    vertexBuffer.render(gl, primitiveType);
   }
 }
