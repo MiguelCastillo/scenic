@@ -95,7 +95,7 @@ describe("fbx Loader", () => {
       gl, sceneManager,
     } = createSceneContextForTests(sceneNodeConfig);
 
-    mockShaders(["phong-lighting"]);
+    mockShaders(["phong-lighting", "flat-material"]);
     buildSceneNode(gl, model, sceneNodeConfig, sceneManager);
 
     sceneManager.updateNodeStateByName("Animation_n0", {

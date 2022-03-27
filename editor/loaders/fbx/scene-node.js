@@ -2,6 +2,11 @@ import * as mat4 from "../../../src/math/matrix4.js";
 import * as vec3 from "../../../src/math/vector3.js";
 
 import {
+  VertexBuffer,
+  VertexBufferData,
+} from "../../../src/renderer/vertexbuffer.js";
+
+import {
   Node as SceneNode,
   findParentByType,
 } from "../../../src/scene/node.js";
@@ -82,6 +87,7 @@ export class Mesh extends Animatable {
   constructor(options, shaderProgram) {
     super(Object.assign({}, options, {type:"fbx-mesh"}));
     this.vertexBuffers = [];
+    this.renderables = [];
 
     if (shaderProgram) {
       this.shaderProgram = shaderProgram.clone();
@@ -94,19 +100,24 @@ export class Mesh extends Animatable {
   }
 
   addVertexBuffer(vertexBuffer) {
-    this.vertexBuffers = this.vertexBuffers.concat(vertexBuffer);
+    this.vertexBuffers.push(vertexBuffer);
+    return this;
+  }
+
+  addRenderable(renderable) {
+    this.renderables.push(renderable);
     return this;
   }
 
   preRender(context) {
-    this.shaderProgram.setUniforms([]);
-    this.vertexBuffers = [];
     super.preRender(context);
+    this.vertexBuffers = [];
+    this.renderables = [];
   }
 
   render(context) {
-    const {shaderProgram, worldMatrix} = this;
     const {gl, sceneManager} = context;
+    const {shaderProgram, worldMatrix} = this;
     const projectionMatrix = this.getProjectionMatrix();
 
     // Quick hack to make bump lighting configurable in the scene config.
@@ -158,15 +169,11 @@ export class Mesh extends Animatable {
 
     // Configure shader program with its current state.
     const program = shaderProgram
+      .clone()
       .addUniforms([{
           name: "projectionMatrix",
           update: ({index}) => {
             gl.uniformMatrix4fv(index, false, projectionMatrix.data);
-          },
-        }, {
-          name: "worldMatrix",
-          update: ({index}) => {
-            gl.uniformMatrix4fv(index, true, worldMatrix.data);
           },
         }, {
           name: "bumpLighting",
@@ -180,21 +187,33 @@ export class Mesh extends Animatable {
         ...lightEnabled,
       ]);
 
-    this.vertexBuffers.forEach(vb => {
-      RenderableSceneNode.render(gl, program, vb);
+    if (this.vertexBuffers.length) {
+      const p = program
+        .clone()
+        .addUniforms([{
+          name: "worldMatrix",
+          update: ({index}) => {
+            gl.uniformMatrix4fv(index, true, worldMatrix.data);
+          },
+        }]);
+
+      this.vertexBuffers.forEach(vertexBuffer => {
+        RenderableSceneNode.render(gl, p, vertexBuffer, gl.TRIANGLES);
+      });
+    }
+
+    this.renderables.forEach(({vertexBuffer, worldMatrix, primitiveType}) => {
+      const p = program
+        .clone()
+        .addUniforms([{
+          name: "worldMatrix",
+          update: ({index}) => {
+            gl.uniformMatrix4fv(index, true, worldMatrix.data);
+          },
+        }]);
+
+      RenderableSceneNode.render(gl, p, vertexBuffer, primitiveType);
     });
-  }
-}
-
-export class Armature extends Animatable {
-  constructor(options) {
-    super(Object.assign({}, options, {type:"fbx-armature"}));
-  }
-}
-
-export class Bone extends Animatable {
-  constructor(options) {
-    super(Object.assign({}, options, {type:"fbx-bone"}));
   }
 }
 
@@ -210,29 +229,175 @@ export class Gometry extends SceneNode {
   add(node) {
     if (node instanceof SkinDeformer) {
       this.skinDeformers.push(node._withParent(this));
-    } else {
-      super.add(node);
     }
+
+    super.add(node);
     return this;
   }
 
-  render() {
+  render(context) {
     let mesh = findParentByType(this, Mesh);
     if (mesh) {
-      if (this.enableSkinning === true && this.skinDeformers.length) {
+      if (!this.enableSkinning || !this.skinDeformers.length) {
+        mesh.addVertexBuffer(this.vertexBuffer);
+      } else if (this.skinDeformers.length) {
         // These deformers are things like a skin deformer which has
         // cluster deformers as children nodes. These clusters are the
         // things that have the indexes to vertices that are affected
         // by the deformations.
         for (const skin of this.skinDeformers) {
           for (const cluster of skin.items) {
-            mesh.addVertexBuffer(this.vertexBuffer.clone().withIndexes(cluster.indexes));
+            // mesh.addVertexBuffer(this.vertexBuffer.clone().withIndexes(cluster.indexes));
+            mesh.addRenderable({
+              vertexBuffer: this.vertexBuffer.clone().withIndexes(cluster.indexes),
+              worldMatrix: cluster.worldMatrix,
+              primitiveType: context.gl.POINTS,
+            });
           }
         };
-      } else {
-        mesh.addVertexBuffer(this.vertexBuffer);
       }
     }
+  }
+}
+
+export class Armature extends Animatable {
+  constructor(options) {
+    super(Object.assign({}, options, {type:"fbx-armature"}));
+    this.bonesByID = {};
+    this.vertexBuffers = [];
+    this.renderables = [];
+    this.renderEnabled = false;
+  }
+
+  add(node) {
+    if (node instanceof Bone) {
+      if (this.bonesByID[node.id]) {
+        console.warn("====> duplicate bone", node);
+      }
+      this.registerBone(node);
+    }
+    super.add(node);
+    return this;
+  }
+
+  registerBone(bone) {
+    this.bonesByID[bone.id] = bone;
+    return this;
+  }
+
+  addVertexBuffer(vertexBuffer) {
+    this.vertexBuffers.push(vertexBuffer);
+    return this;
+  }
+
+  addRenderable(renderable) {
+    this.renderables.push(renderable);
+    return this;
+  }
+
+  preRender(context) {
+    super.preRender(context);
+    this.vertexBuffers = [];
+    this.renderables = [];
+  }
+
+  render(context) {
+    if (!this.renderEnabled) {
+      return;
+    }
+
+    const {gl} = context;
+    const {shaderProgram} = this;
+    const projectionMatrix = this.getProjectionMatrix();
+
+    gl.disable(gl.DEPTH_TEST);
+
+    // Configure shader program with its current state.
+    const program = shaderProgram
+      .clone()
+      .addUniforms([{
+          name: "projectionMatrix",
+          update: ({index}) => {
+            gl.uniformMatrix4fv(index, false, projectionMatrix.data);
+          },
+        },
+      ]);
+
+    this.renderables.forEach(({vertexBuffer, worldMatrix, primitiveType}) => {
+      const p = program
+        .clone()
+        .addUniforms([{
+          name: "worldMatrix",
+          update: ({index}) => {
+            gl.uniformMatrix4fv(index, true, worldMatrix.data);
+          },
+        }]);
+
+      RenderableSceneNode.render(gl, p, vertexBuffer, primitiveType);
+    });
+
+    gl.enable(gl.DEPTH_TEST);
+  }
+}
+
+export class Bone extends Animatable {
+  constructor(options, id) {
+    super(Object.assign({}, options, {type:"fbx-bone"}));
+    this.id = id;
+  }
+
+  add(node) {
+    // NOTE(miguel): bones have other ones are children. In addition to that
+    // they can have other nodes such as meshes directly in the hierarchy of
+    // a skeleton. With skin cluster however, bones are referential. Meaning
+    // that skin clusters aren't stored in bones and instead skin clusters
+    // store a reference to a bone in a skeloton. Once the skeleton matrices
+    // are all processed, skin clusters read the transform from the bones
+    // to determine their world matrix. And the easiest way for skin clusters
+    // to access bones is thru the armature which is why we register all the
+    // bones in it. Registering stores bones in an armature in a way that
+    // allows skin clusters find their associated bones efficiently.
+    if (node instanceof Bone) {
+      const armature = findParentByType(this, Armature);
+      // deformation clusters can also be parents of bones. And in those
+      // cases don't do any registration because those bones are referential.
+      // Meaning that deformation clusters will read the actual bones from
+      // armatures, which is the canonical copy.
+      if (armature) {
+        armature.registerBone(node);
+      }
+    }
+    super.add(node);
+    return this;
+  }
+
+  render(context) {
+    const armature = findParentByType(this, Armature);
+    if (this.parent === armature || !armature.renderEnabled) {
+      return;
+    }
+
+    // This is very raw copying of the position for the beginning and
+    // ending og the bone so that we can render it in the correct
+    // position.  This is not taking into account rotation of the bone
+    // which is OK for now.
+    // TODO(miguel): change this logic to create coordinates at the origin
+    // where we can provide the bone matrix directly so that we can have
+    // rotation and scale included when rendering a bone.
+    const dataA = this.worldMatrix.data;
+    const dataB = this.parent.worldMatrix.data;
+    const a = [dataA[3], dataA[7], dataA[11]];
+    const b = [dataB[3], dataB[7], dataB[11]];
+
+    const {gl} = context;
+    armature.addRenderable({
+      vertexBuffer: new VertexBuffer({
+        positions: new VertexBufferData(gl, [a[0], a[1], a[2], b[0], b[1], b[2]]),
+        colors: new VertexBufferData(gl, [0.7, 1, 1, 1, 1, 1, 1, 1]),
+      }),
+      worldMatrix: mat4.Matrix4.identity(),
+      primitiveType: gl.LINES,
+    });
   }
 }
 
@@ -243,10 +408,38 @@ export class SkinDeformer extends SceneNode {
 }
 
 export class SkinDeformerCluster extends SceneNode {
-  constructor(options, indexes, weights) {
+  constructor(options, indexes, weights, transform, transformLink) {
     super(Object.assign({}, options, {type:"fbx-skin-deformer-cluster"}));
+    this.boneIDs = [];
     this.indexes = indexes;
     this.weights = weights;
+    this.transform = transform;
+
+    // Link refers to the bone this cluster is linked to, and transformLink
+    // is the pose matrix for that bone.
+    this.transformLink = transformLink;
+  }
+
+  add(node) {
+    if (node instanceof Bone) {
+      this.boneIDs.push(node.id);
+    } else {
+      super.add(node);
+    }
+    return this;
+  }
+
+  preRender(context) {
+    super.preRender(context);
+
+    const armatute = this.relativeRoot.items.find(x => x instanceof Armature);
+
+    // We are only taking the first bone because skin cluster only
+    // have one bone associated with it in the fbx files I have looked
+    // at. But if multiple bones affect a skin cluster has multiple
+    // bones then we need to take their average.
+    const bone = armatute.bonesByID[this.boneIDs[0]];
+    this.withMatrix(bone.worldMatrix.multiply(this.transform));
   }
 }
 
@@ -322,6 +515,11 @@ export class AnimationLayer extends SceneNode {
   }
 
   add(node) {
+    if (!(node instanceof AnimationCurveNode)) {
+      console.error("only AnimationCurveNode can be added as child nodes in AnimationLayer");
+      return this;
+    }
+
     if (this.animationCurveNodesByName[node.name]) {
       // eslint-disable-next-line
       console.warn(`animation node ${node.name} already exists in ${this.name}`);
@@ -393,22 +591,20 @@ export class Material extends SceneNode {
     const mesh = findParentByType(this, Mesh);
 
     if (mesh) {
-      const {gl} = context;
-
       mesh.shaderProgram.addUniforms([{
         name: "ambientColor",
         update: ({index}) => {
-          gl.uniform3fv(index, this.ambientColor);
+          context.gl.uniform3fv(index, this.ambientColor);
         }
       }, {
         name: "materialReflectiveness",
         update: ({index}) => {
-          gl.uniform1f(index, this.reflectionFactor);
+          context.gl.uniform1f(index, this.reflectionFactor);
         },
       }, {
         name: "materialColor",
         update: ({index}) => {
-          gl.uniform4fv(index, this.materialColor);
+          context.gl.uniform4fv(index, this.materialColor);
         },
       }]);
     }

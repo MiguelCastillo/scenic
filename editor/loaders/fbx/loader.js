@@ -115,7 +115,15 @@ export function buildSceneNode(gl, fbxDocument, sceneNodeConfig, sceneManager) {
   sceneNode.addItems(
     nodeWrappersByID["0,0"].connections
       .map(connection => sceneNodeFromConnection(gl, connection, sceneManager, sceneNode))
-      .filter(Boolean));
+      .filter(Boolean)
+      .sort((a, b) => {
+        if (a instanceof Armature) {
+          return -1;
+        } else if (b instanceof Armature) {
+          return 1;
+        }
+        return 0;
+      }));
 
   const animationNode = new AnimationSceneNode({name: `Animation_n${animationID++}`});
   findChildrenByName(objects, "AnimationStack")
@@ -148,6 +156,7 @@ export function buildSceneNode(gl, fbxDocument, sceneNodeConfig, sceneManager) {
 
   // We want to find all the meshes and initialize shader programs for each.
   initShaderProgramsForMeshes(gl, sceneNode);
+  initShaderProgramsForArmatures(gl, sceneNode);
 }
 
 const _textureCache = {};
@@ -209,7 +218,7 @@ function sceneNodeFromConnection(gl, rootConnection, sceneManager, relativeRootS
         if (modelType === "Mesh") {
           sceneNode = new Mesh({name});
         } else if (modelType === "LimbNode") {
-          sceneNode = new Bone({name});
+          sceneNode = new Bone({name}, fbxNode.attributes[0]);
         } else if (modelType === "Null") {
           // Armatures are the root nodes for a bone hierarchy. This is some
           // information about the armature node which seems to cause issues
@@ -300,6 +309,8 @@ function sceneNodeFromConnection(gl, rootConnection, sceneManager, relativeRootS
         } else if (type === "Cluster") {
           let indexes = findPropertyValueByName(fbxNode, "Indexes");
           const weights = findPropertyValueByName(fbxNode, "Weights");
+          const transform  = findPropertyValueByName(fbxNode, "Transform");
+          const transformLink  = findPropertyValueByName(fbxNode, "TransformLink");
 
           if (!indexes) {
             break;
@@ -319,7 +330,10 @@ function sceneNodeFromConnection(gl, rootConnection, sceneManager, relativeRootS
 
           sceneNode = new SkinDeformerCluster({name},
             indexes && new VertexBufferIndexes(gl, indexes),
-            weights);
+            weights,
+            new mat4.Matrix4(transform).transpose(),
+            new mat4.Matrix4(transformLink).transpose(),
+          );
         }
         break;
       }
@@ -619,6 +633,12 @@ function initShaderProgramsForMeshes(gl, sceneNode) {
     if (!materials.length) {
       mesh.add(new Material({name: "default material"}));
     }
+  });
+}
+
+function initShaderProgramsForArmatures(gl, sceneNode) {
+  findChildrenByType(sceneNode, Armature).forEach(armature => {
+    armature.withShaderProgram(createShaderProgram(gl, "flat-material"));
   });
 }
 
