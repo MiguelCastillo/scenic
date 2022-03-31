@@ -7,6 +7,7 @@ export class ShaderUniform {
 
     Object.assign(this, {
       index: gl.getUniformLocation(program, options.name),
-    }, options);
+      name: options.name,
+    });
   }
 }

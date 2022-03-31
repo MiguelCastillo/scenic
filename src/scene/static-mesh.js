@@ -57,7 +57,6 @@ export class StaticMesh extends Renderable {
 
     // Configure shader program with its current state.
     shaderProgram
-      .clone()
       .setUniforms([{
           name: "projectionMatrix",
           update: (gl, {index}) => {

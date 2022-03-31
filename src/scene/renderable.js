@@ -8,20 +8,13 @@ export class Renderable extends Node {
   }
 
   withShaderProgram(shaderProgram) {
-    this._shaderProgram = shaderProgram.clone();
+    this.shaderProgram = shaderProgram.clone();
     return this;
   }
 
   withVertexBuffer(vertexBuffer) {
     this.vertexBuffer = vertexBuffer;
     return this;
-  }
-
-  preRender(context) {
-    if (this._shaderProgram) {
-      this.shaderProgram = this._shaderProgram.clone();
-    }
-    super.preRender(context);
   }
 
   getProjectionMatrix() {

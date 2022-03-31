@@ -92,7 +92,7 @@ export class Mesh extends Animatable {
   }
 
   withShaderProgram(shaderProgram) {
-    this._shaderProgram = shaderProgram.clone();
+    this.shaderProgram = shaderProgram.clone();
     return this;
   }
 
@@ -107,7 +107,6 @@ export class Mesh extends Animatable {
   }
 
   preRender(context) {
-    this.shaderProgram = this._shaderProgram.clone();
     super.preRender(context);
     this.vertexBuffers = [];
     this.renderables = [];
@@ -186,7 +185,6 @@ export class Mesh extends Animatable {
 
     if (this.vertexBuffers.length) {
       const p = program
-        .clone()
         .addUniforms([{
           name: "worldMatrix",
           update: (gl, {index}) => {
@@ -201,7 +199,6 @@ export class Mesh extends Animatable {
 
     this.renderables.forEach(({vertexBuffer, worldMatrix, primitiveType}) => {
       program
-        .clone()
         .addUniforms([{
           name: "worldMatrix",
           update: (gl, {index}) => {
@@ -267,7 +264,7 @@ export class Armature extends Animatable {
   }
 
   withShaderProgram(shaderProgram) {
-    this._shaderProgram = shaderProgram.clone();
+    this.shaderProgram = shaderProgram.clone();
     return this;
   }
 
@@ -298,9 +295,6 @@ export class Armature extends Animatable {
   }
 
   preRender(context) {
-    // TODO(miguel): once we add uniform and attribute caching this cloning and
-    // storing of a new shader program can go away.
-    this.shaderProgram = this._shaderProgram.clone();
     super.preRender(context);
     this.vertexBuffers = [];
     this.renderables = [];
@@ -329,7 +323,6 @@ export class Armature extends Animatable {
 
     this.renderables.forEach(({vertexBuffer, worldMatrix, primitiveType}) => {
       shaderProgram
-        .clone()
         .addUniforms([{
           name: "worldMatrix",
           update: (gl, {index}) => {

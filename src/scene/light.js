@@ -19,7 +19,6 @@ export class Light extends Renderable {
     const renderableState = sceneManager.getNodeStateByName(this.name);
 
     shaderProgram
-      .clone()
       .setUniforms([{
           name: "projectionMatrix",
           update: (gl, {index}) => {

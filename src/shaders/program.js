@@ -13,34 +13,53 @@ export class ShaderProgram {
     this.gl = gl;
     this.program =  program;
     this._attributes = [];
-    this._uniforms = [];
+    this._uniformsByName = {}; this._uniformsUpdates = {};
   }
 
   setUniforms(uniforms) {
-    // TODO(miguel): cache uniforms
-    this._uniforms = uniforms.map(uniform => new ShaderUniform(uniform, this));
+    this._uniformsUpdates = {};
+    for (const uniform of uniforms) {
+      this._uniformsUpdates[uniform.name] = uniform.update;
+    }
+
+    // NOTE: Cache can stay in memory forever to avoid recreating uniform
+    // objects each frame. If this becomes a memory issue, then we can
+    // perhaps implement LRU.
+    const newUniforms = uniforms
+      .filter(uniform => !this._uniformsByName[uniform.name])
+      .map(uniform => new ShaderUniform(uniform, this));
+
+    for (const uniform of newUniforms) {
+      this._uniformsByName[uniform.name] = uniform;
+    }
+
     return this;
   }
 
   addUniforms(uniforms) {
-    // TODO(miguel): cache uniforms
-    const unis = uniforms.map(uni => new ShaderUniform(uni, this));
-    this._uniforms = this._uniforms.concat(unis);
+    for (const uniform of uniforms) {
+      this._uniformsUpdates[uniform.name] = uniform.update;
+    }
+
+    const newUniforms = uniforms
+      .filter(uniform => !this._uniformsByName[uniform.name])
+      .map(uniform => new ShaderUniform(uniform, this));
+
+    if (newUniforms.length) {
+      for (const uniform of newUniforms) {
+        this._uniformsByName[uniform.name] = uniform;
+      }
+    }
+
     return this;
   }
 
-  getUniforms() {
-    return this._uniforms;
-  }
-
   setAttributes(attributes) {
-    // TODO(miguel): cache attributes
     this._attributes = attributes.map(attr => new ShaderAttribute(attr, this));
     return this;
   }
 
   addAttributes(attributes) {
-    // TODO(miguel): cache attributes
     const attrs = attributes.map(attr => new ShaderAttribute(attr, this));
     this._attributes = this._attributes.concat(attrs);
     return this;
@@ -53,7 +72,8 @@ export class ShaderProgram {
   clone() {
     const shaderProgram = new ShaderProgram(this.gl, this.program);
     shaderProgram._attributes = [...this._attributes];
-    shaderProgram._uniforms = [...this._uniforms];
+    shaderProgram._uniformsByName = {...this._uniformsByName};
+    shaderProgram._uniformsUpdates = {...this._uniformsUpdates};
     return shaderProgram;
   }
 
@@ -61,12 +81,9 @@ export class ShaderProgram {
     const gl = this.gl;
     gl.useProgram(this.program);
 
-    for (const uniform of this.getUniforms()) {
-      // TODO(miguel): split uniform data from update function.
-      if (uniform.update) {
-        uniform.update(gl, uniform);
-      }
-    }
+    Object.keys(this._uniformsUpdates).forEach(key => {
+      this._uniformsUpdates[key](gl, this._uniformsByName[key]);
+    });
 
     for (const attr of this.getAttributes()) {
       if (vertexBuffer[`${attr.name}s`]) {
