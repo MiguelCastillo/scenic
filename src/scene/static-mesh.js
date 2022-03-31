@@ -14,7 +14,7 @@ export class StaticMesh extends Renderable {
       return;
     }
 
-    const {gl, sceneManager} = context;
+    const {sceneManager} = context;
     const projectionMatrix = this.getProjectionMatrix();
 
     const lightsStates = findParentItemsWithItemType(this, "light")
@@ -23,7 +23,7 @@ export class StaticMesh extends Renderable {
     const lightPositions = lightsStates
       .map(({transform: {position}}, idx) => ({
         name: `lights[${idx}].position`,
-        update: ({index}) => {
+        update: (gl, {index}) => {
           gl.uniform3fv(index, vec3.normalize(...position));
         },
       }));
@@ -31,7 +31,7 @@ export class StaticMesh extends Renderable {
     const lightColors = lightsStates
       .map(({light: {color}}, idx) => ({
         name: `lights[${idx}].color`,
-        update: ({index}) => {
+        update: (gl, {index}) => {
           gl.uniform3fv(index, color);
         }
       }));
@@ -39,7 +39,7 @@ export class StaticMesh extends Renderable {
     const lightIntensities = lightsStates
       .map(({light: {intensity}}, idx) => ({
         name: `lights[${idx}].intensity`,
-        update: ({index}) => {
+        update: (gl, {index}) => {
           gl.uniform1f(index, intensity);
         },
       }));
@@ -47,7 +47,7 @@ export class StaticMesh extends Renderable {
     const lightEnabled = lightsStates
       .map((_, idx) => ({
         name: `lights[${idx}].enabled`,
-        update: ({index}) => {
+        update: (gl, {index}) => {
           gl.uniform1i(index, true);
         },
       }));
@@ -56,33 +56,33 @@ export class StaticMesh extends Renderable {
     const renderableState = sceneManager.getNodeStateByName(this.name);
 
     // Configure shader program with its current state.
-    const program = shaderProgram
+    shaderProgram
       .clone()
       .setUniforms([{
           name: "projectionMatrix",
-          update: ({index}) => {
+          update: (gl, {index}) => {
             gl.uniformMatrix4fv(index, false, projectionMatrix.data);
           },
         }, {
           name: "worldMatrix",
-          update: ({index}) => {
+          update: (gl, {index}) => {
             gl.uniformMatrix4fv(index, true, worldMatrix.data);
           },
         }, {
           name: "materialColor",
-          update: ({index}) => {
+          update: (gl, {index}) => {
             const {color=[1,1,1,1]} = renderableState && renderableState.material || {};
             gl.uniform4fv(index, color);
           },
         }, {
           name: "materialReflectiveness",
-          update: ({index}) => {
+          update: (gl, {index}) => {
             const {reflectiveness=1} = renderableState && renderableState.material || {};
             gl.uniform1f(index, reflectiveness);
           },
         }, {
           name: "ambientColor",
-          update: ({index}) => {
+          update: (gl, {index}) => {
             const {color=[0,0,0]} = renderableState && renderableState.ambient || {};
             gl.uniform3fv(index, color);
           }
@@ -91,8 +91,7 @@ export class StaticMesh extends Renderable {
         ...lightColors,
         ...lightIntensities,
         ...lightEnabled,
-      ]);
-
-    Renderable.render(gl, program, vertexBuffer);
+      ])
+      .render(vertexBuffer);
   }
 }

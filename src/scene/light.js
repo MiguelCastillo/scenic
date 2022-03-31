@@ -7,7 +7,7 @@ import {Renderable} from "./renderable.js";
 export class Light extends Renderable {
   render(context) {
     const {shaderProgram, worldMatrix, vertexBuffer} = this;
-    const {gl, sceneManager} = context;
+    const {sceneManager} = context;
 
     if (!vertexBuffer || !shaderProgram) {
       return;
@@ -18,26 +18,25 @@ export class Light extends Renderable {
     // State of the thing we are rendering.
     const renderableState = sceneManager.getNodeStateByName(this.name);
 
-    const program = shaderProgram
+    shaderProgram
       .clone()
       .setUniforms([{
           name: "projectionMatrix",
-          update: ({index}) => {
+          update: (gl, {index}) => {
             gl.uniformMatrix4fv(index, false, projectionMatrix.data);
           }
         }, {
           name: "worldMatrix",
-          update: ({index}) => {
+          update: (gl, {index}) => {
             gl.uniformMatrix4fv(index, true, worldMatrix.data);
           }
         }, {
           name: "materialColor",
-          update: ({index}) => {
+          update: (gl, {index}) => {
             gl.uniform4fv(index, renderableState.material.color);
           }
         }
-      ]);
-
-    Renderable.render(gl, program, vertexBuffer);
+      ])
+      .render(vertexBuffer);
   }
 }

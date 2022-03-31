@@ -17,11 +17,13 @@ export class ShaderProgram {
   }
 
   setUniforms(uniforms) {
+    // TODO(miguel): cache uniforms
     this._uniforms = uniforms.map(uniform => new ShaderUniform(uniform, this));
     return this;
   }
 
   addUniforms(uniforms) {
+    // TODO(miguel): cache uniforms
     const unis = uniforms.map(uni => new ShaderUniform(uni, this));
     this._uniforms = this._uniforms.concat(unis);
     return this;
@@ -32,11 +34,13 @@ export class ShaderProgram {
   }
 
   setAttributes(attributes) {
+    // TODO(miguel): cache attributes
     this._attributes = attributes.map(attr => new ShaderAttribute(attr, this));
     return this;
   }
 
   addAttributes(attributes) {
+    // TODO(miguel): cache attributes
     const attrs = attributes.map(attr => new ShaderAttribute(attr, this));
     this._attributes = this._attributes.concat(attrs);
     return this;
@@ -46,17 +50,71 @@ export class ShaderProgram {
     return this._attributes;
   }
 
-  bind() {
-    const {gl, program} = this;
-    gl.useProgram(program);
-    return this;
-  }
-
   clone() {
     const shaderProgram = new ShaderProgram(this.gl, this.program);
     shaderProgram._attributes = [...this._attributes];
     shaderProgram._uniforms = [...this._uniforms];
     return shaderProgram;
+  }
+
+  render(vertexBuffer, primitiveType=this.gl.TRIANGLES) {
+    const gl = this.gl;
+    gl.useProgram(this.program);
+
+    for (const uniform of this.getUniforms()) {
+      // TODO(miguel): split uniform data from update function.
+      if (uniform.update) {
+        uniform.update(gl, uniform);
+      }
+    }
+
+    for (const attr of this.getAttributes()) {
+      if (vertexBuffer[`${attr.name}s`]) {
+        vertexBuffer[`${attr.name}s`].bind(gl);
+
+        const {index, size, type, normalized, stride, offset} = attr;
+
+        // Enable this shader attribute.
+        gl.enableVertexAttribArray(index);
+
+        // enableVertexAttribArray binds this shader attribute and the currently
+        // bound ARRAY_BUFFER we are rendering. So before calling enable on an
+        // attribute, you must have called bindBuffer.
+        gl.vertexAttribPointer(index, size, type, normalized, stride, offset);
+      } else {
+        gl.disableVertexAttribArray(attr.index)
+      }
+    }
+
+    const {positions, indexes} = vertexBuffer;
+
+    // Send command to start rendering the vertices.
+    if (indexes) {
+      const {data} = indexes;
+      const vertexOffset = 0;
+
+      indexes.bind();
+
+      gl.drawElements(
+        primitiveType,
+        data.length,
+
+        // This MUST match the size of the index buffer.
+        gl.UNSIGNED_INT,
+        vertexOffset);
+    } else if (positions) {
+      const {data, componentsPerVertex} = positions;
+      const vertexOffset = 0;
+
+      positions.bind();
+
+      gl.drawArrays(
+        primitiveType,
+        vertexOffset,
+        data.length/componentsPerVertex);
+    } else {
+      throw new Error("neither indexes or positions that are configured. must provide one to render.");
+    }
   }
 
   static create(gl, vertexShader, fragmentShader) {
@@ -73,7 +131,7 @@ export class ShaderProgram {
 }
 
 // linkShaderProgram links a WebGL program with already compiled shaders.
-// If you have shader source you wish to compile, you can use 
+// If you have shader source you wish to compile, you can use
 // compileShaderSource and pass the results from that to this function.
 export function linkShaderProgram(
   gl,             // WebGL context, usually from a canvas.
@@ -89,7 +147,7 @@ export function linkShaderProgram(
     throw new Error("must specify a fragment shader to link");
   }
 
-  gl.attachShader(program, vertexShader);   // compileShaderSource(gl, gl.VERTEX_SHADER, vertexShaderSource)); 
+  gl.attachShader(program, vertexShader);   // compileShaderSource(gl, gl.VERTEX_SHADER, vertexShaderSource));
   gl.attachShader(program, fragmentShader); // compileShaderSource(gl, gl.FRAGMENT_SHADER, fragmentShaderSource));
   gl.linkProgram(program);
 

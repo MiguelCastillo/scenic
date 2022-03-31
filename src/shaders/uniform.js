@@ -9,11 +9,4 @@ export class ShaderUniform {
       index: gl.getUniformLocation(program, options.name),
     }, options);
   }
-
-  enable() {
-    if (this.update) {
-      this.update(this);
-      return;
-    }
-  }
 }

@@ -4,6 +4,7 @@ import * as vec3 from "../../../src/math/vector3.js";
 import {
   VertexBuffer,
   VertexBufferData,
+  VertexBufferIndexes,
 } from "../../../src/renderer/vertexbuffer.js";
 
 import {
@@ -84,18 +85,14 @@ class Animatable extends RenderableSceneNode {
 }
 
 export class Mesh extends Animatable {
-  constructor(options, shaderProgram) {
+  constructor(options) {
     super(Object.assign({}, options, {type:"fbx-mesh"}));
     this.vertexBuffers = [];
     this.renderables = [];
-
-    if (shaderProgram) {
-      this.shaderProgram = shaderProgram.clone();
-    }
   }
 
   withShaderProgram(shaderProgram) {
-    this.shaderProgram = shaderProgram.clone();
+    this._shaderProgram = shaderProgram.clone();
     return this;
   }
 
@@ -110,13 +107,14 @@ export class Mesh extends Animatable {
   }
 
   preRender(context) {
+    this.shaderProgram = this._shaderProgram.clone();
     super.preRender(context);
     this.vertexBuffers = [];
     this.renderables = [];
   }
 
   render(context) {
-    const {gl, sceneManager} = context;
+    const {sceneManager} = context;
     const {shaderProgram, worldMatrix} = this;
     const projectionMatrix = this.getProjectionMatrix();
 
@@ -138,7 +136,7 @@ export class Mesh extends Animatable {
     const lightPositions = lightsStates
       .map(({transform: {position}}, idx) => ({
         name: `lights[${idx}].position`,
-        update: ({index}) => {
+        update: (gl, {index}) => {
           gl.uniform3fv(index, vec3.normalize(...position));
         },
       }));
@@ -146,7 +144,7 @@ export class Mesh extends Animatable {
     const lightColors = lightsStates
       .map(({light: {color}}, idx) => ({
         name: `lights[${idx}].color`,
-        update: ({index}) => {
+        update: (gl, {index}) => {
           gl.uniform3fv(index, color);
         }
       }));
@@ -154,7 +152,7 @@ export class Mesh extends Animatable {
     const lightIntensities = lightsStates
       .map(({light: {intensity}}, idx) => ({
         name: `lights[${idx}].intensity`,
-        update: ({index}) => {
+        update: (gl, {index}) => {
           gl.uniform1f(index, intensity);
         },
       }));
@@ -162,22 +160,21 @@ export class Mesh extends Animatable {
     const lightEnabled = lightsStates
       .map((_, idx) => ({
         name: `lights[${idx}].enabled`,
-        update: ({index}) => {
+        update: (gl, {index}) => {
           gl.uniform1i(index, 1);
         },
       }));
 
     // Configure shader program with its current state.
     const program = shaderProgram
-      .clone()
       .addUniforms([{
           name: "projectionMatrix",
-          update: ({index}) => {
+          update: (gl, {index}) => {
             gl.uniformMatrix4fv(index, false, projectionMatrix.data);
           },
         }, {
           name: "bumpLighting",
-          update: ({index}) => {
+          update: (gl, {index}) => {
             gl.uniform1i(index, bumpLightingEnabled);
           },
         },
@@ -192,27 +189,26 @@ export class Mesh extends Animatable {
         .clone()
         .addUniforms([{
           name: "worldMatrix",
-          update: ({index}) => {
+          update: (gl, {index}) => {
             gl.uniformMatrix4fv(index, true, worldMatrix.data);
           },
         }]);
 
       this.vertexBuffers.forEach(vertexBuffer => {
-        RenderableSceneNode.render(gl, p, vertexBuffer, gl.TRIANGLES);
+        p.render(vertexBuffer);
       });
     }
 
     this.renderables.forEach(({vertexBuffer, worldMatrix, primitiveType}) => {
-      const p = program
+      program
         .clone()
         .addUniforms([{
           name: "worldMatrix",
-          update: ({index}) => {
+          update: (gl, {index}) => {
             gl.uniformMatrix4fv(index, true, worldMatrix.data);
           },
-        }]);
-
-      RenderableSceneNode.render(gl, p, vertexBuffer, primitiveType);
+        }])
+        .render(vertexBuffer, primitiveType);
     });
   }
 }
@@ -223,7 +219,7 @@ export class Gometry extends SceneNode {
     this.vertexBuffer = vertexBuffer;
     this.polygonVertexIndexes = polygonVertexIndexes;
     this.skinDeformers = [];
-    this.enableSkinning = false;
+    this.enableSkinning = true;
   }
 
   add(node) {
@@ -236,6 +232,7 @@ export class Gometry extends SceneNode {
   }
 
   render(context) {
+    const {gl} = context;
     let mesh = findParentByType(this, Mesh);
     if (mesh) {
       if (!this.enableSkinning || !this.skinDeformers.length) {
@@ -247,11 +244,11 @@ export class Gometry extends SceneNode {
         // by the deformations.
         for (const skin of this.skinDeformers) {
           for (const cluster of skin.items) {
-            // mesh.addVertexBuffer(this.vertexBuffer.clone().withIndexes(cluster.indexes));
+            // mesh.addVertexBuffer(cluster.vertexBuffer);
             mesh.addRenderable({
-              vertexBuffer: this.vertexBuffer.clone().withIndexes(cluster.indexes),
+              vertexBuffer: cluster.vertexBuffer,
               worldMatrix: cluster.worldMatrix,
-              primitiveType: context.gl.POINTS,
+              primitiveType: gl.POINTS,
             });
           }
         };
@@ -266,7 +263,12 @@ export class Armature extends Animatable {
     this.bonesByID = {};
     this.vertexBuffers = [];
     this.renderables = [];
-    this.renderEnabled = false;
+    this.renderEnabled = true;
+  }
+
+  withShaderProgram(shaderProgram) {
+    this._shaderProgram = shaderProgram.clone();
+    return this;
   }
 
   add(node) {
@@ -296,6 +298,9 @@ export class Armature extends Animatable {
   }
 
   preRender(context) {
+    // TODO(miguel): once we add uniform and attribute caching this cloning and
+    // storing of a new shader program can go away.
+    this.shaderProgram = this._shaderProgram.clone();
     super.preRender(context);
     this.vertexBuffers = [];
     this.renderables = [];
@@ -306,34 +311,32 @@ export class Armature extends Animatable {
       return;
     }
 
-    const {gl} = context;
     const {shaderProgram} = this;
+    const gl = shaderProgram.gl;
     const projectionMatrix = this.getProjectionMatrix();
 
     gl.disable(gl.DEPTH_TEST);
 
     // Configure shader program with its current state.
-    const program = shaderProgram
-      .clone()
+    shaderProgram
       .addUniforms([{
           name: "projectionMatrix",
-          update: ({index}) => {
+          update: (gl, {index}) => {
             gl.uniformMatrix4fv(index, false, projectionMatrix.data);
           },
         },
       ]);
 
     this.renderables.forEach(({vertexBuffer, worldMatrix, primitiveType}) => {
-      const p = program
+      shaderProgram
         .clone()
         .addUniforms([{
           name: "worldMatrix",
-          update: ({index}) => {
+          update: (gl, {index}) => {
             gl.uniformMatrix4fv(index, true, worldMatrix.data);
           },
-        }]);
-
-      RenderableSceneNode.render(gl, p, vertexBuffer, primitiveType);
+        }])
+        .render(vertexBuffer, primitiveType);
     });
 
     gl.enable(gl.DEPTH_TEST);
@@ -440,6 +443,11 @@ export class SkinDeformerCluster extends SceneNode {
     // bones then we need to take their average.
     const bone = armatute.bonesByID[this.boneIDs[0]];
     this.withMatrix(bone.worldMatrix.multiply(this.transform));
+
+    const geometry = findParentByType(this, Gometry);
+    if (geometry && !this.vertexBuffer) {
+      this.vertexBuffer = geometry.vertexBuffer.clone().withIndexes(new VertexBufferIndexes(context.gl, this.indexes));
+    }
   }
 }
 
@@ -593,18 +601,18 @@ export class Material extends SceneNode {
     if (mesh) {
       mesh.shaderProgram.addUniforms([{
         name: "ambientColor",
-        update: ({index}) => {
-          context.gl.uniform3fv(index, this.ambientColor);
+        update: (gl, {index}) => {
+          gl.uniform3fv(index, this.ambientColor);
         }
       }, {
         name: "materialReflectiveness",
-        update: ({index}) => {
-          context.gl.uniform1f(index, this.reflectionFactor);
+        update: (gl, {index}) => {
+          gl.uniform1f(index, this.reflectionFactor);
         },
       }, {
         name: "materialColor",
-        update: ({index}) => {
-          context.gl.uniform4fv(index, this.materialColor);
+        update: (gl, {index}) => {
+          gl.uniform4fv(index, this.materialColor);
         },
       }]);
     }
@@ -689,19 +697,18 @@ export class Texture extends SceneNode {
     let mesh = findParentByType(this, Mesh);
 
     if (mesh) {
-      const {gl} = context;
       const {textureID, type} = this;
 
       if (type === "normalmap") {
         mesh.shaderProgram.addUniforms([
           {
             name: `${type}.enabled`,
-            update: ({index}) => {
+            update: (gl, {index}) => {
               gl.uniform1i(index, 1);
             },
           }, {
             name: `${type}.id`,
-            update: ({index}) => {
+            update: (gl, {index}) => {
               gl.activeTexture(gl.TEXTURE0 + textureID);
               gl.bindTexture(gl.TEXTURE_2D, this.texture);
               gl.uniform1i(index, textureID);
@@ -712,12 +719,12 @@ export class Texture extends SceneNode {
         mesh.shaderProgram.addUniforms([
           {
             name: `textures[${textureID}].enabled`,
-            update: ({index}) => {
+            update: (gl, {index}) => {
               gl.uniform1i(index, 1);
             },
           }, {
             name: `textures[${textureID}].id`,
-            update: ({index}) => {
+            update: (gl, {index}) => {
               gl.activeTexture(gl.TEXTURE0 + textureID);
               gl.bindTexture(gl.TEXTURE_2D, this.texture);
               gl.uniform1i(index, textureID);

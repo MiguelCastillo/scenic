@@ -31,23 +31,4 @@ export class ShaderAttribute {
       offset: 0,
     }, options);
   }
-
-  bind() {
-    const {gl} = this.shaderProgram;
-    const {index, size, type, normalized, stride, offset} = this;
-
-    // Enable this shader attribute.
-    gl.enableVertexAttribArray(index);
-
-    // enableVertexAttribArray binds this shader attribute and the currently
-    // bound ARRAY_BUFFER we are rendering. So before calling enable on an
-    // attribute, you must have called bindBuffer.
-    gl.vertexAttribPointer(index, size, type, normalized, stride, offset);
-  }
-
-  unbind() {
-    const {gl} = this.shaderProgram;
-    const {index} = this;
-    gl.disableVertexAttribArray(index);
-  }
 }

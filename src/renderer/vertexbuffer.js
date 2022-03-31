@@ -127,38 +127,6 @@ export class VertexBuffer {
     return new VertexBuffer(this);
   }
 
-  render(gl, primitiveType=gl.TRIANGLES) {
-    const {positions, indexes} = this;
-
-    // Send command to start rendering the vertices.
-    if (indexes) {
-      const {data} = indexes;
-      const vertexOffset = 0;
-
-      indexes.bind();
-
-      gl.drawElements(
-        primitiveType,
-        data.length,
-        gl.UNSIGNED_INT,
-        vertexOffset);
-    } else if (positions) {
-      const {data, componentsPerVertex} = positions;
-      const vertexOffset = 0;
-
-      positions.bind();
-
-      gl.drawArrays(
-        primitiveType,
-        vertexOffset,
-        data.length/componentsPerVertex);
-    } else {
-      throw new Error("neither indexes or positions that are configured. must provide one to render.");
-    }
-
-    return this;
-  }
-
   static create(options) {
     return new VertexBuffer(options);
   }

@@ -20,7 +20,6 @@ import {
   VertexBuffer,
   VertexBufferData,
   TextureVertexBufferData,
-  VertexBufferIndexes,
 } from "../../../src/renderer/vertexbuffer.js";
 
 import {
@@ -329,7 +328,7 @@ function sceneNodeFromConnection(gl, rootConnection, sceneManager, relativeRootS
           }
 
           sceneNode = new SkinDeformerCluster({name},
-            indexes && new VertexBufferIndexes(gl, indexes),
+            indexes,
             weights,
             new mat4.Matrix4(transform).transpose(),
             new mat4.Matrix4(transformLink).transpose(),
