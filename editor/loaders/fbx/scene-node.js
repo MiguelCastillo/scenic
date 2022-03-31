@@ -211,10 +211,9 @@ export class Mesh extends Animatable {
 }
 
 export class Gometry extends SceneNode {
-  constructor(options, vertexBuffer, polygonVertexIndexes) {
+  constructor(options, vertexBuffer) {
     super(Object.assign({}, options, {type:"fbx-geometry"}));
     this.vertexBuffer = vertexBuffer;
-    this.polygonVertexIndexes = polygonVertexIndexes;
     this.skinDeformers = [];
     this.enableSkinning = true;
   }
