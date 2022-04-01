@@ -435,9 +435,11 @@ export class SkinDeformerCluster extends SceneNode {
     const bone = armatute.bonesByID[this.boneIDs[0]];
     this.withMatrix(bone.worldMatrix.multiply(this.transform));
 
-    const geometry = findParentByType(this, Gometry);
-    if (geometry && !this.vertexBuffer) {
-      this.vertexBuffer = geometry.vertexBuffer.clone().withIndexes(new VertexBufferIndexes(context.gl, this.indexes));
+    if (!this.vertexBuffer) {
+      const geometry = findParentByType(this, Gometry);
+      if (geometry) {
+        this.vertexBuffer = geometry.vertexBuffer.clone().withIndexes(new VertexBufferIndexes(context.gl, this.indexes));
+      }
     }
   }
 }
