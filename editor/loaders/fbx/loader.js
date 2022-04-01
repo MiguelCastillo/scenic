@@ -42,7 +42,7 @@ import {
 
 import {
   Mesh,
-  Gometry,
+  Geometry,
   SkinDeformer,
   SkinDeformerCluster,
   Material,
@@ -297,7 +297,7 @@ function sceneNodeFromConnection(gl, rootConnection, sceneManager, relativeRootS
           // indexes: polygonIndexes && new VertexBufferIndexes(gl, polygonIndexes),
         });
 
-        sceneNode = new Gometry({name}, vbo);
+        sceneNode = new Geometry({name}, vbo);
         break;
       }
       case "Deformer": {

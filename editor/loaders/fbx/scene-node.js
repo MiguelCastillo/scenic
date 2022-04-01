@@ -210,7 +210,7 @@ export class Mesh extends Animatable {
   }
 }
 
-export class Gometry extends SceneNode {
+export class Geometry extends SceneNode {
   constructor(options, vertexBuffer) {
     super(Object.assign({}, options, {type:"fbx-geometry"}));
     this.vertexBuffer = vertexBuffer;
@@ -436,7 +436,7 @@ export class SkinDeformerCluster extends SceneNode {
     this.withMatrix(bone.worldMatrix.multiply(this.transform));
 
     if (!this.vertexBuffer) {
-      const geometry = findParentByType(this, Gometry);
+      const geometry = findParentByType(this, Geometry);
       if (geometry) {
         this.vertexBuffer = geometry.vertexBuffer.clone().withIndexes(new VertexBufferIndexes(context.gl, this.indexes));
       }
