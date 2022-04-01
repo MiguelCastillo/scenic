@@ -10,6 +10,7 @@ import {
 import {
   Node as SceneNode,
   findParentByType,
+  findChildrenByType,
 } from "../../../src/scene/node.js";
 
 import {
@@ -219,11 +220,11 @@ export class Geometry extends SceneNode {
   }
 
   add(node) {
-    if (node instanceof SkinDeformer) {
-      this.skinDeformers.push(node._withParent(this));
-    }
-
     super.add(node);
+
+    if (node instanceof SkinDeformer) {
+      this.skinDeformers.push(node);
+    }
     return this;
   }
 
@@ -255,7 +256,8 @@ export class Geometry extends SceneNode {
 export class Armature extends Animatable {
   constructor(options) {
     super(Object.assign({}, options, {type:"fbx-armature"}));
-    this.bonesByID = {};
+    // _bonesByID gets initialized when its getter is first accessed.
+    this._bonesByID = null;
     this.vertexBuffers = [];
     this.renderables = [];
     this.renderEnabled = true;
@@ -266,19 +268,28 @@ export class Armature extends Animatable {
     return this;
   }
 
-  add(node) {
-    if (node instanceof Bone) {
-      if (this.bonesByID[node.id]) {
-        console.warn("====> duplicate bone", node);
-      }
-      this.registerBone(node);
+  get bonesByID() {
+    if (!this._bonesByID) {
+      this.registerBones();
     }
-    super.add(node);
-    return this;
+    return this._bonesByID;
   }
 
-  registerBone(bone) {
-    this.bonesByID[bone.id] = bone;
+  // registerBones will iterate thru the entire skeleton and will register
+  // each bone in the armature so that skin clusters can find references
+  // to the bone they are linked to.
+  // You can call this yourself to initialize the skeleton. Otherwise this
+  // happens automatically when bonesByID is called at runtime.
+  registerBones() {
+    this._bonesByID = null;
+    const bones = findChildrenByType(this, Bone);
+    if (bones.length) {
+      this._bonesByID = {};
+      for (const bone of bones) {
+        this._bonesByID[bone.id] = bone;
+      }
+    }
+
     return this;
   }
 
@@ -342,31 +353,6 @@ export class Bone extends Animatable {
   constructor(options, id) {
     super(Object.assign({}, options, {type:"fbx-bone"}));
     this.id = id;
-  }
-
-  add(node) {
-    // NOTE(miguel): bones have other bones are children. In addition to that
-    // they can have other nodes such as meshes directly in the hierarchy of
-    // a skeleton. With skin cluster however, bones are referential. Meaning
-    // that skin clusters aren't stored in bones and instead skin clusters
-    // store a reference to a bone in a skeloton. Once the skeleton matrices
-    // are all processed, skin clusters read the transform from the bones
-    // to determine their world matrix. And the easiest way for skin clusters
-    // to access bones is thru the armature which is why we register all the
-    // bones in it. Registering stores bones in an armature in a way that
-    // allows skin clusters find their associated bones efficiently.
-    if (node instanceof Bone) {
-      const armature = findParentByType(this, Armature);
-      // deformation clusters can also be parents of bones. And in those
-      // cases don't do any registration because those bones are referential.
-      // Meaning that deformation clusters will read the actual bones from
-      // armatures, which is the canonical copy.
-      if (armature) {
-        armature.registerBone(node);
-      }
-    }
-    super.add(node);
-    return this;
   }
 
   render(context) {
