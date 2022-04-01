@@ -85,6 +85,20 @@ export class Node {
     nodes.forEach(c => this.add(c));
     return this;
   }
+
+  remove(node) {
+    const index = this.items.indexOf(node);
+    if (index !== -1) {
+      this.items.splice(index, 1);
+      const byTypeIndex = this.childrenByType[node.type].indexOf(node);
+      if (byTypeIndex !== -1) {
+        this.childrenByType[node.type].splice(byTypeIndex, 1);
+      }
+
+      node._withParent(null);
+    }
+    return this;
+  }
 }
 
 export function findParentByType(sceneNode, ParentType) {
