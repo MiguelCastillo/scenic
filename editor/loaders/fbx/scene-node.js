@@ -124,11 +124,7 @@ export class Mesh extends Animatable {
     // added to the scene separately, so they currently don't have their
     // state configurable in the scene config.
     const parentNodeState = sceneManager.getNodeStateByName(this.parent.name);
-    let bumpLightingEnabled = false;
-
-    if (parentNodeState && parentNodeState.material) {
-      bumpLightingEnabled = parentNodeState.material.bumpLighting === true;
-    }
+    let bumpLightingEnabled = parentNodeState.material?.bumpLighting === true;
 
     const lightsStates = findParentItemsWithItemType(this, "light")
       .map(({name}) => sceneManager.getNodeStateByName(name));
@@ -214,14 +210,17 @@ export class Mesh extends Animatable {
 export class Geometry extends SceneNode {
   constructor(options, vertexBuffer) {
     super(Object.assign({}, options, {type:"fbx-geometry"}));
+    this._skinningEnabled = true;
     this.vertexBuffer = vertexBuffer;
     this.skinDeformers = [];
-    this.enableSkinning = true;
+  }
+
+  get skinningEnabled() {
+    return this._skinningEnabled && !!this.skinDeformers.length;
   }
 
   add(node) {
     super.add(node);
-
     if (node instanceof SkinDeformer) {
       this.skinDeformers.push(node);
     }
@@ -231,7 +230,7 @@ export class Geometry extends SceneNode {
   render(context) {
     let mesh = findParentByType(this, Mesh);
     if (mesh) {
-      if (!this.enableSkinning || !this.skinDeformers.length) {
+      if (!this.skinningEnabled) {
         mesh.addVertexBuffer(this.vertexBuffer);
       } else {
         // These deformers are things like a skin deformer which has
