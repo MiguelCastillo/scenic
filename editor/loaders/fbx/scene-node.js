@@ -298,7 +298,7 @@ export class Armature extends Animatable {
     this.renderables = [];
   }
 
-  render(context) {
+  render() {
     if (!this.renderEnabled) {
       return;
     }
@@ -334,6 +334,10 @@ export class Armature extends Animatable {
   }
 }
 
+// NOTE: PreRotation is _not_ supported so you will run into rendering issues
+// caused by incorrect matrix calculations when rendering a scene. To work
+// around that for now you can re-export the FBX model in Blender which will
+// convert PreRotation data into LcL Rotation data.
 export class Bone extends Animatable {
   constructor(options, id) {
     super(Object.assign({}, options, {type:"fbx-bone"}));
@@ -341,7 +345,7 @@ export class Bone extends Animatable {
   }
 
   add(node) {
-    // NOTE(miguel): bones have other ones are children. In addition to that
+    // NOTE(miguel): bones have other bones are children. In addition to that
     // they can have other nodes such as meshes directly in the hierarchy of
     // a skeleton. With skin cluster however, bones are referential. Meaning
     // that skin clusters aren't stored in bones and instead skin clusters
