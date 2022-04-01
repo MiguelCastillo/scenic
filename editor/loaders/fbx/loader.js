@@ -114,15 +114,7 @@ export function buildSceneNode(gl, fbxDocument, sceneNodeConfig, sceneManager) {
   sceneNode.addItems(
     nodeWrappersByID["0,0"].connections
       .map(connection => sceneNodeFromConnection(gl, connection, sceneManager, sceneNode))
-      .filter(Boolean)
-      .sort((a, b) => {
-        if (a instanceof Armature) {
-          return -1;
-        } else if (b instanceof Armature) {
-          return 1;
-        }
-        return 0;
-      }));
+      .filter(Boolean));
 
   const animationNode = new AnimationSceneNode({name: `Animation_n${animationID++}`});
   findChildrenByName(objects, "AnimationStack")
@@ -152,6 +144,11 @@ export function buildSceneNode(gl, fbxDocument, sceneNodeConfig, sceneManager) {
       stackNames: animationNode.items.map(item => item.name),
     });
   }
+
+  // Armature is basically the root bone of a skeleton in a rigged animation.
+  // We want to make sure we have one in the scene node if there is skeletal
+  // animation and there is no armature.
+  buildArmature(sceneNode);
 
   // We want to find all the meshes and initialize shader programs for each.
   initShaderProgramsForMeshes(gl, sceneNode);
@@ -609,6 +606,52 @@ function getLayerData(geometry, layerDataName) {
   */
 
   return components;
+}
+
+// buildArmature ensures that we have an armature node in the scene to
+// encapsulate and manage the skeletal animation bones. An Armature node
+// is the root bone of a skeletal animation, but this is sometimes missing
+// fomr files because armature is a blender specific thing but it is quite
+// useful in practice we are just going to use that term instead of adding
+// another special RootBone type of scene node.
+// buildArmature also sorts nodes to ensure that the armature is the first
+// child in the scene node we are processing. And that's because we need to
+// process all the bones in the animation before any other scene node that
+// relies on the animation data generated from rendering the armature.
+// TODO(miguel): find a better way to ensure armature nodes are always
+// processed before all other nodes in the scene node we are processing
+// in this function.
+function buildArmature(sceneNode) {
+  // Blender adds a type of Bone node called Armature that is the root
+  // node of a skeleton. But if the FBX file being loaded doesn't have
+  // an armature, we insert a fake one.
+  let armature = sceneNode.items.find(x => x instanceof Armature);
+  if (!armature) {
+    const rootBone = sceneNode.items.find(x => x instanceof Bone);
+
+    // If there is a skeletal bone, then we have skeletal animation. And we
+    // will insert an armature node to orchestrate things for us.
+    if (rootBone) {
+      armature = new Armature({name: "Default - Armature"});
+      armature.relativeRoot = sceneNode;
+      sceneNode.remove(rootBone).add(armature);
+      armature.add(rootBone);
+    }
+  }
+
+  if (armature) {
+    // We make sure that Armature is the fisrt node so that it can be the first
+    // one to be preRendered so that all other nodes that depend on a bone by
+    // reference can find the bone already updated for the scene.
+    sceneNode.items.sort((a, b) => {
+      if (a instanceof Armature) {
+        return -1;
+      } else if (b instanceof Armature) {
+        return 1;
+      }
+      return 0;
+    });
+  }
 }
 
 function initShaderProgramsForMeshes(gl, sceneNode) {
