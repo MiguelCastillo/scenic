@@ -258,9 +258,9 @@ export class Armature extends Animatable {
     super(Object.assign({}, options, {type:"fbx-armature"}));
     // _bonesByID gets initialized when its getter is first accessed.
     this._bonesByID = null;
+    this._renderEnabled = true;
     this.vertexBuffers = [];
     this.renderables = [];
-    this.renderEnabled = true;
   }
 
   withShaderProgram(shaderProgram) {
@@ -273,6 +273,10 @@ export class Armature extends Animatable {
       this.registerBones();
     }
     return this._bonesByID;
+  }
+
+  get renderEnabled() {
+    return this._renderEnabled && !!this.shaderProgram;
   }
 
   // registerBones will iterate thru the entire skeleton and will register
@@ -314,7 +318,7 @@ export class Armature extends Animatable {
       return;
     }
 
-    const {shaderProgram} = this;
+    const shaderProgram = this.shaderProgram;
     const gl = shaderProgram.gl;
     const projectionMatrix = this.getProjectionMatrix();
 
