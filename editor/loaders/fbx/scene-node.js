@@ -228,12 +228,11 @@ export class Gometry extends SceneNode {
   }
 
   render(context) {
-    const {gl} = context;
     let mesh = findParentByType(this, Mesh);
     if (mesh) {
       if (!this.enableSkinning || !this.skinDeformers.length) {
         mesh.addVertexBuffer(this.vertexBuffer);
-      } else if (this.skinDeformers.length) {
+      } else {
         // These deformers are things like a skin deformer which has
         // cluster deformers as children nodes. These clusters are the
         // things that have the indexes to vertices that are affected
@@ -244,7 +243,7 @@ export class Gometry extends SceneNode {
             mesh.addRenderable({
               vertexBuffer: cluster.vertexBuffer,
               worldMatrix: cluster.worldMatrix,
-              primitiveType: gl.POINTS,
+              primitiveType: context.gl.POINTS,
             });
           }
         };
