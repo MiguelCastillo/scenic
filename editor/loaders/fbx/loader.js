@@ -20,6 +20,7 @@ import {
   VertexBuffer,
   VertexBufferData,
   TextureVertexBufferData,
+  VertexBufferIndexes,
 } from "../../../src/renderer/vertexbuffer.js";
 
 import {
@@ -283,15 +284,20 @@ function sceneNodeFromConnection(gl, rootConnection, sceneManager, relativeRootS
         // the triangles represented by the indexes yet.
         validateIndexedTriangles(name, vertices, indexes);
 
-        connection.polygonIndexMap = traingleIndexesByPolygonVertex(polygonIndexes);
+        // This map allows us to convert from decoded FBX polygon indexes
+        // to direct indexes, which is what we use for rendering.
+        connection.polygonIndexMap = polygonVertexIndexesToRenderIndexes(polygonIndexes, indexes);
 
         const vbo = new VertexBuffer({
+          // The only things that's required here is `positions` and that's
+          // because those are the vertices for the geometry itself. If there
+          // are no vertices then there is no point in having a geometry node.
           positions: new VertexBufferData(gl, vertices),
-          normals: new VertexBufferData(gl, normals),
+          normals: normals && new VertexBufferData(gl, normals),
           tangents: tangents && new VertexBufferData(gl, tangents),
           bitangents: bitangents && new VertexBufferData(gl, bitangents),
           textureCoords: uv && new TextureVertexBufferData(gl, uv),
-          // indexes: polygonIndexes && new VertexBufferIndexes(gl, polygonIndexes),
+          indexes: indexes && new VertexBufferIndexes(gl, indexes),
         });
 
         sceneNode = new Geometry({name}, vbo);
@@ -316,7 +322,7 @@ function sceneNodeFromConnection(gl, rootConnection, sceneManager, relativeRootS
           // polygonIndexMap. We do this because clusters can be children
           // or Geometry or Skin Deformers.
           let geometryConnection = connection;
-          while (geometryConnection && !geometryConnection.polygonIndexMap) {
+          while (!geometryConnection?.polygonIndexMap) {
             geometryConnection = geometryConnection.pconnection;
           }
 
@@ -435,25 +441,40 @@ function buildGeometryLayers(fbxGeometry, normalSmoothing) {
   // [0, 4, 6, -3] => [0, 4, 6, 0, 6, 2]
   const polygonIndexes = decodePolygonVertexIndexes(polygonVertexIndex);
 
-  // Build out the list of vertices from the triangle indexes. This generates
-  // a lot of duplicated vertices, but this is expected because normal vectors
-  // often can't be shared so indexing the same coordinate will cause the
-  // same normal vertor to be used for polygons that face away from each
-  // other and this causes all sorts of issues with lighting.
-  const vertices = getIndexedComponents(polygonVertices, polygonIndexes, 3);
-
-  // When we extract indexed triangles from the polygons, the vertices
-  // are stored in a sequential order. Normals and all the other layers
-  // also get ordered sequentially. So we have to rebuild the polygon
-  // indexes to be sequential so that we can extract data from the
-  // different layers in the correct order.
+  // In an FBX file, there are multiple ways in which data can be stored which
+  // is optimal for different situations. These are defined by a combination of
+  // ReferenceInformationType and MappingInformationType.
+  // And this is complicated by the fact that vertices are indexed to optimize
+  // for vertices sharing because this causes issues with normal vectors. For
+  // exmaple, say you have two polygons that share the same vertex but are
+  // facing the opposite direction. This means that normal vectors face opposite
+  // direction. If we were to use polygong indexes the way that FBX stores them
+  // we end up with the same normal vector for these two faces causing all sorts
+  // of issues with collision detection and lighting.
   //
-  // TODO(miguel): is there a way to avoid remapping indexes so that
-  // we can just provide `polygonIndexes` to draw elements? Look
-  // out for cube shapes that have normal verctors that cannot be shared;
-  // more generally, any shape that has 90 degree angles where normals just
-  // point in unsharable directions.
-  const indexes = polygonVertexIndexToDirect(polygonVertexIndex);
+  // This means that we really cannot use polygon indexes as the canonical way
+  // to index data.
+  //
+  // To solve this problem we use the same indexing that Normal vectors usually
+  // have, which is Direct indexing. These are just sorted indexes that map to
+  // the order in which PolygonVertexIndex is stored which is the index for the
+  // polygon itself and not the vertex.
+  //
+  // See tests for decodePolygonVertexIndexes and polygonVertexIndexToDirect to
+  // better understand the differences between them.
+  //
+  // [0, 4, 6, -3] => [0, 1, 2, 0, 2, 3]
+  //
+  const directIndexes = polygonVertexIndexToDirect(polygonVertexIndex);
+
+  const vertices = [];
+  for (let i = 0; i < polygonIndexes.length; i++) {
+    const polygonIndexOffset = polygonIndexes[i]*3;
+    const directIndexOffset = directIndexes[i]*3;
+    for (let j = 0; j < 3; j++) {
+      vertices[directIndexOffset+j] = polygonVertices[polygonIndexOffset+j];
+    }
+  }
 
   // Texture coordinates.
   let uv = getLayerData(fbxGeometry, "UV");
@@ -463,31 +484,23 @@ function buildGeometryLayers(fbxGeometry, normalSmoothing) {
   // transform vertices and light positions to and from tangent space, which
   // is the space where normal vectors in normal map textures are defined.
   let tangents, bitangents, normals;
-  if (uv && uv.length) {
-    // Reindex direct polygon indexes to triangle indexes. This changes
-    // the items so that they align with triangles vertices which are
-    // sequentially stored.
-    uv = getIndexedComponents(uv, indexes, 2);
-
-    const [t,b,n] = getTBNVectorsFromTriangles(vertices, uv, normalSmoothing);
-    tangents = t;
-    bitangents = b;
-    normals = n;
-  }
+  // TODO(miguel): add support for indexes when creating TBN vectors
+  // for bump lighting.
+  //
+  // if (uv && uv.length) {
+  //   const [t,b,n] = getTBNVectorsFromTriangles(vertices, uv, normalSmoothing);
+  //   tangents = t;
+  //   bitangents = b;
+  //   normals = n;
+  // }
 
   if (!normals) {
     normals = getLayerData(fbxGeometry, "Normals");
-    if (normals) {
-      // Reindex direct polygon indexes to triangle indexes. This changes
-      // the items so that they align with triangles vertices which are
-      // sequentially stored.
-      normals = getIndexedComponents(normals, indexes, 3);
-    }
   }
 
   return {
     vertices,
-    indexes,
+    indexes: directIndexes,
     tangents,
     bitangents,
     uv, normals,
@@ -545,27 +558,27 @@ function validateIndexedTriangles(name, vertices, indexes) {
 
 const layerMap = {
   "UV": {
-    layer: "LayerElementUV",
-    index: "UVIndex",
+    layerName: "LayerElementUV",
+    indexName: "UVIndex",
     data: "UV",
     componentsPerVertex: 2,
   },
   "Normals": {
-    layer: "LayerElementNormal",
-    index: "NormalsIndex",
+    layerName: "LayerElementNormal",
+    indexName: "NormalsIndex",
     data: "Normals",
     componentsPerVertex: 3,
   },
   "Colors": {
-    layer: "LayerElementColor",
-    index: "ColorIndex",
+    layerName: "LayerElementColor",
+    indexName: "ColorIndex",
     data: "Colors",
     componentsPerVertex: 4,
   }
 }
 
 function getLayerData(geometry, layerDataName) {
-  const layer = findChildByName(geometry, layerMap[layerDataName].layer);
+  const layer = findChildByName(geometry, layerMap[layerDataName].layerName);
   if (!layer) {
     return null;
   }
@@ -587,7 +600,7 @@ function getLayerData(geometry, layerDataName) {
 
   const referenceInformationType = findPropertyValueByName(layer, "ReferenceInformationType");
   if (referenceInformationType === "IndexToDirect") {
-    const indexes = findPropertyValueByName(layer, layerMap[layerDataName].index);
+    const indexes = findPropertyValueByName(layer, layerMap[layerDataName].indexName);
     components = getIndexedComponents(components, indexes, componentsPerVertex);
   }
 
@@ -684,24 +697,16 @@ function initShaderProgramsForArmatures(gl, sceneNode) {
   });
 }
 
-// traingleIndexesByPolygonVertex maps polygon indexes (decoded fbx
-// geometry indexes PolygonVertexIndex) to indexes that map to the vertices
-// we give webgl for rendering. This needs to happen because when we
-// process the geometry layers from an FBX file all the vertices are stored
-// as sequential vertex coordinates for triangles, which means lots of
-// duplicate data. Unlike the decoded PolygonVertexIndex which are not
-// sequential and are optimized for sharing vertex coordinates.
-export function traingleIndexesByPolygonVertex(indexes) {
+// polygonVertexIndexesToRenderIndexes maps polygon indexes to indexes that
+// map to the vertices we give webgl for rendering. This needs to happen
+// because when we process the geometry layers from an FBX file all the
+// vertices are stored as sequential vertex coordinates for triangles, which
+// means lots of duplicate data. Unlike the decoded PolygonVertexIndex which
+// are not sequential and are optimized for sharing vertex coordinates.
+export function polygonVertexIndexesToRenderIndexes(polygonIndexes, renderIndexes) {
   const results = {};
-
-  for (let i = 0; i < indexes.length; i++) {
-    let vindex = indexes[i];
-
-    // We just pick the first index since these point to the same vertex.
-    if (!results.hasOwnProperty(vindex)) {
-      results[vindex] = i;
-    }
+  for (let i = 0; i < renderIndexes.length; i++) {
+    results[polygonIndexes[i]] = renderIndexes[i];
   }
-
   return results;
 }

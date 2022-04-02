@@ -18,7 +18,7 @@ import {
 
 import {
   buildSceneNode,
-  traingleIndexesByPolygonVertex,
+  polygonVertexIndexesToRenderIndexes,
 } from "./loader.js";
 
 import {
@@ -313,16 +313,15 @@ test("unpacked polygon indexes mapped to triangle indexes", () => {
     -0.0882214605808258,-0.05302649736404419,-2.0171525478363037,   // v1
   ]);
 
-  const remappedPolygonIndexes = traingleIndexesByPolygonVertex(triangulatedIndexes);
+  const remappedPolygonIndexes = polygonVertexIndexesToRenderIndexes(polygonVertexIndex, [2, 3, 1, 12, 5, 16, 13, 6]);
   expect(remappedPolygonIndexes).toEqual({
-    "0": 0,
-    "1": 19,
-    "2": 5,
-    "3": 6,
-    "4": 1,
-    "5": 17,
-    "6": 2,
-    "7": 11,
+    "0": 2,
+    "2": 16,
+    "3": 5,
+    "4": 3,
+    "6": 13,
+    "-3": 12,
+    "-8": 6
   });
 });
 

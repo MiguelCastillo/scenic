@@ -246,7 +246,7 @@ export class Geometry extends SceneNode {
               primitiveType: context.gl.POINTS,
             });
           }
-        };
+        }
       }
     }
   }
@@ -431,7 +431,12 @@ export class SkinDeformerCluster extends SceneNode {
     if (!this.vertexBuffer) {
       const geometry = findParentByType(this, Geometry);
       if (geometry) {
-        this.vertexBuffer = geometry.vertexBuffer.clone().withIndexes(new VertexBufferIndexes(context.gl, this.indexes));
+        this.vertexBuffer = geometry.vertexBuffer
+          .clone()
+          .withIndexes(
+            new VertexBufferIndexes(
+              context.gl,
+              this.indexes));
       }
     }
   }
