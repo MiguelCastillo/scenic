@@ -7,7 +7,7 @@ import {
   findChildByName,
   findChildrenByName,
   decodePolygonVertexIndexes,
-  reindexPolygonVertex,
+  polygonVertexIndexToDirect,
 } from "./fbxfile.js";
 
 import {
@@ -182,7 +182,7 @@ test("match calculated normals to normals from file", () => {
     const normals = findPropertyValueByName(normalLayer, "Normals");
 
     const polygonVertexIndex = findPropertyValueByName(geometry, "PolygonVertexIndex");
-    const normalIndexes = reindexPolygonVertex(polygonVertexIndex);
+    const normalIndexes = polygonVertexIndexToDirect(polygonVertexIndex);
     const vertexIndexes = decodePolygonVertexIndexes(polygonVertexIndex);
 
     const a = getIndexed3DComponents(normals, normalIndexes);
@@ -334,7 +334,7 @@ test("render by unpacked polygon index mind bender", () => {
     5, 0, 1, // ti11
   ]);
 
-  const reindexedPolygonIndexes = reindexPolygonVertex(polygonVertexIndex);
+  const reindexedPolygonIndexes = polygonVertexIndexToDirect(polygonVertexIndex);
   expect(reindexedPolygonIndexes).toEqual([
      0,  1,  2,  // ti0
      0,  2,  3,  // ti1

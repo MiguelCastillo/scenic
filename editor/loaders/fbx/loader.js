@@ -33,7 +33,7 @@ import {
   findChildrenByName,
   findPropertyValueByName,
   decodePolygonVertexIndexes,
-  reindexPolygonVertex,
+  polygonVertexIndexToDirect,
 } from "../../../src/formats/fbxfile.js";
 
 import {
@@ -453,7 +453,7 @@ function buildGeometryLayers(fbxGeometry, normalSmoothing) {
   // out for cube shapes that have normal verctors that cannot be shared;
   // more generally, any shape that has 90 degree angles where normals just
   // point in unsharable directions.
-  const indexes = reindexPolygonVertex(polygonVertexIndex);
+  const indexes = polygonVertexIndexToDirect(polygonVertexIndex);
 
   // Texture coordinates.
   let uv = getLayerData(fbxGeometry, "UV");
