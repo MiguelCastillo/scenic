@@ -395,7 +395,7 @@ const byteCountTable = {
 // Support JSON serialization of BigInt
 BigInt.prototype.toJSON = function() { return this.toString(); }
 
-// convertPolygonIndexesToTriangleIndexes returns a new array of triangle
+// decodePolygonVertexIndexes returns a new array of triangle
 // indexes created from PolygonVertexIndex.
 //
 // Polygon vertex indexes in FBX files are encoded with a negative numbers
@@ -404,7 +404,7 @@ BigInt.prototype.toJSON = function() { return this.toString(); }
 // These polygons can be triangles, quads, and other polygons that can be
 // represented with triangles. So we need to remap these polygons to triangle
 // indexes since that's all webgl really supports.
-// And that's exactly what convertPolygonIndexesToTriangleIndexes does.
+// And that's exactly what decodePolygonVertexIndexes does.
 //
 // Consider the following PolygonVertexIndex
 // [0, 4, 6, -3]
@@ -417,7 +417,7 @@ BigInt.prototype.toJSON = function() { return this.toString(); }
 //    [0, 6, 2].
 // 4. The final array of indexes
 //    [0, 4, 6, 0, 6, 2]
-export function convertPolygonIndexesToTriangleIndexes(indexes) {
+export function decodePolygonVertexIndexes(indexes) {
   let triangleIndexes = [];
 
   for (let i = 0, offset = 0; i < indexes.length; i++) {
@@ -447,7 +447,7 @@ export function convertPolygonIndexesToTriangleIndexes(indexes) {
 // assumption that geometry data is also expanded out and the vertices for
 // the model are stored in the order in which indexes are iterated so that
 // the first indexed vertex is the first item in the new array of vertices
-// regardless of the indexed value. See convertPolygonIndexesToTriangleIndexes
+// regardless of the indexed value. See decodePolygonVertexIndexes
 // that is usually called to do such processing on PolygonVertexIndex where
 // we convert those indexes from N vertex polygons to triangle vertex polygons.
 export function reindexPolygonVertex(indexes) {

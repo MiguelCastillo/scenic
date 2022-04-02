@@ -32,7 +32,7 @@ import {
   findChildByName,
   findChildrenByName,
   findPropertyValueByName,
-  convertPolygonIndexesToTriangleIndexes,
+  decodePolygonVertexIndexes,
   reindexPolygonVertex,
 } from "../../../src/formats/fbxfile.js";
 
@@ -433,7 +433,7 @@ function buildGeometryLayers(fbxGeometry, normalSmoothing) {
   let polygonVertices = findPropertyValueByName(fbxGeometry, "Vertices");
 
   // [0, 4, 6, -3] => [0, 4, 6, 0, 6, 2]
-  const polygonIndexes = convertPolygonIndexesToTriangleIndexes(polygonVertexIndex);
+  const polygonIndexes = decodePolygonVertexIndexes(polygonVertexIndex);
 
   // Build out the list of vertices from the triangle indexes. This generates
   // a lot of duplicated vertices, but this is expected because normal vectors

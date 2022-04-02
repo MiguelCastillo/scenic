@@ -6,7 +6,7 @@ import {
   findPropertyValueByName,
   findChildByName,
   findChildrenByName,
-  convertPolygonIndexesToTriangleIndexes,
+  decodePolygonVertexIndexes,
   reindexPolygonVertex,
 } from "./fbxfile.js";
 
@@ -183,7 +183,7 @@ test("match calculated normals to normals from file", () => {
 
     const polygonVertexIndex = findPropertyValueByName(geometry, "PolygonVertexIndex");
     const normalIndexes = reindexPolygonVertex(polygonVertexIndex);
-    const vertexIndexes = convertPolygonIndexesToTriangleIndexes(polygonVertexIndex);
+    const vertexIndexes = decodePolygonVertexIndexes(polygonVertexIndex);
 
     const a = getIndexed3DComponents(normals, normalIndexes);
     const b = normalizeTriangleVertices(getIndexed3DComponents(vertices, vertexIndexes));
@@ -246,7 +246,7 @@ test("parse binary cube7500", () => {
   expect(findPropertyValueByName(geometry, "PolygonVertexIndex")).toEqual([0, 1, 3, -3, 2, 3, 5, -5, 4, 5, 7, -7, 6, 7, 1, -1, 1, 7, 5, -4, 6, 0, 2, -5]);
   expect(findPropertyValueByName(geometry, "Edges")).toEqual([0, 2, 6, 10, 3, 1, 7, 5, 11, 9, 15, 13]);
 
-  const triangulatedIndexes = convertPolygonIndexesToTriangleIndexes(findPropertyValueByName(geometry, "PolygonVertexIndex"));
+  const triangulatedIndexes = decodePolygonVertexIndexes(findPropertyValueByName(geometry, "PolygonVertexIndex"));
   expect(triangulatedIndexes).toEqual(
     [
       0, 1, 3,
@@ -265,9 +265,9 @@ test("parse binary cube7500", () => {
   )
 });
 
-test("convertPolygonIndexesToTriangleIndexes for a quad", () => {
+test("decodePolygonVertexIndexes for a quad", () => {
   const polygonIndexes = [8,7,3,-7];
-  const triangulatedIndexes = convertPolygonIndexesToTriangleIndexes(polygonIndexes);
+  const triangulatedIndexes = decodePolygonVertexIndexes(polygonIndexes);
   expect(triangulatedIndexes).toEqual(
     [
       8,7,3,
@@ -276,9 +276,9 @@ test("convertPolygonIndexesToTriangleIndexes for a quad", () => {
   );
 });
 
-test("convertPolygonIndexesToTriangleIndexes for a cube", () => {
+test("decodePolygonVertexIndexes for a cube", () => {
   const polygonIndexes = [0, 1, 3, -3, 2, 3, 5, -5, 4, 5, 7, -7, 6, 7, 1, -1, 1, 7, 5, -4, 6, 0, 2, -5];
-  const triangulatedIndexes = convertPolygonIndexesToTriangleIndexes(polygonIndexes);
+  const triangulatedIndexes = decodePolygonVertexIndexes(polygonIndexes);
   expect(triangulatedIndexes).toEqual(
     [
       0, 1, 3,
@@ -318,7 +318,7 @@ test("render by unpacked polygon index mind bender", () => {
     5, 4, 0, -2, // ti10, ti11
   ];
 
-  const triangulatedIndexes = convertPolygonIndexesToTriangleIndexes(polygonVertexIndex);
+  const triangulatedIndexes = decodePolygonVertexIndexes(polygonVertexIndex);
   expect(triangulatedIndexes).toEqual([
     0, 4, 6, // ti0
     0, 6, 2, // ti1

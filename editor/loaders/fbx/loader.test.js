@@ -12,7 +12,7 @@ import {
 
 import {
   FbxFile,
-  convertPolygonIndexesToTriangleIndexes,
+  decodePolygonVertexIndexes,
   Node as FbxNode,
 } from "../../../src/formats/fbxfile.js";
 
@@ -242,7 +242,7 @@ test("unpacked polygon indexes mapped to triangle indexes", () => {
     5, 4, 0, -2, // ti10, ti11
   ];
 
-  const triangulatedIndexes = convertPolygonIndexesToTriangleIndexes(polygonVertexIndex);
+  const triangulatedIndexes = decodePolygonVertexIndexes(polygonVertexIndex);
   expect(triangulatedIndexes).toEqual([
     0, 4, 6, // ti0
     0, 6, 2, // ti1
