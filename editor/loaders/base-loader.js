@@ -5,13 +5,13 @@
 import {Timer} from "../../src/timer.js";
 
 export class BaseLoader {
-  load(file, options={}) {
+  load() {
     throw new Error("Must implement load");
   }
 }
 
 export class TextFileLoader extends BaseLoader {
-  load(file, options={}) {
+  load(file) {
     const timer = new Timer();
     return fetch(file).then(res => {
       // eslint-disable-next-line no-console
@@ -22,7 +22,7 @@ export class TextFileLoader extends BaseLoader {
 }
 
 export class BrinaryFileLoader extends BaseLoader {
-  load(file, options={}) {
+  load(file) {
     const timer = new Timer();
     return fetch(file).then(res => {
       // eslint-disable-next-line no-console

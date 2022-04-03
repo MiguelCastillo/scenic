@@ -1,7 +1,11 @@
+// eslint-disable-next-line no-unused-vars
 import React from "react";
 import ReactDOM from "react-dom";
+// eslint-disable-next-line no-unused-vars
 import {SceneGraph} from "./app/app.jsx";
+// eslint-disable-next-line no-unused-vars
 import {Error} from "./app/error.jsx";
+// eslint-disable-next-line no-unused-vars
 import {Loading} from "./app/loading.jsx";
 import {onReady} from "../src/dom/ready.js";
 import webgl from "../src/webgl.js";

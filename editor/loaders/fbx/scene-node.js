@@ -510,6 +510,7 @@ export class AnimationLayer extends SceneNode {
 
   add(node) {
     if (!(node instanceof AnimationCurveNode)) {
+      // eslint-disable-next-line
       console.error("only AnimationCurveNode can be added as child nodes in AnimationLayer");
       return this;
     }
@@ -581,7 +582,7 @@ export class Material extends SceneNode {
     return this;
   }
 
-  render(context) {
+  render() {
     const mesh = findParentByType(this, Mesh);
 
     if (mesh) {
@@ -679,9 +680,8 @@ export class Texture extends SceneNode {
     return newtexturenode;
   }
 
-  render(context) {
+  render() {
     let mesh = findParentByType(this, Mesh);
-
     if (mesh) {
       const {textureID, type} = this;
 
