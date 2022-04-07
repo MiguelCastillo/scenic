@@ -1,7 +1,7 @@
 #version 300 es
 
-in vec4 position;
-in vec4 color;
+in vec3 position;
+in vec3 color;
 
 out vec4 fragmentColor;
 
@@ -9,7 +9,6 @@ uniform mat4 projectionMatrix;
 uniform mat4 worldMatrix;
 
 void main() {
-  mat4 transform = projectionMatrix * worldMatrix;
-  gl_Position = transform * position;
-  fragmentColor = color;
+  gl_Position = projectionMatrix * worldMatrix * vec4(position, 1.0);
+  fragmentColor = vec4(color, 1.0);
 }

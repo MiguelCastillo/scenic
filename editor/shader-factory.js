@@ -58,9 +58,9 @@ function parseVertexShaderAttributes(vertexShaderSource) {
     // tester for regex to parse out attributes.
     // https://regex101.com/r/jmad0Z/1
     return [
-      ...vertexShaderSource.matchAll(/\s*in\s+(\w+)\s+(\w+);/g)
+      ...vertexShaderSource.matchAll(/^\s*^\/?in\s+(\w+)\s+(\w+);/gm)
     ].map(([,type,name]) => {
-      let size = 3;
+      let size;
       switch (type) {
         case "vec2":
           size = 2;
@@ -69,14 +69,7 @@ function parseVertexShaderAttributes(vertexShaderSource) {
           size = 3;
           break;
         case "vec4":
-          // TODO(miguel): bad bad bad.  I took the quick shortcut
-          // to make everything size 3 in the attributes for the
-          // shader program. That's because until now everything had
-          // been 3D vertex data. But now we have texture coordinates
-          // which are 2D (uv) coordinates, so that shortcut breaks
-          // that. To make this better, the vector sizes should match
-          // the component count in the buffers.
-          size = 3;
+          size = 4;
           break;
       }
 

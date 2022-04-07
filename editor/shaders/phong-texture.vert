@@ -26,12 +26,12 @@ struct Light {
   vec3 position;
 };
 
-in vec4 position;
-in vec4 normal;
-in vec4 color;
+in vec3 position;
+in vec3 normal;
+in vec3 color;
 in vec2 textureCoord;
-in vec4 tangent;
-in vec4 bitangent;
+in vec3 tangent;
+in vec3 bitangent;
 
 uniform bool bumpLighting;
 uniform mat4 projectionMatrix;
@@ -54,11 +54,10 @@ out vec3 lightPosition4;
 out vec3 lightPosition5;
 
 void main() {
-  mat4 transform = projectionMatrix * worldMatrix;
-  fragmentPosition = transform * position;
-  fragmentNormal = worldMatrix * vec4(normal.xyz, 0.0);
+  fragmentPosition = projectionMatrix * worldMatrix * vec4(position, 1.0);
+  fragmentNormal = worldMatrix * vec4(normal, 0.0);
   fragmentTextureCoord = textureCoord;
-  fragmentColor = color;
+  fragmentColor = vec4(color, 1.0);
 
   lightPosition0 = lights[0].position;
   lightPosition1 = lights[1].position;
