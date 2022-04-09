@@ -66,7 +66,7 @@ class Animatable extends RenderableSceneNode {
 
     if (this.currentAnimationStack !== stack) {
       this.currentAnimationStack = stack;
-      stack.playback.reset(context.ms);
+      // stack.playback.reset(context.ms);
     }
 
     // https://help.autodesk.com/view/FBX/2017/ENU/?guid=__cpp_ref__transformations_2main_8cxx_example_html

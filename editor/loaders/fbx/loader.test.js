@@ -65,7 +65,7 @@ function createSceneContextForTests(...sceneConfigItems) {
 
 describe("fbx Loader", () => {
   test("loading cube.fbx", () => {
-    const model = loadModel("../../../resources/fbx/cube.fbx");
+    const model = loadModel("./__testdata__/cube.fbx");
     expect(model).toBeInstanceOf(FbxNode);
 
     const sceneNodeFxbCube = {
@@ -86,7 +86,7 @@ describe("fbx Loader", () => {
   });
 
   describe("cube armature animation", () => {
-    const model = loadModel("../../../resources/fbx/cubearmature_simple.fbx");
+    const model = loadModel("./__testdata__/cubearmature_simple.fbx");
     const sceneNodeConfig = {
       name: "cube armature",
       type: "group",
@@ -98,11 +98,11 @@ describe("fbx Loader", () => {
     mockShaders(["phong-lighting", "flat-material"]);
     buildSceneNode(gl, model, sceneNodeConfig, sceneManager);
 
-    sceneManager.updateNodeStateByName("Animation_n0", {
+    const sceneNode = sceneManager.getNodeByName(sceneNodeConfig.name);
+
+    sceneManager.updateNodeStateByName(sceneNode.animation.name, {
       stackName: "Armature|ArmatureAction - AnimStack",
     });
-
-    const sceneNode = sceneManager.getNodeByName(sceneNodeConfig.name);
 
     const bubbleDown = (context) => {
       return (node /*, parent*/) => {
@@ -117,6 +117,7 @@ describe("fbx Loader", () => {
     let testData;
 
     beforeEach(() => {
+      // This data comes directly from the FBX file.
       testData = {
         "Armature - Model_Null": {
           "rotation": [-90,0,0],
@@ -192,21 +193,22 @@ describe("fbx Loader", () => {
       // I extrapolated these time to rotation numbers from the keyframes in
       // blender by looking at the rotation values at these times.
       const timerotation = [
-        [250, 28],
-        [500, 90],
-        [750, 152],
-        [1000, 180],
+        [250, 28, [0, 30, 0, 4.7, -26.5, 0, -14.1, 30, -14.1, 0, 26.5, 0, 0, 0, 0, 1]],
+        [500, 90, [0, 30, 0, 15, 0, 0, -30, 30, -30,  0, 0, 0, 0, 0, 0, 1]],
+        [750, 152, [0, 30, 0, 25.3, 26.5, 0, -14.1, 30, -14.1, 0, -26.5, 0, 0, 0, 0, 1]],
+        [1000, 180, [0, 30, 0, 30, 30, 0, 0, 30, 0, 0, -30, 0, 0, 0, 0, 1]],
       ];
 
       // The right bone is rotated along with Y axis. The tricky things about
       // this animation is that the bone is rotated 90 degrees on its Z axis
       // so if there are issues with animation transform logic then rotating on
       // Y will likely break.
-      for (const [ms, degrees] of timerotation) {
+      for (const [ms, degrees, expectedPreCalculated] of timerotation) {
         let context = {gl, sceneManager, ms};
+        sceneNode.animation.items[0].playback.play(0);
         bubbleTraversal(bubbleDown(context), () => {})(sceneNode);
-        let tdata = testData["Right Bone - Model_LimbNode"];
 
+        let tdata = testData["Right Bone - Model_LimbNode"];
         actual = mat4.Matrix4.identity()
           .translate(...tdata.position)
           .rotate(...tdata.rotation)
@@ -215,7 +217,9 @@ describe("fbx Loader", () => {
 
         actual = tdata.node.parent.worldMatrix.multiply(actual).data.map(float1).map(_fixZeros);
         expected = tdata.node.worldMatrix.data.map(float1).map(_fixZeros);
+
         expect(expected).toEqual(actual);
+        expect(expectedPreCalculated).toEqual(actual);
       }
     });
   });
