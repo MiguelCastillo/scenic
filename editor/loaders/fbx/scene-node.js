@@ -4,7 +4,6 @@ import * as vec3 from "../../../src/math/vector3.js";
 import {
   VertexBuffer,
   VertexBufferData,
-  VertexBufferIndexes,
 } from "../../../src/renderer/vertexbuffer.js";
 
 import {
@@ -89,7 +88,7 @@ export class Mesh extends Animatable {
   constructor(options) {
     super(Object.assign({}, options, {type:"fbx-mesh"}));
     this.vertexBuffers = [];
-    this.renderables = [];
+    this.boneMatrices = [];
   }
 
   withShaderProgram(shaderProgram) {
@@ -102,15 +101,18 @@ export class Mesh extends Animatable {
     return this;
   }
 
-  addRenderable(renderable) {
-    this.renderables.push(renderable);
+  addBoneMatrix(boneMatrix, idx) {
+    if (idx !== this.boneMatrices.length) {
+      console.warn("====> bone matrix index is not correct");
+    }
+    this.boneMatrices[idx] = boneMatrix;
     return this;
   }
 
   preRender(context) {
     super.preRender(context);
     this.vertexBuffers = [];
-    this.renderables = [];
+    this.boneMatrices = [];
   }
 
   render(context) {
@@ -181,7 +183,7 @@ export class Mesh extends Animatable {
       ]);
 
     if (this.vertexBuffers.length) {
-      const p = program
+      let p = program
         .addUniforms([{
           name: "worldMatrix",
           update: (gl, {index}) => {
@@ -189,21 +191,30 @@ export class Mesh extends Animatable {
           },
         }]);
 
+      if (this.boneMatrices.length) {
+        const boneMatrixUniforms = this.boneMatrices.map((m, i) => {
+          return {
+            name: `boneMatrices[${i}]`,
+            update: (gl, {index}) => {
+              gl.uniformMatrix4fv(index, true, m.data);
+            },
+          };
+        });
+
+        p = p
+          .addUniforms(boneMatrixUniforms)
+          .addUniforms([{
+            name: "enabledSkinAnimation",
+            update: (gl, {index}) => {
+              gl.uniform1i(index, 1);
+            }
+          }]);
+      }
+
       this.vertexBuffers.forEach(vertexBuffer => {
         p.render(vertexBuffer);
       });
     }
-
-    this.renderables.forEach(({vertexBuffer, worldMatrix, primitiveType}) => {
-      program
-        .addUniforms([{
-          name: "worldMatrix",
-          update: (gl, {index}) => {
-            gl.uniformMatrix4fv(index, true, worldMatrix.data);
-          },
-        }])
-        .render(vertexBuffer, primitiveType);
-    });
   }
 }
 
@@ -227,24 +238,17 @@ export class Geometry extends SceneNode {
     return this;
   }
 
-  render(context) {
+  render() {
     let mesh = findParentByType(this, Mesh);
     if (mesh) {
-      if (!this.skinningEnabled) {
-        mesh.addVertexBuffer(this.vertexBuffer);
-      } else {
-        // These deformers are things like a skin deformer which has
-        // cluster deformers as children nodes. These clusters are the
-        // things that have the indexes to vertices that are affected
-        // by the deformations.
+      mesh.addVertexBuffer(this.vertexBuffer);
+      if (this.skinningEnabled) {
+        // Skin deformers deform the mesh for the model we are processing.
         for (const skin of this.skinDeformers) {
           for (const cluster of skin.items) {
-            // mesh.addVertexBuffer(cluster.vertexBuffer);
-            mesh.addRenderable({
-              vertexBuffer: cluster.vertexBuffer,
-              worldMatrix: cluster.worldMatrix,
-              primitiveType: context.gl.POINTS,
-            });
+            if (cluster.boneIndex != null) {
+              mesh.addBoneMatrix(cluster.worldMatrix, cluster.boneIndex);
+            }
           }
         }
       }
@@ -257,7 +261,7 @@ export class Armature extends Animatable {
     super(Object.assign({}, options, {type:"fbx-armature"}));
     // _bonesByID gets initialized when its getter is first accessed.
     this._bonesByID = null;
-    this._renderEnabled = true;
+    this._renderEnabled = false;
     this.vertexBuffers = [];
     this.renderables = [];
   }
@@ -407,6 +411,11 @@ export class SkinDeformerCluster extends SceneNode {
     this.transformLink = transformLink;
   }
 
+  withBoneIndex(index) {
+    this.boneIndex = index;
+    return this;
+  }
+
   add(node) {
     if (node instanceof Bone) {
       this.boneIDs.push(node.id);
@@ -427,18 +436,6 @@ export class SkinDeformerCluster extends SceneNode {
     // bones then we need to take their average.
     const bone = armatute.bonesByID[this.boneIDs[0]];
     this.withMatrix(bone.worldMatrix.multiply(this.transform));
-
-    if (!this.vertexBuffer) {
-      const geometry = findParentByType(this, Geometry);
-      if (geometry) {
-        this.vertexBuffer = geometry.vertexBuffer
-          .clone()
-          .withIndexes(
-            new VertexBufferIndexes(
-              context.gl,
-              this.indexes));
-      }
-    }
   }
 }
 

@@ -18,6 +18,7 @@ import {
 
 import {
   buildSceneNode,
+  getMostInfluencialBones,
   polygonVertexIndexesToRenderIndexes,
 } from "./loader.js";
 
@@ -222,6 +223,28 @@ describe("fbx Loader", () => {
         expect(expectedPreCalculated).toEqual(actual);
       }
     });
+  });
+});
+
+describe("getMostInfluencialBones", () => {
+  test("with less than max number of weights", () => {
+    const {weights, boneids} = getMostInfluencialBones({
+      weights: [0, 1, 3],
+      boneids: [2, 1, 4],
+    });
+
+    expect(weights).toEqual([3, 1, 0]);
+    expect(boneids).toEqual([4, 1, 2]);
+  });
+
+  test("with more than max number of weights", () => {
+    const {weights, boneids} = getMostInfluencialBones({
+      weights: [0, 1, 5, 3, 9, 7],
+      boneids: [2, 1, 4, 3, 8, 0],
+    });
+
+    expect(weights).toEqual([9, 7, 5, 3]);
+    expect(boneids).toEqual([8, 0, 4, 3]);
   });
 });
 

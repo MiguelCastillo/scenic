@@ -59,43 +59,21 @@ export class TextureVertexBufferData extends VertexBufferArray {
 // gl.drawElements. Otherwise, we will render the positions with gl.drawArrays.
 export class VertexBuffer {
   constructor(options={}) {
-    const {
-      indexes=null,
-      positions=null,
-      colors=null,
-      normals=null,
-      textureCoords=null,
-      tangents=null,
-      bitangents=null,
-    } = options;
-
-    if (indexes) {
-      this.indexes = indexes;
-    }
-
-    if (positions) {
-      this.positions = positions;
-    }
-
-    if (normals) {
-      this.normals = normals;
-    }
-
-    if (colors) {
-      this.colors = colors;
-    }
-
-    if (textureCoords) {
-      this.textureCoords = textureCoords;
-    }
-
-    if (tangents) {
-      this.tangents = tangents;
-    }
-
-    if (bitangents) {
-      this.bitangents = bitangents;
-    }
+    [
+      "indexes",
+      "positions",
+      "colors",
+      "normals",
+      "textureCoords",
+      "tangents",
+      "bitangents",
+      "weights",
+      "boneids",
+    ]
+    .filter(component => options[component])
+    .forEach(component => {
+      this[component] = options[component];
+    });
   }
 
   withPositions(positions) {
@@ -121,6 +99,16 @@ export class VertexBuffer {
   withIndexes(indexes) {
     this.indexes = indexes;
     return this;
+  }
+
+  withWeights(weights) {
+    this.weights = weights;
+    return this;
+  }
+
+  withBoneIDs(boneids) {
+    this.boneids = boneids;
+    return;
   }
 
   clone() {

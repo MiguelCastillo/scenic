@@ -75,6 +75,19 @@ export class Loader extends BrinaryFileLoader {
 
 let animationID = 0;
 
+// We cache some extra information from the FBX file that is needed after
+// the file is processed. For example, we need vertex indexing information for
+// skin animation.
+//
+// TODO(miguel): rework FBX connection processing so that we don't have these
+// lingering global variables hanging without context.
+const _clusterMetadata = {};
+const _geometryMetadata = {};
+
+// We cache textures by filename so that if different parts of an FBX file
+// needs the same texture we can just use what's already cache instead.
+const _textureCache = {};
+
 export function buildSceneNode(gl, fbxDocument, sceneNodeConfig, sceneManager) {
   const sceneNode = sceneManager.getNodeByName(sceneNodeConfig.name);
 
@@ -151,12 +164,14 @@ export function buildSceneNode(gl, fbxDocument, sceneNodeConfig, sceneManager) {
   // animation and there is no armature.
   buildArmature(sceneNode);
 
+  // After the armature is built, we will then initialize all the internal
+  // bone indexes and weights for geometry deformation.
+  buildSkinAnimation(gl, sceneNode);
+
   // We want to find all the meshes and initialize shader programs for each.
   initShaderProgramsForMeshes(gl, sceneNode);
   initShaderProgramsForArmatures(gl, sceneNode);
 }
-
-const _textureCache = {};
 
 // sceneNodeFromConnection traverses the fbx tree of nodes depth first
 // creating scene nodes for each relevant of the fbx file.
@@ -286,7 +301,10 @@ function sceneNodeFromConnection(gl, rootConnection, sceneManager, relativeRootS
 
         // This map allows us to convert from decoded FBX polygon indexes
         // to direct indexes, which is what we use for rendering.
-        connection.polygonIndexMap = polygonVertexIndexesToRenderIndexes(polygonIndexes, indexes);
+        connection.polygonIndexToRenderIndexMap = polygonVertexIndexesToRenderIndexes(polygonIndexes, indexes);
+        _geometryMetadata[name] = {
+          renderIndexToPolygonMap: polygonVertexIndexesToRenderIndexes(indexes, polygonIndexes)
+        };
 
         const vbo = new VertexBuffer({
           // The only things that's required here is `positions` and that's
@@ -318,16 +336,20 @@ function sceneNodeFromConnection(gl, rootConnection, sceneManager, relativeRootS
             break;
           }
 
+          _clusterMetadata[name] = {
+            polygonVertexIndexes: indexes,
+          };
+
           // Traverse up parent connections until we find the first
-          // polygonIndexMap. We do this because clusters can be children
-          // or Geometry or Skin Deformers.
+          // polygonIndexToRenderIndexMap. We do this because clusters can be
+          // children or Geometry or Skin Deformers.
           let geometryConnection = connection;
-          while (!geometryConnection?.polygonIndexMap) {
+          while (!geometryConnection?.polygonIndexToRenderIndexMap) {
             geometryConnection = geometryConnection.pconnection;
           }
 
           if (geometryConnection) {
-            indexes = indexes.map(idx => geometryConnection.polygonIndexMap[idx]);
+            indexes = indexes.map(idx => geometryConnection.polygonIndexToRenderIndexMap[idx]);
           }
 
           sceneNode = new SkinDeformerCluster({name},
@@ -619,6 +641,147 @@ function getLayerData(geometry, layerDataName) {
   */
 
   return components;
+}
+
+// We only support four bones per vertex.
+const MAX_BONES_PER_VERTEX = 4;
+
+// buildSkinAnimation processes all the geometry nodes looking for bones
+// in order to build the list of weights and bone indexes that we need to
+// provide to the vertex shader for rigged animation with skin deformation.
+// This function only support a max of 4 bones. If we there are less then
+// 4 bones influencing a particular vertex, then we will fill in 0s in order
+// to ensure that the vertex buffer objects have the correct number of items.
+// If there are more than 4 bones for a vertex, then we will ONLY pick the
+// 4 with the most influence on the vertex and drop the rest.
+export function buildSkinAnimation(gl, sceneNode) {
+  for (const geometry of findChildrenByType(sceneNode, Geometry)) {
+    const bonedata = {};
+
+    // All the bone weights for a particular vertex are usually scattered across
+    // multiple clusters; clusters are children of skin deformers that group
+    // weights that a particular bone influences. So we go thru all the these
+    // clusters and group all the weight for every vertex by the vertex index.
+    for (const skin of findChildrenByType(geometry, SkinDeformer)) {
+      for (let i = 0; i < skin.items.length; i++) {
+        const cluster = skin.items[i];
+        // boneIndex matches the bone matrices in vertex shader
+        cluster.withBoneIndex(i);
+
+        // NOTE(miguel):
+        // In an FBX file, vertices in a geometry node are indexed and the
+        // indexes are stored in polygonVertexIndexes. Clusters store the
+        // indexes of the vertices they affect; they also store how much as
+        // weights.
+        // So we need to go thru all the clusters and find the vertex (by index)
+        // that they affect, and how much.
+        // One catch is that clusters get their indexes remapped to "render
+        // indexes" when scene nodes are created.
+        // 1. Why do we reindex clusters? Because vertices are reindexed.
+        // 2. Why do we reindex geometry vertices? Because vertex indexes
+        // in an FBX file are optimized for vertex sharing. Meaing, a vertex
+        // can be shared by multiple faces regardless of where the faces point
+        // towards. However, normal vectors (which are calculated per vertex)
+        // are per face. If we were to use the same index for a vertex that
+        // is shared by multiple faces, the normal vector at that index will
+        // be the same for every face. And this causes issues with lighting.
+        // To ensure that vertices and normals can be indexed, create indexes
+        // per face.
+        //
+        // When we go thru each cluster finding vertex indexes, we need to use
+        // polygonVertexIndexes because that's where we store the indexes for
+        // all the vertices shared by multiple polygons. If we were to use
+        // the render indexes, since all indexes are unique for each polygon,
+        // we won't be able to find all the vertices affected by a cluster.
+        const polygonVertexIndexes = _clusterMetadata[cluster.name].polygonVertexIndexes;
+
+        for (let j = 0; j < polygonVertexIndexes.length; j++) {
+          const polygonVertexIndex = polygonVertexIndexes[j];
+
+          if (!bonedata[polygonVertexIndex]) {
+            bonedata[polygonVertexIndex] = {
+              weights: [],
+              boneids: [],
+            };
+          }
+
+          bonedata[polygonVertexIndex].weights.push(cluster.weights[j]);
+          bonedata[polygonVertexIndex].boneids.push(cluster.boneIndex);
+        }
+      }
+    }
+
+    Object.keys(bonedata).forEach(polygonVertexIndex => {
+      const len = bonedata[polygonVertexIndex].weights.length;
+
+      // weights and boneids have the same size, so let's pick one to determine
+      // the number of each we have. If we have fewer than MAX then we want to
+      // fill them in so that the vertex shader can have the correct amount
+      // of data.
+      // If we have more than MAX than we do some extra work to figure out which
+      // bones to keep.
+      for (let j = 0; j < MAX_BONES_PER_VERTEX - len; j++) {
+        bonedata[polygonVertexIndex].weights.push(0);
+        bonedata[polygonVertexIndex].boneids.push(0);
+      }
+
+      // We only support up to 4 bones worth of data per vertex. If we have
+      // more than that, then we log a wanrning. And we keep the 4 bones with
+      // the most influence (heaviest bones) and drop the rest.
+      if (len > MAX_BONES_PER_VERTEX) {
+        console.warn(`bone with more than ${MAX_BONES_PER_VERTEX} weights.`, geometry.name, len);
+
+        // These are the weights and indexes for the bones with most influence.
+        const {weights, boneids} = getMostInfluencialBones(bonedata[polygonVertexIndex]);
+        bonedata[polygonVertexIndex].weights = weights;
+        bonedata[polygonVertexIndex].boneids = boneids;
+      }
+    });
+
+    if (Object.keys(bonedata).length) {
+      const mappedweights = [];
+      const mappedboneids = [];
+      geometry.vertexBuffer.indexes.data.forEach((idx) => {
+        // We take all the shared vertex indexes and weights and store them
+        // with "render indexes" so that we can use the same indexes we use
+        // for rendering vertices and normal vectors.
+        const polygonVertexIndex = _geometryMetadata[geometry.name].renderIndexToPolygonMap[idx];
+        mappedweights[idx] = bonedata[polygonVertexIndex].weights;
+        mappedboneids[idx] = bonedata[polygonVertexIndex].boneids;
+      });
+
+      geometry.vertexBuffer.withWeights(new VertexBufferData(gl, mappedweights.flat(), MAX_BONES_PER_VERTEX));
+      geometry.vertexBuffer.withBoneIDs(new VertexBufferData(gl, mappedboneids.flat(), MAX_BONES_PER_VERTEX));
+    }
+  }
+}
+
+// getMostInfluencialBones iterates through weights and boneids select the
+// most influencial weights; the weights with higher values. We keep the
+// 4 heaviest bones and for now just drop the rest.
+// weights and boneids are pairs of information where each weight corresponds
+// to a boneid in the same array index. So we iterate through them in pairs
+// with the same array indexes.
+export function getMostInfluencialBones({weights, boneids}) {
+  // These are the weights and indexes for the bones with most influence.
+  const rweights = [], rboneids = [];
+
+  // Zip things up so that we process the weight and bone index as a pair
+  // and sort heavier to lighter so that we keep the bones with the most
+  // influence.
+  weights
+    .map((w,i) => [w, boneids[i]])
+    .sort(([w1],[w2]) => w1 > w2 ? -1 : 1)
+    .slice(0, MAX_BONES_PER_VERTEX)
+    .forEach(([w,id]) => {
+      rweights.push(w);
+      rboneids.push(id);
+    });
+
+  return {
+    weights: rweights,
+    boneids: rboneids,
+  };
 }
 
 // buildArmature ensures that we have an armature node in the scene to
