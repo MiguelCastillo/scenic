@@ -646,53 +646,55 @@ function getLayerData(geometry, layerDataName) {
 // We only support four bones per vertex.
 const MAX_BONES_PER_VERTEX = 4;
 
-// buildSkinAnimation processes all the geometry nodes looking for bones
-// in order to build the list of weights and bone indexes that we need to
-// provide to the vertex shader for rigged animation with skin deformation.
-// This function only support a max of 4 bones. If we there are less then
-// 4 bones influencing a particular vertex, then we will fill in 0s in order
-// to ensure that the vertex buffer objects have the correct number of items.
-// If there are more than 4 bones for a vertex, then we will ONLY pick the
-// 4 with the most influence on the vertex and drop the rest.
+// buildSkinAnimation calculats all the bone weights and vertex indexes that
+// affect vertices in a geometry node. These weights a vertex indexes are
+// provided to vertex shader for rigged animation with skin deformation.
+// We only support up to 4 bones per vertex. If we there are less than 4 bones
+// for a vertex, then we fill in the rest with 0s. If there are more than 4
+// bones for a vertex, then we will ONLY pick the 4 with the most influence
+// on the vertex and drop the rest.
 export function buildSkinAnimation(gl, sceneNode) {
   for (const geometry of findChildrenByType(sceneNode, Geometry)) {
     const bonedata = {};
 
     // All the bone weights for a particular vertex are usually scattered across
     // multiple clusters; clusters are children of skin deformers that group
-    // weights that a particular bone influences. So we go thru all the these
-    // clusters and group all the weight for every vertex by the vertex index.
+    // weights for how much bones influence vertices. So we go thru all the
+    // these clusters and aggregate all the weight for every vertex by the
+    // vertex index.
     for (const skin of findChildrenByType(geometry, SkinDeformer)) {
       for (let i = 0; i < skin.items.length; i++) {
         const cluster = skin.items[i];
         // boneIndex matches the bone matrices in vertex shader
         cluster.withBoneIndex(i);
 
-        // NOTE(miguel):
         // In an FBX file, vertices in a geometry node are indexed and the
-        // indexes are stored in polygonVertexIndexes. Clusters store the
-        // indexes of the vertices they affect; they also store how much as
-        // weights.
-        // So we need to go thru all the clusters and find the vertex (by index)
-        // that they affect, and how much.
+        // indexes are stored in a property called polygonVertexIndexes.
+        // Clusters store the indexes of the vertices they affect; they also
+        // store how much as weights. The idea here is to go thru all the
+        // clusters to aggregate all the vertices (by index) that they affect,
+        // as well as how much a cluster affects these vertices.
         // One catch is that clusters get their indexes remapped to "render
-        // indexes" when scene nodes are created.
+        // indexes" (indexes that can be used for rendering with normal vectors)
+        // when scene nodes are created when first processing FBX nodes.
         // 1. Why do we reindex clusters? Because vertices are reindexed.
         // 2. Why do we reindex geometry vertices? Because vertex indexes
         // in an FBX file are optimized for vertex sharing. Meaing, a vertex
-        // can be shared by multiple faces regardless of where the faces point
-        // towards. However, normal vectors (which are calculated per vertex)
-        // are per face. If we were to use the same index for a vertex that
-        // is shared by multiple faces, the normal vector at that index will
-        // be the same for every face. And this causes issues with lighting.
-        // To ensure that vertices and normals can be indexed, create indexes
-        // per face.
+        // can be used by multiple faces regardless of where the faces point
+        // to. However, normal vectors (which are calculated per vertex) are
+        // per face. If we were to use the same index for a vertex that is
+        // shared by multiple faces, the normal vector at that index will be
+        // the same for every face. Imagine that we have vertex X at index 0.
+        // That vertex is used in 3 different faces pointing in different
+        // direction. If we were to use normal at index 0 for that vertex then
+        // we end up using the same normal vector for multiple different faces.
+        // And this causes issues with lighting.
+        // To ensure that vertices and normals can be indexed without this
+        // problem, we create indexes per face.
         //
-        // When we go thru each cluster finding vertex indexes, we need to use
-        // polygonVertexIndexes because that's where we store the indexes for
-        // all the vertices shared by multiple polygons. If we were to use
-        // the render indexes, since all indexes are unique for each polygon,
-        // we won't be able to find all the vertices affected by a cluster.
+        // So when we go thru each cluster finding vertex indexes, we need to
+        // use polygonVertexIndexes to identify all the vertices in each
+        // cluster.
         const polygonVertexIndexes = _clusterMetadata[cluster.name].polygonVertexIndexes;
 
         for (let j = 0; j < polygonVertexIndexes.length; j++) {
@@ -756,19 +758,12 @@ export function buildSkinAnimation(gl, sceneNode) {
   }
 }
 
-// getMostInfluencialBones iterates through weights and boneids select the
+// getMostInfluencialBones iterates through weights and boneids selecting the
 // most influencial weights; the weights with higher values. We keep the
 // 4 heaviest bones and for now just drop the rest.
-// weights and boneids are pairs of information where each weight corresponds
-// to a boneid in the same array index. So we iterate through them in pairs
-// with the same array indexes.
 export function getMostInfluencialBones({weights, boneids}) {
-  // These are the weights and indexes for the bones with most influence.
   const rweights = [], rboneids = [];
 
-  // Zip things up so that we process the weight and bone index as a pair
-  // and sort heavier to lighter so that we keep the bones with the most
-  // influence.
   weights
     .map((w,i) => [w, boneids[i]])
     .sort(([w1],[w2]) => w1 > w2 ? -1 : 1)
