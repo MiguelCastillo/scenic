@@ -86,15 +86,11 @@ export class ShaderProgram {
     });
 
     for (const attr of this.getAttributes()) {
-      const vbo = vertexBuffer[`${attr.name}s`];
-      if (vbo) {
+      const ubo = vertexBuffer[`${attr.name}s`];
+      if (ubo) {
         const {index, size, type, normalized, stride, offset} = attr;
 
-        if (!vbo.componentsPerVertex || vbo.componentsPerVertex !== size) {
-          console.error("===>", vbo.componentsPerVertex, size, attr);
-        }
-
-        vbo.bind(gl);
+        ubo.bind(gl);
 
         // Enable this shader attribute.
         gl.enableVertexAttribArray(index);
@@ -102,7 +98,7 @@ export class ShaderProgram {
         // enableVertexAttribArray binds this shader attribute and the currently
         // bound ARRAY_BUFFER we are rendering. So before calling enable on an
         // attribute, you must have called bindBuffer.
-        gl.vertexAttribPointer(index, vbo.componentsPerVertex, type, normalized, stride, offset);
+        gl.vertexAttribPointer(index, size, type, normalized, stride, offset);
       } else {
         gl.disableVertexAttribArray(attr.index)
       }
