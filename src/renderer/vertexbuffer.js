@@ -53,10 +53,9 @@ export class TextureVertexBufferData extends VertexBufferArray {
 }
 
 // VertexBuffer contains the buffers that are most commonly used for rendering.
-// It makes it simpler to find all the relevant buffers in one place with a
-// render function that can use either vertices of indexes.
-// If an index buffer exists, then we render with the indexes using
-// gl.drawElements. Otherwise, we will render the positions with gl.drawArrays.
+// It makes it simpler to find all the relevant buffers in one place. This is
+// meant to be provided to a shader program that can bind the buffers to
+// attributes in a vertex shader.
 export class VertexBuffer {
   constructor(options={}) {
     [
@@ -70,7 +69,6 @@ export class VertexBuffer {
       "weights",
       "boneids",
     ]
-    .filter(component => options[component])
     .forEach(component => {
       this[component] = options[component];
     });

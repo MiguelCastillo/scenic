@@ -65,10 +65,6 @@ export class ShaderProgram {
     return this;
   }
 
-  getAttributes() {
-    return this._attributes;
-  }
-
   clone() {
     const shaderProgram = new ShaderProgram(this.gl, this.program);
     shaderProgram._attributes = [...this._attributes];
@@ -77,7 +73,7 @@ export class ShaderProgram {
     return shaderProgram;
   }
 
-  render(vertexBuffer, primitiveType=this.gl.TRIANGLES) {
+  render(vertexBuffers, primitiveType=this.gl.TRIANGLES) {
     const gl = this.gl;
     gl.useProgram(this.program);
 
@@ -85,8 +81,11 @@ export class ShaderProgram {
       this._uniformsUpdates[key](gl, this._uniformsByName[key]);
     });
 
-    for (const attr of this.getAttributes()) {
-      const ubo = vertexBuffer[`${attr.name}s`];
+    for (const attr of this._attributes) {
+      // We add `s` because the attribure in the shader is singular and the
+      // buffer is plurar.  E.g. the vertex shader has `position` and the
+      // buffer has `positions`.
+      const ubo = vertexBuffers[`${attr.name}s`];
       if (ubo) {
         const {index, size, type, normalized, stride, offset} = attr;
 
@@ -104,7 +103,7 @@ export class ShaderProgram {
       }
     }
 
-    const {positions, indexes} = vertexBuffer;
+    const {positions, indexes} = vertexBuffers;
 
     // Send command to start rendering the vertices.
     if (indexes) {
@@ -135,16 +134,47 @@ export class ShaderProgram {
     }
   }
 
-  static create(gl, vertexShader, fragmentShader) {
+  // createWithCompiledShaders creates a shader program using the already
+  // compiled vertex and fragment shaders provided to this function.
+  // There is no ability to autobind attributes in factory method because there
+  // is no source we can parse to automatically pull out the attributes in a
+  // vertex shader.
+  static createWithCompiledShaders(gl, compiledVertexShader, compiledFragmentShader) {
     const program = gl.createProgram();
 
+    // TODO(miguel): add ability to verify that these are compiled shader
+    // objects.
     linkShaderProgram(
       gl,
       program,
-      vertexShader,
-      fragmentShader);
+      compiledVertexShader,
+      compiledFragmentShader);
 
     return new ShaderProgram(gl, program);
+  }
+
+  // create creates a shader program with the shader sources provided to this
+  // function.
+  // Because the source for the vertex shader is provided, we have the ability
+  // to parse to autobind attributes. Autobinding simply read the (supported)
+  // attributes from the vertex shader and automatically registers them in the
+  // shader program before it is returned.
+  static create(gl, vertexShaderSource, fragmentShaderSource, autobindAttributes=false) {
+    const program = gl.createProgram();
+
+    compileShaderProgram(
+      gl,
+      program,
+      vertexShaderSource,
+      fragmentShaderSource,
+    );
+
+    const sp = new ShaderProgram(gl, program);
+    if (autobindAttributes) {
+      sp.addAttributes(parseVertexShaderAttributes(vertexShaderSource));
+    }
+
+    return sp;
   }
 }
 
@@ -198,9 +228,9 @@ export function compileShaderProgram(
     compileShaderSource(gl, gl.FRAGMENT_SHADER, fragmentShaderSource));
 }
 
-
-// TODO(miguel): add caching so that we don't have to compile the source
-// if it has already been compiled before.
+// compileShaderSource takes in shader source and its type, and it compiles it.
+// TODO(miguel): report errors generated when compiling the shader.
+// gl.getShaderInfoLog
 export function compileShaderSource(gl, shaderType, shaderSource) {
   var shader = gl.createShader(shaderType);
   gl.shaderSource(shader, shaderSource);
@@ -229,4 +259,34 @@ export function numberToString(num) {
   }
 
   return num;
+}
+
+// parseVertexShaderAttributes gets the list of all the attributes in a vertex
+// shader and returns the name of the attribute and its size. This currently
+// only support vector types.
+// TODO(miguel): add support for other types as the need arises.
+export function parseVertexShaderAttributes(vertexShaderSource) {
+  // tester for regex to parse out attributes.
+  // https://regex101.com/r/jmad0Z/1
+  return [
+    ...vertexShaderSource.matchAll(/^\s*^\/?in\s+(\w+)\s+(\w+);/gm)
+  ].map(([,type,name]) => {
+    let size;
+    switch (type) {
+      case "vec2":
+        size = 2;
+        break;
+      case "vec3":
+        size = 3;
+        break;
+      case "vec4":
+        size = 4;
+        break;
+    }
+
+    return {
+      name,
+      size,
+    };
+  });
 }
