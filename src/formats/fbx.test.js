@@ -17,7 +17,7 @@ import {
 } from "../math/geometry.js";
 
 test("parse binary cube", () => {
-  const file = fs.readFileSync(path.join(__dirname, "../../resources/fbx/cube.fbx"));
+  const file = fs.readFileSync(path.join(__dirname, "../../resources/fbx/__testdata__/cube.fbx"));
   const model = FbxFile.fromBinary(file.buffer);
   expect(model).toBeInstanceOf(Node);
   expect(findPropertyValueByName(model, "CreationTime")).toEqual("1970-01-01 10:00:00:000");
@@ -164,7 +164,7 @@ test("parse binary cube", () => {
 });
 
 test("match calculated normals to normals from file", () => {
-  const file = fs.readFileSync(path.join(__dirname, "../../resources/fbx/cube.fbx"));
+  const file = fs.readFileSync(path.join(__dirname, "../../resources/fbx/__testdata__/cube.fbx"));
   const model = FbxFile.fromBinary(file.buffer);
   expect(model).toBeInstanceOf(Node);
 
@@ -192,7 +192,7 @@ test("match calculated normals to normals from file", () => {
 });
 
 test("iterate connections", () => {
-  const file = fs.readFileSync(path.join(__dirname, "../../resources/fbx/cube.fbx"));
+  const file = fs.readFileSync(path.join(__dirname, "../../resources/fbx/__testdata__/cube.fbx"));
   const model = FbxFile.fromBinary(file.buffer);
 
   const objectsByID = {};
@@ -230,7 +230,7 @@ test("iterate connections", () => {
 });
 
 test("parse binary cube7500", () => {
-  const file = fs.readFileSync(path.join(__dirname, "../../resources/fbx/cube7500.fbx"));
+  const file = fs.readFileSync(path.join(__dirname, "../../resources/fbx/__testdata__/cube7500.fbx"));
   const model = FbxFile.fromBinary(file.buffer);
   expect(model).toBeInstanceOf(Node);
   expect(findPropertyValueByName(model, "CreationTime")).toEqual("2018-11-27 08:12:37:098");

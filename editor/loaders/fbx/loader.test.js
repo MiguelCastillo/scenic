@@ -66,7 +66,7 @@ function createSceneContextForTests(...sceneConfigItems) {
 
 describe("fbx Loader", () => {
   test("loading cube.fbx", () => {
-    const model = loadModel("./__testdata__/cube.fbx");
+    const model = loadModel("../../../resources/fbx/__testdata__/cube.fbx");
     expect(model).toBeInstanceOf(FbxNode);
 
     const sceneNodeFxbCube = {
@@ -87,7 +87,7 @@ describe("fbx Loader", () => {
   });
 
   describe("cube armature animation", () => {
-    const model = loadModel("./__testdata__/cubearmature_simple.fbx");
+    const model = loadModel("../../../resources/fbx/__testdata__/cubearmature_simple.fbx");
     const sceneNodeConfig = {
       name: "cube armature",
       type: "group",
