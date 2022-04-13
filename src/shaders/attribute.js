@@ -10,10 +10,13 @@ export class ShaderAttribute {
       throw new Error("The attribute must have a name");
     }
 
-    // TODO(miguel): validate the incoming options and ensure the program
-    // is linked. gl.validateProgram(program)
-
     const {gl, program} = shaderProgram;
+
+    gl.validateProgram(program);
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      throw new Error(`shader program is not valid or linked. ${gl.getProgramInfoLog(program)}`);
+    }
+
     this.shaderProgram = shaderProgram;
 
     Object.assign(this, {

@@ -230,9 +230,10 @@ export function linkShaderProgram(
   gl.attachShader(program, vertexShader);   // compileShaderSource(gl, gl.VERTEX_SHADER, vertexShaderSource));
   gl.attachShader(program, fragmentShader); // compileShaderSource(gl, gl.FRAGMENT_SHADER, fragmentShaderSource));
   gl.linkProgram(program);
+  gl.validateProgram(program);
 
   if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-    throw new Error(`Unable to initialize the shader program: ${gl.getProgramInfoLog(program)}`);
+    throw new Error(`unable to initialize the shader program: ${gl.getProgramInfoLog(program)}`);
   }
 }
 
