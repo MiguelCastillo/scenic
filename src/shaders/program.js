@@ -54,14 +54,46 @@ export class ShaderProgram {
     return this;
   }
 
+  // setAttributes sets a new list of attributes in the vertex shader to be
+  // bound to buffer objects.
+  // In the process of adding the attributes, we will determine the attribute
+  // index, which we will use to bind the correct buffer in the render function.
+  // This will replace any already existing attributes in the shader program.
   setAttributes(attributes) {
-    this._attributes = attributes.map(attr => new ShaderAttribute(attr, this));
+    const attrs = attributes.map(attr => new ShaderAttribute(attr, this));
+
+    attrs.forEach(attr => {
+      if (attr.index === -1) {
+        // eslint-disable-next-line no-console
+        console.warn(`shader attribute ${attr.name} is declared but not used`);
+      }
+    });
+
+    // Attributes that are not used in the vertex shader do not get an index,
+    // so we filter them out to avoid unnecessary processing of attributes
+    // in the render function
+    this._attributes = attrs.filter(({index}) => index !== -1);
     return this;
   }
 
+  // addAttributes adds new attributes in the vertex shader to be bound to
+  // buffer objects.
+  // In the process of adding the attributes, we will determine the attribute
+  // index, which we will use to bind the correct buffer in the render function.
   addAttributes(attributes) {
     const attrs = attributes.map(attr => new ShaderAttribute(attr, this));
-    this._attributes = this._attributes.concat(attrs);
+
+    attrs.forEach(attr => {
+      if (attr.index === -1) {
+        // eslint-disable-next-line no-console
+        console.warn(`shader attribute "${attr.name}" is declared but not used`);
+      }
+    });
+
+    // Attributes that are not used in the vertex shader do not get an index,
+    // so we filter them out to avoid unnecessary processing of attributes
+    // in the render function
+    this._attributes = this._attributes.concat(attrs.filter(({index}) => index !== -1));
     return this;
   }
 
