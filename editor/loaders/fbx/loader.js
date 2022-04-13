@@ -731,6 +731,7 @@ export function buildSkinAnimation(gl, sceneNode) {
       // more than that, then we log a wanrning. And we keep the 4 bones with
       // the most influence (heaviest bones) and drop the rest.
       if (len > MAX_BONES_PER_VERTEX) {
+        // eslint-disable-next-line no-console
         console.warn(`bone with more than ${MAX_BONES_PER_VERTEX} weights.`, geometry.name, len);
 
         // These are the weights and indexes for the bones with most influence.

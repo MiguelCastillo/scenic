@@ -103,6 +103,7 @@ export class Mesh extends Animatable {
 
   addBoneMatrix(boneMatrix, idx) {
     if (idx !== this.boneMatrices.length) {
+      // eslint-disable-next-line no-console
       console.warn("====> bone matrix index is not correct");
     }
     this.boneMatrices[idx] = boneMatrix;

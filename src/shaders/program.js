@@ -229,13 +229,61 @@ export function compileShaderProgram(
 }
 
 // compileShaderSource takes in shader source and its type, and it compiles it.
-// TODO(miguel): report errors generated when compiling the shader.
-// gl.getShaderInfoLog
 export function compileShaderSource(gl, shaderType, shaderSource) {
   var shader = gl.createShader(shaderType);
   gl.shaderSource(shader, shaderSource);
   gl.compileShader(shader);
+
+  const message = gl.getShaderInfoLog(shader);
+  const compileMessages = parseShaderCompilationErrors(
+    message,
+    shaderSource);
+
+  compileMessages.forEach(([type, message, sourceFailure]) => {
+    if (type === "ERROR") {
+      // eslint-disable-next-line no-console
+      console.error([message, sourceFailure].join("\n"));
+    } else {
+      // eslint-disable-next-line no-console
+      console.warn(message);
+    }
+  });
+
   return shader;
+}
+
+export function parseShaderCompilationErrors(message, shaderSource, lastLinesCount = 5) {
+  // wbgl compile error string seem to always end with `\u0000` (null). We
+  // filter those out so that we don't parse invalid error strings.
+  return message
+    .split("\n")
+    .filter(v => v && v !== "\u0000")
+    .map(m => _parseShaderCompilationError(m, shaderSource, lastLinesCount));
+}
+
+// _parseShaderCompilationError parses error strings from gl.getShaderInfoLog.
+// This is not meant to be called directly.  Please use parseShaderCompilationErrors
+// instead because that correctly handles null characters.
+// This is exported so that it can be tested.
+export function _parseShaderCompilationError(message, shaderSource, lastLinesCount = 5) {
+  try {
+    const shaderLines = shaderSource.split("\n");
+    const [,msgType,/*col*/,lineStr] = /^(\w+):\s+([0-9]+):([0-9]+):(.*)/.exec(message);
+    if (msgType === "ERROR") {
+      const lineNumberIndex = parseInt(lineStr) - 1;
+      const blockStartIndex = Math.max(lineNumberIndex - lastLinesCount, 0);
+      const lastFewLines = shaderLines.slice(blockStartIndex, lineNumberIndex);
+
+      lastFewLines.push(">>> " + shaderLines[lineNumberIndex]);
+      return ["ERROR", message, lastFewLines.join("\n")];
+    } else if (msgType === "WARN") {
+      return ["WARN", message];
+    }
+  } catch(ex) {
+    // eslint-disable-next-line no-console
+    console.error("error parsing shader compilation error", message, ex);
+  }
+  return null;
 }
 
 // Helper function to convert numbers to strings suitable for shaders.
