@@ -1,29 +1,30 @@
-export function treeTraversal(transformNode, transformParentNode) {
-  return function traverse(child, parent) {
-    const {items=[]} = child;
-    const sceneNode = transformNode(child, parent);
-    const children = items.map(c => traverse(c, sceneNode));
-    return transformParentNode(sceneNode, children);
+export function buildTraversal(buildNode, buildParentNode) {
+  // Depth first traversal
+  return function dft(child, parent) {
+    const sceneNode = buildNode(child, parent);
+    const children = child.items?.map(c => dft(c, sceneNode));
+    return buildParentNode(sceneNode, children);
   }
 }
 
 export function bubbleTraversal(bubbleDown, bubbleUp) {
-  return function traverse(child, parent) {
-    const {items=[]} = child;
+  // Depth first traversal
+  return function dft(child, parent) {
     const updatedChild = bubbleDown(child, parent);
-    items.forEach(c => traverse(c, updatedChild));
+    if (child.items) {
+      for (const c of child.items) {
+        dft(c, updatedChild);
+      }
+    }
     bubbleUp(updatedChild, parent);
   }
 }
 
 export function occlusionTraversal(occlusionTest, processParentNode) {
-  return function traverse(parent) {
-    const {items=[]} = parent;
-    const children =  items
-      .filter(child => occlusionTest(child, parent))
-      .map(child => traverse(child))
-
-    return processParentNode(parent, children);
+  // Depth first traversal
+  return function dft(node) {
+    const children =  node.items?.filter(child => occlusionTest(child, node)).map(dft);
+    return processParentNode(node, children);
   }
 }
 

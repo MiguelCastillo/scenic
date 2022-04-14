@@ -2,7 +2,7 @@ import {Node as SceneNode} from "../src/scene/node.js";
 import {Light as SceneLight} from "../src/scene/light.js";
 import {Projection} from "../src/scene/projection.js";
 import {StaticMesh} from "../src/scene/static-mesh.js";
-import {treeTraversal} from "../src/scene/traversal.js";
+import {buildTraversal} from "../src/scene/traversal.js";
 import {SceneManager} from "../src/scene-manager.js";
 import {StateManager} from "../src/state-manager.js";
 
@@ -25,41 +25,35 @@ export function createScene(config) {
   // information such as world matrices.
   const sceneManager = new SceneManager(stateManager);
 
-  function buildSceneParentNode(parent, items) {
-    return parent.addItems(items);
+  function buildSceneParentNode(parent, children=[]) {
+    return parent.addItems(children);
   }
 
-  function buildSceneNode(node /*, parent*/) {
-    if (isStaticMesh(node)) {
-      return new StaticMesh(node);
-    }
-    else if (isLight(node)) {
-      return new SceneLight(node);
-    }
-    else if (isPerspective(node) || isOrthographic(node)) {
-      return new Projection(node);
+  function buildSceneNode(nodeConfig) {
+    if (isStaticMesh(nodeConfig)) {
+      return new StaticMesh(nodeConfig);
+    } else if (isLight(nodeConfig)) {
+      return new SceneLight(nodeConfig);
+    } else if (isProjection(nodeConfig)) {
+      return new Projection(nodeConfig);
     }
 
-    return new SceneNode(node);
+    return new SceneNode(nodeConfig);
   }
 
-  const traverse = treeTraversal(buildSceneNode, buildSceneParentNode);
-  const sceneNodes = config.items.map(item => traverse(item));
-  return sceneManager.withSceneNodes(sceneNodes);
+  const traverse = buildTraversal(buildSceneNode, buildSceneParentNode);
+  const sceneNode = traverse(config);
+  return sceneManager.withSceneNodes(sceneNode.items);
 }
 
-export function isPerspective(node) {
-  return node.type === "perspective";
+export function isProjection(nodeConfig) {
+  return nodeConfig.type === "perspective" || nodeConfig.type === "orthographic";
 }
 
-export function isOrthographic(node) {
-  return node.type === "orthographic";
+export function isLight(nodeConfig) {
+  return nodeConfig.type === "light";
 }
 
-export function isLight(node) {
-  return node.type === "light";
-}
-
-export function isStaticMesh(node) {
-  return node.type === "static-mesh";
+export function isStaticMesh(nodeConfig) {
+  return nodeConfig.type === "static-mesh";
 }
