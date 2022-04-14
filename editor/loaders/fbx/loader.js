@@ -90,6 +90,7 @@ const _textureCache = {};
 
 export function buildSceneNode(gl, fbxDocument, sceneNodeConfig, sceneManager) {
   const sceneNode = sceneManager.getNodeByName(sceneNodeConfig.name);
+  sceneNode.clear();
 
   const nodeWrappersByID = {
     "0,0": {
@@ -147,7 +148,6 @@ export function buildSceneNode(gl, fbxDocument, sceneNodeConfig, sceneManager) {
 
   if (animationNode.items.length) {
     sceneNode.add(animationNode);
-    sceneNode.animation = animationNode;
 
     // Initialize the state for the animation node
     const {animation={}} = sceneManager.getNodeStateByName(sceneNode.name);

@@ -99,6 +99,14 @@ export class Node {
     }
     return this;
   }
+
+  clear() {
+    const items = [...this.items];
+    for (const node of items) {
+      this.remove(node);
+    }
+    return this;
+  }
 }
 
 export function findParentByType(sceneNode, ParentType) {
