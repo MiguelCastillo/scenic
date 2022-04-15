@@ -51,6 +51,55 @@ export function treeGetMatches(matcher) {
   }
 }
 
+export function findChildDeepBreadthFirst(sceneNode, predicate) {
+  let iter = [sceneNode];
+
+  while (iter.length) {
+    const items = iter.shift().items;
+    const found = items.find(predicate);
+    if (found) {
+      return found;
+    }
+    iter.push(...items);
+  }
+
+  // while (iter.length) {
+  //   for (let i = 0; i < iter.length; i++) {
+  //     const items = iter[i].items;
+  //     const found = items.find(predicate);
+  //     if (found) {
+  //       return found;
+  //     }
+  //   }
+
+  //   let newiter = [];
+  //   for (let i = 0; i < iter.length; i++) {
+  //     newiter.push(...iter[i].items);
+  //   }
+  //   iter = newiter;
+  // }
+}
+
+export function findChildrenDeepBreadthFirst(sceneNode, predicate) {
+  let result = [];
+  let iter = [sceneNode];
+
+  while (iter.length) {
+    const items = iter.shift().items;
+    if (!items) {
+      continue;
+    }
+    for (const item of items) {
+      if (predicate(item)) {
+        result.push(item);
+      }
+    }
+    iter.push(...items);
+  }
+
+  return result;
+}
+
 export const findParentItemsWithItemType = (node, type) => {
   const typeKey = type;
 
