@@ -83,7 +83,7 @@ export const config = {
 
       "projection": {
         "near": 1,
-        "far": 1000,
+        "far": 10000,
         "fov": 30,
       },
 
