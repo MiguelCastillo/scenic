@@ -41,9 +41,8 @@ export class SceneManager {
           return node;
         }
 
-        const {items=[]} = node;
-        if (items.length) {
-          nodeGroups[nodeGroups.length] = items;
+        if (node.items?.length) {
+          nodeGroups[nodeGroups.length] = node.items;
         }
       }
     }

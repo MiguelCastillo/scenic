@@ -1,4 +1,8 @@
 import * as mat4 from "../math/matrix4.js";
+import {
+  findChildDeepBreadthFirst,
+  findChildrenDeepBreadthFirst
+} from "./traversal.js";
 
 const identityMatrix4 = mat4.Matrix4.identity();
 
@@ -117,41 +121,12 @@ export function findParentByType(sceneNode, ParentType) {
   return parent;
 }
 
+// Breadth first search!
 export function findChildrenByType(sceneNode, ChildType) {
-  const result = [];
-
-  function traverse(node) {
-    if (!node) {
-      return;
-    }
-
-    if (node instanceof ChildType) {
-      result.push(node);
-    }
-
-    node.items.forEach(traverse);
-  }
-
-  sceneNode.items.forEach(traverse);
-  return result;
+  return findChildrenDeepBreadthFirst(sceneNode, (x) => x instanceof ChildType);
 }
 
+// Breadth first search!
 export function findChildByType(sceneNode, ChildType) {
-  let found;
-
-  function traverse(node) {
-    if (!node || found) {
-      return;
-    }
-
-    if (node instanceof ChildType) {
-      found = node;
-      return;
-    }
-
-    node.items.forEach(traverse);
-  }
-
-  sceneNode.items.forEach(traverse);
-  return found;
+  return findChildDeepBreadthFirst(sceneNode, (x) => x instanceof ChildType);
 }
