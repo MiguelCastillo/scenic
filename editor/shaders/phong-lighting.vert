@@ -12,7 +12,7 @@ in vec4 boneid;
 uniform mat4 projectionMatrix;
 uniform mat4 worldMatrix;
 uniform bool enabledSkinAnimation;
-uniform mat4 boneMatrices[80];
+uniform mat4 boneMatrices[64];
 
 out vec4 fragmentColor;
 out vec4 fragmentNormal;
