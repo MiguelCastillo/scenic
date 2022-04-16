@@ -10,7 +10,7 @@ import {Console} from "./app/console.jsx";
 // eslint-disable-next-line no-unused-vars
 import {Loading} from "./app/loading.jsx";
 import {onReady} from "../src/dom/ready.js";
-import webgl from "../src/webgl.js";
+import * as webgl from "../src/webgl.js";
 
 import _console from "./logging.js";
 

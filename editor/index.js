@@ -23,6 +23,7 @@ import {startRenderLoop} from "./render-loop.js";
 
 import {createFrameRateCounter} from "./fps-counter.js";
 import {config} from "./scene-config.js";
+import {getDebugData} from "../src/webgl.js";
 
 function applyWorldRotation(sceneManager, rotateX, rotateY, rotateZ=0) {
   const sceneObjectsName = "scene objects";
@@ -238,6 +239,16 @@ function createOrthographicProjectionMatrix(width, height, far=1000) {
 export let sceneManager;
 
 export const doRenderLoop = (gl) => {
+  const {
+    vendor, renderer, limits, contextAttributes,
+  } = getDebugData(gl);
+
+  console.log("Vendor:", vendor);
+  console.log("Renderer:", renderer);
+  console.log("Limits:", JSON.stringify(limits));
+  console.log("Context:", JSON.stringify(contextAttributes));
+  console.log("Browser:", window.clientInformation.userAgent);
+
   const start = Date.now();
 
   // Let's create the scene, which is made up of a scene manager and a

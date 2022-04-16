@@ -361,6 +361,7 @@ body {
   padding: 20px;
   background-color: black;
   color: white;
+  overflow: auto;
 }
 
 .console-ERROR {
