@@ -4,6 +4,9 @@
 // https://www.tutorialspoint.com/webgl/webgl_drawing_points.htm
 //
 
+// This will inject buffering into `console` so that we can access it later.
+import "./logging.js";
+
 import {
   PerspectiveProjectionMatrix,
   OrthographicProjectionMatrix,

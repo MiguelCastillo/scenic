@@ -90,6 +90,7 @@ body {
   height: 100vh;
   background-color: #ffaaaaaa;
   z-index: 1000000;
+  overflow-y: auto;
 }
 
 #error-container:empty {
@@ -354,4 +355,14 @@ body {
   position: absolute;
   cursor: pointer;
   z-index: -1;
+}
+
+.console {
+  padding: 20px;
+  background-color: black;
+  color: white;
+}
+
+.console-ERROR {
+  color: red;
 }
