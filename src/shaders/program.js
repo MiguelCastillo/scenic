@@ -301,8 +301,13 @@ export function parseShaderCompilationErrors(message, shaderSource, lastLinesCou
 export function _parseShaderCompilationError(message, shaderSource, lastLinesCount = 5) {
   try {
     const shaderLines = shaderSource.split("\n");
-    const [,msgType,/*col*/,lineStr] = /^(\w+):\s+([0-9]+):([0-9]+):(.*)/.exec(message);
+
+    const [,msgType,/*col*/,lineStr] = /^(\w+):\s+(?:([0-9]+):([0-9]+):)?(.*)/.exec(message);
     if (msgType === "ERROR") {
+      if (!lineStr) {
+        return ["ERROR", message];
+      }
+
       const lineNumberIndex = parseInt(lineStr) - 1;
       const blockStartIndex = Math.max(lineNumberIndex - lastLinesCount, 0);
       const lastFewLines = shaderLines.slice(blockStartIndex, lineNumberIndex);

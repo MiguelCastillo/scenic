@@ -56,6 +56,31 @@ void main() {
       ">>> #versio2n 300 es",
     ]);
   });
+
+  test("error without line number information", () => {
+    const shaderSourse = (
+`#version 300 es
+
+in vec3 position;
+in vec32 color;
+
+out vec4 fragmentColor;
+
+uniform mat4 projectionMatrix;
+uniform mat4 worldMatrix;
+
+void main() {
+  gl_Position = projectionMatrix * worldMatrix * vec4(position, 1.0);
+  fragmentColor = vec4(color, 1.0);
+}`);
+
+    const expected = _parseShaderCompilationError("ERROR: too many uniforms", shaderSourse);
+    expect(expected).toEqual([
+      "ERROR",
+      "ERROR: too many uniforms",
+    ]);
+  });
+
 });
 
 
