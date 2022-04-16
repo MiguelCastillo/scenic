@@ -18,6 +18,7 @@
     "node": "14.x"
   },
   "dependencies": {
+    "3dub": "^1.1.0",
     "encoding": "^0.1.13",
     "iconoir-react": "^2.1.0",
     "node-fetch": "^2.6.1",
@@ -25,7 +26,6 @@
     "yargs": "^17.2.1"
   },
   "devDependencies": {
-    "3dub": "^1.1.0",
     "@babel/eslint-parser": "^7.13.8",
     "@babel/plugin-proposal-class-properties": "^7.13.0",
     "@babel/preset-env": "^7.13.8",
