@@ -35,6 +35,8 @@ export class NodeDetailsPanel extends React.Component {
       case "animation":
         children = <AnimationPanel node={node} />;
         break;
+      default:
+        return null;
     }
 
     return (
