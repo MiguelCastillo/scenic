@@ -26,18 +26,19 @@ mat4 getBoneMatrix(int boneIndex) {
 }
 
 void main() {
+  mat4 matrix = worldMatrix;
+
   if (enabledSkinAnimation) {
-    vec4 weightedPosition;
+    mat4 weightedMatrix;
     for (int i = 0; i < MAX_BONES; i++) {
       if (weight[i] != 0.0) {
-        weightedPosition += getBoneMatrix(int(boneid[i])) * weight[i] * vec4(position, 1.0);
+        weightedMatrix += getBoneMatrix(int(boneid[i])) * weight[i];
       }
     }
-    gl_Position = projectionMatrix * weightedPosition;
-  } else {
-    gl_Position = projectionMatrix * worldMatrix * vec4(position, 1.0);
+    matrix = weightedMatrix;
   }
 
+  gl_Position = projectionMatrix * matrix * vec4(position, 1.0);
+  fragmentNormal = matrix * vec4(normal, 0.0);
   fragmentColor = vec4(color, 1.0);
-  fragmentNormal = worldMatrix * vec4(normal, 0.0);
 }
