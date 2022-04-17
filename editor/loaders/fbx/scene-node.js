@@ -9,17 +9,12 @@ import {
 import {
   Node as SceneNode,
   findParentByType,
-  findChildByType,
   findChildrenByType,
 } from "../../../src/scene/node.js";
 
 import {
   Renderable as RenderableSceneNode,
 } from "../../../src/scene/renderable.js";
-
-import {
-  Animation as AnimationSceneNode,
-} from "../../../src/scene/animation.js";
 
 import {
   findParentItemsWithItemType,
