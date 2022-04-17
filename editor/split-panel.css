@@ -7,7 +7,7 @@
   display: flex;
   flex: 1 0;
   flex-direction: row;
-  width: 100%;
+  overflow: auto;
 }
 
 .split-panel.vertical > .panel-left {

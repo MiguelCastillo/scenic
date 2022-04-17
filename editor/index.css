@@ -111,9 +111,13 @@ body {
 }
 
 #scene-graph-container {
+  color: #b3b3b3;
+  background-color: #333333;
   display: flex;
   flex: 1 0;
   overflow: auto;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .error .message {
@@ -128,20 +132,19 @@ body {
   color: #b3b3b3;
   background-color: #333333;
   display: flex;
-  flex: 1 0;
   justify-content: space-between;
   flex-direction: column;
   overflow: auto;
+  flex: 1;
 }
 
 .scene-tree {
   display: flex;
-  flex: 1 0;
   flex-direction: column;
   padding-bottom: 1em;
   overflow: auto;
-  min-height: 360px;
   user-select: none;
+  min-height: 200px;
 }
 
 .scene-tree-header {
@@ -174,6 +177,8 @@ body {
 
 .scene-node > .scene-node-content {
   position: relative;
+  display: flex;
+  flex: 1 0 auto;
 }
 
 .scene-node > .scene-node-content > .expander:hover {
@@ -217,7 +222,6 @@ body {
 
 .scene-node-details {
   display: flex;
-  flex: 1 0;
   flex-direction: column;
 }
 

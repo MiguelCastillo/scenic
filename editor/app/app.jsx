@@ -47,13 +47,11 @@ export class SceneGraph extends React.Component {
     return (
       <NodeSelectionContext.Provider value={nodeSelectionContext}>
         <SceneContext.Provider value={sceneContext}>
-          <div className="scene-graph">
             <div className="scene-tree">
               <div className="scene-tree-header">Scene Graph</div>
               <SceneNodeCollection nodes={sceneManager.rootNodes} />
             </div>
             {this.state.selectedNode ? <NodeDetailsPanel node={this.state.selectedNode} /> : null}
-          </div>
         </SceneContext.Provider>
       </NodeSelectionContext.Provider>
     );
