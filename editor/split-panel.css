@@ -5,8 +5,9 @@
 
 .split-panel.vertical {
   display: flex;
-  flex: 1 0 100%;
+  flex: 1 0;
   flex-direction: row;
+  width: 100%;
 }
 
 .split-panel.vertical > .panel-left {
