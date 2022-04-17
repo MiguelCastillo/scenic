@@ -89,7 +89,7 @@ export const config = {
 
       "transform": {
         "scale": [1, 1, 1],
-        "position": [0, 0, -300],
+        "position": [0, -100, -700],
         "rotation": [0, 0, 0],
       },
 
@@ -165,9 +165,9 @@ export const config = {
           },
 
           "items": [{
-            "name": "cube animated",
+            "name": "rigged animation",
             "type": "static-mesh",
-            "resource": "/resources/fbx/cubeanimated.fbx",
+            "resource": "/resources/fbx/dancing-character.fbx",
             "normalSmoothing": false,
             "animation": {
               "speed": 1,
