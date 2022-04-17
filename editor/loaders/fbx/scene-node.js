@@ -774,7 +774,9 @@ function getTransformAnimation(animation, defaultValues) {
 }
 
 function getAnimation(context, animatableNode) {
-  const animation = findChildByType(animatableNode.relativeRoot, AnimationSceneNode);
+  // relative root is a skinned mesh node, which will have an animation
+  // property in it for easy access to the animation node.
+  const animation = animatableNode.relativeRoot.animation;
   if (!animation?.items.length) {
     return;
   }

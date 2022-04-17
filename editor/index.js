@@ -243,10 +243,15 @@ export const doRenderLoop = (gl) => {
     vendor, renderer, limits, contextAttributes,
   } = getDebugData(gl);
 
+  // eslint-disable-next-line no-console
   console.log("Vendor:", vendor);
+  // eslint-disable-next-line no-console
   console.log("Renderer:", renderer);
+  // eslint-disable-next-line no-console
   console.log("Limits:", JSON.stringify(limits));
+  // eslint-disable-next-line no-console
   console.log("Context:", JSON.stringify(contextAttributes));
+  // eslint-disable-next-line no-console
   console.log("Browser:", window.clientInformation.userAgent);
 
   const start = Date.now();

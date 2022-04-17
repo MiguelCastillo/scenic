@@ -4,7 +4,7 @@ import {SceneNodeCollection} from "./node.jsx";
 import {SceneNodeContent} from "./node-content.jsx";
 import {NodeSelectionContext} from "./selection-context.js";
 
-export class SceneNodeStaticMesh extends React.Component {
+export class SceneNodeSkinnedMesh extends React.Component {
   static contextType = NodeSelectionContext;
 
   constructor() {

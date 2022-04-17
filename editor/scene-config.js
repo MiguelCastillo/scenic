@@ -166,7 +166,7 @@ export const config = {
 
           "items": [{
             "name": "rigged animation",
-            "type": "static-mesh",
+            "type": "skinned-mesh",
             "resource": "/resources/fbx/dancing-character.fbx",
             "normalSmoothing": false,
             "animation": {

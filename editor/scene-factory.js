@@ -2,6 +2,7 @@ import {Node as SceneNode} from "../src/scene/node.js";
 import {Light as SceneLight} from "../src/scene/light.js";
 import {Projection} from "../src/scene/projection.js";
 import {StaticMesh} from "../src/scene/static-mesh.js";
+import {SkinnedMesh} from "../src/scene/skinned-mesh.js";
 import {buildTraversal} from "../src/scene/traversal.js";
 import {SceneManager} from "../src/scene-manager.js";
 import {StateManager} from "../src/state-manager.js";
@@ -32,6 +33,8 @@ export function createScene(config) {
   function buildSceneNode(nodeConfig) {
     if (isStaticMesh(nodeConfig)) {
       return new StaticMesh(nodeConfig);
+    } else if (isSkinnedMesh(nodeConfig)) {
+      return new SkinnedMesh(nodeConfig);
     } else if (isLight(nodeConfig)) {
       return new SceneLight(nodeConfig);
     } else if (isProjection(nodeConfig)) {
@@ -56,4 +59,8 @@ export function isLight(nodeConfig) {
 
 export function isStaticMesh(nodeConfig) {
   return nodeConfig.type === "static-mesh";
+}
+
+export function isSkinnedMesh(nodeConfig) {
+  return nodeConfig.type === "skinned-mesh";
 }

@@ -10,7 +10,7 @@ import {
   buildSceneNode as fbxBuildSceneNode
 } from "./fbx/loader.js";
 
-import {isLight, isStaticMesh} from "../scene-factory.js";
+import {isLight, isStaticMesh, isSkinnedMesh} from "../scene-factory.js";
 
 export function createResourceLoader(gl, sceneManager) {
   const cache = {};
@@ -57,8 +57,9 @@ export function createResourceLoader(gl, sceneManager) {
 }
 
 export function getResourcesFromConfig(config) {
+  // TODO(miguel): do we really need to filter out by node type?
   const traverse = treeGetMatches((item) => (
-    (isStaticMesh(item) || isLight(item)) &&
+    (isStaticMesh(item) || isSkinnedMesh(item) || isLight(item)) &&
     (!!item.resource && typeof item.resource === "string")
   ));
 

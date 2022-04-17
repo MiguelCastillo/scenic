@@ -1,7 +1,8 @@
 import * as React from "react";
 
 import {SceneNodeContent} from "./node-content.jsx";
-import {SceneNodeMesh} from "./node-static-mesh.jsx";
+import {SceneNodeStaticMesh} from "./node-static-mesh.jsx";
+import {SceneNodeSkinnedMesh} from "./node-skinned-mesh.jsx";
 import {SceneNodeLight} from "./node-light.jsx";
 import {NodeSelectionContext} from "./selection-context.js";
 
@@ -48,12 +49,12 @@ export class SceneNode extends React.Component {
     }
 
     if (type === "static-mesh") {
-      return <SceneNodeMesh node={node}/>
-    }
-    else if (type === "light") {
-      return <SceneNodeLight node={node}/>
-    }
-    else {
+      return <SceneNodeStaticMesh node={node}/>;
+    } else if (type === "skinned-mesh") {
+      return <SceneNodeSkinnedMesh node={node}/>;
+    } else if (type === "light") {
+      return <SceneNodeLight node={node}/>;
+    } else {
       const isEmpty = items.length === 0;
       if (isEmpty) {
         className.push("empty");
