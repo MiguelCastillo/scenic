@@ -93,7 +93,6 @@ export class Mesh extends Animatable {
   constructor(options) {
     super(Object.assign({}, options, {type:"fbx-mesh"}));
     this.vertexBuffers = [];
-    this.boneMatrices = [];
   }
 
   withShaderProgram(shaderProgram) {
@@ -106,19 +105,9 @@ export class Mesh extends Animatable {
     return this;
   }
 
-  addBoneMatrix(boneMatrix, idx) {
-    if (idx !== this.boneMatrices.length) {
-      // eslint-disable-next-line no-console
-      console.warn("====> bone matrix index is not correct");
-    }
-    this.boneMatrices[idx] = boneMatrix;
-    return this;
-  }
-
   preRender(context) {
     super.preRender(context);
     this.vertexBuffers = [];
-    this.boneMatrices = [];
   }
 
   render(context) {
@@ -172,6 +161,11 @@ export class Mesh extends Animatable {
     // Configure shader program with its current state.
     const program = shaderProgram
       .addUniforms([{
+          name: "worldMatrix",
+          update: (gl, {index}) => {
+            gl.uniformMatrix4fv(index, true, worldMatrix.data);
+          },
+        }, {
           name: "projectionMatrix",
           update: (gl, {index}) => {
             gl.uniformMatrix4fv(index, false, projectionMatrix.data);
@@ -188,39 +182,9 @@ export class Mesh extends Animatable {
         ...lightEnabled,
       ]);
 
-    if (this.vertexBuffers.length) {
-      let p = program
-        .addUniforms([{
-          name: "worldMatrix",
-          update: (gl, {index}) => {
-            gl.uniformMatrix4fv(index, true, worldMatrix.data);
-          },
-        }]);
-
-      if (this.boneMatrices.length) {
-        const boneMatrixUniforms = this.boneMatrices.map((m, i) => {
-          return {
-            name: `boneMatrices[${i}]`,
-            update: (gl, {index}) => {
-              gl.uniformMatrix4fv(index, true, m.data);
-            },
-          };
-        });
-
-        p = p
-          .addUniforms(boneMatrixUniforms)
-          .addUniforms([{
-            name: "enabledSkinAnimation",
-            update: (gl, {index}) => {
-              gl.uniform1i(index, 1);
-            }
-          }]);
-      }
-
-      this.vertexBuffers.forEach(vertexBuffer => {
-        p.render(vertexBuffer);
-      });
-    }
+    this.vertexBuffers.forEach(vertexBuffer => {
+      program.render(vertexBuffer);
+    });
   }
 }
 
@@ -244,18 +208,64 @@ export class Geometry extends SceneNode {
     return this;
   }
 
+  preRender({gl}) {
+    if (this.skinningEnabled) {
+      if (!this._boneMatrixTexture) {
+        this._boneMatrixTexture = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, this._boneMatrixTexture);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+      }
+    }
+  }
+
   render() {
     let mesh = findParentByType(this, Mesh);
     if (mesh) {
       mesh.addVertexBuffer(this.vertexBuffer);
       if (this.skinningEnabled) {
+        let boneMatrices = [];
+
         // Skin deformers deform the mesh for the model we are processing.
         for (const skin of this.skinDeformers) {
           for (const cluster of skin.items) {
-            if (cluster.boneIndex != null) {
-              mesh.addBoneMatrix(cluster.worldMatrix, cluster.boneIndex);
-            }
+            boneMatrices[cluster.boneIndex] = cluster.worldMatrix.transpose().data;
           }
+        }
+
+        if (boneMatrices.length) {
+          mesh.shaderProgram.addUniforms([{
+            name: "boneMatrixTexture",
+            update: (gl, {index}) => {
+              gl.activeTexture(gl.TEXTURE0);
+              gl.bindTexture(gl.TEXTURE_2D, this._boneMatrixTexture);
+              gl.texImage2D(
+                gl.TEXTURE_2D,
+                0,
+                gl.RGBA32F,
+                4,
+                boneMatrices.length,
+                0,
+                gl.RGBA,
+                gl.FLOAT,
+                // NOTE(miguel): we flip images with UNPACK_FLIP_Y_WEBGL so that
+                // textures can render correctly. But that affects the order
+                // of every texture, including the texture we are creating
+                // with bone matrices. But all we have to do is reverse the
+                // list of matrices, since the matrix increments along the
+                // Y axis.  So reversing the list matrices basically flips
+                // the texture on it Y axis.
+                new Float32Array(boneMatrices.reverse().flat()),
+              );
+
+              gl.uniform1i(index, this._boneMatrixTexture);
+            },
+          }, {
+            name: "enabledSkinAnimation",
+            update: (gl, {index}) => {
+              gl.uniform1i(index, 1);
+            }
+          }]);
         }
       }
     }

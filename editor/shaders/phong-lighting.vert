@@ -12,17 +12,25 @@ in vec4 boneid;
 uniform mat4 projectionMatrix;
 uniform mat4 worldMatrix;
 uniform bool enabledSkinAnimation;
-uniform mat4 boneMatrices[64];
+uniform sampler2D boneMatrixTexture;
 
 out vec4 fragmentColor;
 out vec4 fragmentNormal;
+
+mat4 getBoneMatrix(int boneIndex) {
+  return mat4(
+    texelFetch(boneMatrixTexture, ivec2(0, boneIndex), 0),
+    texelFetch(boneMatrixTexture, ivec2(1, boneIndex), 0),
+    texelFetch(boneMatrixTexture, ivec2(2, boneIndex), 0),
+    texelFetch(boneMatrixTexture, ivec2(3, boneIndex), 0));
+}
 
 void main() {
   if (enabledSkinAnimation) {
     vec4 weightedPosition;
     for (int i = 0; i < MAX_BONES; i++) {
       if (weight[i] != 0.0) {
-        weightedPosition += boneMatrices[int(boneid[i])] * weight[i] * vec4(position, 1.0);
+        weightedPosition += getBoneMatrix(int(boneid[i])) * weight[i] * vec4(position, 1.0);
       }
     }
     gl_Position = projectionMatrix * weightedPosition;
