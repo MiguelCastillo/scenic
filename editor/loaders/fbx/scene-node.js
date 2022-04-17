@@ -465,7 +465,6 @@ export class AnimationStack extends SceneNode {
   preRender(context) {
     // TOOD(miguel): fps comes from the FBX file. We should also make this
     // configurable in the UI
-    const fps = 24;
     const playback = this.playback;
     const animationNode = this.parent;
     const animationState = context.sceneManager.getNodeStateByName(animationNode.name);
@@ -476,6 +475,8 @@ export class AnimationStack extends SceneNode {
     }
 
     if (animationState.state && playback.state !== animationState.state) {
+      const {fps = 24} = animationState;
+
       switch(animationState.state) {
         case "paused":
           playback.pause(context.ms);
@@ -494,7 +495,7 @@ export class AnimationStack extends SceneNode {
               state: playback.state,
             });
 
-          playback.skip(-1000/fps);
+          playback.skip(-(1000/fps));
           break;
         case "next":
           if (playback.state === "play") {

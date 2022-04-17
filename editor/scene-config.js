@@ -171,6 +171,7 @@ export const config = {
             "normalSmoothing": false,
             "animation": {
               "speed": 1,
+              "fps": 24,
             },
             "material": {
               "color": [1, 1, 1, 1],

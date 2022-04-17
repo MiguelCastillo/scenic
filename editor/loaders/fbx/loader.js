@@ -73,6 +73,9 @@ export class Loader extends BrinaryFileLoader {
   }
 }
 
+// FBX models fps default of 24 frames per second.
+const FBX_DEFAULT_FPS = 24;
+
 let animationID = 0;
 
 // We cache some extra information from the FBX file that is needed after
@@ -97,6 +100,8 @@ export function buildSceneNode(gl, fbxDocument, sceneNodeConfig, sceneManager) {
       connections: [],
     },
   };
+
+  const globalSettings = findChildByName(fbxDocument, "GlobalSettings");
 
   const objects = findChildByName(fbxDocument, "Objects");
   for (const node of objects.children) {
@@ -149,12 +154,21 @@ export function buildSceneNode(gl, fbxDocument, sceneNodeConfig, sceneManager) {
   if (animationNode.items.length) {
     sceneNode.add(animationNode);
 
+    ////////////
     // Initialize the state for the animation node
+
+    // fps in an FBX file is a property in the global settings and it looks like
+    // ['CustomFrameRate', 'double', 'Number', '', 24]
+    const properties70 = findChildByName(globalSettings, "Properties70");
+    const frameRate = properties70.properties.find(p => p.value[0] === "CustomFrameRate");
+    const fps = frameRate?.value[4];
+
     const {animation={}} = sceneManager.getNodeStateByName(sceneNode.name);
     sceneManager.updateNodeStateByName(animationNode.name, {
       ...animation,
-      name: animationNode.name,
-      type: animationNode.type,
+      // Order of presedence for FPS is first custom, then fbx file, then just
+      // known default.
+      fps: animation.fps || fps || FBX_DEFAULT_FPS,
       stackNames: animationNode.items.map(item => item.name),
     });
   }
