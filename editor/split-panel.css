@@ -5,8 +5,8 @@
 
 .split-panel.vertical {
   display: flex;
-  height: 100%;
-  width: 100%;
+  flex: 1 0 100%;
+  flex-direction: row;
 }
 
 .split-panel.vertical > .panel-left {
@@ -14,6 +14,7 @@
   width: var(--resizer-position);
   padding-right: calc(var(--resizer-size)/2);
   box-sizing: border-box;
+  display: flex;
 }
 
 .split-panel.vertical > .panel-right {
@@ -21,6 +22,7 @@
   width: calc(100% - var(--resizer-position));
   padding-left: calc(var(--resizer-size)/2);
   box-sizing: border-box;
+  display: flex;
 }
 
 .split-panel.vertical > .resizer {
