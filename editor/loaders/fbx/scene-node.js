@@ -126,61 +126,65 @@ export class Mesh extends Animatable {
     const lightsStates = findParentItemsWithItemType(this, "light")
       .map(({name}) => sceneManager.getNodeStateByName(name));
 
-    const lightPositions = lightsStates
-      .map(({transform: {position}}, idx) => ({
-        name: `lights[${idx}].position`,
+    const uniforms = [{
+        name: "worldMatrix",
         update: (gl, {index}) => {
-          gl.uniform3fv(index, vec3.normalize(...position));
+          gl.uniformMatrix4fv(index, true, worldMatrix.data);
         },
-      }));
-
-    const lightColors = lightsStates
-      .map(({light: {color}}, idx) => ({
-        name: `lights[${idx}].color`,
+      }, {
+        name: "projectionMatrix",
         update: (gl, {index}) => {
-          gl.uniform3fv(index, color);
-        }
-      }));
-
-    const lightIntensities = lightsStates
-      .map(({light: {intensity}}, idx) => ({
-        name: `lights[${idx}].intensity`,
-        update: (gl, {index}) => {
-          gl.uniform1f(index, intensity);
+          gl.uniformMatrix4fv(index, false, projectionMatrix.data);
         },
-      }));
-
-    const lightEnabled = lightsStates
-      .map((_, idx) => ({
-        name: `lights[${idx}].enabled`,
+      }, {
+        name: "bumpLighting",
         update: (gl, {index}) => {
-          gl.uniform1i(index, 1);
+          gl.uniform1i(index, bumpLightingEnabled);
         },
-      }));
+      },
+    ];
 
-    // Configure shader program with its current state.
-    const program = shaderProgram
-      .addUniforms([{
-          name: "worldMatrix",
+    lightsStates
+      .forEach(({transform: {position}}, idx) =>
+        uniforms.push({
+          name: `lights[${idx}].position`,
           update: (gl, {index}) => {
-            gl.uniformMatrix4fv(index, true, worldMatrix.data);
+            gl.uniform3fv(index, vec3.normalize(position[0], position[1], position[2]));
           },
-        }, {
-          name: "projectionMatrix",
+        })
+      );
+
+    lightsStates
+      .forEach(({light: {color}}, idx) =>
+        uniforms.push({
+          name: `lights[${idx}].color`,
           update: (gl, {index}) => {
-            gl.uniformMatrix4fv(index, false, projectionMatrix.data);
+            gl.uniform3fv(index, color);
           },
-        }, {
-          name: "bumpLighting",
+        })
+      );
+
+    lightsStates
+      .forEach(({light: {intensity}}, idx) =>
+        uniforms.push({
+          name: `lights[${idx}].intensity`,
           update: (gl, {index}) => {
-            gl.uniform1i(index, bumpLightingEnabled);
+            gl.uniform1f(index, intensity);
           },
-        },
-        ...lightPositions,
-        ...lightColors,
-        ...lightIntensities,
-        ...lightEnabled,
-      ]);
+        })
+      );
+
+    lightsStates
+      .forEach((_, idx) =>
+        uniforms.push({
+          name: `lights[${idx}].enabled`,
+          update: (gl, {index}) => {
+            gl.uniform1i(index, 1);
+          },
+        })
+      );
+
+    const program = shaderProgram.addUniforms(uniforms);
 
     this.vertexBuffers.forEach(vertexBuffer => {
       program.render(vertexBuffer);
@@ -555,7 +559,7 @@ export class AnimationCurveNode extends SceneNode {
   }
 
   getValues(ms, speed) {
-    return [this.pname, ...this.items.map(item => item.getValue(ms, speed))];
+    return [this.pname, this.items.map(item => item.getValue(ms, speed))];
   }
 }
 
@@ -820,7 +824,7 @@ function evaluateAnimation(ms, speed, curveNodes) {
   const ktime = KTIME_ONE_SECOND*ms*0.001;
 
   curveNodes.forEach(curveNode => {
-    const [pname, ...values] = curveNode.getValues(ktime, speed);
+    const [pname, values] = curveNode.getValues(ktime, speed);
     channels[pname] = {
       values, defaults: curveNode.defaultValues,
     };
