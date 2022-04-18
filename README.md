@@ -8,6 +8,8 @@ nodes in a scene yourself if that's what you prefer.
 You can take at this sample scene rendering skinned animation in scenic editor,
 which is an application that renders a scene.  [Scenic Editor](https://scenic-editor.herokuapp.com/editor/index.html)
 
+![dancing-character](https://user-images.githubusercontent.com/1457701/163882070-23ef08d0-a0da-4b0b-95e7-f36e8c84186d.gif)
+
 Quick intro:
 1. Click on the rendering canvas to enter interactive mode (enable mouse tracking on the canvas)
 2. One (and two fingers on mouse track) will rotate the scene on its origin
