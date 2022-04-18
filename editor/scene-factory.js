@@ -7,7 +7,9 @@ import {buildTraversal} from "../src/scene/traversal.js";
 import {SceneManager} from "../src/scene-manager.js";
 import {StateManager} from "../src/state-manager.js";
 
-export function createScene(config) {
+export function createScene(c) {
+  let config = buildDefaultState(c);
+
   // The state manager is the first thing we create. This is built from all
   // the scene configuation information, and it is used for creating the
   // scene manager itself. The state manager is where the state of the world
@@ -63,4 +65,40 @@ export function isStaticMesh(nodeConfig) {
 
 export function isSkinnedMesh(nodeConfig) {
   return nodeConfig.type === "skinned-mesh";
+}
+
+// buildDefaultState insert default state to scene nodes that need it. This
+// makes it simpler in the scene config so that you don't have to worry
+// providing boilerplate data.
+function buildDefaultState(config) {
+  const buildNode = (nodeConfig) => {
+    const transform = Object.assign({
+      scale:[1,1,1],
+      rotation:[0,0,0],
+      position:[0,0,0],
+    }, nodeConfig.transform);
+
+    if (isStaticMesh(nodeConfig) || isSkinnedMesh(nodeConfig)) {
+      const material = Object.assign({
+        color: [1, 1, 1, 1],
+        reflectiveness: 1,
+      }, nodeConfig.material);
+
+      return Object.assign({}, nodeConfig, {
+        transform,
+        material,
+      });
+    }
+
+    return Object.assign({}, nodeConfig, {
+      transform,
+    });
+  };
+
+  const buildParent = (parent, children) => {
+    parent.items = children;
+    return parent;
+  };
+
+  return buildTraversal(buildNode, buildParent)(config);
 }
