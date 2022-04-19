@@ -54,6 +54,8 @@ export class InfoDetailsProperties extends WithNodeState {
 
   render() {
     const nodeState = this.getNodeState();
+    const {node} = this.props;
+    const canSelectFile = (node.type === "static-mesh" || node.type === "skinned-mesh" || node.type === "light");
 
     return (
       <div className="node-properties info-details">
@@ -70,9 +72,9 @@ export class InfoDetailsProperties extends WithNodeState {
             readOnly
             type="text"
             onChange={(evt) => this.handleChange("type", evt)}
-            value={nodeState.type} />
+            value={node.type} />
         </div>
-        {(nodeState.type === "static-mesh" || nodeState.type === "light") ?
+        {canSelectFile ?
           <div className="resource">
             <label>Resource</label>
             <div className="resource-selector">
