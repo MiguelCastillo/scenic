@@ -57,9 +57,13 @@ class Animatable extends RenderableSceneNode {
     }
 
     const {
-      translation=[0,0,0],
-      rotation=[0,0,0],
-      scale=[1,1,1],
+      transform
+    } = context.sceneManager.getNodeStateByName(this.name);
+
+    const {
+      translation=transform.position,
+      rotation=transform.rotation,
+      scale=transform.scale,
       stack,
     } = animation;
 

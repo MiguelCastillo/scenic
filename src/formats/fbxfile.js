@@ -114,7 +114,7 @@ function createParser(bufferReader) {
   const [,,,version] = fileHeader;
   if (version === 7400) {
     binaryParser = new BinaryParser7400(bufferReader);
-  } else if (version === 7500) {
+  } else if (version === 7500 || version === 7700) {
     binaryParser = new BinaryParser7500(bufferReader);
   } else {
     throw new Error("version not supported: " + version)
