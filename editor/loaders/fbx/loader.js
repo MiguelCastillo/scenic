@@ -42,11 +42,14 @@ import {
 } from "../../../src/scene/animation.js";
 
 import {
+  Material as MaterialSceneNode,
+} from "../../../src/scene/material.js";
+
+import {
   Mesh,
   Geometry,
   SkinDeformer,
   SkinDeformerCluster,
-  Material,
   Texture,
   Armature,
   Bone,
@@ -376,7 +379,7 @@ function sceneNodeFromConnection(gl, rootConnection, sceneManager, relativeRootS
         break;
       }
       case "Material": {
-        sceneNode = new Material({name});
+        sceneNode = new MaterialSceneNode({name});
 
         const properties70 = findChildByName(fbxNode, "Properties70");
         if (properties70) {
@@ -843,7 +846,7 @@ function buildArmature(sceneNode) {
 function initShaderProgramsForMeshes(gl, sceneNode) {
   findChildrenByType(sceneNode, Mesh).forEach(mesh => {
     const textures = findChildrenByType(mesh, Texture);
-    const materials = findChildrenByType(mesh, Material);
+    const materials = findChildrenByType(mesh, MaterialSceneNode);
 
     // If the mesh has any textures, then we use phong-texture. We have a
     // separate shader specifically for handling textures because if the
@@ -859,7 +862,7 @@ function initShaderProgramsForMeshes(gl, sceneNode) {
     // We add a default texture so that objects can be seen by default
     // in a scene. Without this, meshes will be rendered completely black.
     if (!materials.length) {
-      mesh.add(new Material({name: "default material"}));
+      mesh.add(new MaterialSceneNode({name: "default material"}));
     }
   });
 }

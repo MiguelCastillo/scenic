@@ -223,9 +223,9 @@ export class Geometry extends SceneNode {
   }
 
   render() {
-    let mesh = findParentByType(this, Mesh);
-    if (mesh) {
-      mesh.addVertexBuffer(this.vertexBuffer);
+    let renderable = findParentByType(this, RenderableSceneNode);
+    if (renderable) {
+      renderable.addVertexBuffer(this.vertexBuffer);
       if (this.skinningEnabled) {
         let boneMatrices = [];
 
@@ -237,7 +237,7 @@ export class Geometry extends SceneNode {
         }
 
         if (boneMatrices.length) {
-          mesh.shaderProgram.addUniforms([{
+          renderable.shaderProgram.addUniforms([{
             name: "boneMatrixTexture",
             update: (gl, {index}) => {
               gl.activeTexture(gl.TEXTURE0);
@@ -576,58 +576,6 @@ export class AnimationCurve extends SceneNode {
   }
 }
 
-export class Material extends SceneNode {
-  constructor(options, materialColor=[0.5,0.5,0.5,1], ambientColor=[1,1,1], reflectionFactor=1) {
-    super(Object.assign({}, options, {type:"fbx-material"}));
-    this.materialColor = materialColor;
-    this.ambientColor = ambientColor;
-    this.reflectionFactor = reflectionFactor;
-  }
-
-  withAmbientColor(ambientColor) {
-    this.ambientColor = ambientColor;
-    return this;
-  }
-
-  withMaterialColor(materialColor) {
-    this.materialColor = materialColor;
-
-    if (materialColor.length === 3) {
-      this.materialColor[3] = 1;
-    }
-
-    return this;
-  }
-
-  withReflectionFactor(reflectionFactor) {
-    this.reflectionFactor = reflectionFactor;
-    return this;
-  }
-
-  render() {
-    const mesh = findParentByType(this, Mesh);
-
-    if (mesh) {
-      mesh.shaderProgram.addUniforms([{
-        name: "ambientColor",
-        update: (gl, {index}) => {
-          gl.uniform3fv(index, this.ambientColor);
-        }
-      }, {
-        name: "materialReflectiveness",
-        update: (gl, {index}) => {
-          gl.uniform1f(index, this.reflectionFactor);
-        },
-      }, {
-        name: "materialColor",
-        update: (gl, {index}) => {
-          gl.uniform4fv(index, this.materialColor);
-        },
-      }]);
-    }
-  }
-}
-
 // The code in the Texture is basically all lifted from:
 // https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/Tutorial/Using_textures_in_WebGL
 export class Texture extends SceneNode {
@@ -703,12 +651,12 @@ export class Texture extends SceneNode {
   }
 
   render() {
-    let mesh = findParentByType(this, Mesh);
-    if (mesh) {
+    let renderable = findParentByType(this, RenderableSceneNode);
+    if (renderable) {
       const {textureID, type} = this;
 
       if (type === "normalmap") {
-        mesh.shaderProgram.addUniforms([
+        renderable.shaderProgram.addUniforms([
           {
             name: `${type}.enabled`,
             update: (gl, {index}) => {
@@ -724,7 +672,7 @@ export class Texture extends SceneNode {
           }
         ]);
       } else {
-        mesh.shaderProgram.addUniforms([
+        renderable.shaderProgram.addUniforms([
           {
             name: `textures[${textureID}].enabled`,
             update: (gl, {index}) => {
