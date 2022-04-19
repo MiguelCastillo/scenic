@@ -25,3 +25,20 @@ it in Blender for now.
 
 It also has support for OBJ files (without mtl). Usually a quick way to feed
 some geometry for rendering.
+
+## Dev
+
+Minimum version of Node is 14. That's what we are running in prod for the server and bundling.
+
+To start up the server locally, you can `npm run serve`.  That will startup
+the build system, file watching, and your local dev server. To load up the
+editor you can navigate to http://localhost:3000/editor/index.html
+
+The usual `npm run test` will run all the tests.
+
+If you just want to build all the artifacts, you can use `npm run build`.
+
+Currently, there are three bundles generated:
+1. The editor. This is an app with a default scene where you can test and experiment with Scenic core. For example, this is where most of the logic for FBX file animation exists while implementing support for it. Eventually this is will get renamed to playground.
+2. Fileformat. This is meant to be loaded in a webworker to parsing Obj files. This can be easily extended to support parsing other file formats if needed.
+3. Scenic.  This is Scenic core - everything in `src`.
