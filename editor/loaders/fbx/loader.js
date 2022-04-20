@@ -643,19 +643,16 @@ function getLayerData(geometry, layerDataName) {
     components = getIndexedComponents(components, indexes, componentsPerVertex);
   }
 
-  /*
   // We do not need to deal with ByPolygonVertex here because things are
   // reindexed later on.
   const mappingInformationType = findPropertyValueByName(layer, "MappingInformationType");
   if (mappingInformationType === "ByPolygonVertex") {
-    const polygonVertexIndex = findPropertyValueByName(geometry, "PolygonVertexIndex");
-    components = toPolygonVertexIndex(components, polygonVertexIndex, componentsPerVertex);
-  } else if (mappingInformationType === "ByPolygon") {
-    // NOTE(miguel): I have yet to see this around! We'll add support when
-    // we need to.
-    console.error("===> FBX MappingInformationType ByPolygon is not supported.");
+    // This is already the default that we use. So this is a NOOP.
+  } else {
+    // TODO(miguel): add support for ByVertice, ByVertex, ByPolygon, ByEdge, AllSame
+    // eslint-disable-next-line no-console
+    console.warn(`FBX MappingInformationType "${mappingInformationType}" is not supported. ${layerDataName}`);
   }
-  */
 
   return components;
 }
