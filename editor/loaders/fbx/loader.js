@@ -504,16 +504,11 @@ function buildGeometryLayers(fbxGeometry, normalSmoothing) {
   //
   // [0, 4, 6, -3] => [0, 1, 2, 0, 2, 3]
   //
-  const directIndexes = polygonVertexIndexToDirect(polygonVertexIndex);
+  const renderIndexes = polygonVertexIndexToDirect(polygonVertexIndex);
 
-  const vertices = [];
-  for (let i = 0; i < polygonIndexes.length; i++) {
-    const polygonIndexOffset = polygonIndexes[i]*3;
-    const directIndexOffset = directIndexes[i]*3;
-    for (let j = 0; j < 3; j++) {
-      vertices[directIndexOffset+j] = polygonVertices[polygonIndexOffset+j];
-    }
-  }
+  // We remap vertices indexed with decoded polygon indexes to  render indexes,
+  // which are suitable for indexing normal vectors.
+  const vertices = mapPolygonIndexToRenderIndex(polygonVertices, polygonIndexes, renderIndexes);
 
   // Texture coordinates.
   let uv = getLayerData(fbxGeometry, "UV");
@@ -539,7 +534,7 @@ function buildGeometryLayers(fbxGeometry, normalSmoothing) {
 
   return {
     vertices,
-    indexes: directIndexes,
+    indexes: renderIndexes,
     tangents,
     bitangents,
     uv, normals,
@@ -616,8 +611,8 @@ const layerMap = {
   }
 }
 
-function getLayerData(geometry, layerDataName) {
-  const layer = findChildByName(geometry, layerMap[layerDataName].layerName);
+function getLayerData(fbxGeometry, layerDataName) {
+  const layer = findChildByName(fbxGeometry, layerMap[layerDataName].layerName);
   if (!layer) {
     return null;
   }
@@ -648,8 +643,21 @@ function getLayerData(geometry, layerDataName) {
   const mappingInformationType = findPropertyValueByName(layer, "MappingInformationType");
   if (mappingInformationType === "ByPolygonVertex") {
     // This is already the default that we use. So this is a NOOP.
+  } else if (mappingInformationType === "ByVertice" || mappingInformationType === "ByVertex") {
+
+    // TODO(miguel): when normals are ByVertice, does that mean that normals
+    // won't break if they are indexed with polygon indexes that share vertices?
+    // Usually vertices can't share indexes too well when polygons have sharp
+    // angles (90 + degrees).
+    const polygonVertexIndex = findPropertyValueByName(fbxGeometry, "PolygonVertexIndex");
+
+    components = mapPolygonIndexToRenderIndex(
+      components,
+      decodePolygonVertexIndexes(polygonVertexIndex),
+      polygonVertexIndexToDirect(polygonVertexIndex));
   } else {
-    // TODO(miguel): add support for ByVertice, ByVertex, ByPolygon, ByEdge, AllSame
+    // TODO(miguel): add support for ByPolygon, ByEdge, AllSame when the need
+    // comes up.
     // eslint-disable-next-line no-console
     console.warn(`FBX MappingInformationType "${mappingInformationType}" is not supported. ${layerDataName}`);
   }
@@ -882,4 +890,16 @@ export function polygonVertexIndexesToRenderIndexes(polygonIndexes, renderIndexe
     results[polygonIndexes[i]] = renderIndexes[i];
   }
   return results;
+}
+
+function mapPolygonIndexToRenderIndex(components, polygonIndexes, renderIndexes) {
+  const newComponents = [];
+  for (let i = 0; i < polygonIndexes.length; i++) {
+    const polygonIndexOffset = polygonIndexes[i]*3;
+    const renderIndexOffset = renderIndexes[i]*3;
+    for (let j = 0; j < 3; j++) {
+      newComponents[renderIndexOffset+j] = components[polygonIndexOffset+j];
+    }
+  }
+  return newComponents;
 }
