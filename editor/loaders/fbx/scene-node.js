@@ -17,6 +17,10 @@ import {
 } from "../../../src/scene/renderable.js";
 
 import {
+  Animation as AnimationSceneNode,
+} from "../../../src/scene/animation.js";
+
+import {
   findParentItemsWithItemType,
 } from "../../../src/scene/traversal.js";
 
@@ -211,9 +215,11 @@ export class Geometry extends SceneNode {
     return this;
   }
 
-  preRender({gl}) {
+  preRender(context) {
+    super.preRender(context);
     if (this.skinningEnabled) {
       if (!this._boneMatrixTexture) {
+        const {gl} = context;
         this._boneMatrixTexture = gl.createTexture();
         gl.bindTexture(gl.TEXTURE_2D, this._boneMatrixTexture);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
@@ -723,7 +729,7 @@ function getTransformAnimation(animation, defaultValues) {
 function getAnimation(context, animatableNode) {
   // relative root is a skinned mesh node, which will have an animation
   // property in it for easy access to the animation node.
-  const animation = animatableNode.relativeRoot.animation;
+  const animation = animatableNode.relativeRoot.items.find(x => x instanceof AnimationSceneNode);
   if (!animation?.items.length) {
     return;
   }

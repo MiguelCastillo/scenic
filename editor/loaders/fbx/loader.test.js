@@ -31,6 +31,10 @@ import {
 } from "../../scene-factory.js";
 
 import {
+  Animation,
+} from "../../../src/scene/animation";
+
+import {
   bubbleTraversal,
 } from "../../../src/scene/traversal.js";
 
@@ -78,6 +82,7 @@ describe("fbx Loader", () => {
       gl, sceneManager
     } = createSceneContextForTests(sceneNodeFxbCube);
 
+    gl.getShaderInfoLog = jest.fn(() => {return ""});
     mockShaders(["phong-lighting"]);
     buildSceneNode(gl, model, sceneNodeFxbCube, sceneManager);
 
@@ -96,12 +101,13 @@ describe("fbx Loader", () => {
       gl, sceneManager,
     } = createSceneContextForTests(sceneNodeConfig);
 
+    gl.getShaderInfoLog = jest.fn(() => {return ""});
     mockShaders(["phong-lighting", "flat-material"]);
     buildSceneNode(gl, model, sceneNodeConfig, sceneManager);
 
     const sceneNode = sceneManager.getNodeByName(sceneNodeConfig.name);
-
-    sceneManager.updateNodeStateByName(sceneNode.animation.name, {
+    const animation = sceneNode.items.find(x => x instanceof Animation);
+    sceneManager.updateNodeStateByName(animation.name, {
       stackName: "Armature|ArmatureAction - AnimStack",
     });
 
@@ -184,7 +190,7 @@ describe("fbx Loader", () => {
         // and insignificant variations.
         actual = tdata.node.parent.worldMatrix.multiply(actual).data.map(float1).map(_fixZeros);
         expected = tdata.node.worldMatrix.data.map(float1).map(_fixZeros);
-        expect(expected).toEqual(actual);
+        expect(actual).toEqual(expected);
       }
     });
 
@@ -206,7 +212,9 @@ describe("fbx Loader", () => {
       // Y will likely break.
       for (const [ms, degrees, expectedPreCalculated] of timerotation) {
         let context = {gl, sceneManager, ms};
-        sceneNode.animation.items[0].playback.play(0);
+        const animation = sceneNode.items.find(x => x instanceof Animation);
+
+        animation.items[0].playback.play(0);
         bubbleTraversal(bubbleDown(context), () => {})(sceneNode);
 
         let tdata = testData["Right Bone - Model_LimbNode"];
