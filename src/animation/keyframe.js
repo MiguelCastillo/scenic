@@ -52,7 +52,8 @@ export class KeyController {
     // Number of frames (segments) in an animation.
     const frameCount = frames.length;
     if (frameCount < 2) {
-      throw new Error("there must be at least 2 frames.");
+      // eslint-disable-next-line no-console
+      console.log(`KeyController with ${frameCount} frame(s). Ideally animations would be more than 2 frames.`);
     }
 
     this.frames = frames;
