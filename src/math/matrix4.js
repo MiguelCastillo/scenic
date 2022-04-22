@@ -138,8 +138,16 @@ export class Matrix4 {
     return new Matrix4(result);
   }
 
+  static rotate(degreesX, degreesY, degreesZ, rotation=rotate) {
+    return new Matrix4(rotation(identity(), degreesX, degreesY, degreesZ));
+  }
+
   static rotation(degreesX, degreesY, degreesZ, rotation=rotate) {
     return new Matrix4(rotation(identity(), degreesX, degreesY, degreesZ));
+  }
+
+  static translate(tx, ty, tz) {
+    return new Matrix4(translate(tx, ty, tz));
   }
 
   static translation(tx, ty, tz) {
