@@ -5,13 +5,26 @@ import {
 } from "./traversal.js";
 
 const identityMatrix4 = mat4.Matrix4.identity();
+let _id = 0;
+let _ids = {};
+const _getID = () => (_ids[++_id]=_id);
 
 export class Node {
-  constructor({type, name}) {
+  constructor({type, name, id}) {
+    if (id != null) {
+      if (_id[id]) {
+        throw new Error(`duplicate id ${id}. please provide a unique id if you must provide one.`);
+      }
+    } else {
+      id = _getID();
+    }
+
     Object.assign(this, {
-      type, name,
+      type, name, id,
       items: [],
       childrenByType: {},
+      childrenByID: {},
+      localMatrix: identityMatrix4,
     });
   }
 
@@ -23,14 +36,14 @@ export class Node {
   // preRender is a hook that is called when the scene tree is traversing down.
   preRender(context) {
     const node = this;
-    const nodeState = context.sceneManager.getNodeStateByName(node.name);
+    const nodeState = context?.sceneManager?.getNodeStateByName(node.name);
 
     // LocalMatrix is also known as a ModelMatrix. This matrix is a transform
     // matrix with origin at [0,0,0] and relies on the parent world matrix
     // to determine the locaton in world space. That is, absolute position
     // so that coordinates can be rendered without depending on ancestry. That
     // absolute matrix is the world matrix.
-    let localMatrix = identityMatrix4;
+    let localMatrix = this.localMatrix;
     let worldMatrix;
 
     if (nodeState?.transform) {
@@ -72,7 +85,12 @@ export class Node {
   }
 
   add(node) {
+    if (this.childrenByID[node.id]) {
+      console.warn(`child with ${node.id} is already registered.`);
+    }
+
     this.items.push(node._withParent(this));
+    this.childrenByID[node.id] = node;
 
     // We will be storing all nodes by type to speed up the lookup
     // of nodes in the scene tree
@@ -80,7 +98,6 @@ export class Node {
     if (!this.childrenByType[typeKey]) {
       this.childrenByType[typeKey] = [];
     }
-
     this.childrenByType[typeKey].push(node);
     return this;
   }
@@ -99,6 +116,7 @@ export class Node {
         this.childrenByType[node.type].splice(byTypeIndex, 1);
       }
 
+      delete this.childrenByID[node.id];
       node._withParent(null);
     }
     return this;
@@ -129,4 +147,9 @@ export function findChildrenByType(sceneNode, ChildType) {
 // Breadth first search!
 export function findChildByType(sceneNode, ChildType) {
   return findChildDeepBreadthFirst(sceneNode, (x) => x instanceof ChildType);
+}
+
+export function _clearIDsForTests() {
+  _id = 0;
+  _ids = {};
 }
