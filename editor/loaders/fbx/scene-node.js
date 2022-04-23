@@ -85,9 +85,9 @@ class Animatable extends RenderableSceneNode {
 
     const parent = this.parent;
     if (parent) {
-      this.withMatrix(parent.worldMatrix.multiply(animationMatrix));
+      this.withWorldMatrix(parent.worldMatrix.multiply(animationMatrix));
     } else {
-      this.withMatrix(animationMatrix);
+      this.withWorldMatrix(animationMatrix);
     }
   }
 }
@@ -460,7 +460,7 @@ export class SkinDeformerCluster extends SceneNode {
     // at. But if multiple bones affect a skin cluster has multiple
     // bones then we need to take their average.
     const bone = armatute.bonesByID[this.boneIDs[0]];
-    this.withMatrix(bone.worldMatrix.multiply(this.transform));
+    this.withWorldMatrix(bone.worldMatrix.multiply(this.transform));
   }
 }
 

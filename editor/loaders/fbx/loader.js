@@ -454,7 +454,7 @@ function sceneNodeFromConnection(gl, rootConnection, sceneManager, relativeRootS
     }
 
     sceneNode.relativeRoot = relativeRootSceneNode;
-    return sceneNode.withMatrix(mat4.Matrix4.identity());
+    return sceneNode.withWorldMatrix(mat4.Matrix4.identity());
   }
 }
 

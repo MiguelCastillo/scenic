@@ -85,11 +85,6 @@ export class Node {
     return this;
   }
 
-  // withMatrix set the world matrix also known as global matrix.
-  withMatrix(matrix) {
-    return this.withWorldMatrix(matrix);
-  }
-
   add(node) {
     if (this.childrenByID[node.id]) {
       // eslint-disable-next-line no-console
