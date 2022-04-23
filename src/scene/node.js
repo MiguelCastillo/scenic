@@ -25,6 +25,7 @@ export class Node {
       childrenByType: {},
       childrenByID: {},
       localMatrix: identityMatrix4,
+      worldMatrix: identityMatrix4,
     });
   }
 
@@ -36,35 +37,40 @@ export class Node {
   // preRender is a hook that is called when the scene tree is traversing down.
   preRender(context) {
     const node = this;
-    const nodeState = context?.sceneManager?.getNodeStateByName(node.name);
+    const transform = context?.sceneManager?.getNodeStateByName(node.name)?.transform;
 
-    // LocalMatrix is also known as a ModelMatrix. This matrix is a transform
-    // matrix with origin at [0,0,0] and relies on the parent world matrix
-    // to determine the locaton in world space. That is, absolute position
-    // so that coordinates can be rendered without depending on ancestry. That
-    // absolute matrix is the world matrix.
-    let localMatrix = this.localMatrix;
-    let worldMatrix;
-
-    if (nodeState?.transform) {
-      const transform = nodeState.transform;
-      localMatrix = mat4.Matrix4.trs(
+    if (transform) {
+      node.withLocalMatrix(mat4.Matrix4.trs(
         transform.position,
         transform.rotation,
-        transform.scale);
+        transform.scale));
     }
 
-    if (node.parent?.worldMatrix) {
-      worldMatrix = localMatrix === identityMatrix4 ?
-        node.parent.worldMatrix :
-        node.parent.worldMatrix.multiply(localMatrix);
-    } else {
-      worldMatrix = localMatrix;
-    }
+    // LocalMatrix is also known as a ModelMatrix. This matrix is a transform
+    // matrix in the space of the node and it is usually with origin [0,0,0].
+    // Local matrix relies on parent world matrix to figure the location of the
+    // in world space.
+    // So what does all this mean?
+    // If you have a model with a body, arms, and fingers each at center[0,0,0]
+    // in local space, they are all render on top of each other at 0,0,0.
+    // For all those parts to be drawn in the proper place (assuming that they
+    // are in a hierarchy) you need to multiple the parent world matrices with
+    // local node matrices so that each node is rendered relative to each other,
+    // very similar to absolute positiong in CSS.
+    let localMatrix = this.localMatrix;
 
-    node
-      .withLocalMatrix(localMatrix)
-      .withWorldMatrix(worldMatrix);
+    // Root nodes don't have a parent node so there is not parent world matrix.
+    let parentWorldMatrix = node.parent?.worldMatrix;
+
+    if (parentWorldMatrix) {
+      if (localMatrix !== identityMatrix4) {
+        node.withWorldMatrix(parentWorldMatrix.multiply(localMatrix));
+      } else {
+        node.withWorldMatrix(parentWorldMatrix);
+      }
+    } else if (localMatrix !== identityMatrix4) {
+      node.withWorldMatrix(localMatrix);
+    }
   }
 
   render() {}
