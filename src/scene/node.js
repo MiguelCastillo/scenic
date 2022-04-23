@@ -92,6 +92,7 @@ export class Node {
 
   add(node) {
     if (this.childrenByID[node.id]) {
+      // eslint-disable-next-line no-console
       console.warn(`child with ${node.id} is already registered.`);
     }
 
@@ -153,6 +154,21 @@ export function findChildrenByType(sceneNode, ChildType) {
 // Breadth first search!
 export function findChildByType(sceneNode, ChildType) {
   return findChildDeepBreadthFirst(sceneNode, (x) => x instanceof ChildType);
+}
+
+export function findChildByID(sceneNode, ID) {
+  const groups = [[sceneNode]];
+  for (const nodes of groups) {
+    for (const node of nodes) {
+      if (node.childrenByID[ID]) {
+        return node.childrenByID[ID];
+      }
+
+      if (node.items.length) {
+        groups[groups.length] = node.items;
+      }
+    }
+  }
 }
 
 export function _clearIDsForTests() {

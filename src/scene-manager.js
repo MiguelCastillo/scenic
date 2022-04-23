@@ -1,4 +1,5 @@
 import {bubbleTraversal} from "./scene/traversal.js";
+import {findChildByID} from "./scene/node.js";
 
 export class SceneManager {
   constructor(stateManager) {
@@ -30,6 +31,15 @@ export class SceneManager {
   withSceneNodes(nodes) {
     this.rootNodes = nodes;
     return this;
+  }
+
+  getNodeByID(id) {
+    for (const root of this.rootNodes) {
+      const node = findChildByID(root, id);
+      if (node) {
+        return node;
+      }
+    }
   }
 
   getNodeByName(name) {
