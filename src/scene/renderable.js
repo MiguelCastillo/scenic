@@ -2,9 +2,16 @@ import * as mat4 from "../math/matrix4.js";
 import {Node} from "./node.js";
 import {Projection} from "./projection.js";
 
+// Renderable is a node type that provides an interface for specifying shader
+// program, vertex buffers, and projection matrices. This is gives us all the
+// usually parts needed to render a node. If your node needs to be able to
+// render children nodes then you will needs these things, so very likely you
+// will want to use this interface.
 export class Renderable extends Node {
-  constructor({name, type}) {
-    super({name, type});
+  constructor(options) {
+    // We will default to a type but often inheriting classes will specify
+    // their own. So we will allow overriding the `type` field.
+    super({type: "renderable", ...options});
   }
 
   withShaderProgram(shaderProgram) {

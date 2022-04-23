@@ -14,7 +14,6 @@ export const config = {
       "transform": {
         "scale": [30, 30, 30],
         "position": [100, 100, 0],
-        "rotation": [0, 0, 0],
       },
       "items": [
         {
@@ -29,12 +28,6 @@ export const config = {
 
           "ambient": {
             "color": [1, 0, 0],
-          },
-
-          "transform": {
-            "scale": [1, 1, 1],
-            "position": [0, 0, 0],
-            "rotation": [0, 0, 0],
           },
         }, {
           "name": "axis-y",
@@ -51,8 +44,6 @@ export const config = {
           },
 
           "transform": {
-            "scale": [1, 1, 1],
-            "position": [0, 0, 0],
             "rotation": [0, 0, 90],
           },
         }, {
@@ -70,8 +61,6 @@ export const config = {
           },
 
           "transform": {
-            "scale": [1, 1, 1],
-            "position": [0, 0, 0],
             "rotation": [0, -90, 0],
           },
         },
@@ -88,9 +77,7 @@ export const config = {
       },
 
       "transform": {
-        "scale": [1, 1, 1],
         "position": [0, -100, -700],
-        "rotation": [0, 0, 0],
       },
 
       "items": [
@@ -110,9 +97,7 @@ export const config = {
           },
 
           "transform": {
-            "scale": [1, 1, 1],
             "position": [0, 0, 330],
-            "rotation": [0, 0, 0],
           },
         }, {
           "name": "light-cyan",
@@ -130,9 +115,7 @@ export const config = {
           },
 
           "transform": {
-            "scale": [1, 1, 1],
             "position": [-200, 0, 0],
-            "rotation": [0, 0, 0],
           },
         }, {
           "name": "light-magenta",

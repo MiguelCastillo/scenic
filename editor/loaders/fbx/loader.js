@@ -94,8 +94,7 @@ const _geometryMetadata = {};
 // needs the same texture we can just use what's already cache instead.
 const _textureCache = {};
 
-export function buildSceneNode(gl, fbxDocument, sceneNodeConfig, sceneManager) {
-  const sceneNode = sceneManager.getNodeByName(sceneNodeConfig.name);
+export function buildSceneNode(gl, fbxDocument, sceneNode, sceneManager) {
   sceneNode.clear();
 
   const nodeWrappersByID = {

@@ -12,7 +12,7 @@ export class SceneNodeCollection extends React.Component {
 
     return (
       <ul className="scene-nodes">
-        {nodes.map(node => <SceneNode key={node.name} node={node} />)}
+        {nodes.map(node => <SceneNode key={node.id} node={node} />)}
       </ul>
     );
   }

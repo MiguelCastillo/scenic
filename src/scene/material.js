@@ -2,8 +2,8 @@ import {Node, findParentByType} from "./node.js";
 import {Renderable} from "./renderable.js";
 
 export class Material extends Node {
-  constructor(options, materialColor=[0.5,0.5,0.5,1], ambientColor=[1,1,1], reflectionFactor=1) {
-    super(Object.assign({}, options, {type:"material"}));
+  constructor(options={}, materialColor=[0.5,0.5,0.5,1], ambientColor=[1,1,1], reflectionFactor=1) {
+    super({...options, type:"material"});
     this.materialColor = materialColor;
     this.ambientColor = ambientColor;
     this.reflectionFactor = reflectionFactor;

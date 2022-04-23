@@ -1,10 +1,10 @@
 import {bubbleTraversal} from "./scene/traversal.js";
-import {findChildByID} from "./scene/node.js";
+import {Node, findChildByID} from "./scene/node.js";
 
 export class SceneManager {
   constructor(stateManager) {
     this.stateManager = stateManager;
-    this.rootNodes = [];
+    this.document = new Node({type: "document"});
   }
 
   getNodeStateByName(name) {
@@ -16,46 +16,22 @@ export class SceneManager {
   }
 
   addNode(node) {
-    this.rootNodes.push(node);
+    this.document.add(node);
     return this;
   }
 
   removeNode(node) {
-    const idx = this.rootNodes.indexOf(node);
-    if (idx !== -1) {
-      this.rootNodes.splice(idx+1, 1);
-    }
+    this.document.remove(node);
     return this;
   }
 
   withSceneNodes(nodes) {
-    this.rootNodes = nodes;
+    this.document.clear().addItems(nodes);
     return this;
   }
 
   getNodeByID(id) {
-    for (const root of this.rootNodes) {
-      const node = findChildByID(root, id);
-      if (node) {
-        return node;
-      }
-    }
-  }
-
-  getNodeByName(name) {
-    const nodeGroups = [this.rootNodes];
-
-    for (const nodes of nodeGroups) {
-      for (const node of nodes) {
-        if (node.name === name) {
-          return node;
-        }
-
-        if (node.items?.length) {
-          nodeGroups[nodeGroups.length] = node.items;
-        }
-      }
-    }
+    return findChildByID(this.document, id);
   }
 
   render(ms, gl) {
@@ -92,6 +68,6 @@ export class SceneManager {
     };
 
     const traverse = bubbleTraversal(bubbleDown, bubbleUp);
-    this.rootNodes.map(traverse);
+    this.document.items.forEach(traverse);
   }
 }

@@ -4,7 +4,7 @@ import {Animation} from "./animation.js";
 // SkinnedMesh is a mesh that is animated with bones.
 export class SkinnedMesh extends Renderable {
   constructor(options) {
-    super(Object.assign({}, options, {type: "skinned-mesh"}));
+    super({...options, type: "skinned-mesh"});
 
     // We have an animation node to make it simpler to find animation data.
     // This is the fundamental difference between a static-mesh and a

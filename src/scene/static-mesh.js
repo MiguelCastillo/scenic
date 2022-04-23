@@ -7,6 +7,10 @@ import * as vec3 from "../math/vector3.js";
 // color for the mesh as well other properties that affect lighting such as
 // reflectiveness.
 export class StaticMesh extends Renderable {
+  constructor(options) {
+    super({...options, type: "static-mesh"});
+  }
+
   render(context) {
     const {shaderProgram, worldMatrix, vertexBuffer} = this;
 

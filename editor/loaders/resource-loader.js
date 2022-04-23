@@ -46,7 +46,11 @@ export function createResourceLoader(gl, sceneManager) {
     }
 
     return cache[filename].then(data => {
-      buildSceneNode(gl, data, node, sceneManager);
+      const sceneNode = sceneManager.getNodeByID(node.id);
+      if (!sceneNode) {
+        throw new Error(`unable to load resource. scene node with "${node.id}" was not found.`)
+      }
+      buildSceneNode(gl, data, sceneNode, sceneManager);
     });
   }
 

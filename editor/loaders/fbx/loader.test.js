@@ -74,7 +74,7 @@ describe("fbx Loader", () => {
     expect(model).toBeInstanceOf(FbxNode);
 
     const sceneNodeFxbCube = {
-      name: "fbx cube",
+      id: "fbx cube",
       type: "group",
     };
 
@@ -84,9 +84,9 @@ describe("fbx Loader", () => {
 
     gl.getShaderInfoLog = jest.fn(() => {return ""});
     mockShaders(["phong-lighting"]);
-    buildSceneNode(gl, model, sceneNodeFxbCube, sceneManager);
 
-    const sceneNode = sceneManager.getNodeByName(sceneNodeFxbCube.name);
+    const sceneNode = sceneManager.getNodeByID(sceneNodeFxbCube.id);
+    buildSceneNode(gl, model, sceneNode, sceneManager);
     expect(sceneNode.items[0].name).toEqual("Cube - Model_Mesh");
     expect(sceneNode.items[0].items[0].name).toEqual("Cube - Geometry_Mesh");
   });
@@ -94,7 +94,7 @@ describe("fbx Loader", () => {
   describe("cube armature animation", () => {
     const model = loadModel("../../../resources/fbx/__testdata__/cubearmature_simple.fbx");
     const sceneNodeConfig = {
-      name: "cube armature",
+      id: "cube armature",
       type: "group",
     };
     const {
@@ -103,9 +103,8 @@ describe("fbx Loader", () => {
 
     gl.getShaderInfoLog = jest.fn(() => {return ""});
     mockShaders(["phong-lighting", "flat-material"]);
-    buildSceneNode(gl, model, sceneNodeConfig, sceneManager);
-
-    const sceneNode = sceneManager.getNodeByName(sceneNodeConfig.name);
+    const sceneNode = sceneManager.getNodeByID(sceneNodeConfig.id);
+    buildSceneNode(gl, model, sceneNode, sceneManager);
     const animation = sceneNode.items.find(x => x instanceof Animation);
     sceneManager.updateNodeStateByName(animation.name, {
       stackName: "Armature|ArmatureAction - AnimStack",

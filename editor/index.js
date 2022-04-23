@@ -16,7 +16,7 @@ import * as easings from "../src/math/easings.js";
 import {Subscription} from "../src/dom/events.js";
 
 import {createSplitPanel} from "./split-panel.js";
-import {createScene} from "./scene-factory.js";
+import {createScene, buildDefaultState} from "./scene-factory.js";
 import {createResourceLoader, getResourcesFromConfig} from "./loaders/resource-loader.js";
 import {loadShaders} from "./shader-factory.js";
 import {startRenderLoop} from "./render-loop.js";
@@ -160,22 +160,23 @@ function createSceneUpdater(gl, sceneManager) {
   // This is the logic for updating the scene state and the scene graph with the
   // new scene state. This is the logic for the game itself.
   function updateScene(/*ms*/) {
-    const worldProjectionName = "world projection";
     sceneManager
-      .getNodeByName(worldProjectionName)
+      .getNodeByID("world projection")
       .withProjection(perspectiveProjectionMatrix);
 
-    const axisName = "axis projection";
-    sceneManager
-      .getNodeByName(axisName)
+    const axisProjection = sceneManager
+      .getNodeByID("axis projection")
       .withProjection(axisProjectionMatrix);
 
-    const sceneObjectsName = "scene objects";
-    const axisState = sceneManager.getNodeStateByName(axisName);
-    sceneManager.updateNodeStateByName(axisName, {
+
+    const sceneObjects = sceneManager.getNodeByID("scene objects");
+    const sceneObjectsTransform = sceneManager.getNodeStateByName(sceneObjects.name).transform;
+
+    const axisProjcetionState = sceneManager.getNodeStateByName(axisProjection.name);
+    sceneManager.updateNodeStateByName(axisProjection.name, {
       transform: {
-        ...axisState.transform,
-        rotation: sceneManager.getNodeStateByName(sceneObjectsName).transform.rotation,
+        ...axisProjcetionState.transform,
+        rotation: sceneObjectsTransform.rotation,
       },
     });
 
@@ -256,9 +257,11 @@ export const doRenderLoop = (gl) => {
 
   const start = Date.now();
 
+  const sceneConfig = buildDefaultState(config);
+
   // Let's create the scene, which is made up of a scene manager and a
   // state manager.
-  sceneManager = createScene(config);
+  sceneManager = createScene(sceneConfig);
 
   // API for loading resources for scene nodes.
   const resourceLoader = createResourceLoader(gl, sceneManager);
@@ -277,8 +280,8 @@ export const doRenderLoop = (gl) => {
 
   // First thing is to load the shaders so that loading renderable
   // resources have them when they are getting built.
-  return loadShaders(config.preload.shaders)
-    .then(() => resourceLoader.loadMany(getResourcesFromConfig(config)))
+  return loadShaders(sceneConfig.preload.shaders)
+    .then(() => resourceLoader.loadMany(getResourcesFromConfig(sceneConfig)))
     .then(() => {
       // eslint-disable-next-line
       console.log(`Load time: ${(Date.now() - start)/1000} secs`)

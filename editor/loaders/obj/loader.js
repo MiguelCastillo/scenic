@@ -27,7 +27,7 @@ export class Loader extends WorkerLoader {
   }
 }
 
-export function buildSceneNode(gl, model, node, sceneManager) {
+export function buildSceneNode(gl, model, sceneNode /*, sceneManager*/) {
   let {vertices, normals, colors} = model;
 
   const vertexBuffer = VertexBuffer.create({
@@ -48,16 +48,15 @@ export function buildSceneNode(gl, model, node, sceneManager) {
   }
 
   let shaderProgram;
-  if (isStaticMesh(node)) {
+  if (isStaticMesh(sceneNode)) {
     shaderProgram = createShaderProgram(gl, "phong-lighting");
-  } else if (isLight(node)) {
+  } else if (isLight(sceneNode)) {
     shaderProgram = createShaderProgram(gl, "flat-material");
   } else {
     throw new Error("Unable to intialize shader program because node is not a static-mesh or light");
   }
 
-  sceneManager
-    .getNodeByName(node.name)
+  sceneNode
     .withVertexBuffer(vertexBuffer)
     .withShaderProgram(shaderProgram);
 }
