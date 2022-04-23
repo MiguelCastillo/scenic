@@ -1,45 +1,45 @@
 import {StateManager} from "./state-manager.js";
 
-test("flat array itemsByName", () => {
-  const itemsByName = StateManager.getItemsByName([{
-    name: "item1",
+test("flat array itemsByID", () => {
+  const itemsByID = StateManager.getItemsByID([{
+    id: "item1",
   }, {
-    name: "item2",
+    id: "item2",
   }]);
 
-  expect(itemsByName["item1"]).toEqual({
-    name: "item1"
+  expect(itemsByID["item1"]).toEqual({
+    id: "item1"
   });
 
-  expect(itemsByName["item2"]).toEqual({
-    name: "item2"
+  expect(itemsByID["item2"]).toEqual({
+    id: "item2"
   });
 });
 
-test("array with items itemsByName", () => {
-  const itemsByName = StateManager.getItemsByName([{
-    name: "item1",
+test("array with items itemsByID", () => {
+  const itemsByID = StateManager.getItemsByID([{
+    id: "item1",
     items: [{
-      name: "item1.1",
+      id: "item1.1",
       items: [{
-        name: "item1.1.1",
+        id: "item1.1.1",
       }]
     }, {
-      name: "item1.2",
+      id: "item1.2",
       items: [{
-        name: "item1.2.1",
+        id: "item1.2.1",
       }]
     }]
   }, {
-    name: "item2",
+    id: "item2",
     items: [{
-      name: "item2.1",
+      id: "item2.1",
     }, {
-      name: "item2.2",
+      id: "item2.2",
     }]
   }]);
 
-  expect(Object.keys(itemsByName)).toEqual([
+  expect(Object.keys(itemsByID)).toEqual([
     "item1",
     "item1.1",
     "item1.1.1",

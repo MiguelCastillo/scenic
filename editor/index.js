@@ -25,11 +25,14 @@ import {createFrameRateCounter} from "./fps-counter.js";
 import {config} from "./scene-config.js";
 import {getDebugData} from "../src/webgl.js";
 
-function applyWorldRotation(sceneManager, rotateX, rotateY, rotateZ=0) {
-  const sceneObjectsName = "scene objects";
-  const sceneObjects = sceneManager.getNodeStateByName(sceneObjectsName);
+const sceneObjectsID = "scene objects";
+const axisProjectionID = "axis projection";
+const worldProjectionID = "world projection";
 
-  sceneManager.updateNodeStateByName(sceneObjectsName, {
+function applyWorldRotation(sceneManager, rotateX, rotateY, rotateZ=0) {
+  const sceneObjects = sceneManager.getNodeStateByID(sceneObjectsID);
+
+  sceneManager.updateNodeStateByID(sceneObjectsID, {
     transform: {
       ...sceneObjects.transform,
       rotation: vec3.add(
@@ -41,10 +44,9 @@ function applyWorldRotation(sceneManager, rotateX, rotateY, rotateZ=0) {
 }
 
 function applyWorldTranslation(sceneManager, translateX, translateY, translateZ) {
-  const sceneObjectsName = "scene objects";
-  const sceneObjects = sceneManager.getNodeStateByName(sceneObjectsName);
+  const sceneObjects = sceneManager.getNodeStateByID(sceneObjectsID);
 
-  sceneManager.updateNodeStateByName(sceneObjectsName, {
+  sceneManager.updateNodeStateByID(sceneObjectsID, {
     transform: {
       ...sceneObjects.transform,
       position: vec3.add(
@@ -66,7 +68,7 @@ function createSceneUpdater(gl, sceneManager) {
     const {canvas} = gl;
     const {clientWidth, clientHeight} = canvas;
 
-    const worldProjectionState = sceneManager.getNodeStateByName("world projection");
+    const worldProjectionState = sceneManager.getNodeStateByID(worldProjectionID);
     perspectiveProjectionMatrix = createPerspectiveProjectionMatrix(
       clientWidth,
       clientHeight,
@@ -75,7 +77,7 @@ function createSceneUpdater(gl, sceneManager) {
       worldProjectionState.projection.far,
     );
 
-    const axisProjectionState = sceneManager.getNodeStateByName("axis projection");
+    const axisProjectionState = sceneManager.getNodeStateByID(axisProjectionID);
     axisProjectionMatrix = createOrthographicProjectionMatrix(
       clientWidth,
       clientHeight,
@@ -161,19 +163,18 @@ function createSceneUpdater(gl, sceneManager) {
   // new scene state. This is the logic for the game itself.
   function updateScene(/*ms*/) {
     sceneManager
-      .getNodeByID("world projection")
+      .getNodeByID(worldProjectionID)
       .withProjection(perspectiveProjectionMatrix);
 
     const axisProjection = sceneManager
-      .getNodeByID("axis projection")
+      .getNodeByID(axisProjectionID)
       .withProjection(axisProjectionMatrix);
 
 
-    const sceneObjects = sceneManager.getNodeByID("scene objects");
-    const sceneObjectsTransform = sceneManager.getNodeStateByName(sceneObjects.name).transform;
+    const sceneObjectsTransform = sceneManager.getNodeStateByID(sceneObjectsID).transform;
 
-    const axisProjcetionState = sceneManager.getNodeStateByName(axisProjection.name);
-    sceneManager.updateNodeStateByName(axisProjection.name, {
+    const axisProjcetionState = sceneManager.getNodeStateByID(axisProjection.id);
+    sceneManager.updateNodeStateByID(axisProjection.id, {
       transform: {
         ...axisProjcetionState.transform,
         rotation: sceneObjectsTransform.rotation,

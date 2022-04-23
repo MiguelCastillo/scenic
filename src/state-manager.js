@@ -1,7 +1,7 @@
 export class StateManager {
   constructor(items) {
     this.items = items;
-    this.itemsByName = StateManager.getItemsByName(items);
+    this.itemsByID = StateManager.getItemsByID(items);
   }
 
   getItems() {
@@ -9,31 +9,31 @@ export class StateManager {
   }
 
   getAllItemsByName() {
-    return this.itemsByName;
+    return this.itemsByID;
   }
 
-  getItemByName(name) {
-    return this.itemsByName[name];
+  getItemByID(id) {
+    return this.itemsByID[id];
   }
 
-  updateItemByName(name, item) {
-    this.itemsByName[name] = Object.assign({}, this.itemsByName[name], item);
+  updateItemByID(id, item) {
+    this.itemsByID[id] = Object.assign({}, this.itemsByID[id], item);
     return this;
   }
 
-  static getItemsByName(items) {
+  static getItemsByID(items) {
     const allItems = [...items];
-    const itemsByName = {};
+    const itemsByID = {};
 
     // This will iterate thru all the items in a breadth first order.
     for (let i = 0; i < allItems.length; i++) {
       const item = allItems[i];
 
-      if (itemsByName.hasOwnProperty(item.name)) {
-        throw new Error(`Configuration item "${item.name}" already exists`);
+      if (itemsByID.hasOwnProperty(item.id)) {
+        throw new Error(`Configuration item "${item.id}" already exists`);
       }
 
-      itemsByName[item.name] = { ...item};
+      itemsByID[item.id] = { ...item};
 
       const {items=[]} = item;
 
@@ -43,6 +43,6 @@ export class StateManager {
       allItems.splice(i+1, 0, ...items);
     }
 
-    return itemsByName;
+    return itemsByID;
   }
 }

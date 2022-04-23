@@ -165,8 +165,8 @@ export function buildSceneNode(gl, fbxDocument, sceneNode, sceneManager) {
     const frameRate = properties70.properties.find(p => p.value[0] === "CustomFrameRate");
     const fps = frameRate?.value[4];
 
-    const {animation={}} = sceneManager.getNodeStateByName(sceneNode.name);
-    sceneManager.updateNodeStateByName(animationNode.name, {
+    const {animation={}} = sceneManager.getNodeStateByID(sceneNode.id);
+    sceneManager.updateNodeStateByID(animationNode.id, {
       ...animation,
       // Order of presedence for FPS is first custom, then fbx file, then just
       // known default.
@@ -223,13 +223,12 @@ function sceneNodeFromConnection(gl, rootConnection, sceneManager, relativeRootS
       }
     }
 
-    sceneManager.updateNodeStateByName(
-      sceneNode.name,
-      Object.assign({
+    sceneManager.updateNodeStateByID(
+      sceneNode.id, {
         name: sceneNode.name,
         type: sceneNode.type,
-      }, sceneManager.getNodeStateByName(sceneNode.name)),
-    );
+        ...sceneManager.getNodeStateByID(sceneNode.id),
+    });
   }
 
   return sceneNode;
@@ -286,7 +285,7 @@ function sceneNodeFromConnection(gl, rootConnection, sceneManager, relativeRootS
           }
         }
 
-        sceneManager.updateNodeStateByName(name, {
+        sceneManager.updateNodeStateByID(sceneNode.id, {
           transform: {
             rotation: rotation,
             position: translation,
@@ -297,7 +296,7 @@ function sceneNodeFromConnection(gl, rootConnection, sceneManager, relativeRootS
         break;
       }
       case "Geometry": {
-        const rootState = sceneManager.getNodeStateByName(relativeRootSceneNode.name);
+        const rootState = sceneManager.getNodeStateByID(relativeRootSceneNode.id);
 
         const {
           vertices,

@@ -37,7 +37,7 @@ export class Node {
   // preRender is a hook that is called when the scene tree is traversing down.
   preRender(context) {
     const node = this;
-    const transform = context?.sceneManager?.getNodeStateByName(node.name)?.transform;
+    const transform = context?.sceneManager?.getNodeStateByID(node.id)?.transform;
 
     if (transform) {
       node.withLocalMatrix(mat4.Matrix4.trs(

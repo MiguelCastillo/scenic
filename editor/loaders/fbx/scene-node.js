@@ -62,7 +62,7 @@ class Animatable extends RenderableSceneNode {
 
     const {
       transform
-    } = context.sceneManager.getNodeStateByName(this.name);
+    } = context.sceneManager.getNodeStateByID(this.id);
 
     const {
       translation=transform.position,
@@ -123,11 +123,11 @@ export class Mesh extends Animatable {
     // with the scene configuration state. All FBX nodes are created and
     // added to the scene separately, so they currently don't have their
     // state configurable in the scene config.
-    const parentNodeState = sceneManager.getNodeStateByName(this.parent.name);
+    const parentNodeState = sceneManager.getNodeStateByID(this.parent.id);
     let bumpLightingEnabled = parentNodeState.material?.bumpLighting === true;
 
     const lightsStates = findParentItemsWithItemType(this, "light")
-      .map(({name}) => sceneManager.getNodeStateByName(name));
+      .map(({id}) => sceneManager.getNodeStateByID(id));
 
     const uniforms = [{
         name: "worldMatrix",
@@ -476,7 +476,7 @@ export class AnimationStack extends SceneNode {
     // configurable in the UI
     const playback = this.playback;
     const animationNode = this.parent;
-    const animationState = context.sceneManager.getNodeStateByName(animationNode.name);
+    const animationState = context.sceneManager.getNodeStateByID(animationNode.id);
 
     const stackName = animationState?.stackName;
     if (stackName && this.name !== stackName) {
@@ -498,8 +498,8 @@ export class AnimationStack extends SceneNode {
             playback.pause(context.ms);
           }
 
-          context.sceneManager.updateNodeStateByName(
-            animationNode.name, {
+          context.sceneManager.updateNodeStateByID(
+            animationNode.id, {
               ...animationState,
               state: playback.state,
             });
@@ -511,8 +511,8 @@ export class AnimationStack extends SceneNode {
             playback.pause(context.ms);
           }
 
-          context.sceneManager.updateNodeStateByName(
-            animationNode.name, {
+          context.sceneManager.updateNodeStateByID(
+            animationNode.id, {
               ...animationState,
               state: playback.state,
             });
@@ -734,7 +734,7 @@ function getAnimation(context, animatableNode) {
     return;
   }
 
-  const animationState = context.sceneManager.getNodeStateByName(animation.name);
+  const animationState = context.sceneManager.getNodeStateByID(animation.id);
   const stackName = animationState?.stackName;
   let stack = animatableNode.currentAnimationStack;
 

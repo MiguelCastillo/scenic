@@ -16,7 +16,7 @@ export class Light extends Renderable {
     const projectionMatrix = this.getProjectionMatrix();
 
     // State of the thing we are rendering.
-    const renderableState = sceneManager.getNodeStateByName(this.name);
+    const renderableState = sceneManager.getNodeStateByID(this.id);
 
     shaderProgram
       .setUniforms([{

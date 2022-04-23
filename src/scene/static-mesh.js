@@ -22,7 +22,7 @@ export class StaticMesh extends Renderable {
     const projectionMatrix = this.getProjectionMatrix();
 
     const lightsStates = findParentItemsWithItemType(this, "light")
-      .map(({name}) => sceneManager.getNodeStateByName(name));
+      .map(({id}) => sceneManager.getNodeStateByID(id));
 
     const lightPositions = lightsStates
       .map(({transform: {position}}, idx) => ({
@@ -57,7 +57,7 @@ export class StaticMesh extends Renderable {
       }));
 
     // State of the thing we are rendering.
-    const renderableState = sceneManager.getNodeStateByName(this.name);
+    const renderableState = sceneManager.getNodeStateByID(this.id);
 
     // Configure shader program with its current state.
     shaderProgram

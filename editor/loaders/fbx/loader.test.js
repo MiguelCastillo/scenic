@@ -106,7 +106,7 @@ describe("fbx Loader", () => {
     const sceneNode = sceneManager.getNodeByID(sceneNodeConfig.id);
     buildSceneNode(gl, model, sceneNode, sceneManager);
     const animation = sceneNode.items.find(x => x instanceof Animation);
-    sceneManager.updateNodeStateByName(animation.name, {
+    sceneManager.updateNodeStateByID(animation.id, {
       stackName: "Armature|ArmatureAction - AnimStack",
     });
 

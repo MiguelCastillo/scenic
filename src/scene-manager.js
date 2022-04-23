@@ -7,12 +7,12 @@ export class SceneManager {
     this.document = new Node({type: "document"});
   }
 
-  getNodeStateByName(name) {
-    return this.stateManager.getItemByName(name);
+  getNodeStateByID(id) {
+    return this.stateManager.getItemByID(id);
   }
 
-  updateNodeStateByName(name, newState) {
-    this.stateManager.updateItemByName(name, newState);
+  updateNodeStateByID(id, newState) {
+    this.stateManager.updateItemByID(id, newState);
   }
 
   addNode(node) {
