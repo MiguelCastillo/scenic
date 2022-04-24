@@ -1,0 +1,13 @@
+# TODO(miguel): I am ignoring basically all files but a few to make sure we are
+# not auto fixing files that have not been prettified. I am currently working on
+# setting that up.
+# Right now the only thing we are going to prettify are editor/*.js files.
+
+/.vscode
+
+/editor/*
+!/editor/*.js
+
+/bin
+/src
+/resources
