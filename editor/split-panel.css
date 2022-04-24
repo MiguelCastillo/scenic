@@ -13,7 +13,7 @@
 .split-panel.vertical > .panel-left {
   position: relative;
   width: var(--resizer-position);
-  padding-right: calc(var(--resizer-size)/2);
+  padding-right: calc(var(--resizer-size) / 2);
   box-sizing: border-box;
   display: flex;
 }
@@ -21,7 +21,7 @@
 .split-panel.vertical > .panel-right {
   position: relative;
   width: calc(100% - var(--resizer-position));
-  padding-left: calc(var(--resizer-size)/2);
+  padding-left: calc(var(--resizer-size) / 2);
   box-sizing: border-box;
   display: flex;
 }
@@ -29,7 +29,7 @@
 .split-panel.vertical > .resizer {
   position: fixed;
   top: 0;
-  left: calc(var(--resizer-position) - var(--resizer-size)/2);
+  left: calc(var(--resizer-position) - var(--resizer-size) / 2);
   width: var(--resizer-size);
   height: 100%;
   background: #444444;
@@ -51,7 +51,7 @@
   position: relative;
   height: var(--resizer-position);
   width: 100%;
-  padding-bottom: calc(var(--resizer-size)/2);
+  padding-bottom: calc(var(--resizer-size) / 2);
   box-sizing: border-box;
 }
 
@@ -59,13 +59,13 @@
   position: relative;
   height: calc(100% - var(--resizer-position));
   width: 100%;
-  padding-top: calc(var(--resizer-size)/2);
+  padding-top: calc(var(--resizer-size) / 2);
   box-sizing: border-box;
 }
 
 .split-panel.horizontal > .resizer {
   position: fixed;
-  top: calc(var(--resizer-position) - var(--resizer-size)/2);
+  top: calc(var(--resizer-position) - var(--resizer-size) / 2);
   left: 0;
   height: var(--resizer-size);
   width: 100%;

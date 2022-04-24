@@ -7,8 +7,6 @@
 /.husky
 
 /editor/dist
-/editor/**/*.css
-/editor/**/*.html
 /editor/**/*.frag
 /editor/**/*.vert
 
