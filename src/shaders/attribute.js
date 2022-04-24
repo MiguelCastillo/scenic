@@ -19,15 +19,19 @@ export class ShaderAttribute {
 
     this.shaderProgram = shaderProgram;
 
-    Object.assign(this, {
-      index: gl.getAttribLocation(program, options.name),
-      type: gl.FLOAT,
-      size: 3,
-      // normamlized tells webgl to clamps values to 0 to 255. For Float type,
-      // this doesn't matter.
-      normalized: false,
-      stride: 0,
-      offset: 0,
-    }, options);
+    Object.assign(
+      this,
+      {
+        index: gl.getAttribLocation(program, options.name),
+        type: gl.FLOAT,
+        size: 3,
+        // normamlized tells webgl to clamps values to 0 to 255. For Float type,
+        // this doesn't matter.
+        normalized: false,
+        stride: 0,
+        offset: 0,
+      },
+      options
+    );
   }
 }

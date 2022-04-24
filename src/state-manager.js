@@ -33,14 +33,14 @@ export class StateManager {
         throw new Error(`Configuration item "${item.id}" already exists`);
       }
 
-      itemsByID[item.id] = { ...item};
+      itemsByID[item.id] = {...item};
 
-      const {items=[]} = item;
+      const {items = []} = item;
 
       // Using i here allows us to array the items in the array in a depth
       // first order.
       // If we wanted breadth first, then we can switch i with items.length
-      allItems.splice(i+1, 0, ...items);
+      allItems.splice(i + 1, 0, ...items);
     }
 
     return itemsByID;

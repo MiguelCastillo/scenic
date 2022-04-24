@@ -21,7 +21,9 @@ test("parse binary cube", () => {
   const model = FbxFile.fromBinary(file.buffer);
   expect(model).toBeInstanceOf(Node);
   expect(findPropertyValueByName(model, "CreationTime")).toEqual("1970-01-01 10:00:00:000");
-  expect(findPropertyValueByName(model, "Creator")).toEqual("Blender (stable FBX IO) - 3.0.0 - 4.27.0");
+  expect(findPropertyValueByName(model, "Creator")).toEqual(
+    "Blender (stable FBX IO) - 3.0.0 - 4.27.0"
+  );
 
   const objects = findChildByName(model, "Objects");
   expect(objects).not.toBeUndefined();
@@ -34,6 +36,8 @@ test("parse binary cube", () => {
   expect(edges).toEqual([0, 1, 2, 3, 4, 6, 7, 10, 11, 12, 13, 16]);
 
   const vertices = findPropertyValueByName(geometry, "Vertices");
+
+  // prettier-ignore
   expect(vertices).toEqual([
      1,  1,  1, // v0
      1,  1, -1, // v1
@@ -46,6 +50,8 @@ test("parse binary cube", () => {
   ]);
 
   const polygonVertexIndex = findPropertyValueByName(geometry, "PolygonVertexIndex");
+
+  // prettier-ignore
   expect(polygonVertexIndex).toEqual([
     0, 4, 6, -3, // ti0,  ti1
     3, 2, 6, -8, // ti2,  ti3
@@ -59,6 +65,8 @@ test("parse binary cube", () => {
   expect(normalLayer).not.toBeUndefined();
 
   const normals = findPropertyValueByName(normalLayer, "Normals");
+
+  // prettier-ignore
   expect(normals).toEqual([
     0,0,1,
     0,0,1,
@@ -90,6 +98,8 @@ test("parse binary cube", () => {
   expect(UVLayer).not.toBeUndefined();
 
   const UV = findPropertyValueByName(UVLayer, "UV");
+
+  // prettier-ignore
   expect(UV).toEqual([
     0.625, 1,      // 0
     0.625, 0.25,   // 1
@@ -108,6 +118,8 @@ test("parse binary cube", () => {
   ]);
 
   const UVIndex = findPropertyValueByName(UVLayer, "UVIndex");
+
+  // prettier-ignore
   expect(UVIndex).toEqual([
     13, 3,
     11, 4,
@@ -124,6 +136,8 @@ test("parse binary cube", () => {
   ]);
 
   const UVCoordinates = getIndexed2DComponents(UV, UVIndex);
+
+  // prettier-ignore
   expect(UVCoordinates).toEqual([
     0.625, 0.5,    // 13
     0.875, 0.5,    // 3
@@ -202,11 +216,7 @@ test("iterate connections", () => {
     objectsByID[obj.attributes[0]] = obj;
   }
 
-  expect(Object.keys(objectsByID)).toEqual([
-    "123698400,0",
-    "535348117,0",
-    "318760608,0",
-  ]);
+  expect(Object.keys(objectsByID)).toEqual(["123698400,0", "535348117,0", "318760608,0"]);
 
   const connectionsByID = {};
   const connections = findChildByName(model, "Connections");
@@ -215,26 +225,26 @@ test("iterate connections", () => {
     connectionsByID[propertyValue[1]] = propertyValue;
   }
 
-  expect(Object.keys(connectionsByID)).toEqual([
-    "535348117,0",
-    "123698400,0",
-    "318760608,0",
-  ]);
+  expect(Object.keys(connectionsByID)).toEqual(["535348117,0", "123698400,0", "318760608,0"]);
 
   expect(connectionsByID["535348117,0"][2]).toEqual([0, 0]); // 0,0 is a root document.
-  expect(connectionsByID["123698400,0"][2]).toEqual([535348117,0]);
-  expect(connectionsByID["318760608,0"][2]).toEqual([535348117,0]);
+  expect(connectionsByID["123698400,0"][2]).toEqual([535348117, 0]);
+  expect(connectionsByID["318760608,0"][2]).toEqual([535348117, 0]);
 
-  expect(objectsByID["123698400,0"].name).toEqual("Geometry")
-  expect(objectsByID["318760608,0"].name).toEqual("Material")
+  expect(objectsByID["123698400,0"].name).toEqual("Geometry");
+  expect(objectsByID["318760608,0"].name).toEqual("Material");
 });
 
 test("parse binary cube7500", () => {
-  const file = fs.readFileSync(path.join(__dirname, "../../resources/fbx/__testdata__/cube7500.fbx"));
+  const file = fs.readFileSync(
+    path.join(__dirname, "../../resources/fbx/__testdata__/cube7500.fbx")
+  );
   const model = FbxFile.fromBinary(file.buffer);
   expect(model).toBeInstanceOf(Node);
   expect(findPropertyValueByName(model, "CreationTime")).toEqual("2018-11-27 08:12:37:098");
-  expect(findPropertyValueByName(model, "Creator")).toEqual("FBX SDK/FBX Plugins version 2016.1.2 build=20150910");
+  expect(findPropertyValueByName(model, "Creator")).toEqual(
+    "FBX SDK/FBX Plugins version 2016.1.2 build=20150910"
+  );
 
   const objects = findChildByName(model, "Objects");
   expect(objects).not.toBeUndefined();
@@ -242,62 +252,68 @@ test("parse binary cube7500", () => {
 
   const geometry = findChildByName(objects, "Geometry");
   expect(geometry).not.toBeUndefined();
-  expect(findPropertyValueByName(geometry, "Vertices")).toEqual([-0.5, -0.5, 0.5, 0.5, -0.5, 0.5, -0.5, 0.5, 0.5, 0.5, 0.5, 0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5, -0.5, -0.5, -0.5, 0.5, -0.5, -0.5]);
-  expect(findPropertyValueByName(geometry, "PolygonVertexIndex")).toEqual([0, 1, 3, -3, 2, 3, 5, -5, 4, 5, 7, -7, 6, 7, 1, -1, 1, 7, 5, -4, 6, 0, 2, -5]);
-  expect(findPropertyValueByName(geometry, "Edges")).toEqual([0, 2, 6, 10, 3, 1, 7, 5, 11, 9, 15, 13]);
+  expect(findPropertyValueByName(geometry, "Vertices")).toEqual([
+    -0.5, -0.5, 0.5, 0.5, -0.5, 0.5, -0.5, 0.5, 0.5, 0.5, 0.5, 0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5,
+    -0.5, -0.5, -0.5, 0.5, -0.5, -0.5,
+  ]);
+  expect(findPropertyValueByName(geometry, "PolygonVertexIndex")).toEqual([
+    0, 1, 3, -3, 2, 3, 5, -5, 4, 5, 7, -7, 6, 7, 1, -1, 1, 7, 5, -4, 6, 0, 2, -5,
+  ]);
+  expect(findPropertyValueByName(geometry, "Edges")).toEqual([
+    0, 2, 6, 10, 3, 1, 7, 5, 11, 9, 15, 13,
+  ]);
 
-  const triangulatedIndexes = decodePolygonVertexIndexes(findPropertyValueByName(geometry, "PolygonVertexIndex"));
-  expect(triangulatedIndexes).toEqual(
-    [
-      0, 1, 3,
-      0, 3, 2,
-      2, 3, 5,
-      2, 5, 4,
-      4, 5, 7,
-      4, 7, 6,
-      6, 7, 1,
-      6, 1, -0,
-      1, 7, 5,
-      1, 5, 3,
-      6, 0, 2,
-      6, 2, 4,
-    ]
-  )
+  const triangulatedIndexes = decodePolygonVertexIndexes(
+    findPropertyValueByName(geometry, "PolygonVertexIndex")
+  );
+  // prettier-ignore
+  expect(triangulatedIndexes).toEqual([
+    0, 1, 3,
+    0, 3, 2,
+    2, 3, 5,
+    2, 5, 4,
+    4, 5, 7,
+    4, 7, 6,
+    6, 7, 1,
+    6, 1, -0,
+    1, 7, 5,
+    1, 5, 3,
+    6, 0, 2,
+    6, 2, 4,
+  ]);
 });
 
 test("decodePolygonVertexIndexes for a quad", () => {
-  const polygonIndexes = [8,7,3,-7];
+  const polygonIndexes = [8, 7, 3, -7];
   const triangulatedIndexes = decodePolygonVertexIndexes(polygonIndexes);
-  expect(triangulatedIndexes).toEqual(
-    [
-      8,7,3,
-      8,3,6,
-    ]
-  );
+  expect(triangulatedIndexes).toEqual([8, 7, 3, 8, 3, 6]);
 });
 
 test("decodePolygonVertexIndexes for a cube", () => {
-  const polygonIndexes = [0, 1, 3, -3, 2, 3, 5, -5, 4, 5, 7, -7, 6, 7, 1, -1, 1, 7, 5, -4, 6, 0, 2, -5];
+  const polygonIndexes = [
+    0, 1, 3, -3, 2, 3, 5, -5, 4, 5, 7, -7, 6, 7, 1, -1, 1, 7, 5, -4, 6, 0, 2, -5,
+  ];
   const triangulatedIndexes = decodePolygonVertexIndexes(polygonIndexes);
-  expect(triangulatedIndexes).toEqual(
-    [
-      0, 1, 3,
-      0, 3, 2,
-      2, 3, 5,
-      2, 5, 4,
-      4, 5, 7,
-      4, 7, 6,
-      6, 7, 1,
-      6, 1, -0,
-      1, 7, 5,
-      1, 5, 3,
-      6, 0, 2,
-      6, 2, 4,
-    ]
-  );
+
+  // prettier-ignore
+  expect(triangulatedIndexes).toEqual([
+    0, 1, 3,
+    0, 3, 2,
+    2, 3, 5,
+    2, 5, 4,
+    4, 5, 7,
+    4, 7, 6,
+    6, 7, 1,
+    6, 1, -0,
+    1, 7, 5,
+    1, 5, 3,
+    6, 0, 2,
+    6, 2, 4,
+  ]);
 });
 
 test("render by unpacked polygon index mind bender", () => {
+  // prettier-ignore
   const vertices = [
      1,  1,  1, // v0
      1,  1, -1, // v1
@@ -309,6 +325,7 @@ test("render by unpacked polygon index mind bender", () => {
     -1, -1, -1, // v7
   ];
 
+  // prettier-ignore
   const polygonVertexIndex = [
     0, 4, 6, -3, // ti0,  ti1
     3, 2, 6, -8, // ti2,  ti3
@@ -319,6 +336,8 @@ test("render by unpacked polygon index mind bender", () => {
   ];
 
   const triangulatedIndexes = decodePolygonVertexIndexes(polygonVertexIndex);
+
+  // prettier-ignore
   expect(triangulatedIndexes).toEqual([
     0, 4, 6, // ti0
     0, 6, 2, // ti1
@@ -335,6 +354,8 @@ test("render by unpacked polygon index mind bender", () => {
   ]);
 
   const reindexedPolygonIndexes = polygonVertexIndexToDirect(polygonVertexIndex);
+
+  // prettier-ignore
   expect(reindexedPolygonIndexes).toEqual([
      0,  1,  2,  // ti0
      0,  2,  3,  // ti1
@@ -355,6 +376,8 @@ test("render by unpacked polygon index mind bender", () => {
   // So we need to reindex UV and normals coordinates so that the first
   // vertex points to the correct UV and Normal.
   const trianglesVertices = getIndexed3DComponents(vertices, triangulatedIndexes);
+
+  // prettier-ignore
   expect(trianglesVertices).toEqual([
      1,  1,  1, // v0
     -1,  1,  1, // v4
@@ -422,44 +445,45 @@ test("render by unpacked polygon index mind bender", () => {
   // directions we have to use a different normal for each one of those
   // coordinates if we want lighting to make the cube look like a cube.
   //
+  // prettier-ignore
   const normals = [
-  // polygon 1
-  // [0, 4, 6, 2,] // ti0,  ti1
+    // polygon 1
+    // [0, 4, 6, 2,] // ti0,  ti1
     0,  0,  1,   // n0
     0,  0,  1,   // n1
     0,  0,  1,   // n2
     0,  0,  1,   // n3
 
-  // Polygon 2
-  // [3, 2, 6, 7,] // ti2,  ti3
+    // Polygon 2
+    // [3, 2, 6, 7,] // ti2,  ti3
     0, -1,  0,   // n4
     0, -1,  0,   // n5
     0, -1,  0,   // n6
     0, -1,  0,   // n7
 
-  // Polygon 3
-  // [7, 6, 4, 5,] // ti4,  ti5
+    // Polygon 3
+    // [7, 6, 4, 5,] // ti4,  ti5
    -1,  0,  0,   // n8
    -1,  0,  0,   // n9
    -1,  0,  0,   // n10
    -1,  0,  0,   // n11
 
-  // Polygon 4
-  // [5, 1, 3, 7,] // ti6,  ti7
+    // Polygon 4
+    // [5, 1, 3, 7,] // ti6,  ti7
     0,  0, -1,   // n12
     0,  0, -1,   // n13
     0,  0, -1,   // n14
     0,  0, -1,   // n15
 
-  // Polygon 5
-  // [1, 0, 2, 3,] // ti8,  ti9
+    // Polygon 5
+    // [1, 0, 2, 3,] // ti8,  ti9
     1,  0,  0,   // n16
     1,  0,  0,   // n18
     1,  0,  0,   // n19
     1,  0,  0,   // n20
 
-  // Polygon 6
-  // [5, 4, 0, 1,] // ti10, ti11
+    // Polygon 6
+    // [5, 4, 0, 1,] // ti10, ti11
     0,  1,  0,   // n21
     0,  1,  0,   // n22
     0,  1,  0,   // n23
@@ -467,6 +491,8 @@ test("render by unpacked polygon index mind bender", () => {
   ];
 
   const trianglesNormals = getIndexed3DComponents(normals, reindexedPolygonIndexes);
+
+  // prettier-ignore
   expect(trianglesNormals).toEqual([
     0,0,1,
     0,0,1,
@@ -506,7 +532,7 @@ test("render by unpacked polygon index mind bender", () => {
     0,1,0,
   ]);
 
-
+  // prettier-ignore
   const UVCoordinates = [
     0.625, 0.5,    // 13
     0.875, 0.5,    // 3
@@ -546,6 +572,8 @@ test("render by unpacked polygon index mind bender", () => {
   ];
 
   const triangleUVs = getIndexed2DComponents(UVCoordinates, reindexedPolygonIndexes);
+
+  // prettier-ignore
   expect(triangleUVs).toEqual([
     0.625,  0.5,
     0.875,  0.5,

@@ -1,12 +1,8 @@
-import {
-  _parseShaderCompilationError,
-  parseShaderCompilationErrors,
-} from "./program.js";
+import {_parseShaderCompilationError, parseShaderCompilationErrors} from "./program.js";
 
 describe("_parseShaderCompilationError", () => {
   test("single error on the 4 fourth line", () => {
-    const shaderSourse = (
-`#version 300 es
+    const shaderSourse = `#version 300 es
 
 in vec3 position;
 in vec32 color;
@@ -19,13 +15,16 @@ uniform mat4 worldMatrix;
 void main() {
   gl_Position = projectionMatrix * worldMatrix * vec4(position, 1.0);
   fragmentColor = vec4(color, 1.0);
-}`);
+}`;
 
-    const expected = _parseShaderCompilationError("ERROR: 0:4: 'color' : syntax error", shaderSourse);
+    const expected = _parseShaderCompilationError(
+      "ERROR: 0:4: 'color' : syntax error",
+      shaderSourse
+    );
     expect(expected).toEqual([
       "ERROR",
       "ERROR: 0:4: 'color' : syntax error",
-`#version 300 es
+      `#version 300 es
 
 in vec3 position;
 >>> in vec32 color;`,
@@ -33,8 +32,7 @@ in vec3 position;
   });
 
   test("single error on the 1st line", () => {
-    const shaderSource = (
-`#versio2n 300 es
+    const shaderSource = `#versio2n 300 es
 
 in vec3 position;
 in vec3 color;
@@ -47,9 +45,12 @@ uniform mat4 worldMatrix;
 void main() {
   gl_Position = projectionMatrix * worldMatrix * vec4(position, 1.0);
   fragmentColor = vec4(color, 1.0);
-}`);
+}`;
 
-    const expected = _parseShaderCompilationError("ERROR: 0:1: 'versio2n' : invalid directive name", shaderSource);
+    const expected = _parseShaderCompilationError(
+      "ERROR: 0:1: 'versio2n' : invalid directive name",
+      shaderSource
+    );
     expect(expected).toEqual([
       "ERROR",
       "ERROR: 0:1: 'versio2n' : invalid directive name",
@@ -58,8 +59,7 @@ void main() {
   });
 
   test("error without line number information", () => {
-    const shaderSourse = (
-`#version 300 es
+    const shaderSourse = `#version 300 es
 
 in vec3 position;
 in vec32 color;
@@ -72,29 +72,22 @@ uniform mat4 worldMatrix;
 void main() {
   gl_Position = projectionMatrix * worldMatrix * vec4(position, 1.0);
   fragmentColor = vec4(color, 1.0);
-}`);
+}`;
 
     const expected = _parseShaderCompilationError("ERROR: too many uniforms", shaderSourse);
-    expect(expected).toEqual([
-      "ERROR",
-      "ERROR: too many uniforms",
-    ]);
+    expect(expected).toEqual(["ERROR", "ERROR: too many uniforms"]);
   });
-
 });
-
 
 describe("getAllShaderCompileErrors", () => {
   test("multiple errors on different lines", () => {
-    const compileErrors = (
-`ERROR: 0:1: 'versio2n' : invalid directive name
+    const compileErrors = `ERROR: 0:1: 'versio2n' : invalid directive name
 ERROR: 0:3: 'in' : storage qualifier supported in GLSL ES 3.00 and above only
 ERROR: 0:4: 'in' : storage qualifier supported in GLSL ES 3.00 and above only
 ERROR: 0:4: 'color' : syntax error
-`);
+`;
 
-    const shaderSource = (
-`#versio2n 300 es
+    const shaderSource = `#versio2n 300 es
 
 in vec3 position;
 in vec3 color;
@@ -107,8 +100,7 @@ uniform mat4 worldMatrix;
 void main() {
   gl_Position = projectionMatrix * worldMatrix * vec4(position, 1.0);
   fragmentColor = vec4(color, 1.0);
-}`);
-
+}`;
 
     const expected = parseShaderCompilationErrors(compileErrors, shaderSource);
     expect(expected[0]).toEqual([
@@ -120,7 +112,7 @@ void main() {
     expect(expected[1]).toEqual([
       "ERROR",
       "ERROR: 0:3: 'in' : storage qualifier supported in GLSL ES 3.00 and above only",
-`#versio2n 300 es
+      `#versio2n 300 es
 
 >>> in vec3 position;`,
     ]);
@@ -128,7 +120,7 @@ void main() {
     expect(expected[2]).toEqual([
       "ERROR",
       "ERROR: 0:4: 'in' : storage qualifier supported in GLSL ES 3.00 and above only",
-`#versio2n 300 es
+      `#versio2n 300 es
 
 in vec3 position;
 >>> in vec3 color;`,
@@ -137,11 +129,10 @@ in vec3 position;
     expect(expected[3]).toEqual([
       "ERROR",
       "ERROR: 0:4: 'color' : syntax error",
-`#versio2n 300 es
+      `#versio2n 300 es
 
 in vec3 position;
 >>> in vec3 color;`,
     ]);
   });
-
 });

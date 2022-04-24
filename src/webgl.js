@@ -1,7 +1,7 @@
 export const WEBGL = "webgl";
 export const WEBGL2 = "webgl2";
 
-export function createContext(canvas, version=WEBGL2) {
+export function createContext(canvas, version = WEBGL2) {
   canvas.height = canvas.clientHeight;
   canvas.width = canvas.clientWidth;
 
@@ -18,7 +18,8 @@ export function createContext(canvas, version=WEBGL2) {
 
 export function getDebugData(gl) {
   // camelCase converts snake_case (case insensitive) to camelCase.
-  const camelCase = (x) => x.toLowerCase().replace(/_[a-z]/g, x => x.replace(x, x.substr(1).toUpperCase()));
+  const camelCase = (x) =>
+    x.toLowerCase().replace(/_[a-z]/g, (x) => x.replace(x, x.substr(1).toUpperCase()));
   const contextAttributes = gl.getContextAttributes();
   const debugInfo = gl.getExtension("WEBGL_debug_renderer_info");
   const vendor = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL);

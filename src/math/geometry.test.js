@@ -1,8 +1,6 @@
-import {
-  getIndexed3DComponents,
-  getIndexed2DComponents,
-} from "./geometry.js";
+import {getIndexed3DComponents, getIndexed2DComponents} from "./geometry.js";
 
+// prettier-ignore
 test("getIndexed3DComponents", () => {
   const vertices = [
     0,  0,  0,  // vert 0
@@ -11,11 +9,13 @@ test("getIndexed3DComponents", () => {
     0,  1,  0,  // vert 3
   ];
 
+  // prettier-ignore
   const indexes = [
     0, 1, 2,  // triangle 0
     0, 2, 3,  // triangle 1
   ];
 
+  // prettier-ignore
   expect(getIndexed3DComponents(vertices, indexes)).toEqual([
     0,  0,  0,  // vert 0 |
     1,  0,  0,  // vert 1 | triangle 0
@@ -28,6 +28,7 @@ test("getIndexed3DComponents", () => {
 });
 
 test("getIndexed3DComponents", () => {
+  // prettier-ignore
   const vertices = [
      1,  1,  1,  // vert 0
      1,  1, -1,  // vert 1
@@ -39,6 +40,7 @@ test("getIndexed3DComponents", () => {
     -1, -1, -1,  // vert 7
   ];
 
+  // prettier-ignore
   const indexes = [
     0, 4, 6,  // triangle 0
     0, 6, 2,  // triangle 1
@@ -54,6 +56,7 @@ test("getIndexed3DComponents", () => {
     5, 0, 1,  // triangle 11
   ];
 
+  // prettier-ignore
   expect(getIndexed3DComponents(vertices, indexes)).toEqual([
      1,  1,  1,  // vert 0 |
     -1,  1,  1,  // vert 4 | triangle 0
@@ -106,6 +109,7 @@ test("getIndexed3DComponents", () => {
 });
 
 test("getIndexed2dComponents", () => {
+  // prettier-ignore
   const uv = [
     0.625, 1,     // vert 0
     0.625, 0.25,  // vert 1
@@ -123,6 +127,7 @@ test("getIndexed2dComponents", () => {
     0.625, 0.5,   // vert 13
   ];
 
+  // prettier-ignore
   const indexes = [
     13, 3,
     11, 4,
@@ -138,6 +143,7 @@ test("getIndexed2dComponents", () => {
     13, 2,
   ];
 
+  // prettier-ignore
   expect(getIndexed2DComponents(uv, indexes)).toEqual([
     0.625, 0.5,   // 13  | vert 0
     0.875, 0.5,   // 3   |

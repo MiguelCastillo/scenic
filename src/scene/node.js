@@ -1,13 +1,10 @@
 import * as mat4 from "../math/matrix4.js";
-import {
-  findChildDeepBreadthFirst,
-  findChildrenDeepBreadthFirst
-} from "./traversal.js";
+import {findChildDeepBreadthFirst, findChildrenDeepBreadthFirst} from "./traversal.js";
 
 const identityMatrix4 = mat4.Matrix4.identity();
 let _id = 0;
 let _ids = {};
-const _getID = () => (_ids[++_id]=_id);
+const _getID = () => (_ids[++_id] = _id);
 
 export class Node {
   constructor({type, name, id}) {
@@ -20,7 +17,9 @@ export class Node {
     }
 
     Object.assign(this, {
-      type, name, id,
+      type,
+      name,
+      id,
       items: [],
       childrenByType: {},
       childrenByID: {},
@@ -40,10 +39,9 @@ export class Node {
     const transform = context?.sceneManager?.getNodeStateByID(node.id)?.transform;
 
     if (transform) {
-      node.withLocalMatrix(mat4.Matrix4.trs(
-        transform.position,
-        transform.rotation,
-        transform.scale));
+      node.withLocalMatrix(
+        mat4.Matrix4.trs(transform.position, transform.rotation, transform.scale)
+      );
     }
 
     // LocalMatrix is also known as a ModelMatrix. This matrix is a transform
@@ -105,7 +103,7 @@ export class Node {
   }
 
   addItems(nodes) {
-    nodes.forEach(c => this.add(c));
+    nodes.forEach((c) => this.add(c));
     return this;
   }
 

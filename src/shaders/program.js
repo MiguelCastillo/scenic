@@ -11,9 +11,10 @@ export class ShaderProgram {
     }
 
     this.gl = gl;
-    this.program =  program;
+    this.program = program;
     this._attributes = [];
-    this._uniformsByName = {}; this._uniformsUpdates = {};
+    this._uniformsByName = {};
+    this._uniformsUpdates = {};
   }
 
   setUniforms(uniforms) {
@@ -26,8 +27,8 @@ export class ShaderProgram {
     // objects each frame. If this becomes a memory issue, then we can
     // perhaps implement LRU.
     const newUniforms = uniforms
-      .filter(uniform => !this._uniformsByName[uniform.name])
-      .map(uniform => new ShaderUniform(uniform, this));
+      .filter((uniform) => !this._uniformsByName[uniform.name])
+      .map((uniform) => new ShaderUniform(uniform, this));
 
     for (const uniform of newUniforms) {
       this._uniformsByName[uniform.name] = uniform;
@@ -42,8 +43,8 @@ export class ShaderProgram {
     }
 
     const newUniforms = uniforms
-      .filter(uniform => !this._uniformsByName[uniform.name])
-      .map(uniform => new ShaderUniform(uniform, this));
+      .filter((uniform) => !this._uniformsByName[uniform.name])
+      .map((uniform) => new ShaderUniform(uniform, this));
 
     if (newUniforms.length) {
       for (const uniform of newUniforms) {
@@ -60,9 +61,9 @@ export class ShaderProgram {
   // index, which we will use to bind the correct buffer in the render function.
   // This will replace any already existing attributes in the shader program.
   setAttributes(attributes) {
-    const attrs = attributes.map(attr => new ShaderAttribute(attr, this));
+    const attrs = attributes.map((attr) => new ShaderAttribute(attr, this));
 
-    attrs.forEach(attr => {
+    attrs.forEach((attr) => {
       if (attr.index === -1) {
         // eslint-disable-next-line no-console
         console.warn(`shader attribute ${attr.name} is declared but not used`);
@@ -81,9 +82,9 @@ export class ShaderProgram {
   // In the process of adding the attributes, we will determine the attribute
   // index, which we will use to bind the correct buffer in the render function.
   addAttributes(attributes) {
-    const attrs = attributes.map(attr => new ShaderAttribute(attr, this));
+    const attrs = attributes.map((attr) => new ShaderAttribute(attr, this));
 
-    attrs.forEach(attr => {
+    attrs.forEach((attr) => {
       if (attr.index === -1) {
         // eslint-disable-next-line no-console
         console.warn(`shader attribute "${attr.name}" is declared but not used`);
@@ -105,11 +106,11 @@ export class ShaderProgram {
     return shaderProgram;
   }
 
-  render(vertexBuffers, primitiveType=this.gl.TRIANGLES) {
+  render(vertexBuffers, primitiveType = this.gl.TRIANGLES) {
     const gl = this.gl;
     gl.useProgram(this.program);
 
-    Object.keys(this._uniformsUpdates).forEach(key => {
+    Object.keys(this._uniformsUpdates).forEach((key) => {
       this._uniformsUpdates[key](gl, this._uniformsByName[key]);
     });
 
@@ -131,7 +132,7 @@ export class ShaderProgram {
         // attribute, you must have called bindBuffer.
         gl.vertexAttribPointer(index, size, type, normalized, stride, offset);
       } else {
-        gl.disableVertexAttribArray(attr.index)
+        gl.disableVertexAttribArray(attr.index);
       }
     }
 
@@ -150,19 +151,19 @@ export class ShaderProgram {
 
         // This MUST match the size of the index buffer.
         gl.UNSIGNED_INT,
-        vertexOffset);
+        vertexOffset
+      );
     } else if (positions) {
       const {data, componentsPerVertex} = positions;
       const vertexOffset = 0;
 
       positions.bind();
 
-      gl.drawArrays(
-        primitiveType,
-        vertexOffset,
-        data.length/componentsPerVertex);
+      gl.drawArrays(primitiveType, vertexOffset, data.length / componentsPerVertex);
     } else {
-      throw new Error("neither indexes or positions that are configured. must provide one to render.");
+      throw new Error(
+        "neither indexes or positions that are configured. must provide one to render."
+      );
     }
   }
 
@@ -176,11 +177,7 @@ export class ShaderProgram {
 
     // TODO(miguel): add ability to verify that these are compiled shader
     // objects.
-    linkShaderProgram(
-      gl,
-      program,
-      compiledVertexShader,
-      compiledFragmentShader);
+    linkShaderProgram(gl, program, compiledVertexShader, compiledFragmentShader);
 
     return new ShaderProgram(gl, program);
   }
@@ -191,15 +188,10 @@ export class ShaderProgram {
   // to parse to autobind attributes. Autobinding simply read the (supported)
   // attributes from the vertex shader and automatically registers them in the
   // shader program before it is returned.
-  static create(gl, vertexShaderSource, fragmentShaderSource, autobindAttributes=false) {
+  static create(gl, vertexShaderSource, fragmentShaderSource, autobindAttributes = false) {
     const program = gl.createProgram();
 
-    compileShaderProgram(
-      gl,
-      program,
-      vertexShaderSource,
-      fragmentShaderSource,
-    );
+    compileShaderProgram(gl, program, vertexShaderSource, fragmentShaderSource);
 
     const sp = new ShaderProgram(gl, program);
     if (autobindAttributes) {
@@ -214,10 +206,10 @@ export class ShaderProgram {
 // If you have shader source you wish to compile, you can use
 // compileShaderSource and pass the results from that to this function.
 export function linkShaderProgram(
-  gl,             // WebGL context, usually from a canvas.
-  program,        // WebGL program, usually from gl.createProgram().
-  vertexShader,   // Compiled vertex shader.
-  fragmentShader, // Compiled fragment shader.
+  gl, // WebGL context, usually from a canvas.
+  program, // WebGL program, usually from gl.createProgram().
+  vertexShader, // Compiled vertex shader.
+  fragmentShader // Compiled fragment shader.
 ) {
   if (!vertexShader) {
     throw new Error("must specify a vertex shader to link");
@@ -227,7 +219,7 @@ export function linkShaderProgram(
     throw new Error("must specify a fragment shader to link");
   }
 
-  gl.attachShader(program, vertexShader);   // compileShaderSource(gl, gl.VERTEX_SHADER, vertexShaderSource));
+  gl.attachShader(program, vertexShader); // compileShaderSource(gl, gl.VERTEX_SHADER, vertexShaderSource));
   gl.attachShader(program, fragmentShader); // compileShaderSource(gl, gl.FRAGMENT_SHADER, fragmentShaderSource));
   gl.linkProgram(program);
   gl.validateProgram(program);
@@ -241,10 +233,10 @@ export function linkShaderProgram(
 // vertex shader and fragment shader source code that needs to be compiled
 // and then linked.
 export function compileShaderProgram(
-  gl,                   // WebGL context, usually from a canvas.
-  program,              // WebGL program, usually from gl.createProgram().
-  vertexShaderSource,   // Vertex shader source. This gets compiled.
-  fragmentShaderSource, // Fragment shader source. This gets compiled.
+  gl, // WebGL context, usually from a canvas.
+  program, // WebGL program, usually from gl.createProgram().
+  vertexShaderSource, // Vertex shader source. This gets compiled.
+  fragmentShaderSource // Fragment shader source. This gets compiled.
 ) {
   if (!vertexShaderSource) {
     throw new Error("must specify a vertex shader to compile");
@@ -258,7 +250,8 @@ export function compileShaderProgram(
     gl,
     program,
     compileShaderSource(gl, gl.VERTEX_SHADER, vertexShaderSource),
-    compileShaderSource(gl, gl.FRAGMENT_SHADER, fragmentShaderSource));
+    compileShaderSource(gl, gl.FRAGMENT_SHADER, fragmentShaderSource)
+  );
 }
 
 // compileShaderSource takes in shader source and its type, and it compiles it.
@@ -268,9 +261,7 @@ export function compileShaderSource(gl, shaderType, shaderSource) {
   gl.compileShader(shader);
 
   const message = gl.getShaderInfoLog(shader);
-  const compileMessages = parseShaderCompilationErrors(
-    message,
-    shaderSource);
+  const compileMessages = parseShaderCompilationErrors(message, shaderSource);
 
   compileMessages.forEach(([type, message, sourceFailure]) => {
     if (type === "ERROR") {
@@ -290,8 +281,8 @@ export function parseShaderCompilationErrors(message, shaderSource, lastLinesCou
   // filter those out so that we don't parse invalid error strings.
   return message
     .split("\n")
-    .filter(v => v && v !== "\u0000")
-    .map(m => _parseShaderCompilationError(m, shaderSource, lastLinesCount));
+    .filter((v) => v && v !== "\u0000")
+    .map((m) => _parseShaderCompilationError(m, shaderSource, lastLinesCount));
 }
 
 // _parseShaderCompilationError parses error strings from gl.getShaderInfoLog.
@@ -302,7 +293,7 @@ export function _parseShaderCompilationError(message, shaderSource, lastLinesCou
   try {
     const shaderLines = shaderSource.split("\n");
 
-    const [,msgType,/*col*/,lineStr] = /^(\w+):\s+(?:([0-9]+):([0-9]+):)?(.*)/.exec(message);
+    const [, msgType /*col*/, , lineStr] = /^(\w+):\s+(?:([0-9]+):([0-9]+):)?(.*)/.exec(message);
     if (msgType === "ERROR") {
       if (!lineStr) {
         return ["ERROR", message];
@@ -317,7 +308,7 @@ export function _parseShaderCompilationError(message, shaderSource, lastLinesCou
     } else if (msgType === "WARN") {
       return ["WARN", message];
     }
-  } catch(ex) {
+  } catch (ex) {
     // eslint-disable-next-line no-console
     console.error("error parsing shader compilation error", message, ex);
   }
@@ -354,9 +345,7 @@ export function numberToString(num) {
 export function parseVertexShaderAttributes(vertexShaderSource) {
   // tester for regex to parse out attributes.
   // https://regex101.com/r/jmad0Z/1
-  return [
-    ...vertexShaderSource.matchAll(/^\s*^\/?in\s+(\w+)\s+(\w+);/gm)
-  ].map(([,type,name]) => {
+  return [...vertexShaderSource.matchAll(/^\s*^\/?in\s+(\w+)\s+(\w+);/gm)].map(([, type, name]) => {
     let size;
     switch (type) {
       case "vec2":

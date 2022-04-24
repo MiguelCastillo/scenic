@@ -2,8 +2,13 @@ import {Node, findParentByType} from "./node.js";
 import {Renderable} from "./renderable.js";
 
 export class Material extends Node {
-  constructor(options={}, materialColor=[0.5,0.5,0.5,1], ambientColor=[1,1,1], reflectionFactor=1) {
-    super({...options, type:"material"});
+  constructor(
+    options = {},
+    materialColor = [0.5, 0.5, 0.5, 1],
+    ambientColor = [1, 1, 1],
+    reflectionFactor = 1
+  ) {
+    super({...options, type: "material"});
     this.materialColor = materialColor;
     this.ambientColor = ambientColor;
     this.reflectionFactor = reflectionFactor;
@@ -33,22 +38,26 @@ export class Material extends Node {
     const renderable = findParentByType(this, Renderable);
 
     if (renderable) {
-      renderable.shaderProgram.addUniforms([{
-        name: "ambientColor",
-        update: (gl, {index}) => {
-          gl.uniform3fv(index, this.ambientColor);
-        }
-      }, {
-        name: "materialReflectiveness",
-        update: (gl, {index}) => {
-          gl.uniform1f(index, this.reflectionFactor);
+      renderable.shaderProgram.addUniforms([
+        {
+          name: "ambientColor",
+          update: (gl, {index}) => {
+            gl.uniform3fv(index, this.ambientColor);
+          },
         },
-      }, {
-        name: "materialColor",
-        update: (gl, {index}) => {
-          gl.uniform4fv(index, this.materialColor);
+        {
+          name: "materialReflectiveness",
+          update: (gl, {index}) => {
+            gl.uniform1f(index, this.reflectionFactor);
+          },
         },
-      }]);
+        {
+          name: "materialColor",
+          update: (gl, {index}) => {
+            gl.uniform4fv(index, this.materialColor);
+          },
+        },
+      ]);
     }
   }
 }

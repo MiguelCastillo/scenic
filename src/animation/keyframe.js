@@ -39,26 +39,27 @@
 // cp0        cp1        cp2        cp3
 //
 
-
 // https://www.khanacademy.org/computing/pixar/animate/ball/pi/animation-with-linear-interpolation
 // https://www.freecodecamp.org/news/understanding-linear-interpolation-in-ui-animations-74701eb9957c/
-const lerp = (fraction, min, max, ease=(x) => x) => {
+const lerp = (fraction, min, max, ease = (x) => x) => {
   //const length = Math.sqrt(min*min + max*max);
-  return ease(((max - min) * fraction) + min);
-}
+  return ease((max - min) * fraction + min);
+};
 
 export class KeyController {
-  constructor(frames, times=[]) {
+  constructor(frames, times = []) {
     // Number of frames (segments) in an animation.
     const frameCount = frames.length;
     if (frameCount < 2) {
       // eslint-disable-next-line no-console
-      console.log(`KeyController with ${frameCount} frame(s). Ideally animations would be more than 2 frames.`);
+      console.log(
+        `KeyController with ${frameCount} frame(s). Ideally animations would be more than 2 frames.`
+      );
     }
 
     this.frames = frames;
     this.times = times;
-    this.animationLength = times.length ? times[times.length-1] : -1;
+    this.animationLength = times.length ? times[times.length - 1] : -1;
     this.segmentCount = frameCount - 1;
   }
 
@@ -66,13 +67,13 @@ export class KeyController {
   // that is always advancing. And every second we will increase
   // or decrease the current frame depending on whether we are
   // going forward or backward with animation.
-  getFrameIndex = (tms, speed=1) => {
+  getFrameIndex = (tms, speed = 1) => {
     const segmentCount = this.segmentCount;
 
     // Slow or speed things up! We also take the floor because
     // the decimal points can cause jitters in animations.
-    let ms = Math.abs(Math.floor(tms*speed));
-    let idx = Math.floor(ms*0.001)
+    let ms = Math.abs(Math.floor(tms * speed));
+    let idx = Math.floor(ms * 0.001);
     let len = 1000;
 
     if (this.times.length) {
@@ -81,7 +82,7 @@ export class KeyController {
       if (!cms && ms) {
         // We are at the very end of the animation.
         idx = segmentCount;
-        len = times[idx] - times[idx-1];
+        len = times[idx] - times[idx - 1];
       } else {
         // TODO(miguel): cache index value so that we don't start over the
         // search everytime.
@@ -93,7 +94,7 @@ export class KeyController {
 
         // Segment length is how long in milliseconds a segment is.
         // This tells us when we jump to the next keyframe.
-        len = times[idx] - times[idx-1];
+        len = times[idx] - times[idx - 1];
         idx--;
       }
 
@@ -107,7 +108,7 @@ export class KeyController {
     // that causes tests to fail when ms is 9.
     // 9 * 0.001 yields 0.009000000000000001. But it really should be 0.009.
     // https://techformist.com/problems-with-decimal-multiplication-javascript/
-    let delta = (ms % len)/len;
+    let delta = (ms % len) / len;
 
     //
     //  |----------|----------|
@@ -129,15 +130,15 @@ export class KeyController {
     if (speed < 0) {
       // If we are in reverse mode then we just invert the current state.
       idx = segmentCount - idx - 1;
-      delta = 1-delta;
+      delta = 1 - delta;
     }
 
     return [delta, idx];
-  }
+  };
 }
 
 export class AnimateScalar {
-  constructor(frames, times=[]) {
+  constructor(frames, times = []) {
     this.frames = frames;
     this.times = times;
     this.controller = new KeyController(frames, times);
@@ -145,12 +146,12 @@ export class AnimateScalar {
 
   animate = (ms, speed, ease) => {
     const [delta, index] = this.controller.getFrameIndex(ms, speed);
-    return lerp(delta, this.frames[index], this.frames[index+1], ease);
-  }
+    return lerp(delta, this.frames[index], this.frames[index + 1], ease);
+  };
 }
 
 export class Animate2v {
-  constructor(frames, times=[]) {
+  constructor(frames, times = []) {
     this.frames = frames;
     this.times = times;
     this.controller = new KeyController(frames, times);
@@ -160,14 +161,14 @@ export class Animate2v {
     const [delta, index] = this.controller.getFrameIndex(ms, speed);
     const frames = this.frames;
     return [
-      lerp(delta, frames[index][0], frames[index+1][0], ease),
-      lerp(delta, frames[index][1], frames[index+1][1], ease),
+      lerp(delta, frames[index][0], frames[index + 1][0], ease),
+      lerp(delta, frames[index][1], frames[index + 1][1], ease),
     ];
-  }
+  };
 }
 
 export class Animate3v {
-  constructor(frames, times=[]) {
+  constructor(frames, times = []) {
     this.frames = frames;
     this.times = times;
     this.controller = new KeyController(frames, times);
@@ -176,11 +177,11 @@ export class Animate3v {
   animate = (ms, speed, ease) => {
     const [delta, index] = this.controller.getFrameIndex(ms, speed);
     return [
-      lerp(delta, this.frames[index][0], this.frames[index+1][0], ease),
-      lerp(delta, this.frames[index][1], this.frames[index+1][1], ease),
-      lerp(delta, this.frames[index][2], this.frames[index+1][2], ease),
+      lerp(delta, this.frames[index][0], this.frames[index + 1][0], ease),
+      lerp(delta, this.frames[index][1], this.frames[index + 1][1], ease),
+      lerp(delta, this.frames[index][2], this.frames[index + 1][2], ease),
     ];
-  }
+  };
 }
 
 export const animateScalar = (frames, times, ease) => {

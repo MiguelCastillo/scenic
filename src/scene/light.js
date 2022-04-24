@@ -19,22 +19,25 @@ export class Light extends Renderable {
     const renderableState = sceneManager.getNodeStateByID(this.id);
 
     shaderProgram
-      .setUniforms([{
+      .setUniforms([
+        {
           name: "projectionMatrix",
           update: (gl, {index}) => {
             gl.uniformMatrix4fv(index, false, projectionMatrix.data);
-          }
-        }, {
+          },
+        },
+        {
           name: "worldMatrix",
           update: (gl, {index}) => {
             gl.uniformMatrix4fv(index, true, worldMatrix.data);
-          }
-        }, {
+          },
+        },
+        {
           name: "materialColor",
           update: (gl, {index}) => {
             gl.uniform4fv(index, renderableState.material.color);
-          }
-        }
+          },
+        },
       ])
       .render(vertexBuffer);
   }

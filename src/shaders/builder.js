@@ -21,7 +21,7 @@ export class ShaderProgramBuilder {
     return this;
   }
 
-  color(red, green, blue, opacity=1.0) {
+  color(red, green, blue, opacity = 1.0) {
     this._color = {
       red,
       green,
@@ -33,11 +33,7 @@ export class ShaderProgramBuilder {
   }
 
   build() {
-    const {
-      _gl: gl,
-      _pointSize: pointSize,
-      _shaderProgram: shaderProgram,
-    } = this;
+    const {_gl: gl, _pointSize: pointSize, _shaderProgram: shaderProgram} = this;
 
     const vertShaderCode = `#version 300 es
       in vec3 ${POSITION};
@@ -47,12 +43,7 @@ export class ShaderProgramBuilder {
       }
     `;
 
-    const {
-      red,
-      green,
-      blue,
-      opacity,
-    } = this._color;
+    const {red, green, blue, opacity} = this._color;
 
     const fragShaderCode = `#version 300 es
       precision highp float;
@@ -68,12 +59,12 @@ export class ShaderProgramBuilder {
       }
     `;
 
-    return shaderProgram
-      .link(vertShaderCode, fragShaderCode)
-      .setAttributes([{
+    return shaderProgram.link(vertShaderCode, fragShaderCode).setAttributes([
+      {
         name: POSITION,
         type: gl.FLOAT,
         size: 3, // The vertex shader code is setup with a 3d vector.
-      }]);
+      },
+    ]);
   }
 }

@@ -31,41 +31,47 @@ export class ObjFile {
 
   getTriangles() {
     let obj = {
-      vertices: [], normals: [], colors: [], textures: [],
-    };
-
-    return this.groups.reduce((result, group) => {
-      if (group.vertices.length) {
-        obj.vertices = obj.vertices.concat(group.vertices);
-      }
-      if (group.normals.length) {
-        obj.normals = obj.normals.concat(group.normals);
-      }
-      if (group.textures.length) {
-        obj.textures = obj.textures.concat(group.textures);
-      }
-      if (group.colors.length) {
-        obj.colors = obj.colors.concat(group.colors);
-      }
-
-      const {faces} = group;
-      const v = getIndexed3DComponents(obj.vertices, faces.vertices);
-      const vc = getIndexed3DComponents(obj.colors, faces.vertices);
-      const vn = getIndexed3DComponents(obj.normals, faces.normals);
-      const vt = getIndexed3DComponents(obj.textures, faces.textures);
-
-      return {
-        vertices: result.vertices.concat(v),
-        normals: result.normals.concat(vn),
-        textures: result.textures.concat(vt),
-        colors: result.colors.concat(vc),
-      };
-    }, {
       vertices: [],
       normals: [],
-      textures: [],
       colors: [],
-    });
+      textures: [],
+    };
+
+    return this.groups.reduce(
+      (result, group) => {
+        if (group.vertices.length) {
+          obj.vertices = obj.vertices.concat(group.vertices);
+        }
+        if (group.normals.length) {
+          obj.normals = obj.normals.concat(group.normals);
+        }
+        if (group.textures.length) {
+          obj.textures = obj.textures.concat(group.textures);
+        }
+        if (group.colors.length) {
+          obj.colors = obj.colors.concat(group.colors);
+        }
+
+        const {faces} = group;
+        const v = getIndexed3DComponents(obj.vertices, faces.vertices);
+        const vc = getIndexed3DComponents(obj.colors, faces.vertices);
+        const vn = getIndexed3DComponents(obj.normals, faces.normals);
+        const vt = getIndexed3DComponents(obj.textures, faces.textures);
+
+        return {
+          vertices: result.vertices.concat(v),
+          normals: result.normals.concat(vn),
+          textures: result.textures.concat(vt),
+          colors: result.colors.concat(vc),
+        };
+      },
+      {
+        vertices: [],
+        normals: [],
+        textures: [],
+        colors: [],
+      }
+    );
   }
 
   getTriangleVertices() {
@@ -136,12 +142,12 @@ export function parse(data) {
         vertices: [],
         textures: [],
         normals: [],
-      }
+      },
     };
   }
 
   function processToken(token) {
-    switch(token.type) {
+    switch (token.type) {
       case COMMENT:
         break;
       case GROUP:
@@ -205,7 +211,7 @@ export function parse(data) {
   }
 
   return {
-    groups
+    groups,
   };
 }
 
@@ -217,9 +223,8 @@ function parseVertices(line) {
 function parseFace(line) {
   const [, items] = line.match(/^(?:\w+\s+)?([^#]+)/);
 
-  const faces = items
-    .split(/\s+/)
-    .reduce((result, f) => {
+  const faces = items.split(/\s+/).reduce(
+    (result, f) => {
       // The format for a face is:
       // vertex_index/texture_index/normal_index
       //
@@ -241,21 +246,23 @@ function parseFace(line) {
       // advantage and do a simple coersion to to bool to determine if we
       // have an actual _face_ value we need to store.
       if (!!v) {
-        result.vertices.push(+v -1);
+        result.vertices.push(+v - 1);
       }
       if (!!t) {
-        result.textures.push(+t -1);
+        result.textures.push(+t - 1);
       }
       if (!!n) {
-        result.normals.push(+n -1);
+        result.normals.push(+n - 1);
       }
 
       return result;
-    }, {
+    },
+    {
       normals: [],
       vertices: [],
       textures: [],
-    });
+    }
+  );
 
   return triangulateFaces(faces);
 }
@@ -330,19 +337,18 @@ function isFace(line) {
 }
 
 function isGroupEmpty(group) {
-  const {
-    vertices, normals, textures, colors, faces
-  } = group;
+  const {vertices, normals, textures, colors, faces} = group;
 
-  const {
-    vertices: vertexIndexes,
-    normals: normalIndexes,
-    textures: textureIndexes,
-  } = faces;
+  const {vertices: vertexIndexes, normals: normalIndexes, textures: textureIndexes} = faces;
 
   return !(
-    vertices.length || normals.length || textures.length || colors.length ||
-    vertexIndexes.length || normalIndexes.length || textureIndexes.length
+    vertices.length ||
+    normals.length ||
+    textures.length ||
+    colors.length ||
+    vertexIndexes.length ||
+    normalIndexes.length ||
+    textureIndexes.length
   );
 }
 
@@ -389,15 +395,16 @@ function triangulateFaces(faces) {
     if (faces.textures.length) {
       textures = textures.concat(...faces.textures, faces.textures[0], faces.textures[2]);
     }
-  }
-  else if (faces.vertices.length > 4) {
+  } else if (faces.vertices.length > 4) {
     vertices = expandFaceIndexes(faces.vertices);
     normals = expandFaceIndexes(faces.normals);
     textures = expandFaceIndexes(faces.textures);
   }
 
   return {
-    vertices, normals, textures,
+    vertices,
+    normals,
+    textures,
   };
 }
 

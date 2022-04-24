@@ -18,16 +18,16 @@ v  1.0  1.0  0.0
 v  1.0  1.0  1.0
 
 f  1  7  5
-f  1  3  7 
-f  1  4  3 
-f  1  2  4 
-f  3  8  7 
-f  3  4  8 
-f  5  7  8 
-f  5  8  6 
-f  1  5  6 
-f  1  6  2 
-f  2  6  8 
+f  1  3  7
+f  1  4  3
+f  1  2  4
+f  3  8  7
+f  3  4  8
+f  5  7  8
+f  5  8  6
+f  1  5  6
+f  1  6  2
+f  2  6  8
 f  2  8  4
 `;
 
@@ -42,6 +42,7 @@ test("parse cube with _only_ vertices", () => {
   expect(cube.groups[0].textures.length).toEqual(0);
   expect(cube.groups[0].faces.textures.length).toEqual(0);
 
+  // prettier-ignore
   expect(cube.groups[0].vertices).toEqual([
     0.0, 0.0, 0.0, // 0,
     0.0, 0.0, 1.0, // 1,
@@ -53,6 +54,7 @@ test("parse cube with _only_ vertices", () => {
     1.0, 1.0, 1.0, // 7,
   ]);
 
+  // prettier-ignore
   expect(cube.groups[0].faces.vertices).toEqual([
     0, 6, 4,
     0, 2, 6,
@@ -69,12 +71,11 @@ test("parse cube with _only_ vertices", () => {
   ]);
 });
 
-
 const cubeWithNormals = `
 # cube.obj
 #
 
-g cube with normals 
+g cube with normals
 
 v  0.0  0.0  0.0
 v  0.0  0.0  1.0
@@ -93,16 +94,16 @@ vn  1.0  0.0  0.0
 vn -1.0  0.0  0.0
 
 f  1//2  7//2  5//2
-f  1//2  3//2  7//2 
-f  1//6  4//6  3//6 
-f  1//6  2//6  4//6 
-f  3//3  8//3  7//3 
-f  3//3  4//3  8//3 
-f  5//5  7//5  8//5 
-f  5//5  8//5  6//5 
-f  1//4  5//4  6//4 
-f  1//4  6//4  2//4 
-f  2//1  6//1  8//1 
+f  1//2  3//2  7//2
+f  1//6  4//6  3//6
+f  1//6  2//6  4//6
+f  3//3  8//3  7//3
+f  3//3  4//3  8//3
+f  5//5  7//5  8//5
+f  5//5  8//5  6//5
+f  1//4  5//4  6//4
+f  1//4  6//4  2//4
+f  2//1  6//1  8//1
 f  2//1  8//1  4//1
 `;
 
@@ -114,6 +115,7 @@ test("parse cube with normals", () => {
   expect(cube.groups[0].textures.length).toEqual(0);
   expect(cube.groups[0].faces.textures.length).toEqual(0);
 
+  // prettier-ignore
   expect(cube.groups[0].vertices).toEqual([
     0.0, 0.0, 0.0, // 0,
     0.0, 0.0, 1.0, // 1,
@@ -125,6 +127,7 @@ test("parse cube with normals", () => {
     1.0, 1.0, 1.0, // 7,
   ]);
 
+  // prettier-ignore
   expect(cube.groups[0].faces.vertices).toEqual([
     0, 6, 4,
     0, 2, 6,
@@ -140,6 +143,7 @@ test("parse cube with normals", () => {
     1, 7, 3,
   ]);
 
+  // prettier-ignore
   expect(cube.groups[0].normals).toEqual([
     0.0, 0.0, 1.0,  // 0,
     0.0, 0.0, -1.0, // 1,
@@ -149,17 +153,18 @@ test("parse cube with normals", () => {
     -1.0, 0.0, 0.0, // 5,
   ]);
 
+  // prettier-ignore
   expect(cube.groups[0].faces.normals).toEqual([
     1, 1, 1,
-    1, 1, 1, 
-    5, 5, 5, 
-    5, 5, 5, 
-    2, 2, 2, 
-    2, 2, 2, 
-    4, 4, 4, 
-    4, 4, 4, 
-    3, 3, 3, 
-    3, 3, 3, 
+    1, 1, 1,
+    5, 5, 5,
+    5, 5, 5,
+    2, 2, 2,
+    2, 2, 2,
+    4, 4, 4,
+    4, 4, 4,
+    3, 3, 3,
+    3, 3, 3,
     0, 0, 0,
     0, 0, 0,
   ]);
@@ -169,7 +174,7 @@ const cubeWithTextureVertices = `
 # cube.obj
 #
 
-g cube with texture vertices 
+g cube with texture vertices
 
 v  0.0  0.0  0.0
 v  0.0  0.0  1.0
@@ -188,16 +193,16 @@ vt  1.0  0.0  0.0
 vt -1.0  0.0  0.0
 
 f  1/2  7/2  5/2
-f  1/2  3/2  7/2 
-f  1/6  4/6  3/6 
-f  1/6  2/6  4/6 
-f  3/3  8/3  7/3 
-f  3/3  4/3  8/3 
-f  5/5  7/5  8/5 
-f  5/5  8/5  6/5 
-f  1/4  5/4  6/4 
-f  1/4  6/4  2/4 
-f  2/1  6/1  8/1 
+f  1/2  3/2  7/2
+f  1/6  4/6  3/6
+f  1/6  2/6  4/6
+f  3/3  8/3  7/3
+f  3/3  4/3  8/3
+f  5/5  7/5  8/5
+f  5/5  8/5  6/5
+f  1/4  5/4  6/4
+f  1/4  6/4  2/4
+f  2/1  6/1  8/1
 f  2/1  8/1  4/1
 `;
 
@@ -209,6 +214,7 @@ test("parse cube with texture vertices", () => {
   expect(cube.groups[0].normals.length).toEqual(0);
   expect(cube.groups[0].faces.normals.length).toEqual(0);
 
+  // prettier-ignore
   expect(cube.groups[0].vertices).toEqual([
     0.0, 0.0, 0.0,
     0.0, 0.0, 1.0,
@@ -220,6 +226,7 @@ test("parse cube with texture vertices", () => {
     1.0, 1.0, 1.0,
   ]);
 
+  // prettier-ignore
   expect(cube.groups[0].faces.vertices).toEqual([
     0, 6, 4,
     0, 2, 6,
@@ -235,6 +242,7 @@ test("parse cube with texture vertices", () => {
     1, 7, 3,
   ]);
 
+  // prettier-ignore
   expect(cube.groups[0].textures).toEqual([
     0.0, 0.0, 1.0,
     0.0, 0.0, -1.0,
@@ -244,17 +252,18 @@ test("parse cube with texture vertices", () => {
     -1.0, 0.0, 0.0,
   ]);
 
+  // prettier-ignore
   expect(cube.groups[0].faces.textures).toEqual([
     1, 1, 1,
-    1, 1, 1, 
-    5, 5, 5, 
-    5, 5, 5, 
-    2, 2, 2, 
-    2, 2, 2, 
-    4, 4, 4, 
-    4, 4, 4, 
-    3, 3, 3, 
-    3, 3, 3, 
+    1, 1, 1,
+    5, 5, 5,
+    5, 5, 5,
+    2, 2, 2,
+    2, 2, 2,
+    4, 4, 4,
+    4, 4, 4,
+    3, 3, 3,
+    3, 3, 3,
     0, 0, 0,
     0, 0, 0,
   ]);
@@ -310,6 +319,7 @@ test("parse object with sequential groups of triangles", () => {
   expect(cube.groups[1].vertices.length).toEqual(9);
   expect(cube.groups[1].faces.vertices.length).toEqual(3);
 
+  // prettier-ignore
   expect(cube.getTriangleVertices()).toEqual([
     0,0,0,
     5,0,0,
@@ -356,6 +366,7 @@ test("parse object with sequential groups of squares and triangles", () => {
   expect(cube.groups[1].vertices.length).toEqual(9);
   expect(cube.groups[1].faces.vertices.length).toEqual(3);
 
+  // prettier-ignore
   expect(cube.getTriangleVertices()).toEqual([
     // From first face
     0,0,0,  // 1
@@ -423,6 +434,7 @@ test("parse object with a 7 component face", () => {
   expect(cube.groups[0].vertices.length).toEqual(21);
   expect(cube.groups[0].faces.vertices.length).toEqual(15);
 
+  // prettier-ignore
   expect(cube.groups[0].faces.vertices).toEqual([
     0, 1, 2,
     0, 2, 3,
@@ -431,6 +443,7 @@ test("parse object with a 7 component face", () => {
     0, 5, 6,
   ]);
 
+  // prettier-ignore
   expect(cube.getTriangleVertices()).toEqual([
     0,0,0,
     5,0,0,

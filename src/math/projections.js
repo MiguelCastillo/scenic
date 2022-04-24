@@ -27,10 +27,11 @@ export class OrthographicProjectionMatrix extends Matrix4 {
 // Creates a matrix that projects to clip space with perspective. Items that
 // are further away appear smaller, and items that are closer appear bigger.
 export function buildPerspectiveProjection(fovInDegres, width, height, near, far) {
-  const aspect = width/height;
-  const f = 1/Math.tan(degToRad(fovInDegres)/2);
-  const rangeInv = 1/(near - far);
+  const aspect = width / height;
+  const f = 1 / Math.tan(degToRad(fovInDegres) / 2);
+  const rangeInv = 1 / (near - far);
 
+  // prettier-ignore
   return [
     f/aspect, 0,                         0,  0,
     0,        f,                         0,  0,
@@ -54,6 +55,7 @@ export function buildPerspectiveProjection(fovInDegres, width, height, near, far
 // mindful of normal vector generation or lighting will be incorrect.
 // Because of all these subtleties and extra work, default is YBottom.
 export function buildOrthographicProjection_YTop(width, height, depth) {
+  // prettier-ignore
   return [
     2 / width, 0, 0, 0,
     0, -2 / height, 0, 0,
@@ -67,6 +69,7 @@ export function buildOrthographicProjection_YTop(width, height, depth) {
 // This will have (0, 0) at the bottom left with positive X going right and
 // positive Y going up.
 export function buildOrthographicProjection_YBottom(width, height, depth) {
+  // prettier-ignore
   return [
     2 / width, 0, 0, 0,
     0, 2 / height, 0, 0,

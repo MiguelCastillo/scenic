@@ -1,13 +1,9 @@
-import {
-  normalize,
-  crossproduct,
-  edges,
-} from "./vector3.js";
+import {normalize, crossproduct, edges} from "./vector3.js";
 
-export function normalizeTriangleVertices(vertices, smoothing=false) {
+export function normalizeTriangleVertices(vertices, smoothing = false) {
   const normals = [];
 
-  for (let offset = 0; offset < vertices.length; offset+=9) {
+  for (let offset = 0; offset < vertices.length; offset += 9) {
     const vertOffset1 = offset;
     const vertOffset2 = offset + 3;
     const vertOffset3 = offset + 6;
@@ -15,7 +11,8 @@ export function normalizeTriangleVertices(vertices, smoothing=false) {
     const [edge1, edge2] = edges(
       trianglesFromVertices(vertices, vertOffset1),
       trianglesFromVertices(vertices, vertOffset2),
-      trianglesFromVertices(vertices, vertOffset3));
+      trianglesFromVertices(vertices, vertOffset3)
+    );
     const [nx, ny, nz] = normalize(...crossproduct(edge1, edge2));
 
     for (let j = 0; j < 3; j++) {
@@ -31,7 +28,7 @@ export function normalizeTriangleVertices(vertices, smoothing=false) {
 }
 
 function trianglesFromVertices(vertices, offset) {
-  return [vertices[offset], vertices[offset+1], vertices[offset+2]];
+  return [vertices[offset], vertices[offset + 1], vertices[offset + 2]];
 }
 
 // smoothNormals smooths out normal vertors that correspond to the triangle
@@ -62,7 +59,7 @@ export function smoothNormals(vertices, normals) {
 export function buildIndexes(vertices) {
   const vexterMap = {};
 
-  for (let offset = 0; offset < vertices.length; offset+=3) {
+  for (let offset = 0; offset < vertices.length; offset += 3) {
     const v = trianglesFromVertices(vertices, offset);
     if (!vexterMap[v]) {
       vexterMap[v] = [];
@@ -79,8 +76,8 @@ export function averageVertex(v, offsets) {
 
   for (let offset of offsets) {
     averageV[0] += v[offset];
-    averageV[1] += v[offset+1];
-    averageV[2] += v[offset+2];
+    averageV[1] += v[offset + 1];
+    averageV[2] += v[offset + 2];
   }
 
   averageV[0] /= count;
@@ -90,8 +87,8 @@ export function averageVertex(v, offsets) {
   for (let offset of offsets) {
     const [nx, ny, nz] = normalize(...averageV);
     v[offset] = nx;
-    v[offset+1] = ny;
-    v[offset+2] = nz;
+    v[offset + 1] = ny;
+    v[offset + 2] = nz;
   }
 }
 
@@ -185,11 +182,11 @@ export function getIndexedComponents(coordinates, indexes, componentsPerVertex) 
   const result = [];
 
   for (let i = 0; i < indexes.length; i++) {
-    const coffset = indexes[i]*componentsPerVertex;
-    const ioffset = i*componentsPerVertex;
+    const coffset = indexes[i] * componentsPerVertex;
+    const ioffset = i * componentsPerVertex;
 
     for (let j = 0; j < componentsPerVertex; j++) {
-      result[ioffset+j] = coordinates[coffset+j];
+      result[ioffset + j] = coordinates[coffset + j];
     }
   }
 

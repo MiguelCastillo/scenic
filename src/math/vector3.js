@@ -1,7 +1,7 @@
 export function normalize(x, y, z) {
-  const len = Math.sqrt(x*x + y*y + z*z);
+  const len = Math.sqrt(x * x + y * y + z * z);
   const fixedLen = len ? len : 1;
-  return [x/fixedLen, y/fixedLen, z/fixedLen];
+  return [x / fixedLen, y / fixedLen, z / fixedLen];
 }
 
 export function add(a, b) {

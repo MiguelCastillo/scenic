@@ -2,9 +2,9 @@ export function buildTraversal(buildNode, buildParentNode) {
   // Depth first traversal
   return function dft(child, parent) {
     const sceneNode = buildNode(child, parent);
-    const children = child.items?.map(c => dft(c, sceneNode));
+    const children = child.items?.map((c) => dft(c, sceneNode));
     return buildParentNode(sceneNode, children);
-  }
+  };
 }
 
 export function bubbleTraversal(bubbleDown, bubbleUp) {
@@ -17,15 +17,15 @@ export function bubbleTraversal(bubbleDown, bubbleUp) {
       }
     }
     bubbleUp(updatedChild, parent);
-  }
+  };
 }
 
 export function occlusionTraversal(occlusionTest, processParentNode) {
   // Depth first traversal
   return function dft(node) {
-    const children =  node.items?.filter(child => occlusionTest(child, node)).map(dft);
+    const children = node.items?.filter((child) => occlusionTest(child, node)).map(dft);
     return processParentNode(node, children);
-  }
+  };
 }
 
 export function treeGetMatches(matcher) {
@@ -48,7 +48,7 @@ export function treeGetMatches(matcher) {
     }
 
     return result;
-  }
+  };
 }
 
 export function findChildDeepBreadthFirst(sceneNode, predicate) {

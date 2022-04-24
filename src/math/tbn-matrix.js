@@ -1,17 +1,8 @@
-import {
-  buildIndexes,
-  averageVertex,
-} from "./geometry.js";
+import {buildIndexes, averageVertex} from "./geometry.js";
 
-import {
-  normalize,
-  crossproduct,
-  edges as edges3v,
-} from "./vector3.js";
+import {normalize, crossproduct, edges as edges3v} from "./vector3.js";
 
-import {
-  edges as edgesUV,
-} from "./vector2.js";
+import {edges as edgesUV} from "./vector2.js";
 
 export function calculateFactor(euv1, euv2) {
   return euv1[0] * euv2[1] - euv2[0] * euv1[1];
@@ -42,7 +33,7 @@ export function getTBNVectorsFromTriangle(v1, v2, v3, uv1, uv2, uv3) {
   if (!factor) {
     factor = 1000000;
   } else {
-    factor = 1/factor;
+    factor = 1 / factor;
   }
 
   const normal = normalize(...crossproduct(e1, e2));
@@ -63,22 +54,22 @@ export function getTBNVectorsFromTriangle(v1, v2, v3, uv1, uv2, uv3) {
   // space as used in pixel lighting provided by normal maps.
   // Being orthogonal also means we have a basis matrix.
   return [
-    tangent,   // T
+    tangent, // T
     bitangent, // B
-    normal,    // N
+    normal, // N
   ];
 }
 
 function getTriangleVertex(vertices, offset) {
-  return [vertices[offset], vertices[offset+1], vertices[offset+2]];
+  return [vertices[offset], vertices[offset + 1], vertices[offset + 2]];
 }
 
 function getTriangleUV(uvs, offset) {
-  return [uvs[offset], uvs[offset+1]];
+  return [uvs[offset], uvs[offset + 1]];
 }
 
-export function getTBNVectorsFromTriangles(vertices, uvs, normalSmoothing=true) {
-  if (uvs.length !== vertices.length - vertices.length/3) {
+export function getTBNVectorsFromTriangles(vertices, uvs, normalSmoothing = true) {
+  if (uvs.length !== vertices.length - vertices.length / 3) {
     throw new Error("vertices and uvs length do not match!");
   }
 
@@ -86,30 +77,37 @@ export function getTBNVectorsFromTriangles(vertices, uvs, normalSmoothing=true) 
   let bitangents = [];
   let normals = [];
 
-  for (let i = 0; i < vertices.length/9; i++) {
+  for (let i = 0; i < vertices.length / 9; i++) {
     const voffset = i * 9;
     const uvoffset = i * 6;
 
     const [t, b, n] = getTBNVectorsFromTriangle(
-      getTriangleVertex(vertices, voffset), getTriangleVertex(vertices, voffset + 3), getTriangleVertex(vertices, voffset + 6),
-      getTriangleUV(uvs, uvoffset), getTriangleUV(uvs, uvoffset + 2), getTriangleUV(uvs, uvoffset + 4));
+      getTriangleVertex(vertices, voffset),
+      getTriangleVertex(vertices, voffset + 3),
+      getTriangleVertex(vertices, voffset + 6),
+      getTriangleUV(uvs, uvoffset),
+      getTriangleUV(uvs, uvoffset + 2),
+      getTriangleUV(uvs, uvoffset + 4)
+    );
 
     // We need to add one tbn for each triangle vertex. We will smooth
     // out all these vectors to get best rendering results.
-    tangents.push(...t); tangents.push(...t); tangents.push(...t)
-    bitangents.push(...b); bitangents.push(...b); bitangents.push(...b);
-    normals.push(...n); normals.push(...n); normals.push(...n);
+    tangents.push(...t);
+    tangents.push(...t);
+    tangents.push(...t);
+    bitangents.push(...b);
+    bitangents.push(...b);
+    bitangents.push(...b);
+    normals.push(...n);
+    normals.push(...n);
+    normals.push(...n);
   }
 
   if (normalSmoothing) {
     smoothTBN(vertices, tangents, bitangents, normals);
   }
 
-  return [
-    tangents.map(_fixZeros),
-    bitangents.map(_fixZeros),
-    normals.map(_fixZeros),
-  ];
+  return [tangents.map(_fixZeros), bitangents.map(_fixZeros), normals.map(_fixZeros)];
 }
 
 function _fixZeros(a) {

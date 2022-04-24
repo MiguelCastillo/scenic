@@ -100,7 +100,9 @@ import {matrixFloatPrecision} from "./float.js";
 import {
   generateRotationMatrix,
   generateRotationFunctionWithDest,
-  rotX, rotY, rotZ,
+  rotX,
+  rotY,
+  rotZ,
 } from "./matrix4-utils.js";
 
 export class Matrix4 {
@@ -117,7 +119,7 @@ export class Matrix4 {
   }
 
   get data() {
-    return this._data.map(v => _fixZeros(matrixFloatPrecision(v)));
+    return this._data.map((v) => _fixZeros(matrixFloatPrecision(v)));
   }
 
   static identity() {
@@ -138,11 +140,11 @@ export class Matrix4 {
     return new Matrix4(result);
   }
 
-  static rotate(degreesX, degreesY, degreesZ, rotation=rotate) {
+  static rotate(degreesX, degreesY, degreesZ, rotation = rotate) {
     return new Matrix4(rotation(identity(), degreesX, degreesY, degreesZ));
   }
 
-  static rotation(degreesX, degreesY, degreesZ, rotation=rotate) {
+  static rotation(degreesX, degreesY, degreesZ, rotation = rotate) {
     return new Matrix4(rotation(identity(), degreesX, degreesY, degreesZ));
   }
 
@@ -158,7 +160,7 @@ export class Matrix4 {
     return new Matrix4(scale(sx, sy, sz));
   }
 
-  rotate(degreesX, degreesY, degreesZ, rotation=rotate) {
+  rotate(degreesX, degreesY, degreesZ, rotation = rotate) {
     const r = rotation(identity(), degreesX, degreesY, degreesZ);
     return new Matrix4(multiply(r, this._data, r));
   }
@@ -177,7 +179,7 @@ export class Matrix4 {
     return new Matrix4(multiply(identity(), this._data, mat4._data));
   }
 
-  rotation(degreesX, degreesY, degreesZ, rotation=rotate) {
+  rotation(degreesX, degreesY, degreesZ, rotation = rotate) {
     // TODO(miguel): this looks like it clears scaling. Let's fix.
     const data = rotation(identity(), degreesX, degreesY, degreesZ);
     data[_03] = this._data[_03];
@@ -222,9 +224,10 @@ export class Matrix4 {
   equal(m) {
     return this._data.every((d, i) => d === m._data[i]);
   }
-};
+}
 
 export function identity() {
+  // prettier-ignore
   return [
     1, 0, 0, 0,
     0, 1, 0, 0,
@@ -234,15 +237,17 @@ export function identity() {
 }
 
 export function translate(tx, ty, tz) {
+  // prettier-ignore
   return [
     1,  0,  0,  tx,
     0,  1,  0,  ty,
     0,  0,  1,  tz,
     0,  0,  0,  1,
   ];
-};
+}
 
-export function scale(sx, sy=sx, sz=sx) {
+export function scale(sx, sy = sx, sz = sx) {
+  // prettier-ignore
   return [
     sx, 0,  0,  0,
     0, sy,  0,  0,
@@ -258,9 +263,12 @@ export function scale(sx, sy=sx, sz=sx) {
 //
 // https://danceswithcode.net/engineeringnotes/rotations_in_3d/rotations_in_3d_part1.html
 export function rotate(dest, degreesX, degreesY, degreesZ) {
-  let sx = Math.sin(degToRad(degreesX)), cx = Math.cos(degToRad(degreesX));
-  let sy = Math.sin(degToRad(degreesY)), cy = Math.cos(degToRad(degreesY));
-  let sz = Math.sin(degToRad(degreesZ)), cz = Math.cos(degToRad(degreesZ));
+  const sx = Math.sin(degToRad(degreesX));
+  const cx = Math.cos(degToRad(degreesX));
+  const sy = Math.sin(degToRad(degreesY));
+  const cy = Math.cos(degToRad(degreesY));
+  const sz = Math.sin(degToRad(degreesZ));
+  const cz = Math.cos(degToRad(degreesZ));
 
   // NOTE(miguel): Tait–Bryan yaw, pitch, roll, around the z, y and x axes
   // respectively is usually how rotation matrices are setup.
@@ -277,41 +285,58 @@ export function rotate(dest, degreesX, degreesY, degreesZ) {
   // in reality we are really applying the rotation on the vector.
   // Tait–Bryan angles ZYX. What we want for rotating objects such as during
   // animation.
-  dest[0] = cz*cy;
-  dest[1] = cz*sy*sx-(sz*cx);
-  dest[2] = sz*sx+cz*sy*cx;
-  dest[4] = sz*cy;
-  dest[5] = cz*cx+sz*sy*sx;
-  dest[6] = sz*sy*cx-(cz*sx);
+  dest[0] = cz * cy;
+  dest[1] = cz * sy * sx - sz * cx;
+  dest[2] = sz * sx + cz * sy * cx;
+  dest[4] = sz * cy;
+  dest[5] = cz * cx + sz * sy * sx;
+  dest[6] = sz * sy * cx - cz * sx;
   dest[8] = -sy;
-  dest[9] = cy*sx;
-  dest[10] = cy*cx;
+  dest[9] = cy * sx;
+  dest[10] = cy * cx;
   return dest;
 }
 
 export function multiply(dest, a, b) {
-  const a00 = a[_00]; const b00 = b[_00];
-  const a01 = a[_01]; const b01 = b[_01];
-  const a02 = a[_02]; const b02 = b[_02];
-  const a03 = a[_03]; const b03 = b[_03];
-  const a10 = a[_10]; const b10 = b[_10];
-  const a11 = a[_11]; const b11 = b[_11];
-  const a12 = a[_12]; const b12 = b[_12];
-  const a13 = a[_13]; const b13 = b[_13];
-  const a20 = a[_20]; const b20 = b[_20];
-  const a21 = a[_21]; const b21 = b[_21];
-  const a22 = a[_22]; const b22 = b[_22];
-  const a23 = a[_23]; const b23 = b[_23];
-  const a30 = a[_30]; const b30 = b[_30];
-  const a31 = a[_31]; const b31 = b[_31];
-  const a32 = a[_32]; const b32 = b[_32];
-  const a33 = a[_33]; const b33 = b[_33];
+  const a00 = a[_00];
+  const a01 = a[_01];
+  const a02 = a[_02];
+  const a03 = a[_03];
+  const a10 = a[_10];
+  const a11 = a[_11];
+  const a12 = a[_12];
+  const a13 = a[_13];
+  const a20 = a[_20];
+  const a21 = a[_21];
+  const a22 = a[_22];
+  const a23 = a[_23];
+  const a30 = a[_30];
+  const a31 = a[_31];
+  const a32 = a[_32];
+  const a33 = a[_33];
+
+  const b00 = b[_00];
+  const b01 = b[_01];
+  const b02 = b[_02];
+  const b03 = b[_03];
+  const b10 = b[_10];
+  const b11 = b[_11];
+  const b12 = b[_12];
+  const b13 = b[_13];
+  const b20 = b[_20];
+  const b21 = b[_21];
+  const b22 = b[_22];
+  const b23 = b[_23];
+  const b30 = b[_30];
+  const b31 = b[_31];
+  const b32 = b[_32];
+  const b33 = b[_33];
 
   // First row = first row of B times all columns of A
   dest[0] = a00 * b00 + a01 * b10 + a02 * b20 + a03 * b30;
   dest[1] = a00 * b01 + a01 * b11 + a02 * b21 + a03 * b31;
   dest[2] = a00 * b02 + a01 * b12 + a02 * b22 + a03 * b32;
-  dest[3] = a00 * b03 + a01 * b13 + a02 * b23 + a03 * b33,
+  dest[3] = a00 * b03 + a01 * b13 + a02 * b23 + a03 * b33;
 
   // Second row = second row of B times all columns of A
   dest[4] = a10 * b00 + a11 * b10 + a12 * b20 + a13 * b30;
@@ -331,7 +356,7 @@ export function multiply(dest, a, b) {
   dest[14] = a30 * b02 + a31 * b12 + a32 * b22 + a33 * b32;
   dest[15] = a30 * b03 + a31 * b13 + a32 * b23 + a33 * b33;
   return dest;
-};
+}
 
 // multiplyVector multiplies a 4x4 matrix A time a vector x.
 //
@@ -349,6 +374,7 @@ export function multiplyVector(a, vec4) {
 }
 
 export function transpose(a) {
+  // prettier-ignore
   return [
     a[_00], a[_10], a[_20], a[_30],
     a[_01], a[_11], a[_21], a[_31],
@@ -361,138 +387,174 @@ export function transpose(a) {
 // https://semath.info/src/inverse-cofactor-ex4.html
 // https://www.mathsisfun.com/algebra/matrix-inverse.html
 export function invert(dest, data) {
-  const a11 = data[_00], a12 = data[_01], a13 = data[_02], a14 = data[_03];
-  const a21 = data[_10], a22 = data[_11], a23 = data[_12], a24 = data[_13];
-  const a31 = data[_20], a32 = data[_21], a33 = data[_22], a34 = data[_23];
-  const a41 = data[_30], a42 = data[_31], a43 = data[_32], a44 = data[_33];
+  const a11 = data[_00];
+  const a12 = data[_01];
+  const a13 = data[_02];
+  const a14 = data[_03];
+  const a21 = data[_10];
+  const a22 = data[_11];
+  const a23 = data[_12];
+  const a24 = data[_13];
+  const a31 = data[_20];
+  const a32 = data[_21];
+  const a33 = data[_22];
+  const a34 = data[_23];
+  const a41 = data[_30];
+  const a42 = data[_31];
+  const a43 = data[_32];
+  const a44 = data[_33];
 
-  const x1 = a33*a44;
-  const x2 = a34*a42;
-  const x3 = a32*a43;
-  const x4 = a33*a42;
-  const x5 = a32*a44;
-  const x6 = a34*a43;
-  const x7 = a12*a23
-  const x8 = a13*a24;
-  const x9 = a14*a22;
-  const x10 = a14*a23;
-  const x11 = a13*a22;
-  const x12 = a12*a24;
-  const x13 = a34*a41;
-  const x14 = a31*a43;
-  const x15 = a33*a41;
-  const x16 = a31*a44;
-  const x17 = a11*a23;
-  const x18 = a14*a21;
-  const x19 = a13*a21;
-  const x20 = a11*a24;
-  const x21 = a31*a42;
-  const x22 = a32*a41;
-  const x23 = a12*a21;
-  const x24 = a11*a22;
+  const x1 = a33 * a44;
+  const x2 = a34 * a42;
+  const x3 = a32 * a43;
+  const x4 = a33 * a42;
+  const x5 = a32 * a44;
+  const x6 = a34 * a43;
+  const x7 = a12 * a23;
+  const x8 = a13 * a24;
+  const x9 = a14 * a22;
+  const x10 = a14 * a23;
+  const x11 = a13 * a22;
+  const x12 = a12 * a24;
+  const x13 = a34 * a41;
+  const x14 = a31 * a43;
+  const x15 = a33 * a41;
+  const x16 = a31 * a44;
+  const x17 = a11 * a23;
+  const x18 = a14 * a21;
+  const x19 = a13 * a21;
+  const x20 = a11 * a24;
+  const x21 = a31 * a42;
+  const x22 = a32 * a41;
+  const x23 = a12 * a21;
+  const x24 = a11 * a22;
 
-  let d11 = a22*(x1 - x6) + a23*(x2 - x5) + a24*(x3 - x4);
-  let d22 = a14*(x4 - x3) + a13*(x5 - x2) + a12*(x6 - x1);
-  let d33 = a44*(x7 - x11) + a42*(x8 - x10) + a43*(x9 - x12);
-  let d44 = a32*(x10 - x8) + a34*(x11 - x7) + a33*(x12 - x9);
+  let d11 = a22 * (x1 - x6) + a23 * (x2 - x5) + a24 * (x3 - x4);
+  let d22 = a14 * (x4 - x3) + a13 * (x5 - x2) + a12 * (x6 - x1);
+  let d33 = a44 * (x7 - x11) + a42 * (x8 - x10) + a43 * (x9 - x12);
+  let d44 = a32 * (x10 - x8) + a34 * (x11 - x7) + a33 * (x12 - x9);
 
-  const factor = 1/(a11*d11 + a21*d22 + a31*d33 + a41*d44);
+  const factor = 1 / (a11 * d11 + a21 * d22 + a31 * d33 + a41 * d44);
 
-  dest[0] = d11*factor;
-  dest[1] = d22*factor;
-  dest[2] = d33*factor;
-  dest[3] = d44*factor;
-  dest[4] = (a24*(x15 - x14) + a23*(x16 - x13) + a21*(x6 - x1))*factor;
-  dest[5] = (a11*(x1 - x6) + a13*(x13 - x16) + a14*(x14 - x15))*factor;
-  dest[6] = (a41*(x10 - x8) + a44*(x19 - x17) + a43*(x20 - x18))*factor;
-  dest[7] = (a34*(x17 - x19) + a31*(x8 - x10) + a33*(x18 - x20))*factor;
-  dest[8] = (a21*(x5 - x2) + a22*(x13 - x16) + a24*(x21 - x22))*factor;
-  dest[9] = (a14*(x22 - x21) + a12*(x16 - x13) + a11*(x2 - x5))*factor;
-  dest[10] = (a44*(x24 - x23) + a41*(x12 - x9) + a42*(x18 - x20))*factor;
-  dest[11] = (a31*(x9 - x12) + a34*(x23 - x24) + a32*(x20 - x18))*factor;
-  dest[12] = (a23*(x22 - x21) + a22*(x14 - x15) + a21*(x4 - x3))*factor;
-  dest[13] = (a11*(x3 - x4) + a12*(x15 - x14) + a13*(x21 - x22))*factor;
-  dest[14] = (a41*(x11 - x7) + a43*(x23 - x24) + a42*(x17 - x19))*factor;
-  dest[15] = (a33*(x24 - x23) + a31*(x7 - x11) + a32*(x19 - x17))*factor;
+  dest[0] = d11 * factor;
+  dest[1] = d22 * factor;
+  dest[2] = d33 * factor;
+  dest[3] = d44 * factor;
+  dest[4] = (a24 * (x15 - x14) + a23 * (x16 - x13) + a21 * (x6 - x1)) * factor;
+  dest[5] = (a11 * (x1 - x6) + a13 * (x13 - x16) + a14 * (x14 - x15)) * factor;
+  dest[6] = (a41 * (x10 - x8) + a44 * (x19 - x17) + a43 * (x20 - x18)) * factor;
+  dest[7] = (a34 * (x17 - x19) + a31 * (x8 - x10) + a33 * (x18 - x20)) * factor;
+  dest[8] = (a21 * (x5 - x2) + a22 * (x13 - x16) + a24 * (x21 - x22)) * factor;
+  dest[9] = (a14 * (x22 - x21) + a12 * (x16 - x13) + a11 * (x2 - x5)) * factor;
+  dest[10] = (a44 * (x24 - x23) + a41 * (x12 - x9) + a42 * (x18 - x20)) * factor;
+  dest[11] = (a31 * (x9 - x12) + a34 * (x23 - x24) + a32 * (x20 - x18)) * factor;
+  dest[12] = (a23 * (x22 - x21) + a22 * (x14 - x15) + a21 * (x4 - x3)) * factor;
+  dest[13] = (a11 * (x3 - x4) + a12 * (x15 - x14) + a13 * (x21 - x22)) * factor;
+  dest[14] = (a41 * (x11 - x7) + a43 * (x23 - x24) + a42 * (x17 - x19)) * factor;
+  dest[15] = (a33 * (x24 - x23) + a31 * (x7 - x11) + a32 * (x19 - x17)) * factor;
 
   return dest;
 }
 
 export function adjoint(dest, data) {
-  const a11 = data[_00], a12 = data[_01], a13 = data[_02], a14 = data[_03];
-  const a21 = data[_10], a22 = data[_11], a23 = data[_12], a24 = data[_13];
-  const a31 = data[_20], a32 = data[_21], a33 = data[_22], a34 = data[_23];
-  const a41 = data[_30], a42 = data[_31], a43 = data[_32], a44 = data[_33];
+  const a11 = data[_00];
+  const a12 = data[_01];
+  const a13 = data[_02];
+  const a14 = data[_03];
+  const a21 = data[_10];
+  const a22 = data[_11];
+  const a23 = data[_12];
+  const a24 = data[_13];
+  const a31 = data[_20];
+  const a32 = data[_21];
+  const a33 = data[_22];
+  const a34 = data[_23];
+  const a41 = data[_30];
+  const a42 = data[_31];
+  const a43 = data[_32];
+  const a44 = data[_33];
 
-  const x1 = a33*a44;
-  const x2 = a34*a42;
-  const x3 = a32*a43;
-  const x4 = a33*a42;
-  const x5 = a32*a44;
-  const x6 = a34*a43;
-  const x7 = a12*a23
-  const x8 = a13*a24;
-  const x9 = a14*a22;
-  const x10 = a14*a23;
-  const x11 = a13*a22;
-  const x12 = a12*a24;
-  const x13 = a34*a41;
-  const x14 = a31*a43;
-  const x15 = a33*a41;
-  const x16 = a31*a44;
-  const x17 = a11*a23;
-  const x18 = a14*a21;
-  const x19 = a13*a21;
-  const x20 = a11*a24;
-  const x21 = a31*a42;
-  const x22 = a32*a41;
-  const x23 = a12*a21;
-  const x24 = a11*a22;
+  const x1 = a33 * a44;
+  const x2 = a34 * a42;
+  const x3 = a32 * a43;
+  const x4 = a33 * a42;
+  const x5 = a32 * a44;
+  const x6 = a34 * a43;
+  const x7 = a12 * a23;
+  const x8 = a13 * a24;
+  const x9 = a14 * a22;
+  const x10 = a14 * a23;
+  const x11 = a13 * a22;
+  const x12 = a12 * a24;
+  const x13 = a34 * a41;
+  const x14 = a31 * a43;
+  const x15 = a33 * a41;
+  const x16 = a31 * a44;
+  const x17 = a11 * a23;
+  const x18 = a14 * a21;
+  const x19 = a13 * a21;
+  const x20 = a11 * a24;
+  const x21 = a31 * a42;
+  const x22 = a32 * a41;
+  const x23 = a12 * a21;
+  const x24 = a11 * a22;
 
-  dest[0] = a22*(x1 - x6) + a23*(x2 - x5) + a24*(x3 - x4);
-  dest[1] = a14*(x4 - x3) + a13*(x5 - x2) + a12*(x6 - x1);
-  dest[2] = a44*(x7 - x11) + a42*(x8 - x10) + a43*(x9 - x12);
-  dest[3] = a32*(x10 - x8) + a34*(x11 - x7) + a33*(x12 - x9);
-  dest[4] = a24*(x15 - x14) + a23*(x16 - x13) + a21*(x6 - x1);
-  dest[5] = a11*(x1 - x6) + a13*(x13 - x16) + a14*(x14 - x15);
-  dest[6] = a41*(x10 - x8) + a44*(x19 - x17) + a43*(x20 - x18);
-  dest[7] = a34*(x17 - x19) + a31*(x8 - x10) + a33*(x18 - x20);
-  dest[8] = a21*(x5 - x2) + a22*(x13 - x16) + a24*(x21 - x22);
-  dest[9] = a14*(x22 - x21) + a12*(x16 - x13) + a11*(x2 - x5);
-  dest[10] = a44*(x24 - x23) + a41*(x12 - x9) + a42*(x18 - x20);
-  dest[11] = a31*(x9 - x12) + a34*(x23 - x24) + a32*(x20 - x18);
-  dest[12] = a23*(x22 - x21) + a22*(x14 - x15) + a21*(x4 - x3);
-  dest[13] = a11*(x3 - x4) + a12*(x15 - x14) + a13*(x21 - x22);
-  dest[14] = a41*(x11 - x7) + a43*(x23 - x24) + a42*(x17 - x19);
-  dest[15] = a33*(x24 - x23) + a31*(x7 - x11) + a32*(x19 - x17);
+  dest[0] = a22 * (x1 - x6) + a23 * (x2 - x5) + a24 * (x3 - x4);
+  dest[1] = a14 * (x4 - x3) + a13 * (x5 - x2) + a12 * (x6 - x1);
+  dest[2] = a44 * (x7 - x11) + a42 * (x8 - x10) + a43 * (x9 - x12);
+  dest[3] = a32 * (x10 - x8) + a34 * (x11 - x7) + a33 * (x12 - x9);
+  dest[4] = a24 * (x15 - x14) + a23 * (x16 - x13) + a21 * (x6 - x1);
+  dest[5] = a11 * (x1 - x6) + a13 * (x13 - x16) + a14 * (x14 - x15);
+  dest[6] = a41 * (x10 - x8) + a44 * (x19 - x17) + a43 * (x20 - x18);
+  dest[7] = a34 * (x17 - x19) + a31 * (x8 - x10) + a33 * (x18 - x20);
+  dest[8] = a21 * (x5 - x2) + a22 * (x13 - x16) + a24 * (x21 - x22);
+  dest[9] = a14 * (x22 - x21) + a12 * (x16 - x13) + a11 * (x2 - x5);
+  dest[10] = a44 * (x24 - x23) + a41 * (x12 - x9) + a42 * (x18 - x20);
+  dest[11] = a31 * (x9 - x12) + a34 * (x23 - x24) + a32 * (x20 - x18);
+  dest[12] = a23 * (x22 - x21) + a22 * (x14 - x15) + a21 * (x4 - x3);
+  dest[13] = a11 * (x3 - x4) + a12 * (x15 - x14) + a13 * (x21 - x22);
+  dest[14] = a41 * (x11 - x7) + a43 * (x23 - x24) + a42 * (x17 - x19);
+  dest[15] = a33 * (x24 - x23) + a31 * (x7 - x11) + a32 * (x19 - x17);
   return dest;
 }
 
 export function determinant(data) {
-  const a11 = data[_00], a12 = data[_01], a13 = data[_02], a14 = data[_03];
-  const a21 = data[_10], a22 = data[_11], a23 = data[_12], a24 = data[_13];
-  const a31 = data[_20], a32 = data[_21], a33 = data[_22], a34 = data[_23];
-  const a41 = data[_30], a42 = data[_31], a43 = data[_32], a44 = data[_33];
+  const a11 = data[_00];
+  const a12 = data[_01];
+  const a13 = data[_02];
+  const a14 = data[_03];
+  const a21 = data[_10];
+  const a22 = data[_11];
+  const a23 = data[_12];
+  const a24 = data[_13];
+  const a31 = data[_20];
+  const a32 = data[_21];
+  const a33 = data[_22];
+  const a34 = data[_23];
+  const a41 = data[_30];
+  const a42 = data[_31];
+  const a43 = data[_32];
+  const a44 = data[_33];
 
-  const x1 = a33*a44;
-  const x2 = a34*a42;
-  const x3 = a32*a43;
-  const x4 = a33*a42;
-  const x5 = a32*a44;
-  const x6 = a34*a43;
-  const x7 = a12*a23
-  const x8 = a13*a24;
-  const x9 = a14*a22;
-  const x10 = a14*a23;
-  const x11 = a13*a22;
-  const x12 = a12*a24;
+  const x1 = a33 * a44;
+  const x2 = a34 * a42;
+  const x3 = a32 * a43;
+  const x4 = a33 * a42;
+  const x5 = a32 * a44;
+  const x6 = a34 * a43;
+  const x7 = a12 * a23;
+  const x8 = a13 * a24;
+  const x9 = a14 * a22;
+  const x10 = a14 * a23;
+  const x11 = a13 * a22;
+  const x12 = a12 * a24;
 
-  let d11 = a22*(x1 - x6) + a23*(x2 - x5) + a24*(x3 - x4);
-  let d22 = a14*(x4 - x3) + a13*(x5 - x2) + a12*(x6 - x1);
-  let d33 = a44*(x7 - x11) + a42*(x8 - x10) + a43*(x9 - x12);
-  let d44 = a32*(x10 - x8) + a34*(x11 - x7) + a33*(x12 - x9);
+  let d11 = a22 * (x1 - x6) + a23 * (x2 - x5) + a24 * (x3 - x4);
+  let d22 = a14 * (x4 - x3) + a13 * (x5 - x2) + a12 * (x6 - x1);
+  let d33 = a44 * (x7 - x11) + a42 * (x8 - x10) + a43 * (x9 - x12);
+  let d44 = a32 * (x10 - x8) + a34 * (x11 - x7) + a33 * (x12 - x9);
 
-  return a11*d11 + a21*d22 + a31*d33 + a41*d44;
+  return a11 * d11 + a21 * d22 + a31 * d33 + a41 * d44;
 }
 
 // Matrix indexes.
@@ -516,15 +578,31 @@ export function determinant(data) {
 // Rotation along Z:
 // 00(cos)  01(sin)
 // 10(-sin) 11(cos)
-const _00 = 0;  const _01 = 1;  const _02 = 2;  const _03 = 3;
-const _10 = 4;  const _11 = 5;  const _12 = 6;  const _13 = 7;
-const _20 = 8;  const _21 = 9;  const _22 = 10; const _23 = 11;
-const _30 = 12; const _31 = 13; const _32 = 14; const _33 = 15;
+const _00 = 0;
+const _01 = 1;
+const _02 = 2;
+const _03 = 3;
+const _10 = 4;
+const _11 = 5;
+const _12 = 6;
+const _13 = 7;
+const _20 = 8;
+const _21 = 9;
+const _22 = 10;
+const _23 = 11;
+const _30 = 12;
+const _31 = 13;
+const _32 = 14;
+const _33 = 15;
 
 function _fixZeros(v) {
   return v === -0 ? 0 : v;
 }
 
 // Auto generate rotation functions.
-export const rotateZYX = generateRotationFunctionWithDest(generateRotationMatrix([], rotZ, rotY, rotX));
-export const rotateXYZ = generateRotationFunctionWithDest(generateRotationMatrix([], rotX, rotY, rotZ));
+export const rotateZYX = generateRotationFunctionWithDest(
+  generateRotationMatrix([], rotZ, rotY, rotX)
+);
+export const rotateXYZ = generateRotationFunctionWithDest(
+  generateRotationMatrix([], rotX, rotY, rotZ)
+);

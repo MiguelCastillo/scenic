@@ -25,7 +25,7 @@ test("clampDegrees -360 return 0", () => {
 });
 
 test("clampDegrees -720 return 0", () => {
-  expect(clampDegrees(360*3)).toEqual(0);
+  expect(clampDegrees(360 * 3)).toEqual(0);
 });
 
 test("clampDegrees 360 return 0", () => {
@@ -33,5 +33,5 @@ test("clampDegrees 360 return 0", () => {
 });
 
 test("clampDegrees 720 return ", () => {
-  expect(clampDegrees(360*3)).toEqual(0);
+  expect(clampDegrees(360 * 3)).toEqual(0);
 });

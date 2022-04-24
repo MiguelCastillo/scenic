@@ -30,8 +30,6 @@ export class Renderable extends Node {
       projectionNode = projectionNode.parent;
     }
 
-    return projectionNode ?
-      projectionNode.projectionMatrix :
-      mat4.Matrix4.identity();
+    return projectionNode ? projectionNode.projectionMatrix : mat4.Matrix4.identity();
   }
 }

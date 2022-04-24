@@ -1,11 +1,10 @@
 // Import DOMEvents to shim the DOM event API.
 import "./events.js";
 
-var _onReadyDeferred = new Promise(function(resolve) {
+var _onReadyDeferred = new Promise(function (resolve) {
   if (document.readyState === "complete") {
     resolve();
-  }
-  else {
+  } else {
     document.addEventListener("DOMContentLoaded", (/*evt*/) => resolve());
   }
 });

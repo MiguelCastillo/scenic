@@ -60,7 +60,7 @@ export class SceneManager {
     const bubbleDown = (node /*, parent*/) => {
       node.preRender(context);
       return node;
-    }
+    };
 
     // We can render on the way up
     const bubbleUp = (node) => {

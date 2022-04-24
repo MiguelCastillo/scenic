@@ -17,11 +17,7 @@ export class FbxFile {
     let done = false;
 
     do {
-      const {
-        endOffset,
-        propertyCount,
-        name,
-      } = binaryParser.readHeader();
+      const {endOffset, propertyCount, name} = binaryParser.readHeader();
 
       let propertyValues = [];
       for (let i = 0; i < propertyCount; i++) {
@@ -53,7 +49,7 @@ export class FbxFile {
           }
         }
       }
-    } while(!done);
+    } while (!done);
 
     return node;
   }
@@ -83,7 +79,7 @@ export class Node {
 }
 
 export const findPropertyValueByName = (node, name) => {
-  const p = node.properties.find(p => p.name === name);
+  const p = node.properties.find((p) => p.name === name);
   if (!p) {
     return undefined;
   }
@@ -92,11 +88,11 @@ export const findPropertyValueByName = (node, name) => {
 };
 
 export const findChildByName = (node, name) => {
-  return node.children.find(c => c.name === name);
+  return node.children.find((c) => c.name === name);
 };
 
 export const findChildrenByName = (node, name) => {
-  return node.children.filter(c => c.name === name);
+  return node.children.filter((c) => c.name === name);
 };
 
 // createParser is a factory for creating fbx parsers.
@@ -104,20 +100,22 @@ function createParser(bufferReader) {
   // Not user.  So we are just going to skip this data.
   const fileHeader = [
     bufferReader.getString(21),
-    bufferReader.getUint8(), bufferReader.getUint8(),
-    bufferReader.getUint32()];
+    bufferReader.getUint8(),
+    bufferReader.getUint8(),
+    bufferReader.getUint32(),
+  ];
 
   let binaryParser;
 
   // Format version.
   // https://help.autodesk.com/view/FBX/2016/ENU/?guid=__cpp_ref_fbxio_8h_html
-  const [,,,version] = fileHeader;
+  const [, , , version] = fileHeader;
   if (version === 7400) {
     binaryParser = new BinaryParser7400(bufferReader);
   } else if (version === 7500 || version === 7700) {
     binaryParser = new BinaryParser7500(bufferReader);
   } else {
-    throw new Error("version not supported: " + version)
+    throw new Error("version not supported: " + version);
   }
 
   return {
@@ -135,7 +133,7 @@ class BinaryParser {
     const {bufferReader} = this;
     let propertyData;
     const typeCode = bufferReader.getChar();
-    switch(typeCode) {
+    switch (typeCode) {
       case "Y":
         propertyData = bufferReader.getInt16();
         break;
@@ -178,7 +176,9 @@ class BinaryParser {
     const arrayLength = bufferReader.getUint32();
     const encoding = bufferReader.getUint32();
     const compressedLength = bufferReader.getUint32();
-    let result = bufferReader.getBytes(encoding ? compressedLength : arrayLength * byteCountTable[typeCode]);
+    let result = bufferReader.getBytes(
+      encoding ? compressedLength : arrayLength * byteCountTable[typeCode]
+    );
 
     if (encoding) {
       const decomp = pako.inflate(result);
@@ -188,7 +188,7 @@ class BinaryParser {
     const b = new BufferReader(result);
     const r = [];
 
-    switch(typeCode) {
+    switch (typeCode) {
       case "b":
         for (let i = 0; i < arrayLength; i++) {
           r[i] = Boolean(b.getInt8());
@@ -232,9 +232,9 @@ class BinaryParser7400 extends BinaryParser {
     // to read an empty header to signify the end of a
     // node in the buffer.
     return {
-      endOffset: bufferReader.getUint32(),                   // 4 bytes
-      propertyCount: bufferReader.getUint32(),               // 4 bytes
-      propertyListLength: bufferReader.getUint32(),          // 4 bytes
+      endOffset: bufferReader.getUint32(), // 4 bytes
+      propertyCount: bufferReader.getUint32(), // 4 bytes
+      propertyListLength: bufferReader.getUint32(), // 4 bytes
       name: bufferReader.getString(bufferReader.getUint8()), // 1 byte
     };
   }
@@ -244,9 +244,9 @@ class BinaryParser7500 extends BinaryParser {
   readHeader() {
     const {bufferReader} = this;
     return {
-      endOffset: bufferReader.getBigUint64(),                // 8 bytes
-      propertyCount: bufferReader.getBigUint64(),            // 8 bytes
-      propertyListLength: bufferReader.getBigUint64(),       // 8 bytes
+      endOffset: bufferReader.getBigUint64(), // 8 bytes
+      propertyCount: bufferReader.getBigUint64(), // 8 bytes
+      propertyListLength: bufferReader.getBigUint64(), // 8 bytes
       name: bufferReader.getString(bufferReader.getUint8()), // 1 byte
     };
   }
@@ -262,7 +262,7 @@ const littleEndian = (() => {
 
 class BufferReader {
   constructor(buffer) {
-    this.buffer = buffer
+    this.buffer = buffer;
     this.view = new DataView(buffer);
     this.currentPos = 0;
   }
@@ -297,10 +297,7 @@ class BufferReader {
       }
 
       const chars = new Uint8Array(
-        this.buffer.slice(
-          this.currentPos + startOffset,
-          this.currentPos + endOffset,
-        )
+        this.buffer.slice(this.currentPos + startOffset, this.currentPos + endOffset)
       );
 
       r += String.fromCharCode(...chars);
@@ -314,7 +311,10 @@ class BufferReader {
   }
 
   getRemainingBytes() {
-    return this.buffer.slice(this.currentPos, this.currentPos + (this.buffer.byteLength - this.currentPos));
+    return this.buffer.slice(
+      this.currentPos,
+      this.currentPos + (this.buffer.byteLength - this.currentPos)
+    );
   }
 
   getBytes(byteCount) {
@@ -323,51 +323,51 @@ class BufferReader {
     return result;
   }
 
-  getInt8(littleEnd=littleEndian) {
+  getInt8(littleEnd = littleEndian) {
     return this.view.getInt8(this.currentPos++, littleEnd);
   }
 
-  getUint8(littleEnd=littleEndian) {
+  getUint8(littleEnd = littleEndian) {
     return this.view.getUint8(this.currentPos++, littleEnd);
   }
 
-  getInt16(littleEnd=littleEndian) {
+  getInt16(littleEnd = littleEndian) {
     const idx = this.currentPos;
     this.currentPos += 2;
     return this.view.getInt8(idx, littleEnd);
   }
 
-  getUint16(littleEnd=littleEndian) {
+  getUint16(littleEnd = littleEndian) {
     const idx = this.currentPos;
     this.currentPos += 2;
     return this.view.getUint16(idx, littleEnd);
   }
 
-  getInt32(littleEnd=littleEndian) {
+  getInt32(littleEnd = littleEndian) {
     const idx = this.currentPos;
     this.currentPos += 4;
     return this.view.getInt32(idx, littleEnd);
   }
 
-  getUint32(littleEnd=littleEndian) {
+  getUint32(littleEnd = littleEndian) {
     const idx = this.currentPos;
     this.currentPos += 4;
     return this.view.getUint32(idx, littleEnd);
   }
 
-  getFloat32(littleEnd=littleEndian) {
+  getFloat32(littleEnd = littleEndian) {
     const idx = this.currentPos;
     this.currentPos += 4;
     return this.view.getFloat32(idx, littleEnd);
   }
 
-  getFloat64(littleEnd=littleEndian) {
+  getFloat64(littleEnd = littleEndian) {
     const idx = this.currentPos;
     this.currentPos += 8;
     return this.view.getFloat64(idx, littleEnd);
   }
 
-  getBigInt64(littleEnd=littleEndian) {
+  getBigInt64(littleEnd = littleEndian) {
     const idx = this.currentPos;
     this.currentPos += 8;
     // JavaScript doesn't support 64 bit ints. So, we
@@ -375,7 +375,7 @@ class BufferReader {
     return this.view.getBigInt64(idx, littleEnd);
   }
 
-  getBigUint64(littleEnd=littleEndian) {
+  getBigUint64(littleEnd = littleEndian) {
     const idx = this.currentPos;
     this.currentPos += 8;
     // JavaScript doesn't support 64 bit ints. So, we
@@ -385,15 +385,17 @@ class BufferReader {
 }
 
 const byteCountTable = {
-  "b": 1, // boolean is 1 byte
-  "i": 4, // integer is 4 bytes
-  "f": 4, // float is 4 bytes
-  "d": 8, // double is 8 bytes
-  "l": 8, // long is 8 bytes
+  b: 1, // boolean is 1 byte
+  i: 4, // integer is 4 bytes
+  f: 4, // float is 4 bytes
+  d: 8, // double is 8 bytes
+  l: 8, // long is 8 bytes
 };
 
 // Support JSON serialization of BigInt
-BigInt.prototype.toJSON = function() { return this.toString(); }
+BigInt.prototype.toJSON = function () {
+  return this.toString();
+};
 
 // decodePolygonVertexIndexes returns a new array of triangle
 // indexes created from PolygonVertexIndex.
@@ -426,13 +428,13 @@ export function decodePolygonVertexIndexes(indexes) {
     }
 
     for (let j = offset; j < i - 1; j++) {
-      triangleIndexes.push(indexes[offset], indexes[j+1], indexes[j+2]);
+      triangleIndexes.push(indexes[offset], indexes[j + 1], indexes[j + 2]);
     }
 
     // `-(x+1)`
     const xi = triangleIndexes.length - 1;
     triangleIndexes[xi] = -(triangleIndexes[xi] + 1);
-    offset = i+1;
+    offset = i + 1;
   }
 
   return triangleIndexes;
@@ -463,7 +465,7 @@ export function polygonVertexIndexToDirect(indexes) {
     for (let j = offset; j < i - 1; j++) {
       results.push(offset, j + 1, j + 2);
     }
-    offset = i+1;
+    offset = i + 1;
   }
 
   return results;
@@ -481,7 +483,8 @@ export function getNodeName(node) {
   // return nameparts.length ? (nameparts[0] ? nameparts[0] : nameparts[1]) : node.attributes[1];
   // return nameparts.length ? [nameparts[0], node.attributes[2]].filter(Boolean).join("_") : "";
   // return nameparts.length ? [nameparts[0], nameparts[1], node.attributes[2]].filter(Boolean).join("_") : "";
-  return nameparts.length ?
-    (nameparts[0] ? nameparts[0] + " - ":"") + [nameparts[1], node.attributes[2]].filter(Boolean).join("_"):
-    "";
+  return nameparts.length
+    ? (nameparts[0] ? nameparts[0] + " - " : "") +
+        [nameparts[1], node.attributes[2]].filter(Boolean).join("_")
+    : "";
 }

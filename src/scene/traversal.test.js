@@ -1,16 +1,9 @@
-import {
-  findChildDeepBreadthFirst,
-  findChildrenDeepBreadthFirst,
-} from "./traversal.js";
+import {findChildDeepBreadthFirst, findChildrenDeepBreadthFirst} from "./traversal.js";
 
-import {
-  Node,
-} from "./node.js"
-
+import {Node} from "./node.js";
 
 describe("findChildDeepBreadthFirst", () => {
   const nodeTypePredicate = (x) => x instanceof Node;
-
 
   test("empty set", () => {
     const expected = findChildDeepBreadthFirst({items: []}, nodeTypePredicate);
@@ -18,19 +11,16 @@ describe("findChildDeepBreadthFirst", () => {
   });
 
   test("with 1 child of the type to be found", () => {
-    const expected = findChildDeepBreadthFirst({items: [new Node({name: "only-one"})]}, nodeTypePredicate);
+    const expected = findChildDeepBreadthFirst(
+      {items: [new Node({name: "only-one"})]},
+      nodeTypePredicate
+    );
     expect(expected).toBeDefined();
     expect(expected.name).toEqual("only-one");
   });
 
   test("with 3 child of the type to be found, we reutrn the 1 one", () => {
-    const node = {items:
-      [
-        new Node({name: 1}),
-        new Node({name: 2}),
-        new Node({name: 3}),
-      ],
-    };
+    const node = {items: [new Node({name: 1}), new Node({name: 2}), new Node({name: 3})]};
 
     const expected = findChildDeepBreadthFirst(node, nodeTypePredicate);
     expect(expected).toBeDefined();
@@ -38,13 +28,7 @@ describe("findChildDeepBreadthFirst", () => {
   });
 
   test("with 3 child and the last is the right type to found, we reutrn the 1 one", () => {
-    const node = {items:
-      [
-        "some string",
-        "some other string",
-        new Node({name: "third-item!"}),
-      ],
-    };
+    const node = {items: ["some string", "some other string", new Node({name: "third-item!"})]};
 
     const expected = findChildDeepBreadthFirst(node, nodeTypePredicate);
     expect(expected).toBeDefined();
@@ -56,10 +40,10 @@ describe("findChildDeepBreadthFirst", () => {
     const predicate = (x) => {
       visited.push(x);
       return x instanceof Node;
-    }
+    };
 
-    const node = {items:
-      [
+    const node = {
+      items: [
         {name: 1, items: ["l1 c1", "l1 c2", {name: 4, items: ["l4 c1", "l4 c2"]}]},
         {name: 2, items: ["l2 c1", "l2 c2"]},
         {name: 3, items: ["l3 c1", "l3 c2", new Node({name: "very-last-item"})]},
@@ -88,22 +72,31 @@ describe("findChildDeepBreadthFirst", () => {
     const predicate = (x) => {
       visited.push(x);
       return x instanceof Node;
-    }
+    };
 
-    const node = {items:
-      [
-        {name: 1, items: [
-          {name: 3, items: ["l1 c1", "l1 c2",
-            {name: 7, items: ["l5 c1", "l5 c2",
-              {name: 8, items: ["l6 c1", "l6 c2"]},
-            ]},
-          ]},
-          {name: 4, items: ["l2 c1", "l2 c2"]},
-        ]},
-        {name: 2, items: [
-          {name: 5, items:["l3 c1", "l3 c2", new Node({name: "the-item-i-was-looking-for"})]},
-          {name: 6, items:["l4 c1", "l4 c2"]},
-        ]},
+    const node = {
+      items: [
+        {
+          name: 1,
+          items: [
+            {
+              name: 3,
+              items: [
+                "l1 c1",
+                "l1 c2",
+                {name: 7, items: ["l5 c1", "l5 c2", {name: 8, items: ["l6 c1", "l6 c2"]}]},
+              ],
+            },
+            {name: 4, items: ["l2 c1", "l2 c2"]},
+          ],
+        },
+        {
+          name: 2,
+          items: [
+            {name: 5, items: ["l3 c1", "l3 c2", new Node({name: "the-item-i-was-looking-for"})]},
+            {name: 6, items: ["l4 c1", "l4 c2"]},
+          ],
+        },
       ],
     };
 
@@ -136,26 +129,52 @@ describe("findChildrenDeepBreadthFirst", () => {
   });
 
   test("2 no items found 10 to process", () => {
-    const node = {items:
-      [
-        {name: 1, items: [
-          {name: 3, items: ["l1 c1", "l1 c2",
-            {name: 7, items: ["l5 c1", "l5 c2",
-              {name: 8, items: ["l6 c1", "l6 c2", new Node({name: "the-SECOND-item-i-was-looking-for"})]},
-            ]},
-          ]},
-          {name: 4, items: ["l2 c1", "l2 c2"]},
-        ]},
-        {name: 2, items: [
-          {name: 5, items:["l3 c1", "l3 c2", new Node({name: "the-FIRST-item-i-was-looking-for"})]},
-          {name: 6, items:["l4 c1", "l4 c2"]},
-        ]},
+    const node = {
+      items: [
+        {
+          name: 1,
+          items: [
+            {
+              name: 3,
+              items: [
+                "l1 c1",
+                "l1 c2",
+                {
+                  name: 7,
+                  items: [
+                    "l5 c1",
+                    "l5 c2",
+                    {
+                      name: 8,
+                      items: [
+                        "l6 c1",
+                        "l6 c2",
+                        new Node({name: "the-SECOND-item-i-was-looking-for"}),
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+            {name: 4, items: ["l2 c1", "l2 c2"]},
+          ],
+        },
+        {
+          name: 2,
+          items: [
+            {
+              name: 5,
+              items: ["l3 c1", "l3 c2", new Node({name: "the-FIRST-item-i-was-looking-for"})],
+            },
+            {name: 6, items: ["l4 c1", "l4 c2"]},
+          ],
+        },
       ],
     };
 
     const expected = findChildrenDeepBreadthFirst(node, (x) => x instanceof Node);
     expect(expected).toHaveLength(2);
-    expect(expected[0]).toMatchObject({name:  "the-FIRST-item-i-was-looking-for"});
-    expect(expected[1]).toMatchObject({name:  "the-SECOND-item-i-was-looking-for"});
+    expect(expected[0]).toMatchObject({name: "the-FIRST-item-i-was-looking-for"});
+    expect(expected[1]).toMatchObject({name: "the-SECOND-item-i-was-looking-for"});
   });
 });

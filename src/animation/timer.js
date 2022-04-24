@@ -28,7 +28,7 @@
 // synced to the same global timer.
 //
 export class Timer {
-  constructor(ms=0) {
+  constructor(ms = 0) {
     this.reset(ms);
   }
 
@@ -37,29 +37,29 @@ export class Timer {
     this._current = absms;
     this._start = absms;
     return this;
-  }
+  };
 
   skip = (abdms) => {
     this._current += abdms;
     return this;
-  }
+  };
 
   // absms is the absolute time starting from T0.
   resume = (absms) => {
     this.pause(absms);
     return this;
-  }
+  };
 
   // absms is the absolute time starting from T0.
   pause = (absms) => {
     this._current = absms - this.length;
-    return this
-  }
+    return this;
+  };
 
   // absms is the absolute time starting from T0.
   elapsed = (absms) => {
     return absms - this._current;
-  }
+  };
 
   get start() {
     return this._start;
@@ -89,7 +89,7 @@ export class Playback {
 
   elapsed = (absms) => {
     return this.state === "play" ? this.timer.elapsed(absms) : this.timer.length;
-  }
+  };
 
   reset(absms) {
     this.timer.reset(absms);
@@ -100,22 +100,22 @@ export class Playback {
   start = () => {
     this.state = "play";
     return this;
-  }
+  };
 
   skip = (absms) => {
     this.timer.skip(absms);
     return this;
-  }
+  };
 
   pause = (absms) => {
     this.timer.pause(absms);
     this.state = "paused";
     return this;
-  }
+  };
 
   play = (absms) => {
     this.timer.resume(absms);
     this.state = "play";
     return this;
-  }
+  };
 }

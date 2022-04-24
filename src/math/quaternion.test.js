@@ -1,8 +1,4 @@
-import {
-  fromEulerAngles,
-  toEulerAngle,
-  toRotationMatrix,
-} from "./quaternion.js";
+import {fromEulerAngles, toEulerAngle, toRotationMatrix} from "./quaternion.js";
 
 import {fixed5f, matrixFloatPrecision} from "./float.js";
 import * as mat4 from "./matrix4.js";
@@ -216,10 +212,7 @@ describe("toRotationMatrix", () => {
 
     let expected = toRotationMatrix(mat4.identity(), q).map(fixed5f);
     expect(expected).toEqual([
-      1, 0, 0, 0,
-      0, 0.70711, -0.7071, 0,
-      0, 0.7071, 0.70711, 0,
-      0, 0, 0, 1,
+      1, 0, 0, 0, 0, 0.70711, -0.7071, 0, 0, 0.7071, 0.70711, 0, 0, 0, 0, 1,
     ]);
   });
 
@@ -229,10 +222,7 @@ describe("toRotationMatrix", () => {
 
     let expected = toRotationMatrix(mat4.identity(), q).map(fixed5f);
     expect(expected).toEqual([
-      0.70711, 0, 0.7071, 0,
-      0, 1, 0, 0,
-      -0.7071, 0, 0.70711, 0,
-      0, 0, 0, 1,
+      0.70711, 0, 0.7071, 0, 0, 1, 0, 0, -0.7071, 0, 0.70711, 0, 0, 0, 0, 1,
     ]);
   });
 
@@ -242,10 +232,7 @@ describe("toRotationMatrix", () => {
 
     let expected = toRotationMatrix(mat4.identity(), q).map(fixed5f);
     expect(expected).toEqual([
-      0.70711, -0.7071, 0, 0,
-      0.7071, 0.70711, 0, 0,
-      0, 0, 1, 0,
-      0, 0, 0, 1,
+      0.70711, -0.7071, 0, 0, 0.7071, 0.70711, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1,
     ]);
   });
 });

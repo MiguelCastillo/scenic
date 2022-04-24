@@ -1,8 +1,4 @@
-import {
-  Node,
-  findChildByID,
-  _clearIDsForTests,
-} from "./node.js";
+import {Node, findChildByID, _clearIDsForTests} from "./node.js";
 
 import * as mat4 from "../math/matrix4.js";
 
@@ -20,7 +16,7 @@ describe("Scene Node add/remove child", () => {
     expect(parent.id).toEqual(1);
     expect(child.id).toEqual(2);
     expect(parent.add(child)).toEqual(parent);
-    expect(parent.childrenByID).toEqual({ "2": child });
+    expect(parent.childrenByID).toEqual({2: child});
     expect(parent.items).toEqual([child]);
     expect(child.parent).toEqual(parent);
   });
@@ -30,7 +26,7 @@ describe("Scene Node add/remove child", () => {
     const parent = new Node({});
     const child = new Node({});
     parent.add(child);
-    expect(parent.childrenByID).toEqual({ "2": child });
+    expect(parent.childrenByID).toEqual({2: child});
     expect(parent.remove(child)).toEqual(parent);
     expect(parent.childrenByID).toEqual({});
     expect(parent.items).toEqual([]);
@@ -70,7 +66,9 @@ describe("Scene Node reprender/render", () => {
     child.preRender();
     expect(child.worldMatrix.data).toEqual(mat4.Matrix4.rotate(32, 0, 40).rotate(14, 45, 71).data);
     grandchild.preRender();
-    expect(grandchild.worldMatrix.data).toEqual(mat4.Matrix4.rotate(32, 0, 40).rotate(14, 45, 71).rotate(28, 3, 11).data);
+    expect(grandchild.worldMatrix.data).toEqual(
+      mat4.Matrix4.rotate(32, 0, 40).rotate(14, 45, 71).rotate(28, 3, 11).data
+    );
   });
 });
 
@@ -94,15 +92,18 @@ describe("findChildByID", () => {
       new Node({id: "child.1"}).addItems([
         new Node({id: "child.1.1"}),
         new Node({id: "child.1.2"}),
-        new Node({id: "child.1.3"})]),
+        new Node({id: "child.1.3"}),
+      ]),
       new Node({id: "child.2"}).addItems([
         new Node({id: "child.2.1"}),
         new Node({id: "child.2.2"}),
-        new Node({id: "child.2.3"})]),
+        new Node({id: "child.2.3"}),
+      ]),
       new Node({id: "child.3"}).addItems([
         new Node({id: "child.3.1"}),
         new Node({id: "child.3.2"}),
-        new Node({id: "child.3.3"})]),
+        new Node({id: "child.3.3"}),
+      ]),
     ]);
 
     expect(findChildByID(root, "child.3.3")).toMatchObject({
@@ -113,50 +114,59 @@ describe("findChildByID", () => {
   it("find child in the third layer of items", () => {
     const root = new Node({id: "groot"});
     root.addItems([
-      new Node({id: "child.1"}).addItems([
-        new Node({id: "child.1.1"}).addItems([
-          new Node({id: "child.1.1.1"}),
-          new Node({id: "child.1.1.2"}),
-          new Node({id: "child.1.1.3"}),
-        ]),
-        new Node({id: "child.1.2"}).addItems([
-          new Node({id: "child.1.2.1"}),
-          new Node({id: "child.1.2.2"}),
-          new Node({id: "child.1.2.3"}),
-        ]),
-        new Node({id: "child.1.3"})]).addItems([
+      new Node({id: "child.1"})
+        .addItems([
+          new Node({id: "child.1.1"}).addItems([
+            new Node({id: "child.1.1.1"}),
+            new Node({id: "child.1.1.2"}),
+            new Node({id: "child.1.1.3"}),
+          ]),
+          new Node({id: "child.1.2"}).addItems([
+            new Node({id: "child.1.2.1"}),
+            new Node({id: "child.1.2.2"}),
+            new Node({id: "child.1.2.3"}),
+          ]),
+          new Node({id: "child.1.3"}),
+        ])
+        .addItems([
           new Node({id: "child.1.3.1"}),
           new Node({id: "child.1.3.2"}),
           new Node({id: "child.1.3.3"}),
         ]),
-      new Node({id: "child.2"}).addItems([
-        new Node({id: "child.2.1"}).addItems([
-          new Node({id: "child.2.1.1"}),
-          new Node({id: "child.2.1.2"}),
-          new Node({id: "child.2.1.3"}),
-        ]),
-        new Node({id: "child.2.2"}).addItems([
-          new Node({id: "child.2.2.1"}),
-          new Node({id: "child.2.2.2"}),
-          new Node({id: "child.2.2.3"}),
-        ]),
-        new Node({id: "child.2.3"})]).addItems([
+      new Node({id: "child.2"})
+        .addItems([
+          new Node({id: "child.2.1"}).addItems([
+            new Node({id: "child.2.1.1"}),
+            new Node({id: "child.2.1.2"}),
+            new Node({id: "child.2.1.3"}),
+          ]),
+          new Node({id: "child.2.2"}).addItems([
+            new Node({id: "child.2.2.1"}),
+            new Node({id: "child.2.2.2"}),
+            new Node({id: "child.2.2.3"}),
+          ]),
+          new Node({id: "child.2.3"}),
+        ])
+        .addItems([
           new Node({id: "child.2.3.1"}),
           new Node({id: "child.2.3.2"}),
           new Node({id: "child.2.3.3"}),
         ]),
-      new Node({id: "child.3"}).addItems([
-        new Node({id: "child.3.1"}).addItems([
-          new Node({id: "child.3.1.1"}),
-          new Node({id: "child.3.1.2"}),
-          new Node({id: "child.3.1.3"}),
-        ]),
-        new Node({id: "child.3.2"}).addItems([
-          new Node({id: "child.3.2.1"}),
-          new Node({id: "child.3.2.2"}),
-          new Node({id: "child.3.2.3"}),
-        ]),
-        new Node({id: "child.3.3"})]).addItems([
+      new Node({id: "child.3"})
+        .addItems([
+          new Node({id: "child.3.1"}).addItems([
+            new Node({id: "child.3.1.1"}),
+            new Node({id: "child.3.1.2"}),
+            new Node({id: "child.3.1.3"}),
+          ]),
+          new Node({id: "child.3.2"}).addItems([
+            new Node({id: "child.3.2.1"}),
+            new Node({id: "child.3.2.2"}),
+            new Node({id: "child.3.2.3"}),
+          ]),
+          new Node({id: "child.3.3"}),
+        ])
+        .addItems([
           new Node({id: "child.3.3.1"}),
           new Node({id: "child.3.3.2"}),
           new Node({id: "child.3.3.3"}),

@@ -1,5 +1,5 @@
 class VertexBufferArray {
-  constructor(gl, data, bufferType=gl.ARRAY_BUFFER) {
+  constructor(gl, data, bufferType = gl.ARRAY_BUFFER) {
     this.gl = gl;
 
     // Create a new buffer object
@@ -11,11 +11,7 @@ class VertexBufferArray {
   }
 
   bind() {
-    const {
-      gl,
-      buffer,
-      bufferType,
-    } = this;
+    const {gl, buffer, bufferType} = this;
 
     gl.bindBuffer(bufferType, buffer);
   }
@@ -25,7 +21,7 @@ class VertexBufferArray {
 // float32 data points. Because we are dealing with triangles in 3 dimensions,
 // we are defaulting to 3 components (X,Y,Z) per vertex.
 export class VertexBufferData extends VertexBufferArray {
-  constructor(gl, data, componentsPerVertex=3, bufferType=gl.ARRAY_BUFFER) {
+  constructor(gl, data, componentsPerVertex = 3, bufferType = gl.ARRAY_BUFFER) {
     super(gl, new Float32Array(data), bufferType);
 
     // This is only useful when we are rendering vertices directly without
@@ -57,7 +53,7 @@ export class TextureVertexBufferData extends VertexBufferArray {
 // meant to be provided to a shader program that can bind the buffers to
 // attributes in a vertex shader.
 export class VertexBuffer {
-  constructor(options={}) {
+  constructor(options = {}) {
     [
       "indexes",
       "positions",
@@ -68,8 +64,7 @@ export class VertexBuffer {
       "bitangents",
       "weights",
       "boneids",
-    ]
-    .forEach(component => {
+    ].forEach((component) => {
       this[component] = options[component];
     });
   }
