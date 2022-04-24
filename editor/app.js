@@ -1,6 +1,6 @@
 // eslint-disable-next-line no-unused-vars
 import React from "react";
-import ReactDOM from "react-dom";
+import { createRoot } from "react-dom/client";
 // eslint-disable-next-line no-unused-vars
 import {SceneGraph} from "./app/app.jsx";
 // eslint-disable-next-line no-unused-vars
@@ -15,42 +15,44 @@ import * as webgl from "../src/webgl.js";
 import _console from "./logging.js";
 
 export class App {
-  constructor() {
+  constructor({
+    loadingRoot,
+    sceneGraphRoot,
+    errorRoot
+  }) {
+    this.loadingRoot = loadingRoot;
+    this.sceneGraphRoot = sceneGraphRoot;
+    this.errorRoot = errorRoot;
   }
 
   init() {
     // Let's show our app loading spinner
-    ReactDOM.render(
-      <Loading isLoading={true}/>,
-      document.querySelector("#loading-container"));
+    this.loadingRoot.render(
+      <Loading isLoading={true}/>);
   }
 
   ready({sceneManager, resourceLoader, refreshProjection}) {
     // Let's mount the scene tree viewer
-    ReactDOM.render(
+    this.sceneGraphRoot.render(
       <SceneGraph
         sceneManager={sceneManager}
         resourceLoader={resourceLoader}
         refreshProjection={refreshProjection}
-      />,
-      document.querySelector("#scene-graph-container"));
+      />);
 
-    ReactDOM.render(
-      <Loading isLoading={false}/>,
-      document.querySelector("#loading-container"));
+    this.loadingRoot.render(
+      <Loading isLoading={false}/>);
   }
 
   error(err) {
-    ReactDOM.render(
-      <Loading isLoading={false}/>,
-      document.querySelector("#loading-container"));
+    this.loadingRoot.render(
+      <Loading isLoading={false}/>);
 
-    ReactDOM.render(
+    this.errorRoot.render(
       <>
         <Error error={err}/>
         <Console buffer={_console.buffer}/>
-      </>,
-      document.querySelector("#error-container"));
+      </>);
   }
 }
 
@@ -62,7 +64,12 @@ onReady(() => {
   // the thing that renders to screen.
   const gl = webgl.createContext(document.querySelector("#glCanvas"));
 
-  const app = new App();
+  const app = new App({
+    loadingRoot: createRoot(document.querySelector("#loading-container")),
+    sceneGraphRoot: createRoot(document.querySelector("#scene-graph-container")),
+    errorRoot: createRoot(document.querySelector("#error-container")),
+  });
+
   app.init();
 
   window.scene.doRenderLoop(gl)
