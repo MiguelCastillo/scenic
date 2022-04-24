@@ -8,10 +8,9 @@ export function createSplitPanel(el) {
     throw new Error("Unable to find resizer element");
   }
 
-  Subscription.create(resizerEl)
-    .on("mousedown", () => {
-      resizeEnabled = true;
-    });
+  Subscription.create(resizerEl).on("mousedown", () => {
+    resizeEnabled = true;
+  });
 
   Subscription.create(el)
     .on("mouseup", () => {

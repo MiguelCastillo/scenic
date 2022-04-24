@@ -1,36 +1,19 @@
 import * as mat4 from "../../../src/math/matrix4.js";
 import * as vec3 from "../../../src/math/vector3.js";
 
-import {
-  VertexBuffer,
-  VertexBufferData,
-} from "../../../src/renderer/vertexbuffer.js";
+import {VertexBuffer, VertexBufferData} from "../../../src/renderer/vertexbuffer.js";
 
-import {
-  Node as SceneNode,
-  findParentByType,
-  findChildrenByType,
-} from "../../../src/scene/node.js";
+import {Node as SceneNode, findParentByType, findChildrenByType} from "../../../src/scene/node.js";
 
-import {
-  Renderable as RenderableSceneNode,
-} from "../../../src/scene/renderable.js";
+import {Renderable as RenderableSceneNode} from "../../../src/scene/renderable.js";
 
-import {
-  Animation as AnimationSceneNode,
-} from "../../../src/scene/animation.js";
+import {Animation as AnimationSceneNode} from "../../../src/scene/animation.js";
 
-import {
-  findParentItemsWithItemType,
-} from "../../../src/scene/traversal.js";
+import {findParentItemsWithItemType} from "../../../src/scene/traversal.js";
 
-import {
-  animateScalar,
-} from "../../../src/animation/keyframe.js";
+import {animateScalar} from "../../../src/animation/keyframe.js";
 
-import {
-  Playback as AnimationPlayback,
-} from "../../../src/animation/timer.js";
+import {Playback as AnimationPlayback} from "../../../src/animation/timer.js";
 
 // 46186158000 is an FBX second.
 // #define KTIME_ONE_SECOND KTime (K_LONGLONG(46186158000))
@@ -60,14 +43,12 @@ class Animatable extends RenderableSceneNode {
       return;
     }
 
-    const {
-      transform
-    } = context.sceneManager.getNodeStateByID(this.id);
+    const {transform} = context.sceneManager.getNodeStateByID(this.id);
 
     const {
-      translation=transform.position,
-      rotation=transform.rotation,
-      scale=transform.scale,
+      translation = transform.position,
+      rotation = transform.rotation,
+      scale = transform.scale,
       stack,
     } = animation;
 
@@ -77,11 +58,7 @@ class Animatable extends RenderableSceneNode {
     }
 
     // https://help.autodesk.com/view/FBX/2017/ENU/?guid=__cpp_ref__transformations_2main_8cxx_example_html
-    let animationMatrix = mat4.Matrix4.trs(
-      translation,
-      rotation,
-      scale,
-    );
+    let animationMatrix = mat4.Matrix4.trs(translation, rotation, scale);
 
     const parent = this.parent;
     if (parent) {
@@ -94,7 +71,7 @@ class Animatable extends RenderableSceneNode {
 
 export class Mesh extends Animatable {
   constructor(options) {
-    super(Object.assign({}, options, {type:"fbx-mesh"}));
+    super(Object.assign({}, options, {type: "fbx-mesh"}));
     this.vertexBuffers = [];
   }
 
@@ -126,20 +103,24 @@ export class Mesh extends Animatable {
     const parentNodeState = sceneManager.getNodeStateByID(this.parent.id);
     let bumpLightingEnabled = parentNodeState.material?.bumpLighting === true;
 
-    const lightsStates = findParentItemsWithItemType(this, "light")
-      .map(({id}) => sceneManager.getNodeStateByID(id));
+    const lightsStates = findParentItemsWithItemType(this, "light").map(({id}) =>
+      sceneManager.getNodeStateByID(id)
+    );
 
-    const uniforms = [{
+    const uniforms = [
+      {
         name: "worldMatrix",
         update: (gl, {index}) => {
           gl.uniformMatrix4fv(index, true, worldMatrix.data);
         },
-      }, {
+      },
+      {
         name: "projectionMatrix",
         update: (gl, {index}) => {
           gl.uniformMatrix4fv(index, false, projectionMatrix.data);
         },
-      }, {
+      },
+      {
         name: "bumpLighting",
         update: (gl, {index}) => {
           gl.uniform1i(index, bumpLightingEnabled);
@@ -147,49 +128,45 @@ export class Mesh extends Animatable {
       },
     ];
 
-    lightsStates
-      .forEach(({transform: {position}}, idx) =>
-        uniforms.push({
-          name: `lights[${idx}].position`,
-          update: (gl, {index}) => {
-            gl.uniform3fv(index, vec3.normalize(position[0], position[1], position[2]));
-          },
-        })
-      );
+    lightsStates.forEach(({transform: {position}}, idx) =>
+      uniforms.push({
+        name: `lights[${idx}].position`,
+        update: (gl, {index}) => {
+          gl.uniform3fv(index, vec3.normalize(position[0], position[1], position[2]));
+        },
+      })
+    );
 
-    lightsStates
-      .forEach(({light: {color}}, idx) =>
-        uniforms.push({
-          name: `lights[${idx}].color`,
-          update: (gl, {index}) => {
-            gl.uniform3fv(index, color);
-          },
-        })
-      );
+    lightsStates.forEach(({light: {color}}, idx) =>
+      uniforms.push({
+        name: `lights[${idx}].color`,
+        update: (gl, {index}) => {
+          gl.uniform3fv(index, color);
+        },
+      })
+    );
 
-    lightsStates
-      .forEach(({light: {intensity}}, idx) =>
-        uniforms.push({
-          name: `lights[${idx}].intensity`,
-          update: (gl, {index}) => {
-            gl.uniform1f(index, intensity);
-          },
-        })
-      );
+    lightsStates.forEach(({light: {intensity}}, idx) =>
+      uniforms.push({
+        name: `lights[${idx}].intensity`,
+        update: (gl, {index}) => {
+          gl.uniform1f(index, intensity);
+        },
+      })
+    );
 
-    lightsStates
-      .forEach((_, idx) =>
-        uniforms.push({
-          name: `lights[${idx}].enabled`,
-          update: (gl, {index}) => {
-            gl.uniform1i(index, 1);
-          },
-        })
-      );
+    lightsStates.forEach((_, idx) =>
+      uniforms.push({
+        name: `lights[${idx}].enabled`,
+        update: (gl, {index}) => {
+          gl.uniform1i(index, 1);
+        },
+      })
+    );
 
     const program = shaderProgram.addUniforms(uniforms);
 
-    this.vertexBuffers.forEach(vertexBuffer => {
+    this.vertexBuffers.forEach((vertexBuffer) => {
       program.render(vertexBuffer);
     });
   }
@@ -197,7 +174,7 @@ export class Mesh extends Animatable {
 
 export class Geometry extends SceneNode {
   constructor(options, vertexBuffer) {
-    super(Object.assign({}, options, {type:"fbx-geometry"}));
+    super(Object.assign({}, options, {type: "fbx-geometry"}));
     this._skinningEnabled = true;
     this.vertexBuffer = vertexBuffer;
     this.skinDeformers = [];
@@ -243,38 +220,41 @@ export class Geometry extends SceneNode {
         }
 
         if (boneMatrices.length) {
-          renderable.shaderProgram.addUniforms([{
-            name: "boneMatrixTexture",
-            update: (gl, {index}) => {
-              gl.activeTexture(gl.TEXTURE0);
-              gl.bindTexture(gl.TEXTURE_2D, this._boneMatrixTexture);
-              gl.texImage2D(
-                gl.TEXTURE_2D,
-                0,
-                gl.RGBA32F,
-                4,
-                boneMatrices.length,
-                0,
-                gl.RGBA,
-                gl.FLOAT,
-                // NOTE(miguel): we flip images with UNPACK_FLIP_Y_WEBGL so that
-                // textures can render correctly. But that affects the order
-                // of every texture, including the texture we are creating
-                // with bone matrices. But all we have to do is reverse the
-                // list of matrices, since the matrix increments along the
-                // Y axis.  So reversing the list matrices basically flips
-                // the texture on it Y axis.
-                new Float32Array(boneMatrices.reverse().flat()),
-              );
+          renderable.shaderProgram.addUniforms([
+            {
+              name: "boneMatrixTexture",
+              update: (gl, {index}) => {
+                gl.activeTexture(gl.TEXTURE0);
+                gl.bindTexture(gl.TEXTURE_2D, this._boneMatrixTexture);
+                gl.texImage2D(
+                  gl.TEXTURE_2D,
+                  0,
+                  gl.RGBA32F,
+                  4,
+                  boneMatrices.length,
+                  0,
+                  gl.RGBA,
+                  gl.FLOAT,
+                  // NOTE(miguel): we flip images with UNPACK_FLIP_Y_WEBGL so that
+                  // textures can render correctly. But that affects the order
+                  // of every texture, including the texture we are creating
+                  // with bone matrices. But all we have to do is reverse the
+                  // list of matrices, since the matrix increments along the
+                  // Y axis.  So reversing the list matrices basically flips
+                  // the texture on it Y axis.
+                  new Float32Array(boneMatrices.reverse().flat())
+                );
 
-              gl.uniform1i(index, this._boneMatrixTexture);
+                gl.uniform1i(index, this._boneMatrixTexture);
+              },
             },
-          }, {
-            name: "enabledSkinAnimation",
-            update: (gl, {index}) => {
-              gl.uniform1i(index, 1);
-            }
-          }]);
+            {
+              name: "enabledSkinAnimation",
+              update: (gl, {index}) => {
+                gl.uniform1i(index, 1);
+              },
+            },
+          ]);
         }
       }
     }
@@ -283,7 +263,7 @@ export class Geometry extends SceneNode {
 
 export class Armature extends Animatable {
   constructor(options) {
-    super(Object.assign({}, options, {type:"fbx-armature"}));
+    super(Object.assign({}, options, {type: "fbx-armature"}));
     // _bonesByID gets initialized when its getter is first accessed.
     this._bonesByID = null;
     this._renderEnabled = false;
@@ -353,23 +333,25 @@ export class Armature extends Animatable {
     gl.disable(gl.DEPTH_TEST);
 
     // Configure shader program with its current state.
-    shaderProgram
-      .addUniforms([{
-          name: "projectionMatrix",
-          update: (gl, {index}) => {
-            gl.uniformMatrix4fv(index, false, projectionMatrix.data);
-          },
+    shaderProgram.addUniforms([
+      {
+        name: "projectionMatrix",
+        update: (gl, {index}) => {
+          gl.uniformMatrix4fv(index, false, projectionMatrix.data);
         },
-      ]);
+      },
+    ]);
 
     this.renderables.forEach(({vertexBuffer, worldMatrix, primitiveType}) => {
       shaderProgram
-        .addUniforms([{
-          name: "worldMatrix",
-          update: (gl, {index}) => {
-            gl.uniformMatrix4fv(index, true, worldMatrix.data);
+        .addUniforms([
+          {
+            name: "worldMatrix",
+            update: (gl, {index}) => {
+              gl.uniformMatrix4fv(index, true, worldMatrix.data);
+            },
           },
-        }])
+        ])
         .render(vertexBuffer, primitiveType);
     });
 
@@ -383,7 +365,7 @@ export class Armature extends Animatable {
 // convert PreRotation data into LcL Rotation data.
 export class Bone extends Animatable {
   constructor(options, id) {
-    super(Object.assign({}, options, {type:"fbx-bone"}));
+    super(Object.assign({}, options, {type: "fbx-bone"}));
     this.id = id;
   }
 
@@ -419,13 +401,13 @@ export class Bone extends Animatable {
 
 export class SkinDeformer extends SceneNode {
   constructor(options) {
-    super(Object.assign({}, options, {type:"fbx-skin-deformer"}));
+    super(Object.assign({}, options, {type: "fbx-skin-deformer"}));
   }
 }
 
 export class SkinDeformerCluster extends SceneNode {
   constructor(options, indexes, weights, transform, transformLink) {
-    super(Object.assign({}, options, {type:"fbx-skin-deformer-cluster"}));
+    super(Object.assign({}, options, {type: "fbx-skin-deformer-cluster"}));
     this.boneIDs = [];
     this.indexes = indexes;
     this.weights = weights;
@@ -453,7 +435,7 @@ export class SkinDeformerCluster extends SceneNode {
   preRender(context) {
     super.preRender(context);
 
-    const armatute = this.relativeRoot.items.find(x => x instanceof Armature);
+    const armatute = this.relativeRoot.items.find((x) => x instanceof Armature);
 
     // We are only taking the first bone because skin cluster only
     // have one bone associated with it in the fbx files I have looked
@@ -486,7 +468,7 @@ export class AnimationStack extends SceneNode {
     if (animationState.state && playback.state !== animationState.state) {
       const {fps = 24} = animationState;
 
-      switch(animationState.state) {
+      switch (animationState.state) {
         case "paused":
           playback.pause(context.ms);
           break;
@@ -498,26 +480,24 @@ export class AnimationStack extends SceneNode {
             playback.pause(context.ms);
           }
 
-          context.sceneManager.updateNodeStateByID(
-            animationNode.id, {
-              ...animationState,
-              state: playback.state,
-            });
+          context.sceneManager.updateNodeStateByID(animationNode.id, {
+            ...animationState,
+            state: playback.state,
+          });
 
-          playback.skip(-(1000/fps));
+          playback.skip(-(1000 / fps));
           break;
         case "next":
           if (playback.state === "play") {
             playback.pause(context.ms);
           }
 
-          context.sceneManager.updateNodeStateByID(
-            animationNode.id, {
-              ...animationState,
-              state: playback.state,
-            });
+          context.sceneManager.updateNodeStateByID(animationNode.id, {
+            ...animationState,
+            state: playback.state,
+          });
 
-          playback.skip(1000/fps);
+          playback.skip(1000 / fps);
           break;
       }
     }
@@ -564,7 +544,7 @@ export class AnimationCurveNode extends SceneNode {
   }
 
   getValues(ms, speed) {
-    return [this.pname, this.items.map(item => item.getValue(ms, speed))];
+    return [this.pname, this.items.map((item) => item.getValue(ms, speed))];
   }
 }
 
@@ -607,8 +587,9 @@ export class Texture extends SceneNode {
     const border = 0;
     const srcFormat = gl.RGBA;
     const srcType = gl.UNSIGNED_BYTE;
-    const pixel = new Uint8Array([0, 0, 255, 255]);  // opaque blue
-    gl.texImage2D(gl.TEXTURE_2D,
+    const pixel = new Uint8Array([0, 0, 255, 255]); // opaque blue
+    gl.texImage2D(
+      gl.TEXTURE_2D,
       level,
       internalFormat,
       width,
@@ -616,17 +597,12 @@ export class Texture extends SceneNode {
       border,
       srcFormat,
       srcType,
-      pixel);
+      pixel
+    );
 
-    getImage(filepath).then(image => {
+    getImage(filepath).then((image) => {
       gl.bindTexture(gl.TEXTURE_2D, this.texture);
-      gl.texImage2D(
-        gl.TEXTURE_2D,
-        level,
-        internalFormat,
-        srcFormat,
-        srcType,
-        image);
+      gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, srcFormat, srcType, image);
 
       // WebGL1 has different requirements for power of 2 images
       // vs non power of 2 images so check if the image is a
@@ -647,10 +623,7 @@ export class Texture extends SceneNode {
   }
 
   clone() {
-    const newtexturenode = new Texture(
-      this.textureID,
-      this.type,
-      {name: this.name});
+    const newtexturenode = new Texture(this.textureID, this.type, {name: this.name});
 
     newtexturenode.texture = this.texture;
     return newtexturenode;
@@ -668,14 +641,15 @@ export class Texture extends SceneNode {
             update: (gl, {index}) => {
               gl.uniform1i(index, 1);
             },
-          }, {
+          },
+          {
             name: `${type}.id`,
             update: (gl, {index}) => {
               gl.activeTexture(gl.TEXTURE0 + textureID);
               gl.bindTexture(gl.TEXTURE_2D, this.texture);
               gl.uniform1i(index, textureID);
             },
-          }
+          },
         ]);
       } else {
         renderable.shaderProgram.addUniforms([
@@ -684,14 +658,15 @@ export class Texture extends SceneNode {
             update: (gl, {index}) => {
               gl.uniform1i(index, 1);
             },
-          }, {
+          },
+          {
             name: `textures[${textureID}].id`,
             update: (gl, {index}) => {
               gl.activeTexture(gl.TEXTURE0 + textureID);
               gl.bindTexture(gl.TEXTURE_2D, this.texture);
               gl.uniform1i(index, textureID);
             },
-          }
+          },
         ]);
       }
     }
@@ -714,7 +689,7 @@ function getImage(filepath) {
     });
   }
 
-  return _imageCache[filepath]
+  return _imageCache[filepath];
 }
 
 const transformIndex = {"d|X": 0, "d|Y": 1, "d|Z": 2};
@@ -729,7 +704,7 @@ function getTransformAnimation(animation, defaultValues) {
 function getAnimation(context, animatableNode) {
   // relative root is a skinned mesh node, which will have an animation
   // property in it for easy access to the animation node.
-  const animation = animatableNode.relativeRoot.items.find(x => x instanceof AnimationSceneNode);
+  const animation = animatableNode.relativeRoot.items.find((x) => x instanceof AnimationSceneNode);
   if (!animation?.items.length) {
     return;
   }
@@ -745,7 +720,7 @@ function getAnimation(context, animatableNode) {
   } else if (stack?.name !== stackName) {
     // If a particular stack is selected, then that's what we are using
     // for animation.
-    stack = animation.items.find(item => item.name === stackName);
+    stack = animation.items.find((item) => item.name === stackName);
   }
 
   if (!stack) {
@@ -754,34 +729,32 @@ function getAnimation(context, animatableNode) {
 
   const speed = animationState.speed == null ? 1 : animationState.speed;
   const ms = stack.playback.elapsed(context.ms);
-  const curves = findCurveNodesInLayer(
-    stack.animationLayers[0],
-    animatableNode.animationNodes);
+  const curves = findCurveNodesInLayer(stack.animationLayers[0], animatableNode.animationNodes);
 
-  const {
-    translation,
-    rotation,
-    scale,
-  } = evaluateAnimation(ms, speed, curves);
+  const {translation, rotation, scale} = evaluateAnimation(ms, speed, curves);
 
   if (!translation && !rotation && !scale) {
     return;
   }
 
   return {
-    translation, rotation, scale, stack,
+    translation,
+    rotation,
+    scale,
+    stack,
   };
 }
 
 function evaluateAnimation(ms, speed, curveNodes) {
   const result = {};
   const channels = {};
-  const ktime = KTIME_ONE_SECOND*ms*0.001;
+  const ktime = KTIME_ONE_SECOND * ms * 0.001;
 
-  curveNodes.forEach(curveNode => {
+  curveNodes.forEach((curveNode) => {
     const [pname, values] = curveNode.getValues(ktime, speed);
     channels[pname] = {
-      values, defaults: curveNode.defaultValues,
+      values,
+      defaults: curveNode.defaultValues,
     };
   });
 
@@ -804,5 +777,5 @@ function evaluateAnimation(ms, speed, curveNodes) {
 }
 
 function findCurveNodesInLayer(layer, animationNodes) {
-  return animationNodes.filter(n => layer.animationCurveNodesByName[n.name]);
+  return animationNodes.filter((n) => layer.animationCurveNodesByName[n.name]);
 }

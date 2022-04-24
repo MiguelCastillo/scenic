@@ -16,8 +16,8 @@ const shaderCache = {};
 // preloading shader sources, then use createShaderProgramAsync.
 export function loadShaders(names) {
   const pendingShaders = names
-    .filter(shaderName => !shaderCache[shaderName])
-    .map(shaderName => {
+    .filter((shaderName) => !shaderCache[shaderName])
+    .map((shaderName) => {
       // File extensions for shaders aren't quite standard, however I have
       // chosen what is used here:
       // https://www.khronos.org/opengles/sdk/tools/Reference-Compiler/
@@ -25,10 +25,9 @@ export function loadShaders(names) {
       const fragmentShaderPath = "/editor/shaders/" + shaderName + ".frag";
 
       return Promise.all([
-        fetch(vertexShaderPath).then(resp => resp.text()),
-        fetch(fragmentShaderPath).then(resp => resp.text()),
-      ])
-      .then(([vertexShaderSource, fragmentShaderSource]) => {
+        fetch(vertexShaderPath).then((resp) => resp.text()),
+        fetch(fragmentShaderPath).then((resp) => resp.text()),
+      ]).then(([vertexShaderSource, fragmentShaderSource]) => {
         addShaderCacheEntry(shaderName, vertexShaderSource, fragmentShaderSource);
       });
     });
@@ -50,16 +49,13 @@ export async function createShaderProgramAsync(gl, name) {
 // sources via loadShaders.
 export function createShaderProgram(gl, name) {
   if (!shaderCache[name]) {
-    throw new Error(`shader program ${name} is not loaded. Please call loadShaders first and await for that to finish`);
+    throw new Error(
+      `shader program ${name} is not loaded. Please call loadShaders first and await for that to finish`
+    );
   }
 
-  let {
-    vertexShaderSource,
-    fragmentShaderSource,
-    vertexShader,
-    fragmentShader,
-    attributes,
-  } = shaderCache[name];
+  let {vertexShaderSource, fragmentShaderSource, vertexShader, fragmentShader, attributes} =
+    shaderCache[name];
 
   if (!vertexShader) {
     vertexShader = compileShaderSource(gl, gl.VERTEX_SHADER, vertexShaderSource);

@@ -1,14 +1,8 @@
 import {treeGetMatches} from "../../src/scene/traversal.js";
 
-import {
-  Loader as ObjFileLoader,
-  buildSceneNode as objBuildSceneNode
-} from "./obj/loader.js";
+import {Loader as ObjFileLoader, buildSceneNode as objBuildSceneNode} from "./obj/loader.js";
 
-import {
-  Loader as FbxFileLoader,
-  buildSceneNode as fbxBuildSceneNode
-} from "./fbx/loader.js";
+import {Loader as FbxFileLoader, buildSceneNode as fbxBuildSceneNode} from "./fbx/loader.js";
 
 import {isLight, isStaticMesh, isSkinnedMesh} from "../scene-factory.js";
 
@@ -27,9 +21,7 @@ export function createResourceLoader(gl, sceneManager) {
     });
 
   function loadMany(resources) {
-    return Promise.all(
-      resources.map((resource) => this.load(resource))
-    );
+    return Promise.all(resources.map((resource) => this.load(resource)));
   }
 
   // Filename is a separate argument because a URL can be from a file selector
@@ -45,10 +37,10 @@ export function createResourceLoader(gl, sceneManager) {
       cache[filename] = loader.load(url);
     }
 
-    return cache[filename].then(data => {
+    return cache[filename].then((data) => {
       const sceneNode = sceneManager.getNodeByID(node.id);
       if (!sceneNode) {
-        throw new Error(`unable to load resource. scene node with "${node.id}" was not found.`)
+        throw new Error(`unable to load resource. scene node with "${node.id}" was not found.`);
       }
       buildSceneNode(gl, data, sceneNode, sceneManager);
     });
@@ -57,25 +49,25 @@ export function createResourceLoader(gl, sceneManager) {
   return {
     loadMany,
     load,
-  }
+  };
 }
 
 export function getResourcesFromConfig(config) {
   // TODO(miguel): do we really need to filter out by node type?
-  const traverse = treeGetMatches((item) => (
-    (isStaticMesh(item) || isSkinnedMesh(item) || isLight(item)) &&
-    (!!item.resource && typeof item.resource === "string")
-  ));
+  const traverse = treeGetMatches(
+    (item) =>
+      (isStaticMesh(item) || isSkinnedMesh(item) || isLight(item)) &&
+      !!item.resource &&
+      typeof item.resource === "string"
+  );
 
-  return (
-    traverse(config.items)
-    .map(item => {
-      return {
-        node: item,
-        url: item.resource,
-        filename: item.resource.split(/[\/]/).pop(),
-      }
-    }));
+  return traverse(config.items).map((item) => {
+    return {
+      node: item,
+      url: item.resource,
+      filename: item.resource.split(/[\/]/).pop(),
+    };
+  });
 }
 
 class LoaderManager {

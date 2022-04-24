@@ -1,5 +1,5 @@
 module.exports = {
-  "root": "./",
-  "livereload": false,
-  "watch": false
+  root: "./",
+  livereload: false,
+  watch: false,
 };

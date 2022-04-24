@@ -1,10 +1,10 @@
 module.exports = {
-  "root": "./",
-  "watch": [
+  root: "./",
+  watch: [
     "editor/*.html",
     "editor/*.css",
     "editor/shaders/*",
     "editor/dist/*.js",
-    "resources/**/?(*.fbx|*.obj)"
-  ]
+    "resources/**/?(*.fbx|*.obj)",
+  ],
 };

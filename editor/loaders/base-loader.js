@@ -13,22 +13,22 @@ export class BaseLoader {
 export class TextFileLoader extends BaseLoader {
   load(file) {
     const timer = new Timer();
-    return fetch(file).then(res => {
+    return fetch(file).then((res) => {
       // eslint-disable-next-line no-console
       console.log("Downloaded:", file, `${timer.elapsed()} seconds`);
       return res.text();
-    })
+    });
   }
 }
 
 export class BrinaryFileLoader extends BaseLoader {
   load(file) {
     const timer = new Timer();
-    return fetch(file).then(res => {
+    return fetch(file).then((res) => {
       // eslint-disable-next-line no-console
       console.log("Downloaded:", file, `${timer.elapsed()} seconds`);
       return res.arrayBuffer();
-    })
+    });
   }
 }
 
@@ -46,7 +46,7 @@ export class WorkerLoader extends BaseLoader {
     this.pending = {};
   }
 
-  load(file, options={}) {
+  load(file, options = {}) {
     return new Promise((resolve, reject) => {
       this.pending[file] = {resolve, reject};
       this.worker.postMessage({file, ...options});

@@ -16,14 +16,14 @@ export function createFrameRateCounter() {
     frameCount++;
 
     if (lapsedMs > 1000) {
-      frameRate = Math.floor(frameCount*(1000/lapsedMs));
+      frameRate = Math.floor(frameCount * (1000 / lapsedMs));
       lastMs = ms;
       frameCount = 0;
     }
 
     return {
       frameRate,
-      lapsedMs
+      lapsedMs,
     };
   };
-};
+}

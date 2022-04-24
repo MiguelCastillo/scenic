@@ -16,7 +16,7 @@ export function startRenderLoop(gl, updateScene, renderScene) {
     // loaded with new Image(), we can just keep this as default behavior.
     // Otherwise, we are going to need to add a way to flip images more
     // selectively on a per texture basis which can add lots of unwanted
-    // complexity because we will need to keep correctly push and pop 
+    // complexity because we will need to keep correctly push and pop
     // that configuration from the state stack so that textures don't
     // interfere with each other.
     // https://jameshfisher.com/2020/10/22/why-is-my-webgl-texture-upside-down/
@@ -25,7 +25,7 @@ export function startRenderLoop(gl, updateScene, renderScene) {
     // WebGL default frontface is gl.CCW.
     // https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/frontFace
     // gl.frontFace(gl.CW);
-    
+
     // Update the scene and states.
     updateScene(ms);
 
@@ -33,6 +33,6 @@ export function startRenderLoop(gl, updateScene, renderScene) {
     renderScene(ms);
 
     // Queue up next frame.
-    requestAnimationFrame(renderFrame)
+    requestAnimationFrame(renderFrame);
   });
 }

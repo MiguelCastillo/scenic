@@ -1,20 +1,12 @@
 import * as mat4 from "../../../src/math/matrix4.js";
 
-import {
-  getTBNVectorsFromTriangles,
-} from "../../../src/math/tbn-matrix.js";
+import {getTBNVectorsFromTriangles} from "../../../src/math/tbn-matrix.js";
 
-import {
-  getIndexedComponents,
-} from "../../../src/math/geometry.js";
+import {getIndexedComponents} from "../../../src/math/geometry.js";
 
-import {
-  createShaderProgram,
-} from "../../shader-factory.js";
+import {createShaderProgram} from "../../shader-factory.js";
 
-import {
-  findChildrenByType,
-} from "../../../src/scene/node.js";
+import {findChildrenByType} from "../../../src/scene/node.js";
 
 import {
   VertexBuffer,
@@ -23,9 +15,7 @@ import {
   VertexBufferIndexes,
 } from "../../../src/renderer/vertexbuffer.js";
 
-import {
-  BrinaryFileLoader
-} from "../base-loader.js";
+import {BrinaryFileLoader} from "../base-loader.js";
 
 import {
   FbxFile,
@@ -37,13 +27,9 @@ import {
   polygonVertexIndexToDirect,
 } from "../../../src/formats/fbxfile.js";
 
-import {
-  Animation as AnimationSceneNode,
-} from "../../../src/scene/animation.js";
+import {Animation as AnimationSceneNode} from "../../../src/scene/animation.js";
 
-import {
-  Material as MaterialSceneNode,
-} from "../../../src/scene/material.js";
+import {Material as MaterialSceneNode} from "../../../src/scene/material.js";
 
 import {
   Mesh,
@@ -72,7 +58,7 @@ import {
  */
 export class Loader extends BrinaryFileLoader {
   load(file) {
-    return super.load(file).then(content => FbxFile.fromBinary(content));
+    return super.load(file).then((content) => FbxFile.fromBinary(content));
   }
 }
 
@@ -116,7 +102,7 @@ export function buildSceneNode(gl, fbxDocument, sceneNode, sceneManager) {
 
   const connections = findChildByName(fbxDocument, "Connections");
   for (const props of connections.properties) {
-    switch(props.name) {
+    switch (props.name) {
       case "C": {
         const [type, src, dest, pname] = props.value;
         if (nodeWrappersByID[dest] && nodeWrappersByID[src]) {
@@ -135,13 +121,14 @@ export function buildSceneNode(gl, fbxDocument, sceneNode, sceneManager) {
 
   sceneNode.addItems(
     nodeWrappersByID["0,0"].connections
-      .map(connection => sceneNodeFromConnection(gl, connection, sceneManager, sceneNode))
-      .filter(Boolean));
+      .map((connection) => sceneNodeFromConnection(gl, connection, sceneManager, sceneNode))
+      .filter(Boolean)
+  );
 
   const animationNode = new AnimationSceneNode({name: `Animation_n${animationID++}`});
   findChildrenByName(objects, "AnimationStack")
-    .map(s => s.attributes[0])
-    .forEach(stackID => {
+    .map((s) => s.attributes[0])
+    .forEach((stackID) => {
       const animationStack = new AnimationStack({
         name: nodeWrappersByID[stackID].name,
       });
@@ -150,7 +137,9 @@ export function buildSceneNode(gl, fbxDocument, sceneNode, sceneManager) {
         animationStack.addItems(
           nodeWrappersByID[stackID].connections
             .map((connection) => sceneNodeFromConnection(gl, connection, sceneManager, sceneNode))
-            .filter(Boolean)));
+            .filter(Boolean)
+        )
+      );
     });
 
   if (animationNode.items.length) {
@@ -162,16 +151,16 @@ export function buildSceneNode(gl, fbxDocument, sceneNode, sceneManager) {
     // fps in an FBX file is a property in the global settings and it looks like
     // ['CustomFrameRate', 'double', 'Number', '', 24]
     const properties70 = findChildByName(globalSettings, "Properties70");
-    const frameRate = properties70.properties.find(p => p.value[0] === "CustomFrameRate");
+    const frameRate = properties70.properties.find((p) => p.value[0] === "CustomFrameRate");
     const fps = frameRate?.value[4];
 
-    const {animation={}} = sceneManager.getNodeStateByID(sceneNode.id);
+    const {animation = {}} = sceneManager.getNodeStateByID(sceneNode.id);
     sceneManager.updateNodeStateByID(animationNode.id, {
       ...animation,
       // Order of presedence for FPS is first custom, then fbx file, then just
       // known default.
       fps: animation.fps || fps || FBX_DEFAULT_FPS,
-      stackNames: animationNode.items.map(item => item.name),
+      stackNames: animationNode.items.map((item) => item.name),
     });
   }
 
@@ -208,7 +197,7 @@ function sceneNodeFromConnection(gl, rootConnection, sceneManager, relativeRootS
         // Only support for OO and OP (partially OP) connections.
         // TODO(miguel): add support for other types of connections.
         // https://download.autodesk.com/us/fbx/20112/fbx_sdk_help/index.html
-        switch(c.type) {
+        switch (c.type) {
           case "OO":
             sceneNode.add(childSceneNode);
             break;
@@ -223,11 +212,10 @@ function sceneNodeFromConnection(gl, rootConnection, sceneManager, relativeRootS
       }
     }
 
-    sceneManager.updateNodeStateByID(
-      sceneNode.id, {
-        name: sceneNode.name,
-        type: sceneNode.type,
-        ...sceneManager.getNodeStateByID(sceneNode.id),
+    sceneManager.updateNodeStateByID(sceneNode.id, {
+      name: sceneNode.name,
+      type: sceneNode.type,
+      ...sceneManager.getNodeStateByID(sceneNode.id),
     });
   }
 
@@ -238,7 +226,7 @@ function sceneNodeFromConnection(gl, rootConnection, sceneManager, relativeRootS
     const {node: fbxNode, name} = src;
     let sceneNode;
 
-    switch(fbxNode.name) {
+    switch (fbxNode.name) {
       case "Model": {
         const modelType = fbxNode.attributes[2];
 
@@ -261,9 +249,9 @@ function sceneNodeFromConnection(gl, rootConnection, sceneManager, relativeRootS
           return null;
         }
 
-        let rotation = [0,0,0];
-        let translation = [0,0,0];
-        let scale = [1,1,1];
+        let rotation = [0, 0, 0];
+        let translation = [0, 0, 0];
+        let scale = [1, 1, 1];
 
         const properties70 = findChildByName(fbxNode, "Properties70");
         if (properties70) {
@@ -298,15 +286,8 @@ function sceneNodeFromConnection(gl, rootConnection, sceneManager, relativeRootS
       case "Geometry": {
         const rootState = sceneManager.getNodeStateByID(relativeRootSceneNode.id);
 
-        const {
-          vertices,
-          indexes,
-          tangents,
-          bitangents,
-          uv,
-          normals,
-          polygonIndexes,
-        } = buildGeometryLayers(fbxNode, rootState.normalSmoothing);
+        const {vertices, indexes, tangents, bitangents, uv, normals, polygonIndexes} =
+          buildGeometryLayers(fbxNode, rootState.normalSmoothing);
 
         // We do a quick check on the vertices with the generated indexes
         // to make sure overall things aren't completely broken. This catches
@@ -316,9 +297,12 @@ function sceneNodeFromConnection(gl, rootConnection, sceneManager, relativeRootS
 
         // This map allows us to convert from decoded FBX polygon indexes
         // to direct indexes, which is what we use for rendering.
-        connection.polygonIndexToRenderIndexMap = polygonVertexIndexesToRenderIndexes(polygonIndexes, indexes);
+        connection.polygonIndexToRenderIndexMap = polygonVertexIndexesToRenderIndexes(
+          polygonIndexes,
+          indexes
+        );
         _geometryMetadata[name] = {
-          renderIndexToPolygonMap: polygonVertexIndexesToRenderIndexes(indexes, polygonIndexes)
+          renderIndexToPolygonMap: polygonVertexIndexesToRenderIndexes(indexes, polygonIndexes),
         };
 
         const vbo = new VertexBuffer({
@@ -344,8 +328,8 @@ function sceneNodeFromConnection(gl, rootConnection, sceneManager, relativeRootS
         } else if (type === "Cluster") {
           let indexes = findPropertyValueByName(fbxNode, "Indexes");
           const weights = findPropertyValueByName(fbxNode, "Weights");
-          const transform  = findPropertyValueByName(fbxNode, "Transform");
-          const transformLink  = findPropertyValueByName(fbxNode, "TransformLink");
+          const transform = findPropertyValueByName(fbxNode, "Transform");
+          const transformLink = findPropertyValueByName(fbxNode, "TransformLink");
 
           if (!indexes) {
             break;
@@ -364,14 +348,15 @@ function sceneNodeFromConnection(gl, rootConnection, sceneManager, relativeRootS
           }
 
           if (geometryConnection) {
-            indexes = indexes.map(idx => geometryConnection.polygonIndexToRenderIndexMap[idx]);
+            indexes = indexes.map((idx) => geometryConnection.polygonIndexToRenderIndexMap[idx]);
           }
 
-          sceneNode = new SkinDeformerCluster({name},
+          sceneNode = new SkinDeformerCluster(
+            {name},
             indexes,
             weights,
             new mat4.Matrix4(transform).transpose(),
-            new mat4.Matrix4(transformLink).transpose(),
+            new mat4.Matrix4(transformLink).transpose()
           );
         }
         break;
@@ -440,7 +425,7 @@ function sceneNodeFromConnection(gl, rootConnection, sceneManager, relativeRootS
       case "AnimationCurve": {
         let times = findPropertyValueByName(fbxNode, "KeyTime");
         let values = findPropertyValueByName(fbxNode, "KeyValueFloat");
-        times = times.map(t => parseInt(t));
+        times = times.map((t) => parseInt(t));
         sceneNode = new AnimationCurve(times, values, pname, {name});
         break;
       }
@@ -535,7 +520,8 @@ function buildGeometryLayers(fbxGeometry, normalSmoothing) {
     indexes: renderIndexes,
     tangents,
     bitangents,
-    uv, normals,
+    uv,
+    normals,
     polygonVertices,
     polygonIndexes,
   };
@@ -556,31 +542,41 @@ function generateFbxNodeName(fbxNode) {
 
 function validateIndexedTriangles(name, vertices, indexes) {
   // eslint-disable-next-line
-  console.log(name,
-    "triangle count", indexes.length/3,
-    "index count", indexes.length,
-    "vertex count", vertices.length);
+  console.log(
+    name,
+    "triangle count",
+    indexes.length / 3,
+    "index count",
+    indexes.length,
+    "vertex count",
+    vertices.length
+  );
 
-  let min = 0, max = 0;
+  let min = 0,
+    max = 0;
   for (let i = 0; i < indexes.length; i += 3) {
     const i1 = indexes[i];
-    const i2 = indexes[i+1];
-    const i3 = indexes[i+2];
+    const i2 = indexes[i + 1];
+    const i3 = indexes[i + 2];
     min = Math.min(min, i1, i2, i3);
     max = Math.max(max, i1, i2, i3);
 
     if (i1 === undefined || i2 === undefined || i3 === undefined) {
       // eslint-disable-next-line
-      console.log(
-        "===> invalid vertex index ", i,
-        i1, i2, i3);
+      console.log("===> invalid vertex index ", i, i1, i2, i3);
     }
     if (vertices[i1] === undefined || vertices[i2] === undefined || vertices[i3] === undefined) {
       // eslint-disable-next-line
       console.log(
-        "===> vertex index out of bound", i,
-        vertices[i1], vertices[i2], vertices[i3],
-        i1, i2, i3);
+        "===> vertex index out of bound",
+        i,
+        vertices[i1],
+        vertices[i2],
+        vertices[i3],
+        i1,
+        i2,
+        i3
+      );
     }
   }
 
@@ -589,25 +585,25 @@ function validateIndexedTriangles(name, vertices, indexes) {
 }
 
 const layerMap = {
-  "UV": {
+  UV: {
     layerName: "LayerElementUV",
     indexName: "UVIndex",
     data: "UV",
     componentsPerVertex: 2,
   },
-  "Normals": {
+  Normals: {
     layerName: "LayerElementNormal",
     indexName: "NormalsIndex",
     data: "Normals",
     componentsPerVertex: 3,
   },
-  "Colors": {
+  Colors: {
     layerName: "LayerElementColor",
     indexName: "ColorIndex",
     data: "Colors",
     componentsPerVertex: 4,
-  }
-}
+  },
+};
 
 function getLayerData(fbxGeometry, layerDataName) {
   const layer = findChildByName(fbxGeometry, layerMap[layerDataName].layerName);
@@ -642,7 +638,6 @@ function getLayerData(fbxGeometry, layerDataName) {
   if (mappingInformationType === "ByPolygonVertex") {
     // This is already the default that we use. So this is a NOOP.
   } else if (mappingInformationType === "ByVertice" || mappingInformationType === "ByVertex") {
-
     // TODO(miguel): when normals are ByVertice, does that mean that normals
     // won't break if they are indexed with polygon indexes that share vertices?
     // Usually vertices can't share indexes too well when polygons have sharp
@@ -652,12 +647,15 @@ function getLayerData(fbxGeometry, layerDataName) {
     components = mapPolygonIndexToRenderIndex(
       components,
       decodePolygonVertexIndexes(polygonVertexIndex),
-      polygonVertexIndexToDirect(polygonVertexIndex));
+      polygonVertexIndexToDirect(polygonVertexIndex)
+    );
   } else {
     // TODO(miguel): add support for ByPolygon, ByEdge, AllSame when the need
     // comes up.
     // eslint-disable-next-line no-console
-    console.warn(`FBX MappingInformationType "${mappingInformationType}" is not supported. ${layerDataName}`);
+    console.warn(
+      `FBX MappingInformationType "${mappingInformationType}" is not supported. ${layerDataName}`
+    );
   }
 
   return components;
@@ -733,7 +731,7 @@ export function buildSkinAnimation(gl, sceneNode) {
       }
     }
 
-    Object.keys(bonedata).forEach(polygonVertexIndex => {
+    Object.keys(bonedata).forEach((polygonVertexIndex) => {
       const len = bonedata[polygonVertexIndex].weights.length;
 
       // weights and boneids have the same size, so let's pick one to determine
@@ -773,8 +771,12 @@ export function buildSkinAnimation(gl, sceneNode) {
         mappedboneids[idx] = bonedata[polygonVertexIndex].boneids;
       });
 
-      geometry.vertexBuffer.withWeights(new VertexBufferData(gl, mappedweights.flat(), MAX_BONES_PER_VERTEX));
-      geometry.vertexBuffer.withBoneIDs(new VertexBufferData(gl, mappedboneids.flat(), MAX_BONES_PER_VERTEX));
+      geometry.vertexBuffer.withWeights(
+        new VertexBufferData(gl, mappedweights.flat(), MAX_BONES_PER_VERTEX)
+      );
+      geometry.vertexBuffer.withBoneIDs(
+        new VertexBufferData(gl, mappedboneids.flat(), MAX_BONES_PER_VERTEX)
+      );
     }
   }
 }
@@ -783,13 +785,14 @@ export function buildSkinAnimation(gl, sceneNode) {
 // most influencial weights; the weights with higher values. We keep the
 // 4 heaviest bones and for now just drop the rest.
 export function getMostInfluencialBones({weights, boneids}) {
-  const rweights = [], rboneids = [];
+  const rweights = [],
+    rboneids = [];
 
   weights
-    .map((w,i) => [w, boneids[i]])
-    .sort(([w1],[w2]) => w1 > w2 ? -1 : 1)
+    .map((w, i) => [w, boneids[i]])
+    .sort(([w1], [w2]) => (w1 > w2 ? -1 : 1))
     .slice(0, MAX_BONES_PER_VERTEX)
-    .forEach(([w,id]) => {
+    .forEach(([w, id]) => {
       rweights.push(w);
       rboneids.push(id);
     });
@@ -817,9 +820,9 @@ function buildArmature(sceneNode) {
   // Blender adds a type of Bone node called Armature that is the root
   // node of a skeleton. But if the FBX file being loaded doesn't have
   // an armature, we insert a fake one.
-  let armature = sceneNode.items.find(x => x instanceof Armature);
+  let armature = sceneNode.items.find((x) => x instanceof Armature);
   if (!armature) {
-    const rootBone = sceneNode.items.find(x => x instanceof Bone);
+    const rootBone = sceneNode.items.find((x) => x instanceof Bone);
 
     // If there is a skeletal bone, then we have skeletal animation. And we
     // will insert an armature node to orchestrate things for us.
@@ -847,7 +850,7 @@ function buildArmature(sceneNode) {
 }
 
 function initShaderProgramsForMeshes(gl, sceneNode) {
-  findChildrenByType(sceneNode, Mesh).forEach(mesh => {
+  findChildrenByType(sceneNode, Mesh).forEach((mesh) => {
     const textures = findChildrenByType(mesh, Texture);
     const materials = findChildrenByType(mesh, MaterialSceneNode);
 
@@ -871,7 +874,7 @@ function initShaderProgramsForMeshes(gl, sceneNode) {
 }
 
 function initShaderProgramsForArmatures(gl, sceneNode) {
-  findChildrenByType(sceneNode, Armature).forEach(armature => {
+  findChildrenByType(sceneNode, Armature).forEach((armature) => {
     armature.withShaderProgram(createShaderProgram(gl, "flat-material"));
   });
 }
@@ -893,10 +896,10 @@ export function polygonVertexIndexesToRenderIndexes(polygonIndexes, renderIndexe
 function mapPolygonIndexToRenderIndex(components, polygonIndexes, renderIndexes) {
   const newComponents = [];
   for (let i = 0; i < polygonIndexes.length; i++) {
-    const polygonIndexOffset = polygonIndexes[i]*3;
-    const renderIndexOffset = renderIndexes[i]*3;
+    const polygonIndexOffset = polygonIndexes[i] * 3;
+    const renderIndexOffset = renderIndexes[i] * 3;
     for (let j = 0; j < 3; j++) {
-      newComponents[renderIndexOffset+j] = components[polygonIndexOffset+j];
+      newComponents[renderIndexOffset + j] = components[polygonIndexOffset + j];
     }
   }
   return newComponents;

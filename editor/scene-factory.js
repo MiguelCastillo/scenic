@@ -26,7 +26,7 @@ export function createScene(config) {
   // information such as world matrices.
   const sceneManager = new SceneManager(stateManager);
 
-  function buildSceneParentNode(parent, children=[]) {
+  function buildSceneParentNode(parent, children = []) {
     return parent.addItems(children);
   }
 
@@ -74,11 +74,11 @@ export function buildDefaultState(config) {
   const buildNode = (nodeConfig) => {
     const defaults = {
       transform: {
-        scale:[1,1,1],
-        rotation:[0,0,0],
-        position:[0,0,0],
+        scale: [1, 1, 1],
+        rotation: [0, 0, 0],
+        position: [0, 0, 0],
         ...nodeConfig.transform,
-      }
+      },
     };
 
     if (isStaticMesh(nodeConfig) || isSkinnedMesh(nodeConfig)) {

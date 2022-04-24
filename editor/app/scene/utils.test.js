@@ -5,10 +5,10 @@ describe("normalizeLeadingZero", () => {
     expect(normalizeLeadingZero("0")).toEqual("0");
   });
   it("-0", () => {
-    expect(normalizeLeadingZero("-0")).toEqual("-0")
+    expect(normalizeLeadingZero("-0")).toEqual("-0");
   });
   it("with no whole number with decimal point", () => {
-    expect(normalizeLeadingZero(".345")).toEqual("0.345")
+    expect(normalizeLeadingZero(".345")).toEqual("0.345");
   });
   it("value is multiple zeros", () => {
     expect(normalizeLeadingZero("0000")).toEqual("0");
@@ -32,9 +32,9 @@ describe("normalizeLeadingZero", () => {
     expect(normalizeLeadingZero("---000")).toEqual("-0");
   });
   it("negavtive decimal number with leading 0s", () => {
-    expect(normalizeLeadingZero("-0.000004325711511636084")).toEqual("-0.000004325711511636084")
+    expect(normalizeLeadingZero("-0.000004325711511636084")).toEqual("-0.000004325711511636084");
   });
   it("decimal number with leading 0s", () => {
-    expect(normalizeLeadingZero("0.000004325711511636084")).toEqual("0.000004325711511636084")
+    expect(normalizeLeadingZero("0.000004325711511636084")).toEqual("0.000004325711511636084");
   });
 });

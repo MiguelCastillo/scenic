@@ -29,16 +29,13 @@ const sceneObjectsID = "scene objects";
 const axisProjectionID = "axis projection";
 const worldProjectionID = "world projection";
 
-function applyWorldRotation(sceneManager, rotateX, rotateY, rotateZ=0) {
+function applyWorldRotation(sceneManager, rotateX, rotateY, rotateZ = 0) {
   const sceneObjects = sceneManager.getNodeStateByID(sceneObjectsID);
 
   sceneManager.updateNodeStateByID(sceneObjectsID, {
     transform: {
       ...sceneObjects.transform,
-      rotation: vec3.add(
-        [rotateX, rotateY, rotateZ],
-        sceneObjects.transform.rotation
-      ),
+      rotation: vec3.add([rotateX, rotateY, rotateZ], sceneObjects.transform.rotation),
     },
   });
 }
@@ -49,10 +46,7 @@ function applyWorldTranslation(sceneManager, translateX, translateY, translateZ)
   sceneManager.updateNodeStateByID(sceneObjectsID, {
     transform: {
       ...sceneObjects.transform,
-      position: vec3.add(
-        [translateX, translateY, translateZ],
-        sceneObjects.transform.position
-      ),
+      position: vec3.add([translateX, translateY, translateZ], sceneObjects.transform.position),
     },
   });
 }
@@ -74,14 +68,14 @@ function createSceneUpdater(gl, sceneManager) {
       clientHeight,
       worldProjectionState.projection.fov,
       worldProjectionState.projection.near,
-      worldProjectionState.projection.far,
+      worldProjectionState.projection.far
     );
 
     const axisProjectionState = sceneManager.getNodeStateByID(axisProjectionID);
     axisProjectionMatrix = createOrthographicProjectionMatrix(
       clientWidth,
       clientHeight,
-      axisProjectionState.projection.far,
+      axisProjectionState.projection.far
     );
   }
 
@@ -99,18 +93,16 @@ function createSceneUpdater(gl, sceneManager) {
   // Update canvas width/height whenever the window is resized. clientHeight
   // and clientWidth are the window.innerHeight and window.innerWidth. it is
   // just a convenient accessor for the global object dimensions.
-  Subscription.create(window)
-    .on("resize", () => {
-      handleResize();
-    });
+  Subscription.create(window).on("resize", () => {
+    handleResize();
+  });
 
   const splitPanelEl = document.getElementById("app-panel");
   createSplitPanel(splitPanelEl);
 
-  Subscription.create(splitPanelEl)
-    .on("panel:resize", () => {
-      handleResize();
-    });
+  Subscription.create(splitPanelEl).on("panel:resize", () => {
+    handleResize();
+  });
 
   let enableWorldTranslation = false;
   const worldRotation = new easings.WeightedItems(easings.easeInQuart);
@@ -129,15 +121,19 @@ function createSceneUpdater(gl, sceneManager) {
     .on("mousemove", (evt) => {
       if (document.pointerLockElement === mousetrapEl) {
         const devicePixelRatio = window.devicePixelRatio;
-        const translationRatio = devicePixelRatio*6;
-        const rotationRatio = devicePixelRatio*2;
+        const translationRatio = devicePixelRatio * 6;
+        const rotationRatio = devicePixelRatio * 2;
 
         if (enableWorldTranslation || evt.shiftKey) {
-          worldTranslation.start([evt.movementX/translationRatio, -evt.movementY/translationRatio, 0]);
+          worldTranslation.start([
+            evt.movementX / translationRatio,
+            -evt.movementY / translationRatio,
+            0,
+          ]);
         } else if (evt.ctrlKey) {
-          worldTranslation.start([0, 0, evt.movementY/translationRatio]);
+          worldTranslation.start([0, 0, evt.movementY / translationRatio]);
         } else {
-          worldRotation.start([evt.movementY/rotationRatio, evt.movementX/rotationRatio]);
+          worldRotation.start([evt.movementY / rotationRatio, evt.movementX / rotationRatio]);
         }
       }
     })
@@ -147,14 +143,23 @@ function createSceneUpdater(gl, sceneManager) {
 
       if (document.pointerLockElement === mousetrapEl) {
         const devicePixelRatio = window.devicePixelRatio;
-        const rotationRatio = devicePixelRatio*6;
+        const rotationRatio = devicePixelRatio * 6;
 
         if (evt.shiftKey) {
-          applyWorldTranslation(sceneManager, -(evt.deltaX/rotationRatio), (evt.deltaY/rotationRatio), 0);
+          applyWorldTranslation(
+            sceneManager,
+            -(evt.deltaX / rotationRatio),
+            evt.deltaY / rotationRatio,
+            0
+          );
         } else if (evt.ctrlKey) {
-          applyWorldTranslation(sceneManager, 0, 0, -(evt.deltaY/rotationRatio));
+          applyWorldTranslation(sceneManager, 0, 0, -(evt.deltaY / rotationRatio));
         } else {
-          applyWorldRotation(sceneManager, -evt.deltaY/devicePixelRatio, -evt.deltaX/devicePixelRatio);
+          applyWorldRotation(
+            sceneManager,
+            -evt.deltaY / devicePixelRatio,
+            -evt.deltaX / devicePixelRatio
+          );
         }
       }
     });
@@ -162,14 +167,11 @@ function createSceneUpdater(gl, sceneManager) {
   // This is the logic for updating the scene state and the scene graph with the
   // new scene state. This is the logic for the game itself.
   function updateScene(/*ms*/) {
-    sceneManager
-      .getNodeByID(worldProjectionID)
-      .withProjection(perspectiveProjectionMatrix);
+    sceneManager.getNodeByID(worldProjectionID).withProjection(perspectiveProjectionMatrix);
 
     const axisProjection = sceneManager
       .getNodeByID(axisProjectionID)
       .withProjection(axisProjectionMatrix);
-
 
     const sceneObjectsTransform = sceneManager.getNodeStateByID(sceneObjectsID).transform;
 
@@ -191,7 +193,9 @@ function createSceneUpdater(gl, sceneManager) {
 
   let lastFps = 0;
   let refreshRateUpdater = () => {};
-  const registerRefreshRateUpdater = (cb) => {refreshRateUpdater = cb};
+  const registerRefreshRateUpdater = (cb) => {
+    refreshRateUpdater = cb;
+  };
 
   function renderScene(ms) {
     sceneManager.render(ms, gl);
@@ -218,7 +222,7 @@ function createSceneUpdater(gl, sceneManager) {
 // reason about in pixel space, but when rasterizing it is much simpler for the
 // low level engines to work with clip space, which is used for determining
 // what geometry can be culled out.
-function createPerspectiveProjectionMatrix(width, height, fov=90, near=0, far=1000) {
+function createPerspectiveProjectionMatrix(width, height, fov = 90, near = 0, far = 1000) {
   // Primitives are clipped to a space coordinate that ranges from -1 to 1
   // in all axis. This is what the hardware wants, so we need to project
   // screen space to clip space so that all things that we render can be
@@ -228,7 +232,7 @@ function createPerspectiveProjectionMatrix(width, height, fov=90, near=0, far=10
   return PerspectiveProjectionMatrix.create(fov, width, height, near, far);
 }
 
-function createOrthographicProjectionMatrix(width, height, far=1000) {
+function createOrthographicProjectionMatrix(width, height, far = 1000) {
   // Primitives are clipped to a space coordinate that ranges from -1 to 1
   // in all axis. This is what the hardware wants, so we need to project
   // screen space to clip space so that all things that we render can be
@@ -241,9 +245,7 @@ function createOrthographicProjectionMatrix(width, height, far=1000) {
 export let sceneManager;
 
 export const doRenderLoop = (gl) => {
-  const {
-    vendor, renderer, limits, contextAttributes,
-  } = getDebugData(gl);
+  const {vendor, renderer, limits, contextAttributes} = getDebugData(gl);
 
   // eslint-disable-next-line no-console
   console.log("Vendor:", vendor);
@@ -269,12 +271,8 @@ export const doRenderLoop = (gl) => {
 
   // Two functions to update the scene state and another for actually render
   // the scene based on the updated scene state.
-  const {
-    updateScene,
-    renderScene,
-    refreshProjection,
-    registerRefreshRateUpdater,
-  } = createSceneUpdater(gl, sceneManager);
+  const {updateScene, renderScene, refreshProjection, registerRefreshRateUpdater} =
+    createSceneUpdater(gl, sceneManager);
 
   // This starts the render loop to render the scene!
   startRenderLoop(gl, updateScene, renderScene);
@@ -285,8 +283,13 @@ export const doRenderLoop = (gl) => {
     .then(() => resourceLoader.loadMany(getResourcesFromConfig(sceneConfig)))
     .then(() => {
       // eslint-disable-next-line
-      console.log(`Load time: ${(Date.now() - start)/1000} secs`)
+      console.log(`Load time: ${(Date.now() - start) / 1000} secs`);
 
-      return {resourceLoader, sceneManager, refreshProjection, registerRefreshRateUpdater};
+      return {
+        resourceLoader,
+        sceneManager,
+        refreshProjection,
+        registerRefreshRateUpdater,
+      };
     });
 };

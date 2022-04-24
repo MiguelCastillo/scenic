@@ -6,8 +6,12 @@
 /.vscode
 /.husky
 
-/editor/*
-!/editor/*.js
+/editor/dist
+/editor/**/*.jsx
+/editor/**/*.css
+/editor/**/*.html
+/editor/**/*.frag
+/editor/**/*.vert
 
 /bin
 /src

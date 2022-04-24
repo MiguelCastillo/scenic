@@ -1,4 +1,3 @@
-
 // normalizeLeadingZero ensure that form inputs of type `number` produce
 // numbers that are OK for regular math operations. E.g. many leading zeros
 // are not good. Number form inputs also allow you to enter more than negative
@@ -13,7 +12,9 @@ export function normalizeLeadingZero(value) {
     return "0";
   }
 
-  let [, negativeNumber="", whole, decimalPoint, decimal] = value.match(/^(?:(-)?-*)(\d+)?(?:(\.)(\d+))?$/);
+  let [, negativeNumber = "", whole, decimalPoint, decimal] = value.match(
+    /^(?:(-)?-*)(\d+)?(?:(\.)(\d+))?$/
+  );
 
   if (!whole) {
     return _buildNumber(negativeNumber, "0", decimalPoint, decimal);
@@ -26,7 +27,7 @@ export function normalizeLeadingZero(value) {
 
   whole = whole.substr(index) || "0";
   if (whole === "0" && !decimalPoint) {
-    return (negativeNumber||"") + "0";
+    return (negativeNumber || "") + "0";
   }
 
   const result = _buildNumber(negativeNumber, whole, decimalPoint, decimal);

@@ -1,22 +1,12 @@
-import {
-  normalizeTriangleVertices,
-} from "../../../src/math/geometry.js";
+import {normalizeTriangleVertices} from "../../../src/math/geometry.js";
 
-import {
-  VertexBuffer,
-  VertexBufferData,
-} from "../../../src/renderer/vertexbuffer.js";
+import {VertexBuffer, VertexBufferData} from "../../../src/renderer/vertexbuffer.js";
 
 import {WorkerLoader} from "../base-loader.js";
 
-import {
-  isLight,
-  isStaticMesh,
-} from "../../scene-factory.js";
+import {isLight, isStaticMesh} from "../../scene-factory.js";
 
-import {
-  createShaderProgram,
-} from "../../shader-factory.js";
+import {createShaderProgram} from "../../shader-factory.js";
 
 /**
  * File loader for obj formatted files.
@@ -36,10 +26,9 @@ export function buildSceneNode(gl, model, sceneNode /*, sceneManager*/) {
 
   if (!normals.byteLength && !normals.length) {
     vertexBuffer.withNormals(
-      new VertexBufferData(
-        gl, normalizeTriangleVertices(new Float32Array(vertices))));
-  }
-  else {
+      new VertexBufferData(gl, normalizeTriangleVertices(new Float32Array(vertices)))
+    );
+  } else {
     vertexBuffer.withNormals(new VertexBufferData(gl, normals));
   }
 
@@ -53,10 +42,10 @@ export function buildSceneNode(gl, model, sceneNode /*, sceneManager*/) {
   } else if (isLight(sceneNode)) {
     shaderProgram = createShaderProgram(gl, "flat-material");
   } else {
-    throw new Error("Unable to intialize shader program because node is not a static-mesh or light");
+    throw new Error(
+      "Unable to intialize shader program because node is not a static-mesh or light"
+    );
   }
 
-  sceneNode
-    .withVertexBuffer(vertexBuffer)
-    .withShaderProgram(shaderProgram);
+  sceneNode.withVertexBuffer(vertexBuffer).withShaderProgram(shaderProgram);
 }

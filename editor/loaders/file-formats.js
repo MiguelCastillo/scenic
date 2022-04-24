@@ -4,7 +4,4 @@
 import {Timer} from "../../src/timer.js";
 import {ObjFile} from "../../src/formats/objfile.js";
 
-export {
-  Timer,
-  ObjFile,
-};
+export {Timer, ObjFile};
