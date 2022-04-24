@@ -4,6 +4,7 @@
 # Right now the only thing we are going to prettify are editor/*.js files.
 
 /.vscode
+/.husky
 
 /editor/*
 !/editor/*.js
