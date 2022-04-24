@@ -1,5 +1,5 @@
 module.exports = {
-  "src": ["editor/index.js"],
+  "src": ["editor/scene-main.js"],
   "dest": "editor/dist/scene.js",
   "umd": "scene",
   "watch": true,
