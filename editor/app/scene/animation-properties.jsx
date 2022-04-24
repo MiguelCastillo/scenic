@@ -1,10 +1,5 @@
 import * as React from "react";
-import {
-  PlayOutline,
-  PauseOutline,
-  SkipNextOutline,
-  SkipPrevOutline,
-} from "iconoir-react";
+import {PlayOutline, PauseOutline, SkipNextOutline, SkipPrevOutline} from "iconoir-react";
 import {WithNodeState} from "./with-node-state.jsx";
 
 export class AnimationProperties extends WithNodeState {
@@ -15,7 +10,7 @@ export class AnimationProperties extends WithNodeState {
       stackName,
       state: "paused",
     });
-  }
+  };
 
   handletAnimationSpeedChange = (evt) => {
     const nodeState = this.getNodeState();
@@ -23,7 +18,7 @@ export class AnimationProperties extends WithNodeState {
       ...nodeState,
       speed: evt.target.value,
     });
-  }
+  };
 
   handlePlaybackState = (type) => {
     const nodeState = this.getNodeState();
@@ -31,46 +26,67 @@ export class AnimationProperties extends WithNodeState {
       ...nodeState,
       state: type,
     });
-  }
+  };
 
   handlePlay = () => {
     this.handlePlaybackState("play");
-  }
+  };
 
   handlePause = () => {
     this.handlePlaybackState("paused");
-  }
+  };
 
   handlePrevFrame = () => {
     this.handlePlaybackState("prev");
-  }
+  };
 
   handleNextFrame = () => {
     this.handlePlaybackState("next");
-  }
+  };
 
   render() {
     const animationState = this.getNodeState();
     return (
       <div className="node-properties animation">
-        {animationState.stackNames && animationState.stackNames.length &&
+        {animationState.stackNames && animationState.stackNames.length && (
           <div className="animation-stack">
             <label>Stack</label>
-            <AnimationStackSelect options={animationState.stackNames} selected={animationState.stackName} onChange={this.selectAnimationStack}/>
+            <AnimationStackSelect
+              options={animationState.stackNames}
+              selected={animationState.stackName}
+              onChange={this.selectAnimationStack}
+            />
           </div>
-        }
+        )}
         <div className="speed">
           <label>Speed</label>
-          <input type="number" step=".1" onChange={this.handletAnimationSpeedChange} value={animationState.speed} />
+          <input
+            type="number"
+            step=".1"
+            onChange={this.handletAnimationSpeedChange}
+            value={animationState.speed}
+          />
         </div>
         <div className="animaton-controls">
-          <button className="prev" name="prev" onClick={this.handlePrevFrame}><SkipPrevOutline /></button>
-          {animationState.state !== "play" ? <button className="play" name="play" onClick={this.handlePlay}><PlayOutline /></button> : null}
-          {animationState.state === "play" ? <button className="pause" name="pause" onClick={this.handlePause}><PauseOutline /></button> : null}
-          <button className="next" name="next" onClick={this.handleNextFrame}><SkipNextOutline /></button>
+          <button className="prev" name="prev" onClick={this.handlePrevFrame}>
+            <SkipPrevOutline />
+          </button>
+          {animationState.state !== "play" ? (
+            <button className="play" name="play" onClick={this.handlePlay}>
+              <PlayOutline />
+            </button>
+          ) : null}
+          {animationState.state === "play" ? (
+            <button className="pause" name="pause" onClick={this.handlePause}>
+              <PauseOutline />
+            </button>
+          ) : null}
+          <button className="next" name="next" onClick={this.handleNextFrame}>
+            <SkipNextOutline />
+          </button>
         </div>
       </div>
-    )
+    );
   }
 }
 
@@ -81,16 +97,20 @@ class AnimationStackSelect extends React.Component {
     if (onChange) {
       onChange(selectedValue);
     }
-  }
+  };
 
   render() {
-    const {options=[], selected} = this.props;
+    const {options = [], selected} = this.props;
     return (
       <select name="animation" onChange={this.handleStackChange} value={selected}>
         {options.map((o, i) => {
-          return <option value={o} key={o+"_"+i}>{o}</option>;
+          return (
+            <option value={o} key={o + "_" + i}>
+              {o}
+            </option>
+          );
         })}
       </select>
-    )
+    );
   }
 }

@@ -1,4 +1,4 @@
-import * as React from "react"
+import * as React from "react";
 import {ColorChannels} from "./color-channels.jsx";
 import {WithNodeState} from "./with-node-state.jsx";
 
@@ -15,7 +15,7 @@ export class LightProperties extends WithNodeState {
         color: [...value],
       },
     });
-  }
+  };
 
   handleChangeIntensity = (evt) => {
     const nodeState = this.getNodeState();
@@ -27,7 +27,7 @@ export class LightProperties extends WithNodeState {
         intensity: fixed3f(evt.target.value),
       },
     });
-  }
+  };
 
   render() {
     const {light} = this.getNodeState();
@@ -36,13 +36,20 @@ export class LightProperties extends WithNodeState {
       <div className="node-properties light">
         <div className="color">
           <label>Color</label>
-          <ColorChannels onChange={this.handleChangeColor} data={light.color}/>
+          <ColorChannels onChange={this.handleChangeColor} data={light.color} />
         </div>
         <div className="intensity">
           <label>Intensity</label>
-          <input type="number" step=".1" min="0" max="1" onChange={this.handleChangeIntensity} value={light.intensity} />
+          <input
+            type="number"
+            step=".1"
+            min="0"
+            max="1"
+            onChange={this.handleChangeIntensity}
+            value={light.intensity}
+          />
         </div>
       </div>
-    )
+    );
   }
 }

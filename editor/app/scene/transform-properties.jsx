@@ -18,31 +18,31 @@ export class TransformProperties extends WithNodeState {
         [which]: newTransform,
       },
     });
-  }
+  };
 
   handleChangePosition = (axis, value) => {
-    if (value==="") {
+    if (value === "") {
       value = "0";
     }
     value = normalizeLeadingZero(value);
     this._handleChange("position", axis, fixed3f(value));
-  }
+  };
 
   handleChangeRotation = (axis, value) => {
-    if (value==="") {
+    if (value === "") {
       value = "0";
     }
     value = normalizeLeadingZero(value);
     this._handleChange("rotation", axis, fixed3f(value));
-  }
+  };
 
   handleChangeScale = (axis, value) => {
-    if (value==="") {
+    if (value === "") {
       value = "1";
     }
     value = normalizeLeadingZero(value);
     this._handleChange("scale", axis, fixed3f(value));
-  }
+  };
 
   render() {
     const {transform} = this.getNodeState();
@@ -50,19 +50,25 @@ export class TransformProperties extends WithNodeState {
       <div className="node-properties transform">
         <div className="position">
           <label>Position</label>
-          <Coordinates onChange={this.handleChangePosition} data={transform.position}/>
+          <Coordinates onChange={this.handleChangePosition} data={transform.position} />
         </div>
         <div className="rotation">
           <label>Rotation</label>
-          <Coordinates step="1" min="-360" max="360" onChange={this.handleChangeRotation} data={transform.rotation}/>
+          <Coordinates
+            step="1"
+            min="-360"
+            max="360"
+            onChange={this.handleChangeRotation}
+            data={transform.rotation}
+          />
         </div>
         <div className="scale">
           <label>Scale</label>
-          <Coordinates onChange={this.handleChangeScale} data={transform.scale}/>
+          <Coordinates onChange={this.handleChangeScale} data={transform.scale} />
         </div>
       </div>
-    )
+    );
   }
 }
 
-const _xyzIndexMap = {"x": 0, "y": 1, "z": 2}
+const _xyzIndexMap = {x: 0, y: 1, z: 2};

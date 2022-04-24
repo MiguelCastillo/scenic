@@ -7,10 +7,7 @@ export class InfoDetailsProperties extends WithNodeState {
       return;
     }
 
-    const {
-      resourceLoader,
-      updateScene,
-    } = this.context;
+    const {resourceLoader, updateScene} = this.context;
 
     const nodeState = this.getNodeState();
 
@@ -18,17 +15,18 @@ export class InfoDetailsProperties extends WithNodeState {
     // always be 1 file.
     const [file] = evt.target.files;
 
-    resourceLoader.load({
-      node: nodeState,
-      url: URL.createObjectURL(file),
-      filename: file.name,
-    })
-    .then(() => {
-      // Clean up URL resource because this will stay in memory until the
-      // document is reloaded. And new URL object are instantiated each time
-      // createObjectURL is called, even if it's for the same resource.
-      URL.revokeObjectURL(file);
-    });
+    resourceLoader
+      .load({
+        node: nodeState,
+        url: URL.createObjectURL(file),
+        filename: file.name,
+      })
+      .then(() => {
+        // Clean up URL resource because this will stay in memory until the
+        // document is reloaded. And new URL object are instantiated each time
+        // createObjectURL is called, even if it's for the same resource.
+        URL.revokeObjectURL(file);
+      });
 
     // HACK(miguel): we need a better way to set the resource name for
     // display purposes.
@@ -39,7 +37,7 @@ export class InfoDetailsProperties extends WithNodeState {
 
     // Trigger scene update so that the scene tree is re-rendered.
     updateScene();
-  }
+  };
 
   handleChange = (which, evt) => {
     const nodeState = this.getNodeState();
@@ -50,12 +48,13 @@ export class InfoDetailsProperties extends WithNodeState {
     });
 
     this.context.updateScene();
-  }
+  };
 
   render() {
     const nodeState = this.getNodeState();
     const {node} = this.props;
-    const canSelectFile = (node.type === "static-mesh" || node.type === "skinned-mesh" || node.type === "light");
+    const canSelectFile =
+      node.type === "static-mesh" || node.type === "skinned-mesh" || node.type === "light";
 
     return (
       <div className="node-properties info-details">
@@ -64,7 +63,8 @@ export class InfoDetailsProperties extends WithNodeState {
           <input
             type="text"
             onChange={(evt) => this.handleChange("name", evt)}
-            value={nodeState.name} />
+            value={nodeState.name}
+          />
         </div>
         <div className="type">
           <label>Type</label>
@@ -72,18 +72,16 @@ export class InfoDetailsProperties extends WithNodeState {
             readOnly
             type="text"
             onChange={(evt) => this.handleChange("type", evt)}
-            value={node.type} />
+            value={node.type}
+          />
         </div>
-        {canSelectFile ?
+        {canSelectFile ? (
           <div className="resource">
             <label>Resource</label>
             <div className="resource-selector">
-              <div className="selected-file">{
-                (
-                  nodeState.resource ?
-                  nodeState.resource.split(/[/\\]/).pop() :
-                  "<select file>"
-                )}</div>
+              <div className="selected-file">
+                {nodeState.resource ? nodeState.resource.split(/[/\\]/).pop() : "<select file>"}
+              </div>
               <button className="dialog-openener">
                 <label htmlFor="resource_file_loader">...</label>
               </button>
@@ -92,11 +90,11 @@ export class InfoDetailsProperties extends WithNodeState {
                 name="resource_file_loader"
                 type="file"
                 accept=".obj,.fbx"
-                onChange={(evt) => this.handleResourceSelection(evt)} />
+                onChange={(evt) => this.handleResourceSelection(evt)}
+              />
             </div>
           </div>
-          : null
-       }
+        ) : null}
       </div>
     );
   }

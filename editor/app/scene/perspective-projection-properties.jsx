@@ -1,4 +1,4 @@
-import * as React from "react"
+import * as React from "react";
 import {WithNodeState} from "./with-node-state.jsx";
 
 export class PerspectiveProjectionProperties extends WithNodeState {
@@ -14,19 +14,19 @@ export class PerspectiveProjectionProperties extends WithNodeState {
     });
 
     this.context.refreshProjection();
-  }
+  };
 
   handleChangeFOV = (evt) => {
     this._handleChange("fov", evt);
-  }
+  };
 
   handleChangeNear = (evt) => {
     this._handleChange("near", evt);
-  }
+  };
 
   handleChangeFar = (evt) => {
     this._handleChange("far", evt);
-  }
+  };
 
   render() {
     const {projection} = this.getNodeState();
@@ -35,17 +35,17 @@ export class PerspectiveProjectionProperties extends WithNodeState {
       <div className="node-properties perspective">
         <div className="fov">
           <label>FOV</label>
-          <input type="number" onChange={this.handleChangeFOV} value={projection.fov}/>
+          <input type="number" onChange={this.handleChangeFOV} value={projection.fov} />
         </div>
         <div className="near">
           <label>Near</label>
-          <input type="number" onChange={this.handleChangeNear} value={projection.near}/>
+          <input type="number" onChange={this.handleChangeNear} value={projection.near} />
         </div>
         <div className="far">
           <label>Far</label>
-          <input type="number" onChange={this.handleChangeFar} value={projection.far}/>
+          <input type="number" onChange={this.handleChangeFar} value={projection.far} />
         </div>
       </div>
-    )
+    );
   }
 }

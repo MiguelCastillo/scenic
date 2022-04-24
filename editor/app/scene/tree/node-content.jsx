@@ -8,12 +8,16 @@ export class SceneNodeContent extends React.Component {
   render() {
     const {selectedNode} = this.context;
     const {name, handlerExpanderClick, handleNameClick} = this.props;
-    const classNames = ["scene-node-content"].concat(selectedNode && selectedNode.name === name ? "selected" : "");
+    const classNames = ["scene-node-content"].concat(
+      selectedNode && selectedNode.name === name ? "selected" : ""
+    );
 
     return (
       <div className={classNames.join(" ")}>
         <div className="expander" onClick={() => handlerExpanderClick()}></div>
-        <div className="name" onClick={() => handleNameClick()}>{name}</div>
+        <div className="name" onClick={() => handleNameClick()}>
+          {name}
+        </div>
       </div>
     );
   }

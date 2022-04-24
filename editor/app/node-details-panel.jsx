@@ -15,7 +15,7 @@ export class NodeDetailsPanel extends React.Component {
     }
 
     let children = null;
-    switch(node.type) {
+    switch (node.type) {
       case "perspective":
       case "orthographic":
         children = <ProjectionDetailsPanel node={node} />;
@@ -39,10 +39,6 @@ export class NodeDetailsPanel extends React.Component {
         return null;
     }
 
-    return (
-      <div className="scene-node-details">
-        {children}
-      </div>
-    );
+    return <div className="scene-node-details">{children}</div>;
   }
 }

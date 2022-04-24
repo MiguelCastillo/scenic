@@ -1,4 +1,4 @@
-import * as React from "react"
+import * as React from "react";
 import {ColorChannels} from "./color-channels.jsx";
 import {WithNodeState} from "./with-node-state.jsx";
 
@@ -7,7 +7,9 @@ import {fixed3f} from "../../../src/math/float.js";
 export class MaterialProperties extends WithNodeState {
   handleChangeColor = (value) => {
     const nodeState = this.getNodeState();
-    const {material:{color}} = nodeState;
+    const {
+      material: {color},
+    } = nodeState;
 
     this.updateNodeState({
       ...nodeState,
@@ -18,7 +20,7 @@ export class MaterialProperties extends WithNodeState {
         color: [...value, color[3]],
       },
     });
-  }
+  };
 
   handleChangeReflectiveness = (evt) => {
     const nodeState = this.getNodeState();
@@ -29,7 +31,7 @@ export class MaterialProperties extends WithNodeState {
         reflectiveness: fixed3f(evt.target.value),
       },
     });
-  }
+  };
 
   render() {
     const {material} = this.getNodeState();
@@ -38,13 +40,20 @@ export class MaterialProperties extends WithNodeState {
       <div className="node-properties material">
         <div className="color">
           <label>Color</label>
-          <ColorChannels onChange={this.handleChangeColor} data={material.color}/>
+          <ColorChannels onChange={this.handleChangeColor} data={material.color} />
         </div>
         <div className="reflectiveness">
           <label>Reflect</label>
-          <input type="number" step=".1" min="0" max="1" onChange={this.handleChangeReflectiveness} value={material.reflectiveness} />
+          <input
+            type="number"
+            step=".1"
+            min="0"
+            max="1"
+            onChange={this.handleChangeReflectiveness}
+            value={material.reflectiveness}
+          />
         </div>
       </div>
-    )
+    );
   }
 }

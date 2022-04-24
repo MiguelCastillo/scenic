@@ -7,7 +7,6 @@
 /.husky
 
 /editor/dist
-/editor/**/*.jsx
 /editor/**/*.css
 /editor/**/*.html
 /editor/**/*.frag

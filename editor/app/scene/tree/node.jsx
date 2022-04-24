@@ -12,7 +12,9 @@ export class SceneNodeCollection extends React.Component {
 
     return (
       <ul className="scene-nodes">
-        {nodes.map(node => <SceneNode key={node.id} node={node} />)}
+        {nodes.map((node) => (
+          <SceneNode key={node.id} node={node} />
+        ))}
       </ul>
     );
   }
@@ -30,30 +32,30 @@ export class SceneNode extends React.Component {
 
   handlerExpanderClick = () => {
     const {collapsed} = this.state;
-    this.setState({collapsed: !collapsed})
-  }
+    this.setState({collapsed: !collapsed});
+  };
 
   handleNameClick = () => {
     this.context.handleNodeSelection(this.props.node);
-  }
+  };
 
   render() {
     const {node} = this.props;
-    const {name, type, items=[]} = node;
+    const {name, type, items = []} = node;
 
     const {collapsed} = this.state;
-    const className=["scene-node", type];
+    const className = ["scene-node", type];
 
     if (collapsed) {
       className.push("collapsed");
     }
 
     if (type === "static-mesh") {
-      return <SceneNodeStaticMesh node={node}/>;
+      return <SceneNodeStaticMesh node={node} />;
     } else if (type === "skinned-mesh") {
-      return <SceneNodeSkinnedMesh node={node}/>;
+      return <SceneNodeSkinnedMesh node={node} />;
     } else if (type === "light") {
-      return <SceneNodeLight node={node}/>;
+      return <SceneNodeLight node={node} />;
     } else {
       const isEmpty = items.length === 0;
       if (isEmpty) {

@@ -1,5 +1,5 @@
 import React from "react";
-import { createRoot } from "react-dom/client";
+import {createRoot} from "react-dom/client";
 import {SceneGraph} from "./app/app.jsx";
 import {Error} from "./app/error.jsx";
 import {Console} from "./app/console.jsx";
@@ -10,11 +10,7 @@ import * as webgl from "../src/webgl.js";
 import _console from "./logging.js";
 
 export class App {
-  constructor({
-    loadingRoot,
-    sceneGraphRoot,
-    errorRoot
-  }) {
+  constructor({loadingRoot, sceneGraphRoot, errorRoot}) {
     this.loadingRoot = loadingRoot;
     this.sceneGraphRoot = sceneGraphRoot;
     this.errorRoot = errorRoot;
@@ -22,8 +18,7 @@ export class App {
 
   init() {
     // Let's show our app loading spinner
-    this.loadingRoot.render(
-      <Loading isLoading={true}/>);
+    this.loadingRoot.render(<Loading isLoading={true} />);
   }
 
   ready({sceneManager, resourceLoader, refreshProjection}) {
@@ -33,21 +28,21 @@ export class App {
         sceneManager={sceneManager}
         resourceLoader={resourceLoader}
         refreshProjection={refreshProjection}
-      />);
+      />
+    );
 
-    this.loadingRoot.render(
-      <Loading isLoading={false}/>);
+    this.loadingRoot.render(<Loading isLoading={false} />);
   }
 
   error(err) {
-    this.loadingRoot.render(
-      <Loading isLoading={false}/>);
+    this.loadingRoot.render(<Loading isLoading={false} />);
 
     this.errorRoot.render(
       <>
-        <Error error={err}/>
-        <Console buffer={_console.buffer}/>
-      </>);
+        <Error error={err} />
+        <Console buffer={_console.buffer} />
+      </>
+    );
   }
 }
 
@@ -67,7 +62,8 @@ onReady(() => {
 
   app.init();
 
-  window.scene.doRenderLoop(gl)
+  window.scene
+    .doRenderLoop(gl)
     .then(({registerRefreshRateUpdater, resourceLoader, sceneManager, refreshProjection}) => {
       app.ready({resourceLoader, sceneManager, refreshProjection});
 
@@ -76,7 +72,7 @@ onReady(() => {
         fpsEl.innerHTML = fps;
       });
     })
-    .catch(ex => {
+    .catch((ex) => {
       // Report error
       app.error(ex);
     });

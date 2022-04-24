@@ -16,17 +16,19 @@ export class SceneNodeStaticMesh extends React.Component {
 
   handlerExpanderClick = () => {
     const {collapsed} = this.state;
-    this.setState({collapsed: !collapsed})
-  }
+    this.setState({collapsed: !collapsed});
+  };
 
   handleNameClick = () => {
     this.context.handleNodeSelection(this.props.node);
-  }
+  };
 
   render() {
-    const {node: {name, items=[]}} = this.props;
+    const {
+      node: {name, items = []},
+    } = this.props;
     const {collapsed} = this.state;
-    const className=["scene-node", "scene-node-mesh"];
+    const className = ["scene-node", "scene-node-mesh"];
 
     if (collapsed) {
       className.push("collapsed");

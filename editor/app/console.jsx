@@ -6,7 +6,7 @@ export class Console extends React.Component {
 
     return (
       <div className="console">
-        {buffer.map(([type, /*date*/, ...msg], i) => {
+        {buffer.map(([type /*date*/, , ...msg], i) => {
           return (
             <div key={`console-${i}`} className={`console-${type}`}>
               {type} {msg.join(" ")}

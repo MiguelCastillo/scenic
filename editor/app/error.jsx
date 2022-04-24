@@ -6,12 +6,14 @@ export class Error extends React.Component {
 
     return (
       <div className="error">
-        <h1 className="message">
-          {error.toString()}
-        </h1>
+        <h1 className="message">{error.toString()}</h1>
         <div className="stack">
           {(error.stack || "").split("\n").map((l, i) => {
-            return <div key={`error-${i}`} className="line">{l}</div>
+            return (
+              <div key={`error-${i}`} className="line">
+                {l}
+              </div>
+            );
           })}
         </div>
       </div>

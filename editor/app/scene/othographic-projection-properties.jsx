@@ -1,4 +1,4 @@
-import * as React from "react"
+import * as React from "react";
 import {WithNodeState} from "./with-node-state.jsx";
 
 export class OrthographicProjectionProperties extends WithNodeState {
@@ -14,7 +14,7 @@ export class OrthographicProjectionProperties extends WithNodeState {
     });
 
     this.context.refreshProjection();
-  }
+  };
 
   render() {
     const {projection} = this.getNodeState();
@@ -23,9 +23,9 @@ export class OrthographicProjectionProperties extends WithNodeState {
       <div className="node-properties orthographic">
         <div className="far">
           <label>Far</label>
-          <input type="number" onChange={this.handleChangeFar} value={projection.far}/>
+          <input type="number" onChange={this.handleChangeFar} value={projection.far} />
         </div>
       </div>
-    )
+    );
   }
 }

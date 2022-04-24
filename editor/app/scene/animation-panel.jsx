@@ -14,13 +14,19 @@ export class AnimationPanel extends React.Component {
     this.setState({
       selectedView,
     });
-  }
+  };
 
   render() {
     const {node} = this.props;
     const {selectedView} = this.state;
-    const infoDetailsClassNames = ["selected"].filter(_ => "info-details" === selectedView).concat(["button", "info-details"]).join(" ");
-    const animationClassNames = ["selected"].filter(_ => "animation" === selectedView).concat(["button", "animation"]).join(" ");
+    const infoDetailsClassNames = ["selected"]
+      .filter((_) => "info-details" === selectedView)
+      .concat(["button", "info-details"])
+      .join(" ");
+    const animationClassNames = ["selected"]
+      .filter((_) => "animation" === selectedView)
+      .concat(["button", "animation"])
+      .join(" ");
 
     let children = null;
     switch (selectedView) {
@@ -35,16 +41,25 @@ export class AnimationPanel extends React.Component {
     return (
       <React.Fragment>
         <div className="scene-node-details-header">
-          <div>{selectedView}</div><div>{node.name}</div>
+          <div>{selectedView}</div>
+          <div>{node.name}</div>
         </div>
         <div className="scene-node-details-body">
           <div className="scene-node-details-toolbar">
-            <a className={infoDetailsClassNames} onClick={() => this.handleViewSelection("info-details")}>I</a>
-            <a className={animationClassNames} onClick={() => this.handleViewSelection("animation")}>A</a>
+            <a
+              className={infoDetailsClassNames}
+              onClick={() => this.handleViewSelection("info-details")}
+            >
+              I
+            </a>
+            <a
+              className={animationClassNames}
+              onClick={() => this.handleViewSelection("animation")}
+            >
+              A
+            </a>
           </div>
-          <div className="scene-node-details-content">
-            {children}
-          </div>
+          <div className="scene-node-details-content">{children}</div>
         </div>
       </React.Fragment>
     );
