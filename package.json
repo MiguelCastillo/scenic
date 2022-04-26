@@ -5,7 +5,6 @@
   "main": "src/index.js",
   "scripts": {
     "test": "jest",
-    "serve": "npm run scene & npm run editor & npm run fileformats & 3dub",
     "start": "3dub --config .3dub-prod.js",
     "start-dev": "pm2 start dev.config.js",
     "stop-dev": "pm2 delete server build-scene build-editor build-fileformats",
@@ -14,7 +13,7 @@
     "editor": "pakit --config editor/.pakit-editor.js",
     "scene": "pakit --config editor/.pakit-scene.js",
     "fileformats": "pakit --config editor/.pakit-fileformats.js",
-    "build": "npm run scene -- --watch false & npm run editor -- --watch false & npm run fileformats -- --watch false",
+    "build": "npm run scene -- --minify & npm run editor -- --minify & npm run fileformats -- --minify",
     "prepare": "husky install"
   },
   "author": "Miguel Castillo",

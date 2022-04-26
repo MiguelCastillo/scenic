@@ -2,8 +2,8 @@ module.exports = {
   apps: [
     {
       name: "server",
-      script: "npm",
-      args: "run serve",
+      script: "npx",
+      args: "3dub --config .3dub.js",
       watch: [".3dub.js"],
       ignore_watch: ["node_modules"],
     },

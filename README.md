@@ -31,15 +31,20 @@ some geometry for rendering.
 
 ## Dev
 
-Minimum version of Node is 14. That's what we are running in prod for the server and bundling.
+Node versions supported are 14 thru 17. Node 18 causes issues with some dependencies, we are staying away for now.
+We are running prod in Heroku, which will pick the highest value in the range, so prod runs on node 17. Heroku will automatically run `npm run build` and `npm run start`, so those are configured to run as prod scripts; no file watching, minification, no livereload.
 
-To start up the server locally, you can `npm run serve`. That will startup
+On a fresh clone, please run `npm install` to get all your dependencies ready.
+
+To start up the dev server you can `npm run start-dev`. That will startup
 the build system, file watching, and your local dev server. To load up the
-editor you can navigate to http://localhost:3000/editor/index.html
+editor you can navigate to http://localhost:3000/editor/index.html.
+To stop the dev server you can use `npm run stop-dev`.
+To see the build processes you can use `npm run monit`. Or if you want an aggregated logs for the build and dev server you can use `npm run logs`.
 
 The usual `npm run test` will run all the tests.
 
-If you just want to build all the artifacts, you can use `npm run build`.
+If you just want to build all the artifacts for prod, you can use `npm run build` which will minify bundles.
 
 Currently, there are three bundles generated:
 
