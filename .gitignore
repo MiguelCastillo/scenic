@@ -76,3 +76,6 @@ typings/
 
 # FuseBox cache
 .fusebox/
+
+# Cache and build artifacts from pakit
+.pakit

@@ -3,4 +3,10 @@ module.exports = {
   dest: "editor/dist/scene.js",
   umd: "scene",
   watch: true,
+
+  loaders: {
+    cache: {
+      dest: ".pakit/.scene-cache.json",
+    },
+  },
 };
