@@ -7,6 +7,7 @@ module.exports = {
     browser: true,
     commonjs: true,
   },
+  extends: ["plugin:react/recommended"],
   rules: {
     curly: 2,
     "no-console": 2,
