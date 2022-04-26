@@ -3,6 +3,7 @@ import {TransformProperties} from "./transform-properties.jsx";
 import {MaterialProperties} from "./material-properties.jsx";
 import {InfoDetailsProperties} from "./info-details-properties.jsx";
 import {AnimationProperties} from "./animation-properties.jsx";
+import {PanelToolbar} from "./panel-toolbar.jsx";
 
 export class SkinnedMeshDetailsPanel extends React.Component {
   constructor(props) {
@@ -21,22 +22,6 @@ export class SkinnedMeshDetailsPanel extends React.Component {
   render() {
     const {node} = this.props;
     const {selectedView} = this.state;
-    const infoDetailsClassNames = ["selected"]
-      .filter((_) => "info-details" === selectedView)
-      .concat(["button", "info-details"])
-      .join(" ");
-    const transformClassNames = ["selected"]
-      .filter((_) => "transform" === selectedView)
-      .concat(["button", "transform"])
-      .join(" ");
-    const materialClassNames = ["selected"]
-      .filter((_) => "material" === selectedView)
-      .concat(["button", "material"])
-      .join(" ");
-    const animationClassNames = ["selected"]
-      .filter((_) => "animation" === selectedView)
-      .concat(["button", "animation"])
-      .join(" ");
 
     const hasAnimation = node.animation && node.animation.type === "animation";
     let children = null;
@@ -64,31 +49,11 @@ export class SkinnedMeshDetailsPanel extends React.Component {
           <div>{node.name}</div>
         </div>
         <div className="scene-node-details-body">
-          <div className="scene-node-details-toolbar">
-            <a
-              className={infoDetailsClassNames}
-              onClick={() => this.handleViewSelection("info-details")}
-            >
-              I
-            </a>
-            <a
-              className={transformClassNames}
-              onClick={() => this.handleViewSelection("transform")}
-            >
-              T
-            </a>
-            <a className={materialClassNames} onClick={() => this.handleViewSelection("material")}>
-              M
-            </a>
-            {hasAnimation ? (
-              <a
-                className={animationClassNames}
-                onClick={() => this.handleViewSelection("animation")}
-              >
-                A
-              </a>
-            ) : null}
-          </div>
+          <PanelToolbar
+            tabs={["info-details", "transform", "material", hasAnimation ? "animation" : null]}
+            onTabSelected={this.handleViewSelection}
+            selectedTab={selectedView}
+          />
           <div className="scene-node-details-content">{children}</div>
         </div>
       </React.Fragment>

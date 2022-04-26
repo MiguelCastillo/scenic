@@ -1,6 +1,7 @@
 import * as React from "react";
 import {InfoDetailsProperties} from "./info-details-properties.jsx";
 import {AnimationProperties} from "./animation-properties.jsx";
+import {PanelToolbar} from "./panel-toolbar.jsx";
 
 export class AnimationPanel extends React.Component {
   constructor(props) {
@@ -19,14 +20,6 @@ export class AnimationPanel extends React.Component {
   render() {
     const {node} = this.props;
     const {selectedView} = this.state;
-    const infoDetailsClassNames = ["selected"]
-      .filter((_) => "info-details" === selectedView)
-      .concat(["button", "info-details"])
-      .join(" ");
-    const animationClassNames = ["selected"]
-      .filter((_) => "animation" === selectedView)
-      .concat(["button", "animation"])
-      .join(" ");
 
     let children = null;
     switch (selectedView) {
@@ -45,20 +38,12 @@ export class AnimationPanel extends React.Component {
           <div>{node.name}</div>
         </div>
         <div className="scene-node-details-body">
-          <div className="scene-node-details-toolbar">
-            <a
-              className={infoDetailsClassNames}
-              onClick={() => this.handleViewSelection("info-details")}
-            >
-              I
-            </a>
-            <a
-              className={animationClassNames}
-              onClick={() => this.handleViewSelection("animation")}
-            >
-              A
-            </a>
-          </div>
+          <PanelToolbar
+            tabs={["info-details", "animation"]}
+            onTabSelected={this.handleViewSelection}
+            selectedTab={selectedView}
+          />
+
           <div className="scene-node-details-content">{children}</div>
         </div>
       </React.Fragment>
