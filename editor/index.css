@@ -262,14 +262,19 @@ body {
 }
 
 .scene-node-details-toolbar > .button {
-  padding: 1em;
   background: #000000;
-  /* border-top: solid 1px #444444;
-  border-right: solid 1px #444444; */
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  box-sizing: border-box;
+  height: 40px;
+  display: flex;
+  justify-content: center;
+  align-content: center;
+  align-items: center;
 }
 
 .scene-node-details-toolbar > .button:hover {
-  cursor: pointer;
   background: #444444;
 }
 

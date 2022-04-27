@@ -3,6 +3,7 @@ import {InfoDetailsProperties} from "./info-details-properties.jsx";
 import {TransformProperties} from "./transform-properties.jsx";
 import {OrthographicProjectionProperties} from "./othographic-projection-properties.jsx";
 import {PerspectiveProjectionProperties} from "./perspective-projection-properties.jsx";
+import {PanelToolbar} from "./panel-toolbar.jsx";
 
 export class ProjectionDetailsPanel extends React.Component {
   constructor(props) {
@@ -21,18 +22,6 @@ export class ProjectionDetailsPanel extends React.Component {
   render() {
     const {node} = this.props;
     const {selectedView} = this.state;
-    const infoDetailsClassNames = ["selected"]
-      .filter((_) => "info-details" === selectedView)
-      .concat(["button", "info-details"])
-      .join(" ");
-    const transformClassNames = ["selected"]
-      .filter((_) => "transform" === selectedView)
-      .concat(["button", "transform"])
-      .join(" ");
-    const projectionClassNames = ["selected"]
-      .filter((_) => "projection" === selectedView)
-      .concat(["button", "projection"])
-      .join(" ");
 
     let children = null;
     switch (selectedView) {
@@ -60,26 +49,11 @@ export class ProjectionDetailsPanel extends React.Component {
           <div>{node.name}</div>
         </div>
         <div className="scene-node-details-body">
-          <div className="scene-node-details-toolbar">
-            <a
-              className={infoDetailsClassNames}
-              onClick={() => this.handleViewSelection("info-details")}
-            >
-              I
-            </a>
-            <a
-              className={projectionClassNames}
-              onClick={() => this.handleViewSelection("projection")}
-            >
-              P
-            </a>
-            <a
-              className={transformClassNames}
-              onClick={() => this.handleViewSelection("transform")}
-            >
-              T
-            </a>
-          </div>
+          <PanelToolbar
+            tabs={["info-details", "projection", "transform"]}
+            onTabSelected={this.handleViewSelection}
+            selectedTab={selectedView}
+          />
           <div className="scene-node-details-content">{children}</div>
         </div>
       </React.Fragment>
