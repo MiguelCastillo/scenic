@@ -1,8 +1,8 @@
-import {Renderable} from "./renderable.js";
 import {Animation} from "./animation.js";
+import {Mesh} from "./mesh.js";
 
 // SkinnedMesh is a mesh that is animated with bones.
-export class SkinnedMesh extends Renderable {
+export class SkinnedMesh extends Mesh {
   constructor(options) {
     super({...options, type: "skinned-mesh"});
 

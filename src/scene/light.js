@@ -6,10 +6,10 @@ import {Renderable} from "./renderable.js";
 // lighting to.
 export class Light extends Renderable {
   render(context) {
-    const {shaderProgram, worldMatrix, vertexBuffer} = this;
+    const {shaderProgram, worldMatrix, vertexBuffers} = this;
     const {sceneManager} = context;
 
-    if (!vertexBuffer || !shaderProgram) {
+    if (!vertexBuffers.length || !shaderProgram) {
       return;
     }
 
@@ -18,27 +18,27 @@ export class Light extends Renderable {
     // State of the thing we are rendering.
     const renderableState = sceneManager.getNodeStateByID(this.id);
 
-    shaderProgram
-      .setUniforms([
-        {
-          name: "projectionMatrix",
-          update: (gl, {index}) => {
-            gl.uniformMatrix4fv(index, false, projectionMatrix.data);
-          },
+    const sp = shaderProgram.setUniforms([
+      {
+        name: "projectionMatrix",
+        update: (gl, {index}) => {
+          gl.uniformMatrix4fv(index, false, projectionMatrix.data);
         },
-        {
-          name: "worldMatrix",
-          update: (gl, {index}) => {
-            gl.uniformMatrix4fv(index, true, worldMatrix.data);
-          },
+      },
+      {
+        name: "worldMatrix",
+        update: (gl, {index}) => {
+          gl.uniformMatrix4fv(index, true, worldMatrix.data);
         },
-        {
-          name: "materialColor",
-          update: (gl, {index}) => {
-            gl.uniform4fv(index, renderableState.material.color);
-          },
+      },
+      {
+        name: "materialColor",
+        update: (gl, {index}) => {
+          gl.uniform4fv(index, renderableState.material.color);
         },
-      ])
-      .render(vertexBuffer);
+      },
+    ]);
+
+    vertexBuffers.forEach((vb) => sp.render(vb));
   }
 }

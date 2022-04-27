@@ -47,5 +47,5 @@ export function buildSceneNode(gl, model, sceneNode /*, sceneManager*/) {
     );
   }
 
-  sceneNode.withVertexBuffer(vertexBuffer).withShaderProgram(shaderProgram);
+  sceneNode.addVertexBuffer(vertexBuffer).withShaderProgram(shaderProgram);
 }

@@ -2,17 +2,11 @@ import * as mat4 from "../../../src/math/matrix4.js";
 import * as vec3 from "../../../src/math/vector3.js";
 
 import {VertexBuffer, VertexBufferData} from "../../../src/renderer/vertexbuffer.js";
-
 import {Node as SceneNode, findParentByType, findChildrenByType} from "../../../src/scene/node.js";
-
-import {Renderable as RenderableSceneNode} from "../../../src/scene/renderable.js";
-
+import {Mesh as MeshSceneNode} from "../../../src/scene/mesh.js";
 import {Animation as AnimationSceneNode} from "../../../src/scene/animation.js";
-
 import {findParentItemsWithItemType} from "../../../src/scene/traversal.js";
-
 import {animateScalar} from "../../../src/animation/keyframe.js";
-
 import {Playback as AnimationPlayback} from "../../../src/animation/timer.js";
 
 // 46186158000 is an FBX second.
@@ -21,7 +15,7 @@ import {Playback as AnimationPlayback} from "../../../src/animation/timer.js";
 // https://download.autodesk.com/us/fbx/docs/FBXSDK200611/wwhelp/wwhimpl/common/html/_index.htm?context=FBXSDK_Overview&file=ktime_8h-source.html
 const KTIME_ONE_SECOND = 46186158000;
 
-class Animatable extends RenderableSceneNode {
+class Animatable extends MeshSceneNode {
   constructor(options) {
     super(options);
     this.animationNodes = [];
@@ -72,103 +66,11 @@ class Animatable extends RenderableSceneNode {
 export class Mesh extends Animatable {
   constructor(options) {
     super(Object.assign({}, options, {type: "fbx-mesh"}));
-    this.vertexBuffers = [];
-  }
-
-  withShaderProgram(shaderProgram) {
-    this.shaderProgram = shaderProgram.clone();
-    return this;
-  }
-
-  addVertexBuffer(vertexBuffer) {
-    this.vertexBuffers.push(vertexBuffer);
-    return this;
   }
 
   preRender(context) {
     super.preRender(context);
     this.vertexBuffers = [];
-  }
-
-  render(context) {
-    const {sceneManager} = context;
-    const {shaderProgram, worldMatrix} = this;
-    const projectionMatrix = this.getProjectionMatrix();
-
-    // Quick hack to make bump lighting configurable in the scene config.
-    // We read from the parent because that's the node that is created
-    // with the scene configuration state. All FBX nodes are created and
-    // added to the scene separately, so they currently don't have their
-    // state configurable in the scene config.
-    const parentNodeState = sceneManager.getNodeStateByID(this.parent.id);
-    let bumpLightingEnabled = parentNodeState.material?.bumpLighting === true;
-
-    const lightsStates = findParentItemsWithItemType(this, "light").map(({id}) =>
-      sceneManager.getNodeStateByID(id)
-    );
-
-    const uniforms = [
-      {
-        name: "worldMatrix",
-        update: (gl, {index}) => {
-          gl.uniformMatrix4fv(index, true, worldMatrix.data);
-        },
-      },
-      {
-        name: "projectionMatrix",
-        update: (gl, {index}) => {
-          gl.uniformMatrix4fv(index, false, projectionMatrix.data);
-        },
-      },
-      {
-        name: "bumpLighting",
-        update: (gl, {index}) => {
-          gl.uniform1i(index, bumpLightingEnabled);
-        },
-      },
-    ];
-
-    lightsStates.forEach(({transform: {position}}, idx) =>
-      uniforms.push({
-        name: `lights[${idx}].position`,
-        update: (gl, {index}) => {
-          gl.uniform3fv(index, vec3.normalize(position[0], position[1], position[2]));
-        },
-      })
-    );
-
-    lightsStates.forEach(({light: {color}}, idx) =>
-      uniforms.push({
-        name: `lights[${idx}].color`,
-        update: (gl, {index}) => {
-          gl.uniform3fv(index, color);
-        },
-      })
-    );
-
-    lightsStates.forEach(({light: {intensity}}, idx) =>
-      uniforms.push({
-        name: `lights[${idx}].intensity`,
-        update: (gl, {index}) => {
-          gl.uniform1f(index, intensity);
-        },
-      })
-    );
-
-    lightsStates.forEach((_, idx) =>
-      uniforms.push({
-        name: `lights[${idx}].enabled`,
-        update: (gl, {index}) => {
-          gl.uniform1i(index, 1);
-        },
-      })
-    );
-
-    const program = shaderProgram.addUniforms(uniforms);
-
-    this.vertexBuffers.forEach((vertexBuffer) => {
-      program.render(vertexBuffer);
-    });
   }
 }
 
@@ -206,7 +108,7 @@ export class Geometry extends SceneNode {
   }
 
   render() {
-    let renderable = findParentByType(this, RenderableSceneNode);
+    let renderable = findParentByType(this, MeshSceneNode);
     if (renderable) {
       renderable.addVertexBuffer(this.vertexBuffer);
       if (this.skinningEnabled) {
@@ -630,7 +532,7 @@ export class Texture extends SceneNode {
   }
 
   render() {
-    let renderable = findParentByType(this, RenderableSceneNode);
+    let renderable = findParentByType(this, MeshSceneNode);
     if (renderable) {
       const {textureID, type} = this;
 

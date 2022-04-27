@@ -12,6 +12,7 @@ export class Renderable extends Node {
     // We will default to a type but often inheriting classes will specify
     // their own. So we will allow overriding the `type` field.
     super({type: "renderable", ...options});
+    this.vertexBuffers = [];
   }
 
   withShaderProgram(shaderProgram) {
@@ -19,8 +20,8 @@ export class Renderable extends Node {
     return this;
   }
 
-  withVertexBuffer(vertexBuffer) {
-    this.vertexBuffer = vertexBuffer;
+  addVertexBuffer(vertexBuffer) {
+    this.vertexBuffers.push(vertexBuffer);
     return this;
   }
 
