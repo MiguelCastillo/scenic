@@ -4,7 +4,7 @@ import {VertexBuffer, VertexBufferData} from "../../../src/renderer/vertexbuffer
 
 import {WorkerLoader} from "../base-loader.js";
 
-import {isLight, isStaticMesh} from "../../scene-factory.js";
+import {isLight, isStaticMesh, isSkinnedMesh} from "../../scene-factory.js";
 
 import {createShaderProgram} from "../../shader-factory.js";
 
@@ -18,6 +18,7 @@ export class Loader extends WorkerLoader {
 }
 
 export function buildSceneNode(gl, model, sceneNode /*, sceneManager*/) {
+  sceneNode.clear();
   let {vertices, normals, colors} = model;
 
   const vertexBuffer = VertexBuffer.create({
@@ -37,7 +38,7 @@ export function buildSceneNode(gl, model, sceneNode /*, sceneManager*/) {
   }
 
   let shaderProgram;
-  if (isStaticMesh(sceneNode)) {
+  if (isStaticMesh(sceneNode) || isSkinnedMesh(sceneNode)) {
     shaderProgram = createShaderProgram(gl, "phong-lighting");
   } else if (isLight(sceneNode)) {
     shaderProgram = createShaderProgram(gl, "flat-material");
