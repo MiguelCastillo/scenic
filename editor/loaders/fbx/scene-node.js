@@ -5,7 +5,7 @@ import {VertexBuffer, VertexBufferData} from "../../../src/renderer/vertexbuffer
 import {Node as SceneNode, findParentByType, findChildrenByType} from "../../../src/scene/node.js";
 import {Mesh as MeshSceneNode} from "../../../src/scene/mesh.js";
 import {Animation as AnimationSceneNode} from "../../../src/scene/animation.js";
-import {findParentItemsWithItemType} from "../../../src/scene/traversal.js";
+import {findParentItemsWithItemTypeName} from "../../../src/scene/traversal.js";
 import {animateScalar} from "../../../src/animation/keyframe.js";
 import {Playback as AnimationPlayback} from "../../../src/animation/timer.js";
 

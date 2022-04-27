@@ -1,5 +1,5 @@
 import {Renderable} from "./renderable.js";
-import {findParentItemsWithItemType} from "./traversal.js";
+import {findParentItemsWithItemTypeName} from "./traversal.js";
 import * as vec3 from "../math/vector3.js";
 
 export class Mesh extends Renderable {
@@ -17,7 +17,7 @@ export class Mesh extends Renderable {
     const renderableState = sceneManager.getNodeStateByID(this.id);
     let bumpLightingEnabled = renderableState.material?.bumpLighting === true;
 
-    const lightsStates = findParentItemsWithItemType(this, "light").map(({id}) =>
+    const lightsStates = findParentItemsWithItemTypeName(this, "light").map(({id}) =>
       sceneManager.getNodeStateByID(id)
     );
 

@@ -21,7 +21,7 @@ export class Node {
       name,
       id,
       items: [],
-      childrenByType: {},
+      childrenByTypeName: {},
       childrenByID: {},
       localMatrix: identityMatrix4,
       worldMatrix: identityMatrix4,
@@ -94,11 +94,11 @@ export class Node {
 
     // We will be storing all nodes by type to speed up the lookup
     // of nodes in the scene tree
-    const typeKey = node.type;
-    if (!this.childrenByType[typeKey]) {
-      this.childrenByType[typeKey] = [];
+    const typeName = node.type;
+    if (!this.childrenByTypeName[typeName]) {
+      this.childrenByTypeName[typeName] = [];
     }
-    this.childrenByType[typeKey].push(node);
+    this.childrenByTypeName[typeName].push(node);
     return this;
   }
 
@@ -111,9 +111,9 @@ export class Node {
     const index = this.items.indexOf(node);
     if (index !== -1) {
       this.items.splice(index, 1);
-      const byTypeIndex = this.childrenByType[node.type].indexOf(node);
+      const byTypeIndex = this.childrenByTypeName[node.type].indexOf(node);
       if (byTypeIndex !== -1) {
-        this.childrenByType[node.type].splice(byTypeIndex, 1);
+        this.childrenByTypeName[node.type].splice(byTypeIndex, 1);
       }
 
       delete this.childrenByID[node.id];

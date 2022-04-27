@@ -100,11 +100,9 @@ export function findChildrenDeepBreadthFirst(sceneNode, predicate) {
   return result;
 }
 
-export const findParentItemsWithItemType = (node, type) => {
-  const typeKey = type;
-
+export const findParentItemsWithItemTypeName = (node, typeName) => {
   let currentNode = node;
-  while (currentNode && !currentNode.childrenByType[typeKey]) {
+  while (currentNode && !currentNode.childrenByTypeName[typeName]) {
     currentNode = currentNode.parent;
   }
 
@@ -112,5 +110,5 @@ export const findParentItemsWithItemType = (node, type) => {
     return [];
   }
 
-  return currentNode.childrenByType[typeKey];
+  return currentNode.childrenByTypeName[typeName];
 };
