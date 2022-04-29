@@ -1,11 +1,10 @@
 import * as mat4 from "../../../src/math/matrix4.js";
-import * as vec3 from "../../../src/math/vector3.js";
 
 import {VertexBuffer, VertexBufferData} from "../../../src/renderer/vertexbuffer.js";
 import {Node as SceneNode, findParentByType, findChildrenByType} from "../../../src/scene/node.js";
 import {Mesh as MeshSceneNode} from "../../../src/scene/mesh.js";
+import {Renderable as RenderableSceneNode} from "../../../src/scene/renderable.js";
 import {Animation as AnimationSceneNode} from "../../../src/scene/animation.js";
-import {findParentItemsWithItemTypeName} from "../../../src/scene/traversal.js";
 import {animateScalar} from "../../../src/animation/keyframe.js";
 import {Playback as AnimationPlayback} from "../../../src/animation/timer.js";
 
@@ -15,7 +14,7 @@ import {Playback as AnimationPlayback} from "../../../src/animation/timer.js";
 // https://download.autodesk.com/us/fbx/docs/FBXSDK200611/wwhelp/wwhimpl/common/html/_index.htm?context=FBXSDK_Overview&file=ktime_8h-source.html
 const KTIME_ONE_SECOND = 46186158000;
 
-class Animatable extends MeshSceneNode {
+class Animatable extends RenderableSceneNode {
   constructor(options) {
     super(options);
     this.animationNodes = [];
@@ -72,6 +71,29 @@ export class Mesh extends Animatable {
     super.preRender(context);
     this.vertexBuffers = [];
   }
+
+  render(context) {
+    const sceneManager = context.sceneManager;
+
+    // The parent mesh is what was defined in the scene configuration, so
+    // we need to get that nodes configuration to determine if bump lighting
+    // is enabled.
+    const parentRenderableState = sceneManager.getNodeStateByID(
+      findParentByType(this, MeshSceneNode).id
+    );
+    let bumpLightingEnabled = parentRenderableState.material?.bumpLighting === true;
+
+    this.shaderProgram.addUniforms([
+      {
+        name: "bumpLighting",
+        update: (gl, {index}) => {
+          gl.uniform1i(index, bumpLightingEnabled);
+        },
+      },
+    ]);
+
+    MeshSceneNode.render(context, this);
+  }
 }
 
 export class Geometry extends SceneNode {
@@ -108,7 +130,7 @@ export class Geometry extends SceneNode {
   }
 
   render() {
-    let renderable = findParentByType(this, MeshSceneNode);
+    let renderable = findParentByType(this, RenderableSceneNode);
     if (renderable) {
       renderable.addVertexBuffer(this.vertexBuffer);
       if (this.skinningEnabled) {
@@ -532,7 +554,7 @@ export class Texture extends SceneNode {
   }
 
   render() {
-    let renderable = findParentByType(this, MeshSceneNode);
+    let renderable = findParentByType(this, RenderableSceneNode);
     if (renderable) {
       const {textureID, type} = this;
 

@@ -3,21 +3,20 @@ import {findParentItemsWithItemTypeName} from "./traversal.js";
 import * as vec3 from "../math/vector3.js";
 
 export class Mesh extends Renderable {
-  render(context) {
-    const {shaderProgram, worldMatrix, vertexBuffers} = this;
+  static render(context, node) {
+    const {shaderProgram, worldMatrix, vertexBuffers} = node;
 
     if (!vertexBuffers.length || !shaderProgram) {
       return;
     }
 
     const {sceneManager} = context;
-    const projectionMatrix = this.getProjectionMatrix();
+    const projectionMatrix = node.getProjectionMatrix();
 
     // State of the thing we are rendering.
-    const renderableState = sceneManager.getNodeStateByID(this.id);
-    let bumpLightingEnabled = renderableState.material?.bumpLighting === true;
+    const renderableState = sceneManager.getNodeStateByID(node.id);
 
-    const lightsStates = findParentItemsWithItemTypeName(this, "light").map(({id}) =>
+    const lightsStates = findParentItemsWithItemTypeName(node, "light").map(({id}) =>
       sceneManager.getNodeStateByID(id)
     );
 
@@ -53,12 +52,6 @@ export class Mesh extends Renderable {
         update: (gl, {index}) => {
           const {color = [0, 0, 0]} = (renderableState && renderableState.ambient) || {};
           gl.uniform3fv(index, color);
-        },
-      },
-      {
-        name: "bumpLighting",
-        update: (gl, {index}) => {
-          gl.uniform1i(index, bumpLightingEnabled);
         },
       },
     ];
