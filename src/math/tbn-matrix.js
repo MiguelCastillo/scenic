@@ -66,9 +66,9 @@ export function getTBNVectorsFromTriangles(vertices, uvs, renderIndexes, normalS
     console.warn("===> vertices and uvs length do not match!");
   }
 
-  let tangents = [];
-  let bitangents = [];
-  let normals = [];
+  const tangents = [];
+  const bitangents = [];
+  const normals = [];
 
   for (let i = 0; i < renderIndexes.length; i += 3) {
     const voffset1 = renderIndexes[i] * 3;
@@ -89,19 +89,21 @@ export function getTBNVectorsFromTriangles(vertices, uvs, renderIndexes, normalS
 
     // We need to add one tbn for each triangle vertex. We will smooth
     // out all these vectors to get best rendering results.
-    tangents.splice(voffset1, 0, ...t);
-    tangents.splice(voffset2, 0, ...t);
-    tangents.splice(voffset3, 0, ...t);
-    bitangents.splice(voffset1, 0, ...b);
-    bitangents.splice(voffset2, 0, ...b);
-    bitangents.splice(voffset3, 0, ...b);
-    normals.splice(voffset1, 0, ...n);
-    normals.splice(voffset2, 0, ...n);
-    normals.splice(voffset3, 0, ...n);
+    tangents[voffset1] = tangents[voffset2] = tangents[voffset3] = t[0];
+    tangents[voffset1 + 1] = tangents[voffset2 + 1] = tangents[voffset3 + 1] = t[1];
+    tangents[voffset1 + 2] = tangents[voffset2 + 2] = tangents[voffset3 + 2] = t[2];
+
+    bitangents[voffset1] = bitangents[voffset2] = bitangents[voffset3] = b[0];
+    bitangents[voffset1 + 1] = bitangents[voffset2 + 1] = bitangents[voffset3 + 1] = b[1];
+    bitangents[voffset1 + 2] = bitangents[voffset2 + 2] = bitangents[voffset3 + 2] = b[2];
+
+    normals[voffset1] = normals[voffset2] = normals[voffset3] = n[0];
+    normals[voffset1 + 1] = normals[voffset2 + 1] = normals[voffset3 + 1] = n[1];
+    normals[voffset1 + 2] = normals[voffset2 + 2] = normals[voffset3 + 2] = n[2];
   }
 
   if (normalSmoothing) {
-    // smoothTBN(vertices, tangents, bitangents, normals);
+    smoothTBN(vertices, tangents, bitangents, normals);
   }
 
   return [tangents.map(_fixZeros), bitangents.map(_fixZeros), normals.map(_fixZeros)];
