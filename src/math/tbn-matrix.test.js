@@ -3,10 +3,10 @@ import {
   calculateTangentVector,
   calculateBiTangentVector,
   getTBNVectorsFromTriangle,
+  getTBNVectorsFromTriangles,
 } from "./tbn-matrix.js";
 
 import {dotproduct, edges as edges3v} from "./vector3.js";
-
 import {edges as edgesUV} from "./vector2.js";
 
 // NOTE: Some of the geometry vertices and UVs are from fbx.test.js which
@@ -60,6 +60,34 @@ test("getTBNVectorsFromTriangle and verify vectors are orthogonal", () => {
   expect(tangent.map(_fixZeros)).toEqual([-1, 0, 0]);
   expect(bitangent.map(_fixZeros)).toEqual([0, 1, 0]);
   expect(normal.map(_fixZeros)).toEqual([0, 0, 1]);
+});
+
+test("getTBNVectorsFromTriangles generates the correct vectors", () => {
+  const [tangent, bitangent, normal] = getTBNVectorsFromTriangles(
+    // Vertices for the triangle.
+    [
+      [1, 1, 1], // v0 |
+      [-1, 1, 1], // v4 | triangle 1
+      [-1, -1, 1], // v6 |
+    ].flat(),
+
+    // UV coordinates for the triangle.
+    [
+      [0.625, 0.5],
+      [0.875, 0.5],
+      [0.875, 0.75],
+    ].flat(),
+
+    [0, 1, 2]
+  );
+
+  expect(dotproduct(tangent, bitangent)).toEqual(0);
+  expect(dotproduct(tangent, normal)).toEqual(0);
+  expect(dotproduct(bitangent, normal)).toEqual(0);
+
+  expect(tangent.map(_fixZeros)).toEqual([-1, 0, 0, -1, 0, 0, -1, 0, 0]);
+  expect(bitangent.map(_fixZeros)).toEqual([0, 1, 0, 0, 1, 0, 0, 1, 0]);
+  expect(normal.map(_fixZeros)).toEqual([0, 0, 1, 0, 0, 1, 0, 0, 1]);
 });
 
 function _fixZeros(v) {

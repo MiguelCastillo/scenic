@@ -504,12 +504,12 @@ function buildGeometryLayers(fbxGeometry, normalSmoothing) {
   // TODO(miguel): add support for indexes when creating TBN vectors
   // for bump lighting.
   //
-  // if (uv && uv.length) {
-  //   const [t,b,n] = getTBNVectorsFromTriangles(vertices, uv, normalSmoothing);
-  //   tangents = t;
-  //   bitangents = b;
-  //   normals = n;
-  // }
+  if (uv && uv.length) {
+    const [t, b, n] = getTBNVectorsFromTriangles(vertices, uv, renderIndexes, normalSmoothing);
+    tangents = t;
+    bitangents = b;
+    normals = n;
+  }
 
   if (!normals) {
     normals = getLayerData(fbxGeometry, "Normals");
