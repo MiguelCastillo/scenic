@@ -60,51 +60,48 @@ export function getTBNVectorsFromTriangle(v1, v2, v3, uv1, uv2, uv3) {
   ];
 }
 
-function getTriangleVertex(vertices, offset) {
-  return [vertices[offset], vertices[offset + 1], vertices[offset + 2]];
-}
-
-function getTriangleUV(uvs, offset) {
-  return [uvs[offset], uvs[offset + 1]];
-}
-
-export function getTBNVectorsFromTriangles(vertices, uvs, normalSmoothing = true) {
+export function getTBNVectorsFromTriangles(vertices, uvs, renderIndexes, normalSmoothing = true) {
   if (uvs.length !== vertices.length - vertices.length / 3) {
-    throw new Error("vertices and uvs length do not match!");
+    // eslint-disable-next-line no-console
+    console.warn("===> vertices and uvs length do not match!");
   }
 
   let tangents = [];
   let bitangents = [];
   let normals = [];
 
-  for (let i = 0; i < vertices.length / 9; i++) {
-    const voffset = i * 9;
-    const uvoffset = i * 6;
+  for (let i = 0; i < renderIndexes.length; i += 3) {
+    const voffset1 = renderIndexes[i] * 3;
+    const voffset2 = renderIndexes[i + 1] * 3;
+    const voffset3 = renderIndexes[i + 2] * 3;
+    const uvoffset1 = renderIndexes[i] * 2;
+    const uvoffset2 = renderIndexes[i + 1] * 2;
+    const uvoffset3 = renderIndexes[i + 2] * 2;
 
     const [t, b, n] = getTBNVectorsFromTriangle(
-      getTriangleVertex(vertices, voffset),
-      getTriangleVertex(vertices, voffset + 3),
-      getTriangleVertex(vertices, voffset + 6),
-      getTriangleUV(uvs, uvoffset),
-      getTriangleUV(uvs, uvoffset + 2),
-      getTriangleUV(uvs, uvoffset + 4)
+      [vertices[voffset1], vertices[voffset1 + 1], vertices[voffset1 + 2]],
+      [vertices[voffset2], vertices[voffset2 + 1], vertices[voffset2 + 2]],
+      [vertices[voffset3], vertices[voffset3 + 1], vertices[voffset3 + 2]],
+      [uvs[uvoffset1], uvs[uvoffset1 + 1]],
+      [uvs[uvoffset2], uvs[uvoffset2 + 1]],
+      [uvs[uvoffset3], uvs[uvoffset3 + 1]]
     );
 
     // We need to add one tbn for each triangle vertex. We will smooth
     // out all these vectors to get best rendering results.
-    tangents.push(...t);
-    tangents.push(...t);
-    tangents.push(...t);
-    bitangents.push(...b);
-    bitangents.push(...b);
-    bitangents.push(...b);
-    normals.push(...n);
-    normals.push(...n);
-    normals.push(...n);
+    tangents.splice(voffset1, 0, ...t);
+    tangents.splice(voffset2, 0, ...t);
+    tangents.splice(voffset3, 0, ...t);
+    bitangents.splice(voffset1, 0, ...b);
+    bitangents.splice(voffset2, 0, ...b);
+    bitangents.splice(voffset3, 0, ...b);
+    normals.splice(voffset1, 0, ...n);
+    normals.splice(voffset2, 0, ...n);
+    normals.splice(voffset3, 0, ...n);
   }
 
   if (normalSmoothing) {
-    smoothTBN(vertices, tangents, bitangents, normals);
+    // smoothTBN(vertices, tangents, bitangents, normals);
   }
 
   return [tangents.map(_fixZeros), bitangents.map(_fixZeros), normals.map(_fixZeros)];
