@@ -8,8 +8,4 @@ export class StaticMesh extends Mesh {
   constructor(options) {
     super({...options, type: "static-mesh"});
   }
-
-  render(context) {
-    Mesh.render(context, this);
-  }
 }

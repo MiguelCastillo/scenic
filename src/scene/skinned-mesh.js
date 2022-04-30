@@ -20,8 +20,4 @@ export class SkinnedMesh extends Mesh {
     super.add(node);
     return this;
   }
-
-  render(context) {
-    Mesh.render(context, this);
-  }
 }
