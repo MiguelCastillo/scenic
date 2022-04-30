@@ -143,9 +143,7 @@
                 "fps": 24
               },
               "material": {
-                "color": [1, 1, 1, 1],
-                "reflectiveness": 1,
-                "bumpLighting": true
+                "reflectiveness": 1
               },
               "transform": {
                 "scale": [1, 1, 1],
