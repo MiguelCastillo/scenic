@@ -35,13 +35,17 @@ export class MaterialProperties extends WithNodeState {
 
   render() {
     const {material} = this.getNodeState();
+    if (!material) {
+      return null;
+    }
 
     return (
       <div className="node-properties material">
-        <div className="color">
-          <label>Color</label>
-          <ColorChannels onChange={this.handleChangeColor} data={material.color} />
-        </div>
+        {material.color != null ?
+          <div className="color">
+            <label>Color</label>
+            <ColorChannels onChange={this.handleChangeColor} data={material.color} />
+          </div> : null}
         <div className="reflectiveness">
           <label>Reflect</label>
           <input

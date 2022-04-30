@@ -81,16 +81,6 @@ export function buildDefaultState(config) {
       },
     };
 
-    if (isStaticMesh(nodeConfig) || isSkinnedMesh(nodeConfig)) {
-      Object.assign(defaults, {
-        material: {
-          color: [1, 1, 1, 1],
-          reflectiveness: 1,
-          ...nodeConfig.material,
-        },
-      });
-    }
-
     return {
       id: nodeConfig.name,
       ...nodeConfig,
