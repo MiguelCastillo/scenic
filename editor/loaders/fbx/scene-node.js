@@ -14,91 +14,79 @@ import {Playback as AnimationPlayback} from "../../../src/animation/timer.js";
 // https://download.autodesk.com/us/fbx/docs/FBXSDK200611/wwhelp/wwhimpl/common/html/_index.htm?context=FBXSDK_Overview&file=ktime_8h-source.html
 const KTIME_ONE_SECOND = 46186158000;
 
-class Animatable extends RenderableSceneNode {
-  constructor(options) {
-    super(options);
-    this.animationNodes = [];
-  }
-
-  add(node) {
-    if (node instanceof AnimationCurveNode) {
-      this.animationNodes.push(node._withParent(this));
-    } else {
-      super.add(node);
-    }
-    return this;
-  }
-
-  preRender(context) {
-    const animation = getAnimation(context, this);
-    if (!animation) {
-      super.preRender(context);
-      return;
+const AnimatableInterface = (superclass) =>
+  class extends superclass {
+    constructor(options) {
+      super(options);
+      this.animationNodes = [];
     }
 
-    const {transform} = context.sceneManager.getNodeStateByID(this.id);
-
-    const {
-      translation = transform.position,
-      rotation = transform.rotation,
-      scale = transform.scale,
-      stack,
-    } = animation;
-
-    if (this.currentAnimationStack !== stack) {
-      this.currentAnimationStack = stack;
-      // stack.playback.reset(context.ms);
+    add(node) {
+      if (node instanceof AnimationCurveNode) {
+        this.animationNodes.push(node._withParent(this));
+      } else {
+        super.add(node);
+      }
+      return this;
     }
 
-    // https://help.autodesk.com/view/FBX/2017/ENU/?guid=__cpp_ref__transformations_2main_8cxx_example_html
-    let animationMatrix = mat4.Matrix4.trs(translation, rotation, scale);
+    configureAnimation(context) {
+      const animation = getAnimation(context, this);
+      if (!animation) {
+        super.preRender(context);
+        return;
+      }
 
-    const parent = this.parent;
-    if (parent) {
-      this.withWorldMatrix(parent.worldMatrix.multiply(animationMatrix));
-    } else {
-      this.withWorldMatrix(animationMatrix);
+      const {transform} = context.sceneManager.getNodeStateByID(this.id);
+
+      const {
+        translation = transform.position,
+        rotation = transform.rotation,
+        scale = transform.scale,
+        stack,
+      } = animation;
+
+      if (this.currentAnimationStack !== stack) {
+        this.currentAnimationStack = stack;
+        // stack.playback.reset(context.ms);
+      }
+
+      // https://help.autodesk.com/view/FBX/2017/ENU/?guid=__cpp_ref__transformations_2main_8cxx_example_html
+      let animationMatrix = mat4.Matrix4.trs(translation, rotation, scale);
+
+      const parent = this.parent;
+      if (parent) {
+        this.withWorldMatrix(parent.worldMatrix.multiply(animationMatrix));
+      } else {
+        this.withWorldMatrix(animationMatrix);
+      }
     }
-  }
-}
+  };
 
-export class Mesh extends Animatable {
-  constructor(options) {
-    super(Object.assign({}, options, {type: "fbx-mesh"}));
-  }
-
+export class Mesh extends AnimatableInterface(MeshSceneNode) {
   preRender(context) {
     super.preRender(context);
+
+    // descendents of Mesh will add vertex buffers that are needed to be
+    // rendered every frame. So we need to clear it up when we are setting
+    // up the render state.
     this.vertexBuffers = [];
   }
 
-  render(context) {
-    const sceneManager = context.sceneManager;
-
-    // The parent mesh is what was defined in the scene configuration, so
-    // we need to get that nodes configuration to determine if bump lighting
-    // is enabled.
-    const parentRenderableState = sceneManager.getNodeStateByID(
-      findParentByType(this, MeshSceneNode).id
-    );
-    let bumpLightingEnabled = parentRenderableState.material?.bumpLighting === true;
-
-    this.shaderProgram.addUniforms([
-      {
-        name: "bumpLighting",
-        update: (gl, {index}) => {
-          gl.uniform1i(index, bumpLightingEnabled);
-        },
-      },
-    ]);
-
-    MeshSceneNode.render(context, this);
+  getMaterialsState(context) {
+    // because we want to read the settings from relative root for the
+    // material, we override the getMaterials method
+    const state = context.sceneManager.getNodeStateByID(this.relativeRoot.id);
+    return {
+      material: state.material,
+      ambient: state.ambient,
+    };
   }
 }
 
 export class Geometry extends SceneNode {
   constructor(options, vertexBuffer) {
-    super(Object.assign({}, options, {type: "fbx-geometry"}));
+    super({...options, type: "fbx-geometry"});
     this._skinningEnabled = true;
     this.vertexBuffer = vertexBuffer;
     this.skinDeformers = [];
@@ -118,86 +106,80 @@ export class Geometry extends SceneNode {
 
   preRender(context) {
     super.preRender(context);
-    if (this.skinningEnabled) {
-      if (!this._boneMatrixTexture) {
-        const {gl} = context;
-        this._boneMatrixTexture = gl.createTexture();
-        gl.bindTexture(gl.TEXTURE_2D, this._boneMatrixTexture);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-      }
+    if (!this._boneMatrixTexture && this.skinningEnabled) {
+      const {gl} = context;
+      this._boneMatrixTexture = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, this._boneMatrixTexture);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     }
   }
 
   render() {
     let renderable = findParentByType(this, RenderableSceneNode);
-    if (renderable) {
-      renderable.addVertexBuffer(this.vertexBuffer);
-      if (this.skinningEnabled) {
-        let boneMatrices = [];
+    if (!renderable) {
+      return;
+    }
 
-        // Skin deformers deform the mesh for the model we are processing.
-        for (const skin of this.skinDeformers) {
-          for (const cluster of skin.items) {
-            boneMatrices[cluster.boneIndex] = cluster.worldMatrix.transpose().data;
-          }
+    renderable.addVertexBuffer(this.vertexBuffer);
+    if (this.skinningEnabled) {
+      let boneMatrices = [];
+
+      // Skin deformers deform the mesh for the model we are processing.
+      for (const skin of this.skinDeformers) {
+        for (const cluster of skin.items) {
+          boneMatrices[cluster.boneIndex] = cluster.worldMatrix.transpose().data;
         }
+      }
 
-        if (boneMatrices.length) {
-          renderable.shaderProgram.addUniforms([
-            {
-              name: "boneMatrixTexture",
-              update: (gl, {index}) => {
-                gl.activeTexture(gl.TEXTURE0);
-                gl.bindTexture(gl.TEXTURE_2D, this._boneMatrixTexture);
-                gl.texImage2D(
-                  gl.TEXTURE_2D,
-                  0,
-                  gl.RGBA32F,
-                  4,
-                  boneMatrices.length,
-                  0,
-                  gl.RGBA,
-                  gl.FLOAT,
-                  // NOTE(miguel): we flip images with UNPACK_FLIP_Y_WEBGL so that
-                  // textures can render correctly. But that affects the order
-                  // of every texture, including the texture we are creating
-                  // with bone matrices. But all we have to do is reverse the
-                  // list of matrices, since the matrix increments along the
-                  // Y axis.  So reversing the list matrices basically flips
-                  // the texture on it Y axis.
-                  new Float32Array(boneMatrices.reverse().flat())
-                );
+      if (boneMatrices.length) {
+        renderable.shaderProgram.addUniforms([
+          {
+            name: "boneMatrixTexture",
+            update: (gl, {index}) => {
+              gl.activeTexture(gl.TEXTURE0);
+              gl.bindTexture(gl.TEXTURE_2D, this._boneMatrixTexture);
+              gl.texImage2D(
+                gl.TEXTURE_2D,
+                0,
+                gl.RGBA32F,
+                4,
+                boneMatrices.length,
+                0,
+                gl.RGBA,
+                gl.FLOAT,
+                // NOTE(miguel): we flip images with UNPACK_FLIP_Y_WEBGL so that
+                // textures can render correctly. But that affects the order
+                // of every texture, including the texture we are creating
+                // with bone matrices. But all we have to do is reverse the
+                // list of matrices, since the matrix increments along the
+                // Y axis.  So reversing the list matrices basically flips
+                // the texture on it Y axis.
+                new Float32Array(boneMatrices.reverse().flat())
+              );
 
-                gl.uniform1i(index, this._boneMatrixTexture);
-              },
+              gl.uniform1i(index, this._boneMatrixTexture);
             },
-            {
-              name: "enabledSkinAnimation",
-              update: (gl, {index}) => {
-                gl.uniform1i(index, 1);
-              },
+          },
+          {
+            name: "enabledSkinAnimation",
+            update: (gl, {index}) => {
+              gl.uniform1i(index, 1);
             },
-          ]);
-        }
+          },
+        ]);
       }
     }
   }
 }
 
-export class Armature extends Animatable {
+export class Armature extends AnimatableInterface(RenderableSceneNode) {
   constructor(options) {
-    super(Object.assign({}, options, {type: "fbx-armature"}));
+    super({...options, type: "fbx-armature"});
     // _bonesByID gets initialized when its getter is first accessed.
     this._bonesByID = null;
     this._renderEnabled = false;
-    this.vertexBuffers = [];
     this.renderables = [];
-  }
-
-  withShaderProgram(shaderProgram) {
-    this.shaderProgram = shaderProgram.clone();
-    return this;
   }
 
   get bonesByID() {
@@ -226,11 +208,6 @@ export class Armature extends Animatable {
       }
     }
 
-    return this;
-  }
-
-  addVertexBuffer(vertexBuffer) {
-    this.vertexBuffers.push(vertexBuffer);
     return this;
   }
 
@@ -287,10 +264,14 @@ export class Armature extends Animatable {
 // caused by incorrect matrix calculations when rendering a scene. To work
 // around that for now you can re-export the FBX model in Blender which will
 // convert PreRotation data into LcL Rotation data.
-export class Bone extends Animatable {
+export class Bone extends AnimatableInterface(SceneNode) {
   constructor(options, id) {
-    super(Object.assign({}, options, {type: "fbx-bone"}));
+    super({...options, type: "fbx-bone"});
     this.id = id;
+  }
+
+  preRender(context) {
+    this.configureAnimation(context);
   }
 
   render(context) {

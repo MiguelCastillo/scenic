@@ -3,61 +3,40 @@ import {findParentItemsWithItemTypeName} from "./traversal.js";
 import * as vec3 from "../math/vector3.js";
 
 export class Mesh extends Renderable {
-  static render(context, node) {
-    const {shaderProgram, worldMatrix, vertexBuffers} = node;
-
-    if (!vertexBuffers.length || !shaderProgram) {
-      return;
+  render(context) {
+    if (this.vertexBuffers.length && this.shaderProgram) {
+      const materialState = this.getMaterialsState(context);
+      Mesh.configureLighting(this.shaderProgram, this.getLightsState(context));
+      Mesh.configureMaterial(this.shaderProgram, materialState.material, materialState.ambient);
+      Mesh.render(this);
     }
+  }
 
-    const {sceneManager} = context;
-    const projectionMatrix = node.getProjectionMatrix();
+  // getMaterialsState provides the current state of the material for this
+  // mesh.  Override if you need to specify your own settings in some way.
+  getMaterialsState(context) {
+    const state = context.sceneManager.getNodeStateByID(this.id);
+    return {
+      material: state.material,
+      ambient: state.ambient,
+    };
+  }
 
-    // State of the thing we are rendering.
-    const renderableState = sceneManager.getNodeStateByID(node.id);
-
-    const lightsStates = findParentItemsWithItemTypeName(node, "light").map(({id}) =>
-      sceneManager.getNodeStateByID(id)
+  // getLightsState provides the current state of all the lights that affect
+  // this mesh. This is merely calculated based on the first parent that is
+  // found that has light objects. Override this if you need a mesh to provide
+  // lights state differently.
+  getLightsState(context) {
+    return findParentItemsWithItemTypeName(this, "light").map(({id}) =>
+      context.sceneManager.getNodeStateByID(id)
     );
+  }
 
-    const uniforms = [
-      {
-        name: "projectionMatrix",
-        update: (gl, {index}) => {
-          gl.uniformMatrix4fv(index, false, projectionMatrix.data);
-        },
-      },
-      {
-        name: "worldMatrix",
-        update: (gl, {index}) => {
-          gl.uniformMatrix4fv(index, true, worldMatrix.data);
-        },
-      },
-      {
-        name: "materialColor",
-        update: (gl, {index}) => {
-          const {color = [1, 1, 1, 1]} = (renderableState && renderableState.material) || {};
-          gl.uniform4fv(index, color);
-        },
-      },
-      {
-        name: "materialReflectiveness",
-        update: (gl, {index}) => {
-          const {reflectiveness = 1} = (renderableState && renderableState.material) || {};
-          gl.uniform1f(index, reflectiveness);
-        },
-      },
-      {
-        name: "ambientColor",
-        update: (gl, {index}) => {
-          const {color = [0, 0, 0]} = (renderableState && renderableState.ambient) || {};
-          gl.uniform3fv(index, color);
-        },
-      },
-    ];
+  static configureLighting(shaderProgram, lights) {
+    const uniforms = [];
 
-    for (let i = 0; i < lightsStates.length; i++) {
-      let lightState = lightsStates[i];
+    for (let i = 0; i < lights.length; i++) {
+      let lightState = lights[i];
 
       const lightPosition = lightState.transform?.position;
       if (lightPosition != null) {
@@ -99,6 +78,60 @@ export class Mesh extends Renderable {
         },
       });
     }
+
+    shaderProgram.addUniforms(uniforms);
+  }
+
+  static configureMaterial(shaderProgram, material = {}, ambient = {}) {
+    const uniforms = [
+      {
+        name: "bumpLighting",
+        update: (gl, {index}) => {
+          gl.uniform1i(index, !!material.bumpLighting);
+        },
+      },
+      {
+        name: "materialColor",
+        update: (gl, {index}) => {
+          gl.uniform4fv(index, material.color || [1, 1, 1, 1]);
+        },
+      },
+      {
+        name: "materialReflectiveness",
+        update: (gl, {index}) => {
+          gl.uniform1f(index, material.reflectiveness == null ? 1 : material.reflectiveness);
+        },
+      },
+      {
+        name: "ambientColor",
+        update: (gl, {index}) => {
+          const color = ambient.color || [0, 0, 0];
+          gl.uniform3fv(index, color);
+        },
+      },
+    ];
+
+    shaderProgram.addUniforms(uniforms);
+  }
+
+  static render(node) {
+    const {shaderProgram, worldMatrix, vertexBuffers} = node;
+    const projectionMatrix = node.getProjectionMatrix();
+
+    const uniforms = [
+      {
+        name: "projectionMatrix",
+        update: (gl, {index}) => {
+          gl.uniformMatrix4fv(index, false, projectionMatrix.data);
+        },
+      },
+      {
+        name: "worldMatrix",
+        update: (gl, {index}) => {
+          gl.uniformMatrix4fv(index, true, worldMatrix.data);
+        },
+      },
+    ];
 
     // Configure shader program with its current state.
     const program = shaderProgram.addUniforms(uniforms);
