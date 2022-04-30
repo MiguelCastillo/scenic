@@ -5,9 +5,16 @@ import * as vec3 from "../math/vector3.js";
 export class Mesh extends Renderable {
   render(context) {
     if (this.vertexBuffers.length && this.shaderProgram) {
+      const lightsState = this.getLightsState(context);
+      if (lightsState) {
+        Mesh.configureLighting(this.shaderProgram, lightsState);
+      }
+
       const materialState = this.getMaterialsState(context);
-      Mesh.configureLighting(this.shaderProgram, this.getLightsState(context));
-      Mesh.configureMaterial(this.shaderProgram, materialState.material, materialState.ambient);
+      if (materialState) {
+        Mesh.configureMaterial(this.shaderProgram, materialState.material, materialState.ambient);
+      }
+
       Mesh.render(this);
     }
   }
