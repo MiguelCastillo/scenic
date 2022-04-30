@@ -5,6 +5,7 @@ import {SkinnedMeshDetailsPanel} from "./scene/skinned-mesh-details-panel.jsx";
 import {LightDetailsPanel} from "./scene/light-details-panel.jsx";
 import {TransformDetailsPanel} from "./scene/transform-details-panel.jsx";
 import {ProjectionDetailsPanel} from "./scene/projection-details-panel.jsx";
+import {MaterialDetailsPanel} from "./scene/material-details-panel.jsx";
 
 export class NodeDetailsPanel extends React.Component {
   render() {
@@ -34,6 +35,9 @@ export class NodeDetailsPanel extends React.Component {
         break;
       case "animation":
         children = <AnimationPanel node={node} />;
+        break;
+      case "material":
+        children = <MaterialDetailsPanel node={node}/>;
         break;
       default:
         return null;

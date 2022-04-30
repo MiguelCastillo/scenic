@@ -143,7 +143,6 @@
                 "fps": 24
               },
               "material": {
-                "color": [1, 1, 1, 1],
                 "reflectiveness": 1,
                 "bumpLighting": true
               },
