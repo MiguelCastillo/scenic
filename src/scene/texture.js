@@ -1,0 +1,131 @@
+import {Node, findParentByType} from "./node.js";
+import {Renderable} from "./renderable.js";
+
+// The code in the Texture is basically all lifted from:
+// https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/Tutorial/Using_textures_in_WebGL
+export class Texture extends Node {
+  constructor(textureID, type, options) {
+    super({...options, type: "texture"});
+    this.textureID = textureID;
+    this.textureType = type;
+  }
+
+  load(gl, filepath) {
+    this.texture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, this.texture);
+
+    // Because images have to be downloaded over the internet
+    // they might take a moment until they are ready.
+    // Until then put a single pixel in the texture so we can
+    // use it immediately. When the image has finished downloading
+    // we'll update the texture with the contents of the image.
+    const level = 0;
+    const internalFormat = gl.RGBA;
+    const width = 1;
+    const height = 1;
+    const border = 0;
+    const srcFormat = gl.RGBA;
+    const srcType = gl.UNSIGNED_BYTE;
+    const pixel = new Uint8Array([0, 0, 255, 255]); // opaque blue
+    gl.texImage2D(
+      gl.TEXTURE_2D,
+      level,
+      internalFormat,
+      width,
+      height,
+      border,
+      srcFormat,
+      srcType,
+      pixel
+    );
+
+    getImage(filepath).then((image) => {
+      gl.bindTexture(gl.TEXTURE_2D, this.texture);
+      gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, srcFormat, srcType, image);
+
+      // WebGL1 has different requirements for power of 2 images
+      // vs non power of 2 images so check if the image is a
+      // power of 2 in both dimensions.
+      if (isPowerOf2(image.width) && isPowerOf2(image.height)) {
+        // Yes, it's a power of 2. Generate mips.
+        gl.generateMipmap(gl.TEXTURE_2D);
+      } else {
+        // No, it's not a power of 2. Turn off mips and set
+        // wrapping to clamp to edge
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      }
+    });
+
+    return this;
+  }
+
+  clone() {
+    const newtexturenode = new Texture(this.textureID, this.textureType, {name: this.name});
+    newtexturenode.texture = this.texture;
+    return newtexturenode;
+  }
+
+  render() {
+    let renderable = findParentByType(this, Renderable);
+    if (renderable) {
+      const {textureID, textureType} = this;
+
+      if (textureType === "normalmap") {
+        renderable.shaderProgram.addUniforms([
+          {
+            name: `${textureType}.enabled`,
+            update: (gl, {index}) => {
+              gl.uniform1i(index, 1);
+            },
+          },
+          {
+            name: `${textureType}.id`,
+            update: (gl, {index}) => {
+              gl.activeTexture(gl.TEXTURE0 + textureID);
+              gl.bindTexture(gl.TEXTURE_2D, this.texture);
+              gl.uniform1i(index, textureID);
+            },
+          },
+        ]);
+      } else {
+        renderable.shaderProgram.addUniforms([
+          {
+            name: `textures[${textureID}].enabled`,
+            update: (gl, {index}) => {
+              gl.uniform1i(index, 1);
+            },
+          },
+          {
+            name: `textures[${textureID}].id`,
+            update: (gl, {index}) => {
+              gl.activeTexture(gl.TEXTURE0 + textureID);
+              gl.bindTexture(gl.TEXTURE_2D, this.texture);
+              gl.uniform1i(index, textureID);
+            },
+          },
+        ]);
+      }
+    }
+  }
+}
+
+function isPowerOf2(value) {
+  return (value & (value - 1)) == 0;
+}
+
+const _imageCache = {};
+function getImage(filepath) {
+  if (!_imageCache[filepath]) {
+    _imageCache[filepath] = new Promise((resolve) => {
+      const image = new Image();
+      image.onload = () => {
+        resolve(image);
+      };
+      image.src = filepath;
+    });
+  }
+
+  return _imageCache[filepath];
+}

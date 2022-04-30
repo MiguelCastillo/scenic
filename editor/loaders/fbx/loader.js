@@ -1,12 +1,7 @@
 import * as mat4 from "../../../src/math/matrix4.js";
-
 import {getTBNVectorsFromTriangles} from "../../../src/math/tbn-matrix.js";
-
 import {getIndexedComponents} from "../../../src/math/geometry.js";
-
 import {createShaderProgram} from "../../shader-factory.js";
-
-import {findChildrenByType} from "../../../src/scene/node.js";
 
 import {
   VertexBuffer,
@@ -27,16 +22,16 @@ import {
   polygonVertexIndexToDirect,
 } from "../../../src/formats/fbxfile.js";
 
+import {findChildrenByType} from "../../../src/scene/node.js";
 import {Animation as AnimationSceneNode} from "../../../src/scene/animation.js";
-
 import {Material as MaterialSceneNode} from "../../../src/scene/material.js";
+import {Texture as TextureSceneNode} from "../../../src/scene/texture.js";
 
 import {
   Mesh,
   Geometry,
   SkinDeformer,
   SkinDeformerCluster,
-  Texture,
   Armature,
   Bone,
   AnimationStack,
@@ -391,7 +386,7 @@ function sceneNodeFromConnection(gl, rootConnection, sceneManager, relativeRootS
           const textureID = Object.keys(_textureCache).length;
           _textureCache[filepath] = {
             id: textureID,
-            texture: new Texture(textureID, type, {name}).load(gl, filepath),
+            texture: new TextureSceneNode(textureID, type, {name}).load(gl, filepath),
           };
         }
 
@@ -851,7 +846,7 @@ function buildArmature(sceneNode) {
 
 function initShaderProgramsForMeshes(gl, sceneNode) {
   findChildrenByType(sceneNode, Mesh).forEach((mesh) => {
-    const textures = findChildrenByType(mesh, Texture);
+    const textures = findChildrenByType(mesh, TextureSceneNode);
     const materials = findChildrenByType(mesh, MaterialSceneNode);
 
     // If the mesh has any textures, then we use phong-texture. We have a
