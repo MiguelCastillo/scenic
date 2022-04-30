@@ -30,7 +30,7 @@ const AnimatableInterface = (superclass) =>
       return this;
     }
 
-    configureAnimation(context) {
+    preRender(context) {
       const animation = getAnimation(context, this);
       if (!animation) {
         super.preRender(context);
@@ -268,10 +268,6 @@ export class Bone extends AnimatableInterface(SceneNode) {
   constructor(options, id) {
     super({...options, type: "fbx-bone"});
     this.id = id;
-  }
-
-  preRender(context) {
-    this.configureAnimation(context);
   }
 
   render(context) {
