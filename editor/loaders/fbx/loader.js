@@ -371,6 +371,10 @@ function sceneNodeFromConnection(gl, rootConnection, sceneManager, relativeRootS
                 sceneNode.withMaterialColor(property.value.slice(4));
                 break;
               }
+              case "ReflectionFactor": {
+                sceneNode.withReflectionFactor(property.value[4]);
+                break;
+              }
             }
           }
         }
