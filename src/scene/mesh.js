@@ -89,36 +89,51 @@ export class Mesh extends Renderable {
     shaderProgram.addUniforms(uniforms);
   }
 
-  static configureMaterial(shaderProgram, material = {}, ambient = {}) {
-    const uniforms = [
-      {
-        name: "bumpLighting",
-        update: (gl, {index}) => {
-          gl.uniform1i(index, !!material.bumpLighting);
-        },
-      },
-      {
-        name: "materialColor",
-        update: (gl, {index}) => {
-          gl.uniform4fv(index, material.color || [1, 1, 1, 1]);
-        },
-      },
-      {
-        name: "materialReflectiveness",
-        update: (gl, {index}) => {
-          gl.uniform1f(index, material.reflectiveness == null ? 1 : material.reflectiveness);
-        },
-      },
-      {
-        name: "ambientColor",
-        update: (gl, {index}) => {
-          const color = ambient.color || [0, 0, 0];
-          gl.uniform3fv(index, color);
-        },
-      },
-    ];
+  static configureMaterial(shaderProgram, material, ambient) {
+    const uniforms = [];
 
-    shaderProgram.addUniforms(uniforms);
+    if (material) {
+      if (material.bumpLighting != null) {
+        uniforms.push({
+          name: "bumpLighting",
+          update: (gl, {index}) => {
+            gl.uniform1i(index, !!material.bumpLighting);
+          },
+        });
+      }
+      if (material.reflectiveness != null) {
+        uniforms.push({
+          name: "materialReflectiveness",
+          update: (gl, {index}) => {
+            gl.uniform1f(index, material.reflectiveness == null ? 1 : material.reflectiveness);
+          },
+        });
+      }
+      if (material.color != null) {
+        uniforms.push({
+          name: "materialColor",
+          update: (gl, {index}) => {
+            gl.uniform4fv(index, material.color || [1, 1, 1, 1]);
+          },
+        });
+      }
+    }
+
+    if (ambient) {
+      if (ambient.color != null) {
+        uniforms.push({
+          name: "ambientColor",
+          update: (gl, {index}) => {
+            const color = ambient.color || [0, 0, 0];
+            gl.uniform3fv(index, color);
+          },
+        });
+      }
+    }
+
+    if (uniforms.length) {
+      shaderProgram.addUniforms(uniforms);
+    }
   }
 
   static render(node) {
