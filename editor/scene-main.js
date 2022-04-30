@@ -22,7 +22,6 @@ import {loadShaders} from "./shader-factory.js";
 import {startRenderLoop} from "./render-loop.js";
 
 import {createFrameRateCounter} from "./fps-counter.js";
-import {config} from "./scene-config.js";
 import {getDebugData} from "../src/webgl.js";
 
 const sceneObjectsID = "scene objects";
@@ -242,8 +241,6 @@ function createOrthographicProjectionMatrix(width, height, far = 1000) {
   return OrthographicProjectionMatrix.create(width, height, far);
 }
 
-export let sceneManager;
-
 export const doRenderLoop = (gl) => {
   const {vendor, renderer, limits, contextAttributes} = getDebugData(gl);
 
@@ -258,13 +255,19 @@ export const doRenderLoop = (gl) => {
   // eslint-disable-next-line no-console
   console.log("Browser:", window.clientInformation.userAgent);
 
+  return fetch("/editor/scenes/skinning-mesh-animation-dancing-character.json")
+    .then((response) => response.json())
+    .then((config) => loadScene(gl, config));
+};
+
+function loadScene(gl, config) {
   const start = Date.now();
 
   const sceneConfig = buildDefaultState(config);
 
   // Let's create the scene, which is made up of a scene manager and a
   // state manager.
-  sceneManager = createScene(sceneConfig);
+  const sceneManager = createScene(sceneConfig);
 
   // API for loading resources for scene nodes.
   const resourceLoader = createResourceLoader(gl, sceneManager);
@@ -286,10 +289,11 @@ export const doRenderLoop = (gl) => {
       console.log(`Load time: ${(Date.now() - start) / 1000} secs`);
 
       return {
+        loadScene: (config) => loadScene(gl, config),
         resourceLoader,
         sceneManager,
         refreshProjection,
         registerRefreshRateUpdater,
       };
     });
-};
+}
