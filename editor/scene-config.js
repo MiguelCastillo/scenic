@@ -157,7 +157,7 @@ export const config = {
               name: "rigged animation",
               type: "skinned-mesh",
               resource: "/resources/fbx/dancing-character.fbx",
-              normalSmoothing: false,
+              normalSmoothing: true,
               animation: {
                 speed: 1,
                 fps: 24,
