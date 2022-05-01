@@ -3,7 +3,7 @@ import {InfoDetailsProperties} from "./info-details-properties.jsx";
 import {TransformProperties} from "./transform-properties.jsx";
 import {OrthographicProjectionProperties} from "./othographic-projection-properties.jsx";
 import {PerspectiveProjectionProperties} from "./perspective-projection-properties.jsx";
-import {PanelToolbar} from "./panel-toolbar.jsx";
+import {PanelToolbar} from "../components/panel-toolbar.jsx";
 
 export class ProjectionDetailsPanel extends React.Component {
   constructor(props) {

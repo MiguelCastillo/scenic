@@ -3,7 +3,7 @@ import {TransformProperties} from "./transform-properties.jsx";
 import {MaterialProperties} from "./material-properties.jsx";
 import {LightProperties} from "./light-properties.jsx";
 import {InfoDetailsProperties} from "./info-details-properties.jsx";
-import {PanelToolbar} from "./panel-toolbar.jsx";
+import {PanelToolbar} from "../components/panel-toolbar.jsx";
 
 export class LightDetailsPanel extends React.Component {
   constructor(props) {

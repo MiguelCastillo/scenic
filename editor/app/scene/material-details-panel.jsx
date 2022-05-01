@@ -1,5 +1,5 @@
 import * as React from "react";
-import {PanelToolbar} from "./panel-toolbar.jsx";
+import {PanelToolbar} from "../components/panel-toolbar.jsx";
 import {InfoDetailsProperties} from "./info-details-properties.jsx";
 import {MaterialProperties} from "./material-properties.jsx";
 

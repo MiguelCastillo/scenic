@@ -1,7 +1,7 @@
 import * as React from "react";
 import {TransformProperties} from "./transform-properties.jsx";
 import {InfoDetailsProperties} from "./info-details-properties.jsx";
-import {PanelToolbar} from "./panel-toolbar.jsx";
+import {PanelToolbar} from "../components/panel-toolbar.jsx";
 
 export class TransformDetailsPanel extends React.Component {
   constructor(props) {

@@ -1,7 +1,7 @@
 import * as React from "react";
 import {InfoDetailsProperties} from "./info-details-properties.jsx";
 import {AnimationProperties} from "./animation-properties.jsx";
-import {PanelToolbar} from "./panel-toolbar.jsx";
+import {PanelToolbar} from "../components/panel-toolbar.jsx";
 
 export class AnimationPanel extends React.Component {
   constructor(props) {
