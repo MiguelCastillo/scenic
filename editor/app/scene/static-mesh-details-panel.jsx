@@ -2,8 +2,8 @@ import * as React from "react";
 import {TransformProperties} from "./transform-properties.jsx";
 import {MaterialProperties} from "./material-properties.jsx";
 import {InfoDetailsProperties} from "./info-details-properties.jsx";
-import {AnimationProperties} from "./animation-properties.jsx";
 import {PanelToolbar} from "../components/panel-toolbar.jsx";
+import {Panel, PanelHeader, PanelBody} from "../components/panel.jsx";
 
 export class StaticMeshDetailsPanel extends React.Component {
   constructor(props) {
@@ -37,20 +37,20 @@ export class StaticMeshDetailsPanel extends React.Component {
     }
 
     return (
-      <React.Fragment>
-        <div className="scene-node-details-header">
+      <Panel>
+        <PanelHeader className="scene-node-details-header">
           <div>{selectedView}</div>
           <div>{node.name}</div>
-        </div>
-        <div className="scene-node-details-body">
+        </PanelHeader>
+        <PanelBody>
           <PanelToolbar
             tabs={["info-details", "transform", "material"]}
             onTabSelected={this.handleViewSelection}
             selectedTab={selectedView}
           />
           <div className="scene-node-details-content">{children}</div>
-        </div>
-      </React.Fragment>
+        </PanelBody>
+      </Panel>
     );
   }
 }

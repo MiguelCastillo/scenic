@@ -1,7 +1,10 @@
 import * as React from "react";
-import {PanelToolbar} from "../components/panel-toolbar.jsx";
 import {InfoDetailsProperties} from "./info-details-properties.jsx";
 import {MaterialProperties} from "./material-properties.jsx";
+import {PanelToolbar} from "../components/panel-toolbar.jsx";
+import {Panel, PanelHeader, PanelBody} from "../components/panel.jsx";
+
+import "./scene-node-details.css";
 
 export class MaterialDetailsPanel extends React.Component {
   constructor(props) {
@@ -35,20 +38,20 @@ export class MaterialDetailsPanel extends React.Component {
     }
 
     return (
-      <React.Fragment>
-        <div className="scene-node-details-header">
+      <Panel>
+        <PanelHeader className="scene-node-details-header">
           <div>{selectedView}</div>
           <div>{node.name}</div>
-        </div>
-        <div className="scene-node-details-body">
+        </PanelHeader>
+        <PanelBody>
           <PanelToolbar
             tabs={["info-details", "material"]}
             onTabSelected={this.handleViewSelection}
             selectedTab={selectedView}
           />
           <div className="scene-node-details-content">{children}</div>
-        </div>
-      </React.Fragment>
+        </PanelBody>
+      </Panel>
     );
   }
 }
