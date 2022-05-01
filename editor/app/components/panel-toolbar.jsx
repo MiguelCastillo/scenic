@@ -1,4 +1,5 @@
 import * as React from "react";
+import "./panel-toolbar.css";
 
 import {
   Axes,
@@ -40,7 +41,7 @@ export function PanelToolbar({tabs, selectedTab, onTabSelected}) {
     <div className="scene-node-details-toolbar">
       {tabs.filter(Boolean).map((tab) => {
         const classNames = ["selected"]
-          .filter((_) => tab === selectedTab)
+          .filter(() => tab === selectedTab)
           .concat(["button", tab])
           .join(" ");
 
