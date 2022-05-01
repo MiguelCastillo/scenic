@@ -38,7 +38,7 @@ function getTabDetails(tab) {
  */
 export function PanelToolbar({tabs, selectedTab, onTabSelected}) {
   return (
-    <div className="scene-node-details-toolbar">
+    <div className="panel-toolbar">
       {tabs.filter(Boolean).map((tab) => {
         const classNames = ["selected"]
           .filter(() => tab === selectedTab)

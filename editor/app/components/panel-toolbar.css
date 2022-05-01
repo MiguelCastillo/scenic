@@ -1,4 +1,10 @@
-.scene-node-details-toolbar > .button {
+.panel-toolbar {
+  display: flex;
+  flex-direction: column;
+  background-color: #000000;
+}
+
+.panel-toolbar > .button {
   background: #000000;
   border: none;
   color: #fff;
@@ -12,11 +18,11 @@
   align-items: center;
 }
 
-.scene-node-details-toolbar > .button:hover {
+.panel-toolbar > .button:hover {
   background: #444444;
 }
 
-.scene-node-details-toolbar > .button.selected {
+.panel-toolbar > .button.selected {
   cursor: pointer;
   background-color: #333333;
 }
