@@ -24,5 +24,6 @@ module.exports = {
     "key-spacing": 0,
     "no-trailing-spaces": 0,
     "eol-last": 2,
+    "react/prop-types": 0,
   },
 };
