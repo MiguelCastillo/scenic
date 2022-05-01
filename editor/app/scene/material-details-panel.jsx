@@ -6,52 +6,37 @@ import {Panel, PanelHeader, PanelBody} from "../components/panel.jsx";
 
 import "./scene-node-details.css";
 
-export class MaterialDetailsPanel extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      selectedView: "info-details",
-    };
-  }
+export const MaterialDetailsPanel = (props) => {
+  const [selectedView, setSelectedView] = React.useState("info-details");
+  const {node} = props;
 
-  handleViewSelection = (selectedView) => {
-    this.setState({
-      selectedView,
-    });
-  };
-
-  render() {
-    const {node} = this.props;
-    const {selectedView} = this.state;
-
-    let children = null;
-    switch (selectedView) {
-      case "info-details":
-        children = <InfoDetailsProperties node={node} />;
-        break;
-      case "material": {
-        children = <MaterialProperties node={node} />;
-        break;
-      }
-      default:
-        return null;
+  let children = null;
+  switch (selectedView) {
+    case "info-details":
+      children = <InfoDetailsProperties node={node} />;
+      break;
+    case "material": {
+      children = <MaterialProperties node={node} />;
+      break;
     }
-
-    return (
-      <Panel>
-        <PanelHeader className="scene-node-details-header">
-          <div>{selectedView}</div>
-          <div>{node.name}</div>
-        </PanelHeader>
-        <PanelBody>
-          <PanelToolbar
-            tabs={["info-details", "material"]}
-            onTabSelected={this.handleViewSelection}
-            selectedTab={selectedView}
-          />
-          <div className="scene-node-details-content">{children}</div>
-        </PanelBody>
-      </Panel>
-    );
+    default:
+      return null;
   }
+
+  return (
+    <Panel>
+      <PanelHeader className="scene-node-details-header">
+        <div>{selectedView}</div>
+        <div>{node.name}</div>
+      </PanelHeader>
+      <PanelBody>
+        <PanelToolbar
+          tabs={["info-details", "material"]}
+          onTabSelected={setSelectedView}
+          selectedTab={selectedView}
+        />
+        <div className="scene-node-details-content">{children}</div>
+      </PanelBody>
+    </Panel>
+  );
 }
