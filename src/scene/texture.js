@@ -71,42 +71,32 @@ export class Texture extends Node {
     let renderable = findParentByType(this, Renderable);
     if (renderable) {
       const {textureID, textureType} = this;
+      let enabledName, enabledId;
 
       if (textureType === "normalmap") {
-        renderable.shaderProgram.addUniforms([
-          {
-            name: `${textureType}.enabled`,
-            update: (gl, {index}) => {
-              gl.uniform1i(index, 1);
-            },
-          },
-          {
-            name: `${textureType}.id`,
-            update: (gl, {index}) => {
-              gl.activeTexture(gl.TEXTURE0 + textureID);
-              gl.bindTexture(gl.TEXTURE_2D, this.texture);
-              gl.uniform1i(index, textureID);
-            },
-          },
-        ]);
+        enabledName = `${textureType}.enabled`;
+        enabledId = `${textureType}.id`;
       } else {
-        renderable.shaderProgram.addUniforms([
-          {
-            name: `textures[${textureID}].enabled`,
-            update: (gl, {index}) => {
-              gl.uniform1i(index, 1);
-            },
-          },
-          {
-            name: `textures[${textureID}].id`,
-            update: (gl, {index}) => {
-              gl.activeTexture(gl.TEXTURE0 + textureID);
-              gl.bindTexture(gl.TEXTURE_2D, this.texture);
-              gl.uniform1i(index, textureID);
-            },
-          },
-        ]);
+        enabledName = `textures[${textureID}].enabled`;
+        enabledId = `textures[${textureID}].id`;
       }
+
+      renderable.shaderProgram.addUniforms([
+        {
+          name: enabledName,
+          update: (gl, {index}) => {
+            gl.uniform1i(index, 1);
+          },
+        },
+        {
+          name: enabledId,
+          update: (gl, {index}) => {
+            gl.activeTexture(gl.TEXTURE0 + textureID);
+            gl.bindTexture(gl.TEXTURE_2D, this.texture);
+            gl.uniform1i(index, textureID);
+          },
+        },
+      ]);
     }
   }
 }
