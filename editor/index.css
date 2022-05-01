@@ -249,7 +249,7 @@ body {
 
 .scene-node-details .scene-node-details-content {
   padding: 1em;
-  width: 100%;
+  flex: 1;
   height: 250px;
   overflow-y: auto;
 }
@@ -257,7 +257,6 @@ body {
 .scene-node-details .scene-node-details-toolbar {
   display: flex;
   flex-direction: column;
-  width: 3em;
   background-color: #000000;
 }
 
@@ -268,6 +267,7 @@ body {
   cursor: pointer;
   box-sizing: border-box;
   height: 40px;
+  width: 40px;
   display: flex;
   justify-content: center;
   align-content: center;
