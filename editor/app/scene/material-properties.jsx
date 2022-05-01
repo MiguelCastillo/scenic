@@ -22,6 +22,17 @@ export class MaterialProperties extends WithNodeState {
     });
   };
 
+  handleChangeAmbientColor = (value) => {
+    const nodeState = this.getNodeState();
+    this.updateNodeState({
+      ...nodeState,
+      ambient: {
+        ...nodeState.ambient,
+        color: [...value],
+      },
+    });
+  }
+
   handleChangeReflectiveness = (evt) => {
     const nodeState = this.getNodeState();
     this.updateNodeState({
@@ -34,29 +45,35 @@ export class MaterialProperties extends WithNodeState {
   };
 
   render() {
-    const {material} = this.getNodeState();
-    if (!material) {
+    const {material, ambient} = this.getNodeState();
+    if (!material && !ambient) {
       return null;
     }
 
     return (
       <div className="node-properties material">
-        {material.color != null ?
+        {material?.color != null ?
           <div className="color">
             <label>Color</label>
             <ColorChannels onChange={this.handleChangeColor} data={material.color} />
           </div> : null}
-        <div className="reflectiveness">
-          <label>Reflect</label>
-          <input
-            type="number"
-            step=".1"
-            min="0"
-            max="1"
-            onChange={this.handleChangeReflectiveness}
-            value={material.reflectiveness}
-          />
-        </div>
+        {material?.reflectiveness != null ?
+          <div className="reflectiveness">
+            <label>Reflectiveness</label>
+            <input
+              type="number"
+              step=".1"
+              min="0"
+              max="1"
+              onChange={this.handleChangeReflectiveness}
+              value={material.reflectiveness}
+            />
+          </div> : null}
+        {ambient?.color != null ?
+          <div className="color">
+          <label>Ambient Color</label>
+          <ColorChannels onChange={this.handleChangeAmbientColor} data={ambient.color} />
+        </div> : null}
       </div>
     );
   }

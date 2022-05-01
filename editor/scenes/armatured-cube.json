@@ -134,6 +134,9 @@
               "type": "skinned-mesh",
               "resource": "/resources/fbx/__testdata__/cubearmature.fbx",
               "normalSmoothing": false,
+              "material": {
+                "reflectiveness": 1
+              },
               "animation": {
                 "speed": 1,
                 "fps": 24

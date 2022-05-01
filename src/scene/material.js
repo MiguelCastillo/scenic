@@ -34,6 +34,23 @@ export class Material extends Node {
     return this;
   }
 
+  preRender(context) {
+    super.preRender(context);
+
+    const state = context.sceneManager.getNodeStateByID(this.id);
+    if (state) {
+      if (state.material?.color) {
+        this.withMaterialColor(state.material.color);
+      }
+      if (state.material?.reflectiveness != null) {
+        this.withReflectionFactor(state.material?.reflectiveness);
+      }
+      if (state.ambient?.color) {
+        this.withAmbientColor(state.ambient.color);
+      }
+    }
+  }
+
   render() {
     const renderable = findParentByType(this, Renderable);
 

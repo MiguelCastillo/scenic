@@ -159,6 +159,9 @@ export function buildSceneNode(gl, fbxDocument, sceneNode, sceneManager) {
     });
   }
 
+  // If a model has materials, then we want to create state for them.
+  initMaterialsState(sceneNode, sceneManager);
+
   // Armature is basically the root bone of a skeleton in a rigged animation.
   // We want to make sure we have one in the scene node if there is skeletal
   // animation and there is no armature.
@@ -846,6 +849,20 @@ function buildArmature(sceneNode) {
       return 0;
     });
   }
+}
+
+function initMaterialsState(sceneNode, sceneManager) {
+  findChildrenByType(sceneNode, MaterialSceneNode).forEach((material) => {
+    sceneManager.updateNodeStateByID(material.id, {
+      material: {
+        reflectiveness: material.reflectionFactor,
+        color: material.materialColor,
+      },
+      ambient: {
+        color: material.ambientColor,
+      },
+    });
+  });
 }
 
 function initShaderProgramsForMeshes(gl, sceneNode) {
