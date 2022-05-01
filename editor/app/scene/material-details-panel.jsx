@@ -4,6 +4,8 @@ import {MaterialProperties} from "./material-properties.jsx";
 import {PanelToolbar} from "../components/panel-toolbar.jsx";
 import {Panel, PanelHeader, PanelBody} from "../components/panel.jsx";
 
+import "./scene-node-details.css";
+
 export class MaterialDetailsPanel extends React.Component {
   constructor(props) {
     super(props);

@@ -1,0 +1,12 @@
+.scene-node-details-header {
+  text-transform: capitalize;
+  padding: 1em;
+  background-color: #000000;
+}
+
+.scene-node-details-content {
+  padding: 1em;
+  flex: 1;
+  height: 250px;
+  overflow-y: auto;
+}

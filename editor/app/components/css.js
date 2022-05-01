@@ -1,4 +1,4 @@
-export const buildStyles = (styles) => {
+export const styles = (styles) => {
   return []
     .concat(styles)
     .filter(Boolean)
@@ -10,6 +10,6 @@ export const buildStyles = (styles) => {
     }, {});
 };
 
-export const buildClassNames = (className) => {
-  return [].concat(className).join(" ");
+export const classNames = (className) => {
+  return [].concat(className).filter(Boolean).join(" ");
 };

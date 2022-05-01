@@ -1,12 +1,14 @@
 import * as React from "react";
-import {buildStyles, buildClassNames} from "./utils.js";
+import {classNames} from "./css.js";
+
+import "./panel.css";
 
 export const PanelHeader = (props) => {
-  const {style, className, children} = props;
+  const {style={}, className, children} = props;
   return (
     <div
-      className={buildClassNames(["panel-header", className])}
-      style={buildStyles([styles.panelHeader, style])}
+      className={classNames(["panel-header", className])}
+      style={style}
     >
       {children}
     </div>
@@ -14,11 +16,11 @@ export const PanelHeader = (props) => {
 };
 
 export const PanelBody = (props) => {
-  const {style, className, children} = props;
+  const {style={}, className, children} = props;
   return (
     <div
-      className={buildClassNames(["panel-body", className])}
-      style={buildStyles([styles.panelBody, style])}
+      className={classNames(["panel-body", className])}
+      style={style}
     >
       {children}
     </div>
@@ -26,27 +28,13 @@ export const PanelBody = (props) => {
 };
 
 export const Panel = (props) => {
-  const {style, className, children} = props;
+  const {style={}, className, children} = props;
   return (
     <div
-      className={buildClassNames(["panel", className])}
-      style={buildStyles([styles.panel, style])}
+      className={classNames(["panel", className])}
+      style={style}
     >
       {children}
     </div>
   );
 };
-
-const styles = {
-  panel: {
-    display: "flex",
-    flexDirection: "column",
-  },
-  panelHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-  },
-  panelBody: {
-    display: "flex",
-  }
-}
