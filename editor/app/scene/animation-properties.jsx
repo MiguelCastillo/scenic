@@ -1,6 +1,7 @@
 import * as React from "react";
 import {PlayOutline, PauseOutline, SkipNextOutline, SkipPrevOutline} from "iconoir-react";
 import {WithNodeState} from "./with-node-state.jsx";
+import Slider from "../components/slider.jsx";
 
 export class AnimationProperties extends WithNodeState {
   selectAnimationStack = (stackName) => {
@@ -12,7 +13,7 @@ export class AnimationProperties extends WithNodeState {
     });
   };
 
-  handletAnimationSpeedChange = (evt) => {
+  handleAnimationSpeedChange = (evt) => {
     const nodeState = this.getNodeState();
     this.updateNodeState({
       ...nodeState,
@@ -58,15 +59,17 @@ export class AnimationProperties extends WithNodeState {
             />
           </div>
         )}
+
         <div className="speed">
           <label>Speed</label>
-          <input
-            type="number"
-            step=".1"
-            onChange={this.handletAnimationSpeedChange}
+          <Slider
             value={animationState.speed}
+            min={-1}
+            max={3}
+            onChange={this.handleAnimationSpeedChange}
           />
         </div>
+
         <div className="animaton-controls">
           <button className="prev" name="prev" onClick={this.handlePrevFrame}>
             <SkipPrevOutline />

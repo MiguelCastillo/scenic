@@ -1,0 +1,145 @@
+/**
+ * Slider component
+ */
+.slider {
+  --hue: 240;
+  --hl: 0.2;
+  --gap: 4px;
+
+  --track-h: 0.75rem;
+  --track-r: 0.5rem;
+  --track-shadow: 0 1px #686868, inset 0 2px #090909;
+
+  --thumb-size: 1.75rem;
+  --thumb-p: 0.5rem;
+  --thumb-w: var(--thumb-size);
+  --thumb-h: var(--thumb-size);
+  --thumb-shadow: 0px 0px 2px rgba(0, 0, 0, 0.2), 0px 2px 7px rgba(0, 0, 0, 0.1);
+  --thumb-bg: radial-gradient(
+        circle farthest-side at 61% 87%,
+        hsl(calc(var(--hue) + 5), 81.5%, 87%) 61%,
+        hsl(calc(var(--hue) + 12.5), 15%, 47%) 92%
+      )
+      content-box,
+    conic-gradient(
+        at 65%,
+        hsl(calc(var(--hue) - 15), 57.5%, 53%),
+        hsl(calc(var(--hue) - 25), 39%, 35%) 50%,
+        hsl(calc(var(--hue) - 15), 35%, 27%) 0%,
+        hsl(calc(var(--hue) - 15), 53%, 47%)
+      )
+      padding-box,
+    linear-gradient(
+        hsl(var(--hue), 51%, 63%),
+        hsl(calc(var(--hue) - 5), 47%, 61%),
+        hsl(var(--hue), 95%, 28.5%)
+      )
+      border-box;
+
+  display: grid;
+  grid-gap: var(--gap);
+  color: #fff;
+  filter: Saturate(var(--hl, 0));
+  transition: filter 0.35s;
+  place-items: center;
+  width: 100%;
+}
+
+.slider:hover,
+.slider:focus-within {
+  --hl: 1;
+}
+
+.slider::before,
+.slider::after {
+  width: 100%;
+  height: var(--track-h);
+  border-radius: var(--track-r);
+  box-shadow: var(--track-shadow);
+  content: "";
+  grid-area: 1/1;
+  z-index: -1;
+}
+
+.slider::before {
+  /* variable dynamically calculated based on the selected value */
+  clip-path: inset(0px var(--track-value) 0 0);
+  background: repeating-linear-gradient(-45deg, rgba(0, 0, 0, 0.1) 0 2px, transparent 0 5px),
+    linear-gradient(hsl(calc(var(--hue) - 7), 67%, 81%), hsl(calc(var(--hue) + 2), 75%, 85%));
+}
+
+/**
+ * Input control
+ */
+.slider-range {
+  grid-area: 1/1;
+  width: 100%;
+}
+
+.slider-range:focus {
+  outline: none;
+}
+
+.slider-range,
+.slider-range::-webkit-slider-runnable-track,
+.slider-range::-webkit-slider-thumb {
+  box-sizing: border-box;
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+}
+
+.slider-range::-webkit-slider-thumb {
+  box-sizing: border-box;
+  border: solid 1px transparent;
+  padding: var(--thumb-p, 0.375em);
+  margin-top: calc((var(--track-h) - var(--thumb-h) + var(--thumb-size)) / 2);
+  width: var(--thumb-w);
+  height: var(--thumb-h);
+  border-radius: var(--thumb-r, 50%);
+  box-shadow: var(--thumb-shadow);
+  background: var(--thumb-bg);
+  cursor: ew-resize;
+  pointer-events: auto;
+}
+
+/**
+ * NOTE: Duplicating the thumb styles because browsers don't support using more
+ * than one selector for these set of rules.
+ */
+.slider-range::-moz-range-thumb {
+  box-sizing: border-box;
+  border: solid 1px transparent;
+  padding: var(--thumb-p, 0.375em);
+  margin-top: calc((var(--track-h) - var(--thumb-h) + var(--thumb-size)) / 2);
+  width: var(--thumb-w);
+  height: var(--thumb-h);
+  border-radius: var(--thumb-r, 50%);
+  box-shadow: var(--thumb-shadow);
+  background: var(--thumb-bg);
+  cursor: ew-resize;
+  pointer-events: auto;
+}
+
+/**
+ * Tickmarks and labels
+ */
+.slider-labels {
+  display: grid;
+  grid-auto-flow: column;
+  justify-content: space-between;
+  width: calc(100% - (var(--thumb-size) / 2));
+}
+
+.slider-label {
+  display: grid;
+  grid-gap: var(--gap);
+  place-items: center;
+}
+
+.slider-label::before {
+  width: 2px;
+  height: 8px;
+  background: currentcolor;
+  content: "";
+}
