@@ -1,0 +1,28 @@
+.panel-toolbar {
+  display: flex;
+  flex-direction: column;
+  background-color: #000000;
+}
+
+.panel-toolbar > .button {
+  background: #000000;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  box-sizing: border-box;
+  height: 40px;
+  width: 40px;
+  display: flex;
+  justify-content: center;
+  align-content: center;
+  align-items: center;
+}
+
+.panel-toolbar > .button:hover {
+  background: #444444;
+}
+
+.panel-toolbar > .button.selected {
+  cursor: pointer;
+  background-color: #333333;
+}

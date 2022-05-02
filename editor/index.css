@@ -235,54 +235,6 @@ body {
   flex-direction: column;
 }
 
-.scene-node-details .scene-node-details-header {
-  text-transform: capitalize;
-  padding: 1em;
-  background-color: #000000;
-  display: flex;
-  justify-content: space-between;
-}
-
-.scene-node-details .scene-node-details-body {
-  display: flex;
-}
-
-.scene-node-details .scene-node-details-content {
-  padding: 1em;
-  flex: 1;
-  height: 250px;
-  overflow-y: auto;
-}
-
-.scene-node-details .scene-node-details-toolbar {
-  display: flex;
-  flex-direction: column;
-  background-color: #000000;
-}
-
-.scene-node-details-toolbar > .button {
-  background: #000000;
-  border: none;
-  color: #fff;
-  cursor: pointer;
-  box-sizing: border-box;
-  height: 40px;
-  width: 40px;
-  display: flex;
-  justify-content: center;
-  align-content: center;
-  align-items: center;
-}
-
-.scene-node-details-toolbar > .button:hover {
-  background: #444444;
-}
-
-.scene-node-details-toolbar > .button.selected {
-  cursor: pointer;
-  background-color: #333333;
-}
-
 .scene-node-details .node-properties > * {
   display: grid;
   grid-template-columns: minmax(6em, 10%) 1fr;

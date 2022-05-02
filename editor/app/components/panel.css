@@ -1,0 +1,13 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.panel .panel-header {
+  display: flex;
+  justify-content: space-between;
+}
+
+.panel .panel-body {
+  display: flex;
+}
