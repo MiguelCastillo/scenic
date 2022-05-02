@@ -67,6 +67,7 @@ export class AnimationProperties extends WithNodeState {
             min={-1}
             max={3}
             onChange={this.handleAnimationSpeedChange}
+            step={0.001}
           />
         </div>
 
