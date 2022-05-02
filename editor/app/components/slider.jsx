@@ -14,7 +14,7 @@ const range = (start, end) => Array.from({length: end - start + 1}, (_, i) => st
  * A custom slider component that extends the standard input range control.
  */
 export default function Slider(props) {
-  const {min, max, onChange, step = 1, value} = props;
+  const {min, max, onChange, value} = props;
 
   // Create an array of labels for the slider here so these don't have to be
   // recalculated on every render.
@@ -29,7 +29,6 @@ export default function Slider(props) {
       <input
         type="range"
         className="slider-range"
-        step={step}
         min={min}
         max={max}
         onChange={onChange}
