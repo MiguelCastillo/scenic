@@ -103,6 +103,10 @@
   pointer-events: auto;
 }
 
+/**
+ * NOTE: Duplicating the thumb styles because browsers don't support using more
+ * than one selector for these set of rules.
+ */
 .slider-range::-moz-range-thumb {
   box-sizing: border-box;
   border: solid 1px transparent;
