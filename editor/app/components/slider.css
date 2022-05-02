@@ -131,12 +131,13 @@
   width: calc(100% - (var(--thumb-size) / 2));
 }
 
-.slider-labels option {
+.slider-label {
+  display: grid;
   grid-gap: var(--gap);
   place-items: center;
 }
 
-.slider-labels option::before {
+.slider-label::before {
   width: 2px;
   height: 8px;
   background: currentcolor;

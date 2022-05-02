@@ -38,7 +38,7 @@ export default function Slider(props) {
       />
       <datalist id="speeds" className="slider-labels">
         {labels.map((speed) => (
-          <option key={speed} value={speed} style={{display: "grid"}}>
+          <option key={speed} value={speed} className="slider-label">
             {speed}
           </option>
         ))}
