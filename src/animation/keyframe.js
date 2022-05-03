@@ -36,12 +36,17 @@ const lerp = (fraction, min, max, ease = (x) => x) => {
   return ease((max - min) * fraction + min);
 };
 
+// KeyController manages frames in a key frame animation and provide a method
+// to calculate the frame index for any particular point in time in the
+// animaiton. The index generated will include a delta value that tells us
+// how much of a frame is
 export class KeyController {
-  // Right not we have just two things for animation. Frames and time intervals
+  // Right now we have just two things for animation. Frames and time intervals
   // for each frame (optional). If we needed more data than those two things,
   // we can create a KeyFrame object that can hold information about each
   // frame. Perhaps we want to support different ease function to transition
   // between frames.
+  // duration is how long the animation is in Milliseconds!
   constructor(frames, times = [], duration = -1) {
     // Number of frames (segments) in an animation.
     const frameCount = frames.length;
@@ -52,25 +57,46 @@ export class KeyController {
       );
     }
 
-    if (times.length && frames.length !== times.length) {
+    // When no time intervals are provided we just create them ourselves and
+    // give each interval (segment) a 1 second length. This simplifies the logic
+    // for calculating the frame index for a particular point in time in the
+    // animation.
+    if (!times.length) {
+      const segmentLength = duration !== -1 ? frames.length / duration : 1000;
+      times = frames.map((_, i) => i * segmentLength);
+    }
+
+    if (frames.length !== times.length) {
       // eslint-disable-next-line no-console
       console.warn(
         `KeyController has mismatching number of frames (${frames.length}) and time intervals (${times.length}).`
       );
     }
 
-    this.frames = frames;
     this.times = times;
-    this.duration = times.length ? times[times.length - 1] : duration;
+    this.frames = frames;
     this.segmentCount = frameCount - 1;
+
+    if (duration !== -1) {
+      this.duration = duration;
+    } else if (times.length) {
+      this.duration = times[times.length - 1];
+    } else {
+      this.duration = this.segmentCount * 1000;
+    }
   }
 
-  // The way this works is that ms is time in millisenconds
-  // that is always advancing. And every second we will increase
-  // or decrease the current frame depending on whether we are
-  // going forward or backward with animation.
+  // getFrameIndex returns the index of the current frame for the time provided
+  // and a delta value for how long into the frame the time provided is.
+  // speed controls how fast we advance frames, or go in reverse when speed
+  // is negative.
+  //
+  // The way this works is that ms is time in millisenconds that is always
+  // advancing. And every second we will increase or decrease the current frame
+  // depending on whether we are going forward or backward with animation.
   getFrameIndex = (tms, speed = 1) => {
     const segmentCount = this.segmentCount;
+    const times = this.times;
 
     // Slow or speed things up! We also take the floor because
     // the decimal points can cause jitters in animations.
@@ -85,34 +111,22 @@ export class KeyController {
     // frames.
     let len;
 
-    // time corresponds to how long each frame is. Sometimes all frames last
-    // the same amount of time, but not always.
-    // If no times exist in the animation then we will default to every frame
-    // lasting 1 second.
-    const times = this.times;
+    // We wrap the time provided to loop the animation.
+    const cms = ms % this.duration;
 
-    if (times.length) {
-      const cms = ms % this.duration;
-
-      if (!cms && ms) {
-        // We are at the very end of the animation. So can return early since
-        // there are no more calculations needed here.
-        return [1, segmentCount - 1];
-      } else {
-        // TODO(miguel): cache index value so that we don't start over the
-        // search everytime.
-        for (idx = 0; idx < times.length; idx++) {
-          if (cms < times[idx]) {
-            break;
-          }
-        }
-
-        len = times[idx] - times[idx - 1];
-        idx--;
-      }
+    if (cms) {
+      // Find the index for the frame for the corresponding point in time.
+      for (idx = 0; idx < times.length && !(cms < times[idx]); idx++) {}
+      len = times[idx] - times[idx - 1];
+      idx--;
+    } else if (ms) {
+      // We are at the very end of the animation last frame.
+      idx = segmentCount;
+      len = times[idx] - times[idx - 1];
     } else {
-      idx = Math.floor(ms * 0.001);
-      len = 1000;
+      // We are at the very beggining of the first frame.
+      idx = 0;
+      len = times[1] - times[0];
     }
 
     // delta tells us where within a frame range we are so that we can
@@ -122,7 +136,7 @@ export class KeyController {
     // that causes tests to fail when ms is 9.
     // 9 * 0.001 yields 0.009000000000000001. But it really should be 0.009.
     // https://techformist.com/problems-with-decimal-multiplication-javascript/
-    let delta = (ms % len) / len;
+    let delta = (cms % len) / len;
 
     if (!delta && idx) {
       // The adjustment in this logic branch allows us to access all the data
@@ -143,8 +157,6 @@ export class KeyController {
       delta = 1;
       idx--;
     }
-
-    idx = idx % segmentCount;
 
     if (speed < 0) {
       // If we are in reverse mode then we just invert the computed values.
