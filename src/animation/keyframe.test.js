@@ -245,6 +245,28 @@ test("animateScalar with 4 curve points and 10 second span with 1 millisecond at
 
 test("animateScalar with 4 curve points iterating over a 3 second span", () => {
   const keyValues = [0, 1, 2, 3];
+  const animator = animateScalar(keyValues);
+  const speed = 1;
+
+  expect(animator(0, speed)).toEqual(0);
+  expect(animator(250, speed)).toEqual(0.25);
+  expect(animator(500, speed)).toEqual(0.5);
+  expect(animator(750, speed)).toEqual(0.75);
+  expect(animator(1000, speed)).toEqual(1);
+  expect(animator(1250, speed)).toEqual(1.25);
+  expect(animator(1500, speed)).toEqual(1.5);
+  expect(animator(1750, speed)).toEqual(1.75);
+  expect(animator(2000, speed)).toEqual(2);
+  expect(animator(2250, speed)).toEqual(2.25);
+  expect(animator(2500, speed)).toEqual(2.5);
+  expect(animator(2750, speed)).toEqual(2.75);
+  expect(animator(3000, speed)).toEqual(3);
+  expect(animator(3001, speed)).toEqual(0.001);
+  expect(animator(3002, speed)).toEqual(0.002);
+});
+
+test("animateScalar with 4 curve points iterating over a 3 second span with provided time intervals", () => {
+  const keyValues = [0, 1, 2, 3];
   const animator = animateScalar(
     keyValues,
     keyValues.map((_, i) => i * 1000)
@@ -269,7 +291,33 @@ test("animateScalar with 4 curve points iterating over a 3 second span", () => {
 });
 
 test("animateScalar with 4 curve points iterating over a 3 second span in reverse", () => {
-  const animator = animateScalar([0, 1, 2, 3]);
+  const keyValues = [0, 1, 2, 3];
+  const animator = animateScalar(keyValues);
+  const speed = -1;
+
+  expect(animator(0, speed)).toEqual(3);
+  expect(animator(250, speed)).toEqual(2.75);
+  expect(animator(500, speed)).toEqual(2.5);
+  expect(animator(750, speed)).toEqual(2.25);
+  expect(animator(1000, speed)).toEqual(2);
+  expect(animator(1250, speed)).toEqual(1.75);
+  expect(animator(1500, speed)).toEqual(1.5);
+  expect(animator(1750, speed)).toEqual(1.25);
+  expect(animator(2000, speed)).toEqual(1);
+  expect(animator(2250, speed)).toEqual(0.75);
+  expect(animator(2500, speed)).toEqual(0.5);
+  expect(animator(2750, speed)).toEqual(0.25);
+  expect(animator(3000, speed)).toEqual(0);
+  expect(animator(3001, speed)).toEqual(2.999);
+  expect(animator(3002, speed)).toEqual(2.998);
+});
+
+test("animateScalar with 4 curve points iterating over a 3 second span in reverse with provided time intervals", () => {
+  const keyValues = [0, 1, 2, 3];
+  const animator = animateScalar(
+    keyValues,
+    keyValues.map((_, i) => i * 1000)
+  );
   const speed = -1;
 
   expect(animator(0, speed)).toEqual(3);
