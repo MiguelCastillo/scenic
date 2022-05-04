@@ -10,7 +10,8 @@ on:
     branches: [main]
 
 jobs:
-  build:
+  lint_and_test:
+    name: Lint and test
 
     runs-on: ${{ matrix.os }}
 
