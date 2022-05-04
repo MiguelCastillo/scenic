@@ -1,3 +1,5 @@
+import {lerp} from "../math/lerp.js";
+
 // Keyframe animation is the notion that state changes over time in which the
 // state is defined by a frame; frames are snapshots of some state at discrete
 // points in time.
@@ -28,13 +30,6 @@
 // and 75% from frame `b`. Said differently, the animation is 5 seconds into
 // the segment.
 //
-
-// https://www.khanacademy.org/computing/pixar/animate/ball/pi/animation-with-linear-interpolation
-// https://www.freecodecamp.org/news/understanding-linear-interpolation-in-ui-animations-74701eb9957c/
-const lerp = (fraction, min, max, ease = (x) => x) => {
-  //const length = Math.sqrt(min*min + max*max);
-  return ease((max - min) * fraction + min);
-};
 
 // KeyController manages frames in a key frame animation and provide a method
 // to calculate the frame index for any particular point in time in the
