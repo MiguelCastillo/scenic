@@ -26,4 +26,9 @@ module.exports = {
     "eol-last": 2,
     "react/prop-types": 0,
   },
+  settings: {
+    react: {
+      version: "detect",
+    },
+  },
 };

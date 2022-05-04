@@ -1,0 +1,39 @@
+# Main workflow that runs either in PRs or on pushes to the main branch.  
+# See:
+# https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs-or-python
+name: main
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        node-version: [16.x]
+
+    steps:
+    - name: Checking out latest commit
+      uses: actions/checkout@v3
+
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+    
+    - Install dependencies
+      run: npm ci
+    
+    - Lint files
+      run: npm run lint
+
+    - Run tests
+      run: npm test
