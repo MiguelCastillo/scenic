@@ -9,8 +9,6 @@ export class SceneGraph extends React.Component {
   constructor() {
     super();
 
-    const temp = "ESLint should complain about this!";
-
     this.state = {
       selectedNode: null,
     };
