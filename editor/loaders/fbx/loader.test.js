@@ -86,7 +86,7 @@ describe("fbx Loader", () => {
     const model = loadModel("../../../resources/fbx/__testdata__/cubearmature_simple.fbx");
     const sceneNodeConfig = {
       id: "cube armature",
-      type: "group",
+      type: "skinned-mesh",
     };
     const {gl, sceneManager} = createSceneContextForTests(sceneNodeConfig);
 
@@ -204,7 +204,7 @@ describe("fbx Loader", () => {
         let context = {gl, sceneManager, ms};
         const animation = sceneNode.items.find((x) => x instanceof Animation);
 
-        animation.items[0].playback.play(0);
+        animation.currentStack.playback.play(0);
         bubbleTraversal(bubbleDown(context), () => {})(sceneNode);
 
         let tdata = testData["Right Bone - Model_LimbNode"];
