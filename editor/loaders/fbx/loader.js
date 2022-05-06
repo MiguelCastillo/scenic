@@ -23,7 +23,6 @@ import {
 } from "../../../src/formats/fbxfile.js";
 
 import {findChildrenByType} from "../../../src/scene/node.js";
-import {Animation as AnimationSceneNode} from "../../../src/scene/animation.js";
 import {Material as MaterialSceneNode} from "../../../src/scene/material.js";
 import {Texture as TextureSceneNode} from "../../../src/scene/texture.js";
 
@@ -34,6 +33,7 @@ import {
   SkinDeformerCluster,
   Armature,
   Bone,
+  Animation,
   AnimationStack,
   AnimationLayer,
   AnimationCurveNode,
@@ -120,7 +120,7 @@ export function buildSceneNode(gl, fbxDocument, sceneNode, sceneManager) {
       .filter(Boolean)
   );
 
-  const animationNode = new AnimationSceneNode({name: `Animation_n${animationID++}`});
+  const animationNode = new Animation({name: `Animation_n${animationID++}`});
   findChildrenByName(objects, "AnimationStack")
     .map((s) => s.attributes[0])
     .forEach((stackID) => {
@@ -137,7 +137,7 @@ export function buildSceneNode(gl, fbxDocument, sceneNode, sceneManager) {
       );
     });
 
-  if (animationNode.items.length) {
+  if (animationNode.stacks.length) {
     sceneNode.add(animationNode);
 
     ////////////
@@ -155,7 +155,7 @@ export function buildSceneNode(gl, fbxDocument, sceneNode, sceneManager) {
       // Order of presedence for FPS is first custom, then fbx file, then just
       // known default.
       fps: animation.fps || fps || FBX_DEFAULT_FPS,
-      stackNames: animationNode.items.map((item) => item.name),
+      stackNames: animationNode.stacks.map((item) => item.name),
     });
   }
 

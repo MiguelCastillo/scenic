@@ -43,13 +43,7 @@ const AnimatableInterface = (superclass) =>
         translation = transform.position,
         rotation = transform.rotation,
         scale = transform.scale,
-        stack,
       } = animation;
-
-      if (this.currentAnimationStack !== stack) {
-        this.currentAnimationStack = stack;
-        // stack.playback.reset(context.ms);
-      }
 
       // https://help.autodesk.com/view/FBX/2017/ENU/?guid=__cpp_ref__transformations_2main_8cxx_example_html
       let animationMatrix = mat4.Matrix4.trs(translation, rotation, scale);
@@ -62,6 +56,37 @@ const AnimatableInterface = (superclass) =>
       }
     }
   };
+
+export class Animation extends AnimationSceneNode {
+  constructor(options) {
+    super(options);
+    this.stacks = [];
+    this.currentStack;
+  }
+
+  add(node) {
+    if (node instanceof AnimationStack) {
+      this.stacks.push(node._withParent(this));
+    } else {
+      super.add(node);
+    }
+    return this;
+  }
+
+  preRender(context) {
+    const animationState = context.sceneManager.getNodeStateByID(this.id);
+    const stackName = animationState?.stackName;
+
+    if (!stackName) {
+      this.currentStack = this.stacks[0];
+    } else if (this.currentStack?.name !== stackName) {
+      this.currentStack = this.stacks.find((stack) => stack.name === stackName);
+      this.currentStack.playback.reset(context.ms);
+    }
+
+    this.currentStack?.preRender(context);
+  }
+}
 
 export class Mesh extends AnimatableInterface(MeshSceneNode) {
   preRender(context) {
@@ -475,29 +500,13 @@ function getTransformAnimation(animation, defaultValues) {
 function getAnimation(context, animatableNode) {
   // relative root is a skinned mesh node, which will have an animation
   // property in it for easy access to the animation node.
-  const animation = animatableNode.relativeRoot.items.find((x) => x instanceof AnimationSceneNode);
-  if (!animation?.items.length) {
-    return;
-  }
-
-  const animationState = context.sceneManager.getNodeStateByID(animation.id);
-  const stackName = animationState?.stackName;
-  let stack = animatableNode.currentAnimationStack;
-
-  if (!stackName) {
-    // The only children that an animation node has are animation stacks.
-    // If there is no stack active, we just pick the firs one.
-    stack = animation.items[0];
-  } else if (stack?.name !== stackName) {
-    // If a particular stack is selected, then that's what we are using
-    // for animation.
-    stack = animation.items.find((item) => item.name === stackName);
-  }
-
+  const animation = animatableNode.relativeRoot.animation;
+  const stack = animation?.currentStack;
   if (!stack) {
     return;
   }
 
+  const animationState = context.sceneManager.getNodeStateByID(animation.id);
   const speed = animationState.speed == null ? 1 : animationState.speed;
   const ms = stack.playback.elapsed(context.ms);
   const curves = findCurveNodesInLayer(stack.animationLayers[0], animatableNode.animationNodes);
@@ -512,7 +521,6 @@ function getAnimation(context, animatableNode) {
     translation,
     rotation,
     scale,
-    stack,
   };
 }
 
