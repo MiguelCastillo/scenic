@@ -1,5 +1,8 @@
 import {animate2v, animate3v, animateScalar} from "./keyframe.js";
 
+// Let's disable console log to keep the reports clean.
+jest.spyOn(console, "log").mockImplementation(() => {});
+
 test("animate2v no frames throws error", () => {
   expect(() => {
     animate2v([]);

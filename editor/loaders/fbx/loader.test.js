@@ -59,6 +59,9 @@ function createSceneContextForTests(...sceneConfigItems) {
   };
 }
 
+// Let's disable console log to keep the reports clean.
+jest.spyOn(console, "log").mockImplementation(() => {});
+
 describe("fbx Loader", () => {
   test("loading cube.fbx", () => {
     const model = loadModel("../../../resources/fbx/__testdata__/cube.fbx");
