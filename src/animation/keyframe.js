@@ -32,9 +32,9 @@ import {lerp} from "../math/lerp.js";
 //
 
 // KeyController manages frames in a key frame animation and provide a method
-// to calculate the frame index for any particular point in time in the
-// animaiton. The index generated will include a delta value that tells us
-// how much of a frame is
+// to calculate the frame index at any particular point in time in the
+// animaiton. The index generated will include a delta value for linear
+// interpolation.
 export class KeyController {
   // Right now we have just two things for animation. Frames and time intervals
   // for each frame (optional). If we needed more data than those two things,
@@ -81,14 +81,45 @@ export class KeyController {
     }
   }
 
-  // getFrameIndex returns the index of the current frame for the time provided
-  // and a delta value for how long into the frame the time provided is.
-  // speed controls how fast we advance frames, or go in reverse when speed
-  // is negative.
+  // getFrameIndex returns the index of the current frame index and delta for
+  // the time provided in the animation. speed controls how fast we advance
+  // frames, or go in reverse when speed is negative.
   //
-  // The way this works is that ms is time in millisenconds that is always
-  // advancing. And every second we will increase or decrease the current frame
-  // depending on whether we are going forward or backward with animation.
+  // This function will loop animation. Meaning that if time provided to this
+  // function is bigger than the duration, we will just continue calculations
+  // from the beginning of the animation. If you don't want looping you can
+  // use an abstraction that manages time before it is passed into this
+  // function.
+  //
+  // Animation looping has a subtle behavior that can be very confusing. When
+  // looping an animation the very last frame and the very first frame fall in
+  // the same time slot. Meaning when we get to the very last frame of the
+  // animation, that time will also corresponding to the beginning of the next
+  // loop's very first frame.
+  // To illustrates what looping looks like consider 5 frames that are looped:
+  // [1, 2, 3, 4, 5] first iteration
+  //             [1, 2, 3, 4, 5] looped over
+  //
+  // Notices how the 1 and the 5 overlap. That helps us align time that is
+  // always running consistently so that we can render frame 2 exactly 1 second
+  // after we finished the first iteration. And we rely on continue time to
+  // allow us to lineraly interpolate the values between 1 and 2.  The focus of
+  // the behavior to allow us to run an animation from the very beginning to the
+  // very end of the animation while providing reasonable looping behavior that
+  // relise on lerp to fill in the gaps.
+  //
+  // This is actually much more clearly illustrated when we are animation 360
+  // degrees like we wouldo do when rotation an object in circles.
+  // Let's say that an animation is 360 seconds and every second we animate
+  // 1 degree. At second 360 we want to animate exactly at 360 degrees. And at
+  // second 361 we want to render degree 361, which is equivalent to 1 degree.
+  // And 360 degree is actually the same as 0 degrees.
+  // [358, 359, 360] first iteration
+  //           [  0, 1, 2] second iteration (second loop)
+  //
+  // The confusion gets amplified when we have speeds other than 1. For example,
+  // speed of 2 in our above example means that we will jump from 360 to 2
+  //
   getFrameIndex = (tms, speed = 1) => {
     const segmentCount = this.segmentCount;
     const times = this.times;

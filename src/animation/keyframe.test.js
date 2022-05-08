@@ -1,4 +1,5 @@
 import {animate2v, animate3v, animateScalar} from "./keyframe.js";
+import {range} from "../math/range.js";
 
 // Let's disable console log to keep the reports clean.
 jest.spyOn(console, "log").mockImplementation(() => {});
@@ -247,33 +248,8 @@ test("animateScalar with 4 curve points and 10 second span with 1 millisecond at
 });
 
 test("animateScalar with 4 curve points iterating over a 3 second span", () => {
-  const keyValues = [0, 1, 2, 3];
-  const animator = animateScalar(keyValues);
-  const speed = 1;
-
-  expect(animator(0, speed)).toEqual(0);
-  expect(animator(250, speed)).toEqual(0.25);
-  expect(animator(500, speed)).toEqual(0.5);
-  expect(animator(750, speed)).toEqual(0.75);
-  expect(animator(1000, speed)).toEqual(1);
-  expect(animator(1250, speed)).toEqual(1.25);
-  expect(animator(1500, speed)).toEqual(1.5);
-  expect(animator(1750, speed)).toEqual(1.75);
-  expect(animator(2000, speed)).toEqual(2);
-  expect(animator(2250, speed)).toEqual(2.25);
-  expect(animator(2500, speed)).toEqual(2.5);
-  expect(animator(2750, speed)).toEqual(2.75);
-  expect(animator(3000, speed)).toEqual(3);
-  expect(animator(3001, speed)).toEqual(0.001);
-  expect(animator(3002, speed)).toEqual(0.002);
-});
-
-test("animateScalar with 4 curve points iterating over a 3 second span with provided time intervals", () => {
-  const keyValues = [0, 1, 2, 3];
-  const animator = animateScalar(
-    keyValues,
-    keyValues.map((_, i) => i * 1000)
-  );
+  const frames = [0, 1, 2, 3];
+  const animator = animateScalar(frames);
   const speed = 1;
 
   expect(animator(0, speed)).toEqual(0);
@@ -294,8 +270,8 @@ test("animateScalar with 4 curve points iterating over a 3 second span with prov
 });
 
 test("animateScalar with 4 curve points iterating over a 3 second span in reverse", () => {
-  const keyValues = [0, 1, 2, 3];
-  const animator = animateScalar(keyValues);
+  const frames = [0, 1, 2, 3];
+  const animator = animateScalar(frames);
   const speed = -1;
 
   expect(animator(0, speed)).toEqual(3);
@@ -315,41 +291,13 @@ test("animateScalar with 4 curve points iterating over a 3 second span in revers
   expect(animator(3002, speed)).toEqual(2.998);
 });
 
-test("animateScalar with 4 curve points iterating over a 3 second span in reverse with provided time intervals", () => {
-  const keyValues = [0, 1, 2, 3];
-  const animator = animateScalar(
-    keyValues,
-    keyValues.map((_, i) => i * 1000)
-  );
-  const speed = -1;
-
-  expect(animator(0, speed)).toEqual(3);
-  expect(animator(250, speed)).toEqual(2.75);
-  expect(animator(500, speed)).toEqual(2.5);
-  expect(animator(750, speed)).toEqual(2.25);
-  expect(animator(1000, speed)).toEqual(2);
-  expect(animator(1250, speed)).toEqual(1.75);
-  expect(animator(1500, speed)).toEqual(1.5);
-  expect(animator(1750, speed)).toEqual(1.25);
-  expect(animator(2000, speed)).toEqual(1);
-  expect(animator(2250, speed)).toEqual(0.75);
-  expect(animator(2500, speed)).toEqual(0.5);
-  expect(animator(2750, speed)).toEqual(0.25);
-  expect(animator(3000, speed)).toEqual(0);
-  expect(animator(3001, speed)).toEqual(2.999);
-  expect(animator(3002, speed)).toEqual(2.998);
-});
-
-test("animateScalar with 10 items from 0 to 1 second", () => {
-  const keyValues = [
+test("animateScalar with 10 items from 0 to 10 second", () => {
+  const frames = [
     0, 0.6858710646629333, 2.524005651473999, 5.185185432434082, 8.340192794799805,
     11.659809112548828, 14.814814567565918, 17.47599220275879, 19.314130783081055, 20,
   ];
 
-  const animator = animateScalar(
-    keyValues,
-    keyValues.map((_, i) => i * 1000)
-  );
+  const animator = animateScalar(frames);
 
   expect(animator(0)).toEqual(0);
   expect(animator(1000)).toEqual(0.6858710646629333);
@@ -362,6 +310,76 @@ test("animateScalar with 10 items from 0 to 1 second", () => {
   expect(animator(8000)).toEqual(19.314130783081055);
   expect(animator(9000)).toEqual(20);
   expect(animator(10000)).toEqual(0.6858710646629333);
+});
+
+test("animateScalar of 5 second duration and speed of 1", () => {
+  const frames = [1, 2, 3, 4, 5];
+  const animator = animateScalar(frames);
+  const speed = 1;
+
+  expect(animator(0, speed)).toEqual(1);
+  expect(animator(1000, speed)).toEqual(2);
+  expect(animator(2000, speed)).toEqual(3);
+  expect(animator(3000, speed)).toEqual(4);
+  expect(animator(4000, speed)).toEqual(5);
+  expect(animator(5000, speed)).toEqual(2);
+  expect(animator(6000, speed)).toEqual(3);
+  expect(animator(7000, speed)).toEqual(4);
+  expect(animator(8000, speed)).toEqual(5);
+  expect(animator(9000, speed)).toEqual(2);
+  expect(animator(10000, speed)).toEqual(3);
+  expect(animator(20000, speed)).toEqual(5);
+  expect(animator(30000, speed)).toEqual(3);
+});
+
+test("animateScalar from 1 to 5, duration of 10 second, and speed of 2", () => {
+  const frames = [0, 1, 2, 3, 4, 5];
+  const animator = animateScalar(frames);
+  const speed = 2;
+
+  expect(animator(0, speed)).toEqual(0);
+  expect(animator(1000, speed)).toEqual(2);
+  expect(animator(2000, speed)).toEqual(4);
+  expect(animator(3000, speed)).toEqual(1);
+  expect(animator(4000, speed)).toEqual(3);
+  expect(animator(5000, speed)).toEqual(5);
+  expect(animator(6000, speed)).toEqual(2);
+  expect(animator(7000, speed)).toEqual(4);
+  expect(animator(8000, speed)).toEqual(1);
+  expect(animator(9000, speed)).toEqual(3);
+  expect(animator(10000, speed)).toEqual(5);
+});
+
+test("animateScalar from 0 to 360 speed of 1", () => {
+  const frames = range(0, 360);
+  const times = range(0, 360);
+  const animator = animateScalar(frames, times);
+  const speed = 1;
+
+  // This test illustrates the confusing behavior around animation looping.
+  // Please see getFrameIndex for more details.
+  expect(times.map((t) => animator(t, speed))).toEqual(frames);
+
+  // At 361 seconds, we are going to render frame 2; animation produces
+  // frame indexes which are 0 based index. So index 1 is the second frame.
+  // We don't see rendering of frame at index 0 (frame 1).
+  expect(animator(360, speed)).toEqual(360);
+  expect(animator(361, speed)).toEqual(1);
+  expect(animator(362, speed)).toEqual(2);
+});
+
+test("animateScalar from 0 to 360 speed of 2", () => {
+  const frames = range(0, 360);
+  const times = range(0, 360);
+  const animator = animateScalar(frames, times);
+  const speed = 2;
+
+  // Here it looks like we are skipping two frames when we transition to the
+  // new loop. Meaning that it seems like we skipped frame 0 and frame 1 and
+  // instead start the new loop at frame 2.
+  expect(animator(360, speed)).toEqual(360);
+  expect(animator(361, speed)).toEqual(2);
+  expect(animator(362, speed)).toEqual(4);
 });
 
 test("fbx animation curve", () => {
@@ -406,8 +424,9 @@ test("fbx animation curve", () => {
     "71203660250",
     "73128083500",
     "75052506750",
-  ];
-  const keyValues = [
+  ].map((v) => parseInt(v));
+
+  const frames = [
     -25, -24.534690856933594, -23.21709632873535, -21.164718627929688, -18.495054244995117,
     -15.325607299804688, -11.77387809753418, -7.957367897033691, -3.993574380874634, 0,
     3.9151315689086914, 7.680702209472656, 11.234869003295898, 14.515789985656738,
@@ -419,13 +438,10 @@ test("fbx animation curve", () => {
     -24.637500762939453, -25,
   ];
 
-  const keyTimesValues = keyTimes.map((v) => parseInt(v));
-  const animator = animateScalar(keyValues, keyTimesValues);
+  const animator = animateScalar(frames, keyTimes);
   const speed = 1;
 
-  for (let i = 0; i < keyValues.length; i++) {
-    expect(animator(keyTimesValues[i], speed)).toEqual(keyValues[i]);
-  }
+  expect(keyTimes.map((t) => animator(t, speed))).toEqual(frames);
 });
 
 test("fbx animation curve in reverse", () => {
@@ -470,8 +486,9 @@ test("fbx animation curve in reverse", () => {
     "71203660250",
     "73128083500",
     "75052506750",
-  ];
-  const keyValues = [
+  ].map((v) => parseInt(v));
+
+  const frames = [
     -25, -24.534690856933594, -23.21709632873535, -21.164718627929688, -18.495054244995117,
     -15.325607299804688, -11.77387809753418, -7.957367897033691, -3.993574380874634, 0,
     3.9151315689086914, 7.680702209472656, 11.234869003295898, 14.515789985656738,
@@ -483,13 +500,10 @@ test("fbx animation curve in reverse", () => {
     -24.637500762939453, -25,
   ];
 
-  const keyTimesValues = keyTimes.map((v) => parseInt(v));
-  const animator = animateScalar(keyValues, keyTimesValues);
+  const animator = animateScalar(frames, keyTimes);
   const speed = -1;
 
-  for (let i = 0; i < keyValues.length; i++) {
-    expect(animator(keyTimesValues[i], speed)).toEqual(keyValues[keyValues.length - i - 1]);
-  }
+  expect(keyTimes.map((t) => animator(t, speed))).toEqual(frames.reverse());
 });
 
 function normalizeDecimal(v) {
