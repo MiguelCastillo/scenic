@@ -1,4 +1,4 @@
-// Timer provides functionality for evaluating elapsed time relative to a
+// Elapsed provides functionality for evaluating elapsed time relative to a
 // continuesly advancing clock. This is most useful in animations where a
 // global timer is always moving forward, but we want to be able to pause
 // and resume an animation while staying in sync with the global timer.
@@ -14,9 +14,9 @@
 // |=======|========|
 // 0       5        10
 //
-// An important feature of this timer is that we can start the timer at any
-// given point relative to the global timer. So if the global timer is at 10
-// seconds, elapsed times will be normalized by substracting those 10 seconds.
+// An important feature is that we can start the timer at any given point
+// relative to the global timer. So if the global timer is at 10 seconds,
+// elapsed times will be normalized by substracting those 10 seconds.
 //
 // start   offset   current
 // |=======|========|
@@ -26,51 +26,45 @@
 // are pausing and resuming at different times, we want to advance the exact
 // same number of milliseconds in _every_ running animation as they are all
 // synced to the same global timer.
-//
-export class Timer {
+export class Elapsed {
   constructor(ms = 0) {
     this.reset(ms);
   }
 
-  // absms is the absolute time starting from T0.
-  reset = (absms) => {
-    this._current = absms;
-    this._start = absms;
+  reset = (ms) => {
+    this._start = this._offset = ms;
     return this;
   };
 
-  skip = (abdms) => {
-    this._current += abdms;
+  skip = (ms) => {
+    this._offset += ms;
     return this;
   };
 
-  // absms is the absolute time starting from T0.
-  resume = (absms) => {
-    this.pause(absms);
+  resume = (ms) => {
+    return this._updateOffset(ms);
+  };
+
+  pause = (ms) => {
+    return this._updateOffset(ms);
+  };
+
+  _updateOffset = (ms) => {
+    this._offset = ms - this.current;
     return this;
   };
 
-  // absms is the absolute time starting from T0.
-  pause = (absms) => {
-    this._current = absms - this.length;
-    return this;
+  // time returns how much time has elapsed since the start of the animation.
+  time = (ms) => {
+    return ms - this._offset;
   };
 
-  // absms is the absolute time starting from T0.
-  elapsed = (absms) => {
-    return absms - this._current;
-  };
-
-  get start() {
-    return this._start;
-  }
-
+  // current is the amount of time between the start of the animation and the
+  // last time the animation was paused or resumed. For example, if the
+  // animation was paused 5 seconds in, then this cursor value will be 5
+  // seconds.
   get current() {
-    return this._current;
-  }
-
-  get length() {
-    return this._current - this._start;
+    return this._offset - this._start;
   }
 }
 
@@ -83,16 +77,16 @@ export class Timer {
 // time (absolute timer) to relative elapsed time.
 export class Playback {
   constructor(absms) {
-    this.timer = new Timer(absms);
+    this._elapsed = new Elapsed(absms);
     this.state = "unstarted";
   }
 
   elapsed = (absms) => {
-    return this.state === "play" ? this.timer.elapsed(absms) : this.timer.length;
+    return this.state === "play" ? this._elapsed.time(absms) : this._elapsed.current;
   };
 
   reset(absms) {
-    this.timer.reset(absms);
+    this._elapsed.reset(absms);
     this.state = "paused";
     return this;
   }
@@ -103,18 +97,18 @@ export class Playback {
   };
 
   skip = (absms) => {
-    this.timer.skip(absms);
+    this._elapsed.skip(absms);
     return this;
   };
 
   pause = (absms) => {
-    this.timer.pause(absms);
+    this._elapsed.pause(absms);
     this.state = "paused";
     return this;
   };
 
   play = (absms) => {
-    this.timer.resume(absms);
+    this._elapsed.resume(absms);
     this.state = "play";
     return this;
   };

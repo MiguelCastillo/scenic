@@ -6,7 +6,7 @@ import {Mesh as MeshSceneNode} from "../../../src/scene/mesh.js";
 import {Renderable as RenderableSceneNode} from "../../../src/scene/renderable.js";
 import {Animation as AnimationSceneNode} from "../../../src/scene/animation.js";
 import {animateScalar} from "../../../src/animation/keyframe.js";
-import {Playback as AnimationPlayback} from "../../../src/animation/timer.js";
+import {Playback as AnimationPlayback} from "../../../src/animation/playback.js";
 
 // 46186158000 is an FBX second.
 // #define KTIME_ONE_SECOND KTime (K_LONGLONG(46186158000))

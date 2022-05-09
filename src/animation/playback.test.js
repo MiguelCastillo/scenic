@@ -1,4 +1,4 @@
-import {Timer, Playback} from "./timer.js";
+import {Elapsed, Playback} from "./playback.js";
 
 describe("Pause/Play animation", () => {
   let playback = new Playback();
@@ -50,13 +50,15 @@ describe("Pause/Play animation", () => {
   });
 });
 
-test("animation timer", () => {
-  let timer = new Timer();
-  expect(timer.pause(0).length).toEqual(0);
-  expect(timer.pause(100).length).toEqual(100);
-  expect(timer.elapsed(500)).toEqual(400);
-  expect(timer.elapsed(600)).toEqual(500);
-  expect(timer.pause(300).length).toEqual(200);
-  expect(timer.elapsed(600)).toEqual(400);
-  expect(timer.elapsed(900)).toEqual(700);
+test("elapsed", () => {
+  let elapsed = new Elapsed();
+  expect(elapsed.pause(0).current).toEqual(0);
+  expect(elapsed.pause(100).current).toEqual(100);
+  expect(elapsed.time(500)).toEqual(400);
+  expect(elapsed.time(600)).toEqual(500);
+  expect(elapsed.current).toEqual(100);
+  expect(elapsed.pause(300).current).toEqual(200);
+  expect(elapsed.time(600)).toEqual(400);
+  expect(elapsed.time(900)).toEqual(700);
+  expect(elapsed.current).toEqual(200);
 });
