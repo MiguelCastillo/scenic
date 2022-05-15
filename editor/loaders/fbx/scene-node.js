@@ -5,7 +5,7 @@ import {Node as SceneNode, findParentByType, findChildrenByType} from "../../../
 import {Mesh as MeshSceneNode} from "../../../src/scene/mesh.js";
 import {Renderable as RenderableSceneNode} from "../../../src/scene/renderable.js";
 import {Animation as AnimationSceneNode} from "../../../src/scene/animation.js";
-import {animateScalar} from "../../../src/animation/keyframe.js";
+import {AnimateScalar} from "../../../src/animation/keyframe.js";
 import {Playback as AnimationPlayback} from "../../../src/animation/playback.js";
 
 // 46186158000 is an FBX second.
@@ -481,11 +481,11 @@ export class AnimationCurve extends SceneNode {
     this.times = times;
     this.values = values;
     this.pname = pname;
-    this.animate = animateScalar(values, times);
+    this.animation = new AnimateScalar(values, times);
   }
 
   getValue(ms, speed) {
-    return [this.pname, this.animate(ms, speed)];
+    return [this.pname, this.animation.animate(ms, speed)];
   }
 }
 
