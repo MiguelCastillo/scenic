@@ -18,4 +18,20 @@ describe("range", () => {
   it("-5 to 5 with default step of 1", () => {
     expect(range(-5, 5)).toEqual([-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5]);
   });
+
+  it("0 to 0.9 with step of 0.1", () => {
+    expect(range(0, 0.9, 0.1).map(normalizeDecimal)).toEqual([
+      0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9,
+    ]);
+  });
+
+  it("1 to 1.9 with step of 0.1", () => {
+    expect(range(1, 1.9, 0.1).map(normalizeDecimal)).toEqual([
+      1, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9,
+    ]);
+  });
 });
+
+function normalizeDecimal(v) {
+  return Number.parseFloat(Number.parseFloat("" + v).toFixed(4));
+}
