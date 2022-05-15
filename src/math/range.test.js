@@ -1,4 +1,5 @@
 import {range} from "./range.js";
+import {fixed5f} from "./float.js";
 
 describe("range", () => {
   it("0 to 10 with default step of 1", () => {
@@ -20,18 +21,14 @@ describe("range", () => {
   });
 
   it("0 to 0.9 with step of 0.1", () => {
-    expect(range(0, 0.9, 0.1).map(normalizeDecimal)).toEqual([
+    expect(range(0, 0.9, 0.1).map(fixed5f)).toEqual([
       0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9,
     ]);
   });
 
   it("1 to 1.9 with step of 0.1", () => {
-    expect(range(1, 1.9, 0.1).map(normalizeDecimal)).toEqual([
+    expect(range(1, 1.9, 0.1).map(fixed5f)).toEqual([
       1, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9,
     ]);
   });
 });
-
-function normalizeDecimal(v) {
-  return Number.parseFloat(Number.parseFloat("" + v).toFixed(4));
-}
