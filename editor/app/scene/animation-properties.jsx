@@ -17,7 +17,7 @@ export class AnimationProperties extends WithNodeState {
     const nodeState = this.getNodeState();
     this.updateNodeState({
       ...nodeState,
-      speed: evt.target.value,
+      speed: 1*evt.target.value,
     });
   };
 
