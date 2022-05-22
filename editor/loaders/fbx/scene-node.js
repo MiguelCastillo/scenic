@@ -8,13 +8,6 @@ import {Animation as AnimationSceneNode} from "../../../src/scene/animation.js";
 import {AnimateScalar} from "../../../src/animation/keyframe.js";
 import {Playback as AnimationPlayback} from "../../../src/animation/playback.js";
 
-// 46186158000 is an FBX second.
-// #define KTIME_ONE_SECOND KTime (K_LONGLONG(46186158000))
-// https://github.com/mont29/blender-io-fbx/blob/ea45491a84b64f7396030775536be562bc118c41/io_scene_fbx/export_fbx.py#L2447
-// https://download.autodesk.com/us/fbx/docs/FBXSDK200611/wwhelp/wwhimpl/common/html/_index.htm?context=FBXSDK_Overview&file=ktime_8h-source.html
-const KTIME_ONE_SECOND = 46186158000;
-const KTIME_ONE_MSECOND = KTIME_ONE_SECOND * 0.001;
-
 const AnimatableInterface = (superclass) =>
   class extends superclass {
     constructor(options) {
@@ -528,10 +521,9 @@ function getAnimation(context, animatableNode) {
 function evaluateAnimation(ms, speed, curveNodes) {
   const result = {};
   const channels = {};
-  const ktime = KTIME_ONE_MSECOND * ms;
 
   curveNodes.forEach((curveNode) => {
-    const [pname, values] = curveNode.getValues(ktime, speed);
+    const [pname, values] = curveNode.getValues(ms, speed);
     channels[pname] = {
       values,
       defaults: curveNode.defaultValues,

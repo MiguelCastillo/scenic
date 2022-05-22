@@ -1,4 +1,5 @@
 import * as mat4 from "../../../src/math/matrix4.js";
+import {fixed5f} from "../../../src/math/float.js";
 import {getTBNVectorsFromTriangles} from "../../../src/math/tbn-matrix.js";
 import {getIndexedComponents} from "../../../src/math/geometry.js";
 import {createShaderProgram} from "../../shader-factory.js";
@@ -39,6 +40,13 @@ import {
   AnimationCurveNode,
   AnimationCurve,
 } from "./scene-node.js";
+
+// 46186158000 is an FBX second.
+// #define KTIME_ONE_SECOND KTime (K_LONGLONG(46186158000))
+// https://github.com/mont29/blender-io-fbx/blob/ea45491a84b64f7396030775536be562bc118c41/io_scene_fbx/export_fbx.py#L2447
+// https://download.autodesk.com/us/fbx/docs/FBXSDK200611/wwhelp/wwhimpl/common/html/_index.htm?context=FBXSDK_Overview&file=ktime_8h-source.html
+const KTIME_ONE_SECOND = 46186158000;
+const KTIME_ONE_MSECOND = KTIME_ONE_SECOND * 0.001;
 
 /**
  * File loader for bfx formatted files.
@@ -427,7 +435,7 @@ function sceneNodeFromConnection(gl, rootConnection, sceneManager, relativeRootS
       case "AnimationCurve": {
         let times = findPropertyValueByName(fbxNode, "KeyTime");
         let values = findPropertyValueByName(fbxNode, "KeyValueFloat");
-        times = times.map((t) => parseInt(t));
+        times = times.map((t) => parseInt(t) / KTIME_ONE_MSECOND).map(fixed5f);
         sceneNode = new AnimationCurve(times, values, pname, {name});
         break;
       }
