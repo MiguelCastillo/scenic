@@ -181,7 +181,7 @@ export class KeyController {
   };
 }
 
-export class AnimateScalar {
+class Animation {
   constructor(frames, times = []) {
     this.frames = frames;
     this.times = times;
@@ -192,23 +192,20 @@ export class AnimateScalar {
     return this.controller.duration;
   }
 
-  animate = (ms, speed, ease) => {
-    const [delta, index] = this.controller.getFrameIndex(ms, speed);
-    return lerp(delta, this.frames[index], this.frames[index + 1], ease);
+  animate = () => {
+    throw new Error("must implement!");
   };
 }
 
-export class Animate2v {
-  constructor(frames, times = []) {
-    this.frames = frames;
-    this.times = times;
-    this.controller = new KeyController(frames, times);
-  }
+export class AnimateScalar extends Animation {
+  animate = (ms, speed, ease) => {
+    const [delta, index] = this.controller.getFrameIndex(ms, speed);
+    const frames = this.frames;
+    return lerp(delta, frames[index], frames[index + 1], ease);
+  };
+}
 
-  get duration() {
-    return this.controller.duration;
-  }
-
+export class Animate2v extends Animation {
   animate = (ms, speed, ease) => {
     const [delta, index] = this.controller.getFrameIndex(ms, speed);
     const frames = this.frames;
@@ -219,23 +216,14 @@ export class Animate2v {
   };
 }
 
-export class Animate3v {
-  constructor(frames, times = []) {
-    this.frames = frames;
-    this.times = times;
-    this.controller = new KeyController(frames, times);
-  }
-
-  get duration() {
-    return this.controller.duration;
-  }
-
+export class Animate3v extends Animation {
   animate = (ms, speed, ease) => {
     const [delta, index] = this.controller.getFrameIndex(ms, speed);
+    const frames = this.frames;
     return [
-      lerp(delta, this.frames[index][0], this.frames[index + 1][0], ease),
-      lerp(delta, this.frames[index][1], this.frames[index + 1][1], ease),
-      lerp(delta, this.frames[index][2], this.frames[index + 1][2], ease),
+      lerp(delta, frames[index][0], frames[index + 1][0], ease),
+      lerp(delta, frames[index][1], frames[index + 1][1], ease),
+      lerp(delta, frames[index][2], frames[index + 1][2], ease),
     ];
   };
 }
