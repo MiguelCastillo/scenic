@@ -1,26 +1,11 @@
-// Elapsed provides functionality for evaluating elapsed time relative to a
+import {wrapTime} from "./wrap-time.js";
+
+const MAX_LENGTH = Number.MAX_SAFE_INTEGER;
+
+// Elapsed evaluates elapsed time (how log has gone by) relative to a
 // continuesly advancing clock. This is most useful in animations where a
 // global timer is always moving forward, but we want to be able to pause
 // and resume an animation while staying in sync with the global timer.
-//
-// The example below is an animation timer that starts at 0 and it's paused at
-// 5 seconds. The absolute timer is at 10 seconds, but elpased seconds in the
-// animation timer will still return 5 because the timer was paused at 5
-// seconds. When we resume the animation, we will continue animation from 5
-// seconds advancing relative to the global timer which is at 10 seconds, so
-// elapsed time will still be 5.
-//
-// start   offset   current
-// |=======|========|
-// 0       5        10
-//
-// An important feature is that we can start the timer at any given point
-// relative to the global timer. So if the global timer is at 10 seconds,
-// elapsed times will be normalized by substracting those 10 seconds.
-//
-// start   offset   current
-// |=======|========|
-// 10      15       20
 //
 // Why do we want this? So if there are multiple animations going on and some
 // are pausing and resuming at different times, we want to advance the exact
@@ -28,44 +13,47 @@
 // synced to the same global timer.
 export class Elapsed {
   constructor(ms = 0) {
-    this.reset(ms);
+    // _offset is often the same as `_start` except for when an animation is
+    // paused/played. In those cases we need to keep track of the times those
+    // events happened so that we can correctly keep playback moving forward
+    // relative to the global clock. Imagine that you paused the animation 5
+    // seconds into the animation. We want to make sure that elapsed will keep
+    // returning 5 seconds until we set the animation to `play` again. In that
+    // case we have to continue the timer from 5 seconds regardless of how
+    // much time has gone by in the global clock. So we keep updating _offset
+    // everytime we pause and play an animation.
+    this._offset = ms;
+
+    // _pauseMs keeps track of the time at which playback is paused. This is
+    // used for recalculating the _offset value once playback is resumed.
+    this._pauseMs = 0;
   }
 
   reset = (ms) => {
-    this._start = this._offset = ms;
+    this._offset = ms;
+    this._pauseMs = 0;
     return this;
   };
 
-  skip = (ms) => {
-    this._offset += ms;
+  skip = (msCount) => {
+    this._offset -= msCount;
     return this;
   };
 
   resume = (ms) => {
-    return this._updateOffset(ms);
-  };
-
-  pause = (ms) => {
-    return this._updateOffset(ms);
-  };
-
-  _updateOffset = (ms) => {
-    this._offset = ms - this.current;
+    this.reset(this._offset + (ms - this._pauseMs));
     return this;
   };
 
-  // time returns how much time has elapsed since the start of the animation.
-  time = (ms) => {
-    return ms - this._offset;
+  pause = (ms) => {
+    this._pauseMs = ms;
+    return this;
   };
 
-  // current is the amount of time between the start of the animation and the
-  // last time the animation was paused or resumed. For example, if the
-  // animation was paused 5 seconds in, then this cursor value will be 5
-  // seconds.
-  get current() {
-    return this._offset - this._start;
-  }
+  time = (ms, duration = MAX_LENGTH, speed = 1) => {
+    const t = wrapTime((this._pauseMs || ms) - this._offset, duration, speed);
+    return t < 0 && duration !== MAX_LENGTH ? duration + t : t;
+  };
 }
 
 // Playback provides an abstraction for animation state that can be paused
@@ -76,40 +64,62 @@ export class Elapsed {
 // are provided by a global timer. The playback timer normalizes the global
 // time (absolute timer) to relative elapsed time.
 export class Playback {
-  constructor(absms) {
-    this._elapsed = new Elapsed(absms);
-    this.state = "unstarted";
+  constructor(ms = 0) {
+    this._elapsed = new Elapsed(ms);
+    this.state = null;
+    this.speed = 1;
   }
 
-  elapsed = (absms) => {
-    return this.state === "play" ? this._elapsed.time(absms) : this._elapsed.current;
+  elapsed = (ms, duration, speed) => {
+    return this.state === "play"
+      ? this._elapsed.time(ms, duration, speed)
+      : this._elapsed.time(this._elapsed._pauseMs, duration, speed);
   };
 
-  reset(absms) {
-    this._elapsed.reset(absms);
+  reset = (ms) => {
+    this._elapsed.reset(ms);
+    return this;
+  };
+
+  skip = (ms) => {
+    this._elapsed.skip(ms);
+    return this;
+  };
+
+  pause = (ms) => {
     this.state = "paused";
+    if (ms != null) {
+      this._elapsed.pause(ms);
+    }
     return this;
-  }
+  };
 
-  start = () => {
+  play = (ms) => {
     this.state = "play";
+    if (ms != null) {
+      this._elapsed.resume(ms);
+    }
     return this;
   };
 
-  skip = (absms) => {
-    this._elapsed.skip(absms);
-    return this;
-  };
+  updateOffset = (ms, duration, speed) => {
+    // NOTE: this is tightly coupled to the duration because the calculations
+    // of the state that store in the _elapsed timer are derrived from the
+    // provided duration.  So using updateOffset should only really be shared
+    // for animation tracks with the same duration.
+    // This behavior is a signal that playback should be initialized with a
+    // duration if updateOffset is used, but for now a note is sufficient.
 
-  pause = (absms) => {
-    this._elapsed.pause(absms);
-    this.state = "paused";
-    return this;
-  };
+    if (this.speed === speed || speed == null) {
+      return this;
+    }
 
-  play = (absms) => {
-    this._elapsed.resume(absms);
-    this.state = "play";
+    const a = this.elapsed(ms, duration, speed);
+    const b = this.elapsed(ms, duration, this.speed);
+    const v = (a - b) / speed;
+
+    this.skip(-v);
+    this.speed = speed;
     return this;
   };
 }

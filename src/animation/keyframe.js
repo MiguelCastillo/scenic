@@ -1,4 +1,5 @@
 import {lerp} from "../math/lerp.js";
+import {fixed5f} from "../math/float.js";
 
 // Keyframe animation is the notion that state changes over time in which the
 // state is defined by a frame; frames are snapshots of some state at discrete
@@ -69,7 +70,11 @@ export class KeyController {
     }
 
     this.times = times;
-    this.frames = frames;
+
+    // We truncate frame data because there are frames with very tiny deltas
+    // that result in noise or no actual practical outputs. So we skip those
+    // and save on the cycles.
+    this.frames = frames.map(fixed5f);
     this.segmentCount = frameCount - 1;
 
     if (duration !== -1) {
@@ -78,6 +83,14 @@ export class KeyController {
       this.duration = times[times.length - 1];
     } else {
       this.duration = this.segmentCount * 1000;
+    }
+
+    // This is a shortcut. If all the frames have the same values then we
+    // optimize the animation to always return the same frame since all
+    // animation LERP will always return the same values.
+    const fval = this.frames[0];
+    if (this.frames.every((v) => fval === v)) {
+      this._noop = [0, 0];
     }
   }
 
@@ -120,10 +133,12 @@ export class KeyController {
   // The confusion gets amplified when we have speeds other than 1. For example,
   // speed of 2 in our above example means that we will jump from 360 to 2
   //
-  getFrameIndex = (ms, speed = 1) => {
-    const segmentCount = this.segmentCount;
+  getFrameIndex = (ms) => {
+    if (this._noop) {
+      return this._noop;
+    }
+
     const times = this.times;
-    const duration = this.duration;
 
     // frameIndex is the frame index the current time milliseconds (tms)
     // corresponds to.
@@ -133,48 +148,19 @@ export class KeyController {
     // interpolate frames.
     let delta = 0;
 
-    // We wrap the time provided to loop the animation. This is particularly
-    // important when we are speeding up animation playback.
-    // NOTE: wrapping time can have two ways for dealing when animation reaches
-    // the very end:
-    // 1. wrapTime will start animation at 0.
-    // 2. wrapTime returns duration.
-    //
-    // To illustrate, consider an animation that last 5 seconds. When the
-    // elapsed time has reached 5 seconds exactly. wrapTime could return
-    // 5 or it could return 0 depending on how you want your times to be
-    // wrapped. The current implementation will wrap time back to 0.
-    //
-    // The logic for generating frame indexes and delta values will handle
-    // both cases.
-    const cms = wrapTime(ms, duration, speed);
+    const cms = Math.min(Math.max(times[0], ms), this.duration);
 
-    if (cms) {
+    if (cms !== times[0]) {
       // Find the index for the frame for the corresponding point in time.
-      for (
-        frameIndex = 0;
-        frameIndex < times.length && !(cms <= times[frameIndex]);
-        frameIndex++
-      ) {}
-      const len = times[frameIndex] - times[frameIndex - 1];
-      delta = (cms - times[frameIndex - 1]) / len;
-      frameIndex--;
-    } else if (ms) {
-      // This handles the sitation where wrapping time goes back to 0 seconds
-      // when we are at very end of the animation.
-      //
-      // The adjustment in this logic branch allows us to access all the data
-      // in the very last frame while generating array indexes that can
-      // interpolate frames with
-      // lerp(delta, this.frames[index], this.frames[index + 1])
-      frameIndex = segmentCount - 1;
-      delta = 1;
-    }
+      const frameCount = this.frames.length;
+      for (frameIndex = 1; frameIndex < frameCount && cms > times[frameIndex]; frameIndex++) {}
 
-    if (speed < 0) {
-      // If we are in reverse mode then we just invert the computed values.
-      frameIndex = segmentCount - frameIndex - 1;
-      delta = 1 - delta;
+      frameIndex--;
+      const segmentLength = times[frameIndex + 1] - times[frameIndex];
+
+      // delta tells us where within a frame range we are so that we can
+      // interpolate frames.
+      delta = (cms - times[frameIndex]) / segmentLength;
     }
 
     return [delta, frameIndex];
@@ -208,22 +194,21 @@ export class AnimateScalar extends Animation {
 export class Animate2v extends Animation {
   animate = (ms, speed, ease) => {
     const [delta, index] = this.controller.getFrameIndex(ms, speed);
-    const frames = this.frames;
-    return [
-      lerp(delta, frames[index][0], frames[index + 1][0], ease),
-      lerp(delta, frames[index][1], frames[index + 1][1], ease),
-    ];
+    const f1 = this.frames[index];
+    const f2 = this.frames[index + 1];
+    return [lerp(delta, f1[0], f2[0], ease), lerp(delta, f1[1], f2[1], ease)];
   };
 }
 
 export class Animate3v extends Animation {
   animate = (ms, speed, ease) => {
     const [delta, index] = this.controller.getFrameIndex(ms, speed);
-    const frames = this.frames;
+    const f1 = this.frames[index];
+    const f2 = this.frames[index + 1];
     return [
-      lerp(delta, frames[index][0], frames[index + 1][0], ease),
-      lerp(delta, frames[index][1], frames[index + 1][1], ease),
-      lerp(delta, frames[index][2], frames[index + 1][2], ease),
+      lerp(delta, f1[0], f2[0], ease),
+      lerp(delta, f1[1], f2[1], ease),
+      lerp(delta, f1[2], f2[2], ease),
     ];
   };
 }
@@ -247,23 +232,4 @@ export const animate3v = (frames, times, ease) => {
   return (ms, speed) => {
     return animator.animate(ms, speed, ease);
   };
-};
-
-export const wrapTime = (ms, duration, speed = 1) => {
-  return Math.abs(ms * speed) % duration;
-
-  // NOTE(miguel):
-  // This approach will apply speed changes after the given time is wrapped.
-  // It actually generates the same exact values as applying the speed changes
-  // to the provided time directly before wrapping around the duration.
-  // It is a lot more work and confusing code for no real benefit. So we don't
-  // use it an only have it for reference.
-  //
-  // const _time = (t, duration) => t <= duration ? t : t - duration * Math.floor(t / duration);
-  // const s = Math.abs(speed);
-  // let t = _time(Math.abs(ms), duration/s);
-  // if (speed !== 1) {
-  //   t = _time(t * s, duration);
-  // }
-  // return t;
 };

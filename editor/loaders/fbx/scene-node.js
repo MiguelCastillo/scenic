@@ -8,6 +8,8 @@ import {Animation as AnimationSceneNode} from "../../../src/scene/animation.js";
 import {AnimateScalar} from "../../../src/animation/keyframe.js";
 import {Playback as AnimationPlayback} from "../../../src/animation/playback.js";
 
+const minSpeed = 0.001;
+
 const AnimatableInterface = (superclass) =>
   class extends superclass {
     constructor(options) {
@@ -25,6 +27,8 @@ const AnimatableInterface = (superclass) =>
     }
 
     preRender(context) {
+      maybeUpdatePlayback(context, this.relativeRoot.animation);
+
       const animation = getAnimation(context, this);
       if (!animation) {
         super.preRender(context);
@@ -376,54 +380,8 @@ export class AnimationStack extends SceneNode {
     this.playback = new AnimationPlayback();
   }
 
-  preRender(context) {
-    // TOOD(miguel): fps comes from the FBX file. We should also make this
-    // configurable in the UI
-    const playback = this.playback;
-    const animationNode = this.parent;
-    const animationState = context.sceneManager.getNodeStateByID(animationNode.id);
-
-    const stackName = animationState?.stackName;
-    if (stackName && this.name !== stackName) {
-      return;
-    }
-
-    if (animationState.state && playback.state !== animationState.state) {
-      const {fps = 24} = animationState;
-
-      switch (animationState.state) {
-        case "paused":
-          playback.pause(context.ms);
-          break;
-        case "play":
-          playback.play(context.ms);
-          break;
-        case "prev":
-          if (playback.state === "play") {
-            playback.pause(context.ms);
-          }
-
-          context.sceneManager.updateNodeStateByID(animationNode.id, {
-            ...animationState,
-            state: playback.state,
-          });
-
-          playback.skip(-(1000 / fps));
-          break;
-        case "next":
-          if (playback.state === "play") {
-            playback.pause(context.ms);
-          }
-
-          context.sceneManager.updateNodeStateByID(animationNode.id, {
-            ...animationState,
-            state: playback.state,
-          });
-
-          playback.skip(1000 / fps);
-          break;
-      }
-    }
+  get duration() {
+    return this.animationLayers[0].duration;
   }
 
   add(node) {
@@ -437,6 +395,10 @@ export class AnimationLayer extends SceneNode {
     super(Object.assign({}, options, {type: "fbx-animation-layer"}));
     this.animationCurveNodesByName = {};
     this.animationCurveNodes = [];
+  }
+
+  get duration() {
+    return this.animationCurveNodes[0].items[0].animation.duration;
   }
 
   add(node) {
@@ -466,8 +428,8 @@ export class AnimationCurveNode extends SceneNode {
     this.defaultValues = defaultValues;
   }
 
-  getValues(ms, speed) {
-    return [this.pname, this.items.map((item) => item.getValue(ms, speed))];
+  getValues(ms) {
+    return [this.pname, this.items.map((item) => item.getValue(ms))];
   }
 }
 
@@ -480,8 +442,8 @@ export class AnimationCurve extends SceneNode {
     this.animation = new AnimateScalar(values, times);
   }
 
-  getValue(ms, speed) {
-    return [this.pname, this.animation.animate(ms, speed)];
+  getValue(ms) {
+    return [this.pname, this.animation.animate(ms)];
   }
 }
 
@@ -504,11 +466,17 @@ function getAnimation(context, animatableNode) {
   }
 
   const animationState = context.sceneManager.getNodeStateByID(animation.id);
-  const speed = animationState.speed == null ? 1 : animationState.speed;
-  const ms = stack.playback.elapsed(context.ms);
   const curves = findCurveNodesInLayer(stack.animationLayers[0], animatableNode.animationNodes);
+  const playback = stack.playback;
 
-  const {translation, rotation, scale} = evaluateAnimation(ms, speed, curves);
+  const {translation, rotation, scale} = evaluateAnimation(
+    playback.elapsed(
+      context.ms,
+      stack.duration,
+      animationState.speed === 0 ? minSpeed : animationState.speed
+    ),
+    curves
+  );
 
   if (!translation && !rotation && !scale) {
     return;
@@ -521,12 +489,16 @@ function getAnimation(context, animatableNode) {
   };
 }
 
-function evaluateAnimation(ms, speed, curveNodes) {
+function evaluateAnimation(ms, curveNodes) {
+  if (!curveNodes.length) {
+    return {};
+  }
+
   const result = {};
   const channels = {};
 
   curveNodes.forEach((curveNode) => {
-    const [pname, values] = curveNode.getValues(ms, speed);
+    const [pname, values] = curveNode.getValues(ms);
     channels[pname] = {
       values,
       defaults: curveNode.defaultValues,
@@ -553,4 +525,58 @@ function evaluateAnimation(ms, speed, curveNodes) {
 
 function findCurveNodesInLayer(layer, animationNodes) {
   return animationNodes.filter((n) => layer.animationCurveNodesByName[n.name]);
+}
+
+function maybeUpdatePlayback(context, animationNode) {
+  const stack = animationNode?.currentStack;
+  if (!stack) {
+    return;
+  }
+
+  const animationState = context.sceneManager.getNodeStateByID(animationNode.id);
+  const playback = stack.playback;
+  const ms = context.ms;
+
+  if (animationState.state && playback.state !== animationState.state) {
+    const {fps = 24} = animationState;
+
+    switch (animationState.state) {
+      case "paused":
+        playback.pause(ms);
+        break;
+      case "play":
+        playback.play(ms);
+        break;
+      case "prev":
+        if (playback.state === "play") {
+          playback.pause(ms);
+        }
+
+        context.sceneManager.updateNodeStateByID(animationNode.id, {
+          ...animationState,
+          state: playback.state,
+        });
+
+        playback.skip(-(1000 / fps));
+        break;
+      case "next":
+        if (playback.state === "play") {
+          playback.pause(ms);
+        }
+
+        context.sceneManager.updateNodeStateByID(animationNode.id, {
+          ...animationState,
+          state: playback.state,
+        });
+
+        playback.skip(1000 / fps);
+        break;
+    }
+  }
+
+  playback.updateOffset(
+    ms,
+    stack.duration,
+    animationState.speed === 0 ? minSpeed : animationState.speed
+  );
 }
