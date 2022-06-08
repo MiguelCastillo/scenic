@@ -4,7 +4,6 @@ import "webgl-mock";
 
 import {fixedFloat} from "../../../src/math/float.js";
 import * as mat4 from "../../../src/math/matrix4.js";
-
 import {getIndexed3DComponents} from "../../../src/math/geometry.js";
 
 import {
@@ -20,11 +19,8 @@ import {
 } from "./loader.js";
 
 import {addShaderCacheEntry} from "../../shader-factory.js";
-
 import {createScene} from "../../scene-factory.js";
-
 import {Animation} from "../../../src/scene/animation";
-
 import {bubbleTraversal} from "../../../src/scene/traversal.js";
 
 const float1 = fixedFloat(1);
@@ -157,7 +153,7 @@ describe("fbx Loader", () => {
       };
     });
 
-    test("all transforms at first framge at 0sec of animation", () => {
+    it("all transforms at first framge at 0sec of animation", () => {
       let actual, expected;
 
       // The first animation pass we are rendering at 0 seconds. So
@@ -187,7 +183,8 @@ describe("fbx Loader", () => {
       }
     });
 
-    test("right bone transforms at different times in the animation", () => {
+    it("right bone transforms at different times in the animation", () => {
+      animation._configureCurrentStack({gl, sceneManager, ms: 0});
       let actual, expected;
 
       // I extrapolated these time to rotation numbers from the keyframes in
@@ -205,8 +202,6 @@ describe("fbx Loader", () => {
       // Y will likely break.
       for (const [ms, degrees, expectedPreCalculated] of timerotation) {
         let context = {gl, sceneManager, ms};
-        const animation = sceneNode.items.find((x) => x instanceof Animation);
-
         animation.currentStack.playback.play(0);
         bubbleTraversal(bubbleDown(context), () => {})(sceneNode);
 
@@ -220,8 +215,8 @@ describe("fbx Loader", () => {
         actual = tdata.node.parent.worldMatrix.multiply(actual).data.map(float1).map(_fixZeros);
         expected = tdata.node.worldMatrix.data.map(float1).map(_fixZeros);
 
-        expect(expected).toEqual(actual);
-        expect(expectedPreCalculated).toEqual(actual);
+        expect(actual).toEqual(expectedPreCalculated);
+        expect(actual).toEqual(expected);
       }
     });
   });

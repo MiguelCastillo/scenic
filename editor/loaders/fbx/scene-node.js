@@ -67,7 +67,7 @@ export class Animation extends AnimationSceneNode {
     return this;
   }
 
-  preRender(context) {
+  _configureCurrentStack(context) {
     const animationState = context.sceneManager.getNodeStateByID(this.id);
     const stackName = animationState?.stackName;
 
@@ -77,7 +77,10 @@ export class Animation extends AnimationSceneNode {
       this.currentStack = this.stacks.find((stack) => stack.name === stackName);
       this.currentStack.playback.reset(context.ms);
     }
+  }
 
+  preRender(context) {
+    this._configureCurrentStack(context);
     this.currentStack?.preRender(context);
   }
 }
