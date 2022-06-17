@@ -179,10 +179,10 @@ describe("animate3v", () => {
     const playback = new Playback().play();
     const animate = (ms, speed) => animator.animate(playback.elapsed(ms, animator.duration, speed));
 
-    // (6-1)*1 + 1 = 5 + 1 = 6
-    // (7-2)*1 + 2 = 6 + 2 = 7
-    // (8-3)*1 + 3 = 7 + 3 = 8
-    expect(animate(0, speed)).toEqual([6, 7, 8]);
+    // (6-1)*(0) + 1 = 5*(0) + 1 = 1
+    // (7-2)*(0) + 2 = 6*(0) + 2 = 2
+    // (8-3)*(0) + 3 = 7*(0) + 3 = 3
+    expect(animate(0, speed)).toEqual([1, 2, 3]);
 
     // (6-1)*(0.5) + 1 = 5*(0.5) + 1 = 3.5
     // (7-2)*(0.5) + 2 = 5*(0.5) + 2 = 4.5
@@ -199,10 +199,10 @@ describe("animate3v", () => {
     // (8-3)*(0.15) + 3 = 5*(0.15) + 3 = 3.75
     expect(animate(850, speed)).toEqual([1.75, 2.75, 3.75]);
 
-    // (6-1)*(0) + 1 = 5*(0) + 1 = 1
-    // (7-2)*(0) + 2 = 5*(0) + 2 = 2
-    // (8-3)*(0) + 3 = 5*(0) + 3 = 3
-    expect(animate(1000, speed)).toEqual([1, 2, 3]);
+    // (6-1)*(1) + 1 = 5*(1) + 1 = 6
+    // (7-2)*(1) + 2 = 5*(1) + 2 = 7
+    // (8-3)*(1) + 3 = 5*(1) + 3 = 8
+    expect(animate(1000, speed)).toEqual([6, 7, 8]);
 
     // (6-1)*(.999) + 1 = 5*(0.999) + 1 = 5.995
     // (7-2)*(.999) + 2 = 5*(0.999) + 2 = 6.995
@@ -230,7 +230,7 @@ describe("animateScalar", () => {
     const playback = new Playback().play();
     const animate = (ms, speed) => animator.animate(playback.elapsed(ms, animator.duration, speed));
 
-    expect(animate(-1000)).toEqual(1);
+    expect(animate(-1000)).toEqual(2);
     expect(animate(0)).toEqual(0);
     expect(animate(1000)).toEqual(1);
     expect(animate(2000)).toEqual(2);
@@ -258,33 +258,26 @@ describe("animateScalar", () => {
 
   describe("with 4 curve points with time range of -10 to 10 seconds, iterating 1 millisecond at a time", () => {
     const animator = new AnimateScalar([0, 1, 2, 3]);
-    const frameRange = range(-10000, 10000, 1);
+    const frameRange = range(-10, 10, 1);
     const playback = new Playback().play();
     const animate = (ms, speed) => animator.animate(playback.elapsed(ms, animator.duration, speed));
-
-    const getFrameValue = (v) => {
-      // Tricky end of frame values. This is just reference to help illustrate
-      // what values to expect and their relationship to each other.
-      // 3000/1000  = 3    // 3/3   = 1  // 3 frame value
-      // 6000/1000  = 6    // 6/3   = 2  // 3 frame value
-      // 9000/1000  = 9    // 9/3   = 3  // 3 frame value
-      // 12000/1000 = 12   // 12/3  = 4  // 3 frame value
-      let expected = Math.abs((v * 0.001) % 3);
-      return !expected && v ? 3 : expected;
-    };
 
     it("speed of 1", () => {
       const speed = 1;
       const frames = frameRange.map((v) => animate(v, speed)).map(fixed5f);
-      const expected = frameRange.map(getFrameValue).map(fixed5f);
-      expect(frames).toEqual(expected);
+      expect(frames).toEqual([
+        2.99, 2.991, 2.992, 2.993, 2.994, 2.995, 2.996, 2.997, 2.998, 2.999, 0, 0.001, 0.002, 0.003,
+        0.004, 0.005, 0.006, 0.007, 0.008, 0.009, 0.01,
+      ]);
     });
 
     it("speed of -1 (reversed animation)", () => {
       const speed = -1;
       const frames = frameRange.map((v) => animate(v, speed)).map(fixed5f);
-      const expected = frameRange.map(getFrameValue).map((v) => fixed5f(3 - v));
-      expect(frames).toEqual(expected);
+      expect(frames).toEqual([
+        0.01, 0.009, 0.008, 0.007, 0.006, 0.005, 0.004, 0.003, 0.002, 0.001, 0, 2.999, 2.998, 2.997,
+        2.996, 2.995, 2.994, 2.993, 2.992, 2.991, 2.99,
+      ]);
     });
   });
 
@@ -315,7 +308,7 @@ describe("animateScalar", () => {
 
     it("speed of -1 (reversed animation)", () => {
       const speed = -1;
-      expect(animate(0, speed)).toEqual(3);
+      expect(animate(0, speed)).toEqual(0);
       expect(animate(250, speed)).toEqual(2.75);
       expect(animate(500, speed)).toEqual(2.5);
       expect(animate(750, speed)).toEqual(2.25);
@@ -327,7 +320,7 @@ describe("animateScalar", () => {
       expect(animate(2250, speed)).toEqual(0.75);
       expect(animate(2500, speed)).toEqual(0.5);
       expect(animate(2750, speed)).toEqual(0.25);
-      expect(animate(3000, speed)).toEqual(0);
+      expect(animate(3000, speed)).toEqual(3);
       expect(animate(3001, speed)).toEqual(2.999);
       expect(animate(3002, speed)).toEqual(2.998);
     });
