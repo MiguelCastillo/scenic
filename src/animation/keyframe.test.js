@@ -212,33 +212,7 @@ describe("animate3v", () => {
 });
 
 describe("animateScalar", () => {
-  it("test boundaries at 1 sec intervals without playback", () => {
-    const animator = new AnimateScalar([0, 1, 2, 3], [0, 1000, 2000, 3000]);
-    const animate = (ms, speed) => animator.animate(ms, speed);
-
-    expect(animate(-1)).toEqual(0);
-    expect(animate(0)).toEqual(0);
-    expect(animate(1000)).toEqual(1);
-    expect(animate(2000)).toEqual(2);
-    expect(animate(3000)).toEqual(3);
-    expect(animate(3001)).toEqual(3);
-    expect(animate(4000)).toEqual(3);
-  });
-
-  it("test boundaries at 1 sec intervals", () => {
-    const animator = new AnimateScalar([0, 1, 2, 3], [0, 1000, 2000, 3000]);
-    const playback = new Playback().play();
-    const animate = (ms, speed) => animator.animate(playback.elapsed(ms, animator.duration, speed));
-
-    expect(animate(-1000)).toEqual(2);
-    expect(animate(0)).toEqual(0);
-    expect(animate(1000)).toEqual(1);
-    expect(animate(2000)).toEqual(2);
-    expect(animate(3000)).toEqual(3);
-    expect(animate(4000)).toEqual(1);
-  });
-
-  it("test boundaries with varying lenghts time segments", () => {
+  it("with varying length time intervals", () => {
     const animator = new AnimateScalar([0, 1, 2, 3], [0, 2000, 5000, 10000]);
     const playback = new Playback().play();
     const animate = (ms, speed) => animator.animate(playback.elapsed(ms, animator.duration, speed));
@@ -281,51 +255,6 @@ describe("animateScalar", () => {
     });
   });
 
-  describe("with 4 curve points in a 3 second animation", () => {
-    const frames = [0, 1, 2, 3];
-    const animator = new AnimateScalar(frames);
-    const playback = new Playback().play();
-    const animate = (ms, speed) => animator.animate(playback.elapsed(ms, animator.duration, speed));
-
-    it("speed 1", () => {
-      const speed = 1;
-      expect(animate(0, speed)).toEqual(0);
-      expect(animate(250, speed)).toEqual(0.25);
-      expect(animate(500, speed)).toEqual(0.5);
-      expect(animate(750, speed)).toEqual(0.75);
-      expect(animate(1000, speed)).toEqual(1);
-      expect(animate(1250, speed)).toEqual(1.25);
-      expect(animate(1500, speed)).toEqual(1.5);
-      expect(animate(1750, speed)).toEqual(1.75);
-      expect(animate(2000, speed)).toEqual(2);
-      expect(animate(2250, speed)).toEqual(2.25);
-      expect(animate(2500, speed)).toEqual(2.5);
-      expect(animate(2750, speed)).toEqual(2.75);
-      expect(animate(3000, speed)).toEqual(3);
-      expect(animate(3001, speed)).toEqual(0.001);
-      expect(animate(3002, speed)).toEqual(0.002);
-    });
-
-    it("speed of -1 (reversed animation)", () => {
-      const speed = -1;
-      expect(animate(0, speed)).toEqual(0);
-      expect(animate(250, speed)).toEqual(2.75);
-      expect(animate(500, speed)).toEqual(2.5);
-      expect(animate(750, speed)).toEqual(2.25);
-      expect(animate(1000, speed)).toEqual(2);
-      expect(animate(1250, speed)).toEqual(1.75);
-      expect(animate(1500, speed)).toEqual(1.5);
-      expect(animate(1750, speed)).toEqual(1.25);
-      expect(animate(2000, speed)).toEqual(1);
-      expect(animate(2250, speed)).toEqual(0.75);
-      expect(animate(2500, speed)).toEqual(0.5);
-      expect(animate(2750, speed)).toEqual(0.25);
-      expect(animate(3000, speed)).toEqual(3);
-      expect(animate(3001, speed)).toEqual(2.999);
-      expect(animate(3002, speed)).toEqual(2.998);
-    });
-  });
-
   describe("frame range from 0 to 360 (degrees)", () => {
     const frames = range(0, 360);
     const times = range(0, 360);
@@ -343,6 +272,7 @@ describe("animateScalar", () => {
       // At 361 seconds, we are going to render frame 2; animation produces
       // frame indexes which are 0 based index. So index 1 is the second frame.
       // We don't see rendering of frame at index 0 (frame 1).
+      expect(animate(359, speed)).toEqual(359);
       expect(animate(360, speed)).toEqual(360);
       expect(animate(361, speed)).toEqual(1);
       expect(animate(362, speed)).toEqual(2);
@@ -354,6 +284,7 @@ describe("animateScalar", () => {
       // Here it looks like we are skipping two frames when we transition to the
       // new loop. Meaning that it seems like we skipped frame 0 and frame 1 and
       // instead start the new loop at frame 2.
+      expect(animate(359, speed)).toEqual(358);
       expect(animate(360, speed)).toEqual(360);
       expect(animate(361, speed)).toEqual(2);
       expect(animate(362, speed)).toEqual(4);
@@ -452,239 +383,53 @@ describe("Animation with different speeds", () => {
     const speed = 1;
 
     expect(
-      range(0, 0.9, 0.1)
+      range(0, 11.9, 0.1)
         .map((v) => animate(v, speed))
         .map(fixed5f)
-    ).toEqual([0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]);
-
-    expect(
-      range(1, 1.9, 0.1)
-        .map((v) => animate(v, speed))
-        .map(fixed5f)
-    ).toEqual([1, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9]);
-
-    expect(
-      range(2, 2.9, 0.1)
-        .map((v) => animate(v, speed))
-        .map(fixed5f)
-    ).toEqual([2, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9]);
-
-    expect(
-      range(3, 3.9, 0.1)
-        .map((v) => animate(v, speed))
-        .map(fixed5f)
-    ).toEqual([3, 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8, 3.9]);
-
-    expect(
-      range(4, 4.9, 0.1)
-        .map((v) => animate(v, speed))
-        .map(fixed5f)
-    ).toEqual([4, 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7, 4.8, 4.9]);
-
-    expect(
-      range(5, 5.9, 0.1)
-        .map((v) => animate(v, speed))
-        .map(fixed5f)
-    ).toEqual([5, 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7, 5.8, 5.9]);
-
-    expect(
-      range(6, 6.9, 0.1)
-        .map((v) => animate(v, speed))
-        .map(fixed5f)
-    ).toEqual([6, 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 6.8, 6.9]);
-
-    expect(
-      range(7, 7.9, 0.1)
-        .map((v) => animate(v, speed))
-        .map(fixed5f)
-    ).toEqual([7, 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 7.7, 7.8, 7.9]);
-
-    expect(
-      range(8, 8.9, 0.1)
-        .map((v) => animate(v, speed))
-        .map(fixed5f)
-    ).toEqual([8, 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 8.7, 8.8, 8.9]);
-
-    expect(
-      range(9, 9.9, 0.1)
-        .map((v) => animate(v, speed))
-        .map(fixed5f)
-    ).toEqual([9, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]);
-
-    expect(
-      range(10, 10.9, 0.1)
-        .map((v) => animate(v, speed))
-        .map(fixed5f)
-    ).toEqual([1, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9]);
-
-    expect(
-      range(11, 11.9, 0.1)
-        .map((v) => animate(v, speed))
-        .map(fixed5f)
-    ).toEqual([2, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9]);
+    ).toEqual([
+      0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8,
+      1.9, 2, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 3, 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7,
+      3.8, 3.9, 4, 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7, 4.8, 4.9, 5, 5.1, 5.2, 5.3, 5.4, 5.5, 5.6,
+      5.7, 5.8, 5.9, 6, 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 6.8, 6.9, 7, 7.1, 7.2, 7.3, 7.4, 7.5,
+      7.6, 7.7, 7.8, 7.9, 8, 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 8.7, 8.8, 8.9, 9, 0.1, 0.2, 0.3, 0.4,
+      0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2, 2.1, 2.2, 2.3,
+      2.4, 2.5, 2.6, 2.7, 2.8, 2.9,
+    ]);
   });
 
   it("speed 1.5", () => {
     const speed = 1.5;
 
     expect(
-      range(0, 0.9, 0.1)
+      range(0, 11.9, 0.1)
         .map((v) => animate(v, speed))
         .map(fixed5f)
-    ).toEqual([0, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9, 1.05, 1.2, 1.35]);
-
-    expect(
-      range(1, 1.9, 0.1)
-        .map((v) => animate(v, speed))
-        .map(fixed5f)
-    ).toEqual([1.5, 1.65, 1.8, 1.95, 2.1, 2.25, 2.4, 2.55, 2.7, 2.85]);
-
-    expect(
-      range(2, 2.9, 0.1)
-        .map((v) => animate(v, speed))
-        .map(fixed5f)
-    ).toEqual([3, 3.15, 3.3, 3.45, 3.6, 3.75, 3.9, 4.05, 4.2, 4.35]);
-
-    expect(
-      range(3, 3.9, 0.1)
-        .map((v) => animate(v, speed))
-        .map(fixed5f)
-    ).toEqual([4.5, 4.65, 4.8, 4.95, 5.1, 5.25, 5.4, 5.55, 5.7, 5.85]);
-
-    expect(
-      range(4, 4.9, 0.1)
-        .map((v) => animate(v, speed))
-        .map(fixed5f)
-    ).toEqual([6, 6.15, 6.3, 6.45, 6.6, 6.75, 6.9, 7.05, 7.2, 7.35]);
-
-    expect(
-      range(5, 5.9, 0.1)
-        .map((v) => animate(v, speed))
-        .map(fixed5f)
-    ).toEqual([7.5, 7.65, 7.8, 7.95, 8.1, 8.25, 8.4, 8.55, 8.7, 8.85]);
-
-    expect(
-      range(6, 6.9, 0.1)
-        .map((v) => animate(v, speed))
-        .map(fixed5f)
-    ).toEqual([9, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9, 1.05, 1.2, 1.35]);
-
-    expect(
-      range(7, 7.9, 0.1)
-        .map((v) => animate(v, speed))
-        .map(fixed5f)
-    ).toEqual([1.5, 1.65, 1.8, 1.95, 2.1, 2.25, 2.4, 2.55, 2.7, 2.85]);
-
-    expect(
-      range(8, 8.9, 0.1)
-        .map((v) => animate(v, speed))
-        .map(fixed5f)
-    ).toEqual([3, 3.15, 3.3, 3.45, 3.6, 3.75, 3.9, 4.05, 4.2, 4.35]);
-
-    expect(
-      range(9, 9.9, 0.1)
-        .map((v) => animate(v, speed))
-        .map(fixed5f)
-    ).toEqual([4.5, 4.65, 4.8, 4.95, 5.1, 5.25, 5.4, 5.55, 5.7, 5.85]);
-
-    expect(
-      range(10, 10.9, 0.1)
-        .map((v) => animate(v, speed))
-        .map(fixed5f)
-    ).toEqual([6, 6.15, 6.3, 6.45, 6.6, 6.75, 6.9, 7.05, 7.2, 7.35]);
-
-    expect(
-      range(11, 11.9, 0.1)
-        .map((v) => animate(v, speed))
-        .map(fixed5f)
-    ).toEqual([7.5, 7.65, 7.8, 7.95, 8.1, 8.25, 8.4, 8.55, 8.7, 8.85]);
-
-    expect(
-      range(12, 12.9, 0.1)
-        .map((v) => animate(v, speed))
-        .map(fixed5f)
-    ).toEqual([9, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9, 1.05, 1.2, 1.35]);
+    ).toEqual([
+      0, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9, 1.05, 1.2, 1.35, 1.5, 1.65, 1.8, 1.95, 2.1, 2.25, 2.4,
+      2.55, 2.7, 2.85, 3, 3.15, 3.3, 3.45, 3.6, 3.75, 3.9, 4.05, 4.2, 4.35, 4.5, 4.65, 4.8, 4.95,
+      5.1, 5.25, 5.4, 5.55, 5.7, 5.85, 6, 6.15, 6.3, 6.45, 6.6, 6.75, 6.9, 7.05, 7.2, 7.35, 7.5,
+      7.65, 7.8, 7.95, 8.1, 8.25, 8.4, 8.55, 8.7, 8.85, 9, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9, 1.05,
+      1.2, 1.35, 1.5, 1.65, 1.8, 1.95, 2.1, 2.25, 2.4, 2.55, 2.7, 2.85, 3, 3.15, 3.3, 3.45, 3.6,
+      3.75, 3.9, 4.05, 4.2, 4.35, 4.5, 4.65, 4.8, 4.95, 5.1, 5.25, 5.4, 5.55, 5.7, 5.85, 6, 6.15,
+      6.3, 6.45, 6.6, 6.75, 6.9, 7.05, 7.2, 7.35, 7.5, 7.65, 7.8, 7.95, 8.1, 8.25, 8.4, 8.55, 8.7,
+      8.85,
+    ]);
   });
 
   it("speed 2", () => {
     const speed = 2;
 
     expect(
-      range(0, 0.9, 0.1)
+      range(0, 11.9, 0.1)
         .map((v) => animate(v, speed))
         .map(fixed5f)
-    ).toEqual([0, 0.2, 0.4, 0.6, 0.8, 1, 1.2, 1.4, 1.6, 1.8]);
-
-    expect(
-      range(1, 1.9, 0.1)
-        .map((v) => animate(v, speed))
-        .map(fixed5f)
-    ).toEqual([2, 2.2, 2.4, 2.6, 2.8, 3, 3.2, 3.4, 3.6, 3.8]);
-
-    expect(
-      range(2, 2.9, 0.1)
-        .map((v) => animate(v, speed))
-        .map(fixed5f)
-    ).toEqual([4, 4.2, 4.4, 4.6, 4.8, 5, 5.2, 5.4, 5.6, 5.8]);
-
-    expect(
-      range(3, 3.9, 0.1)
-        .map((v) => animate(v, speed))
-        .map(fixed5f)
-    ).toEqual([6, 6.2, 6.4, 6.6, 6.8, 7, 7.2, 7.4, 7.6, 7.8]);
-
-    expect(
-      range(4, 4.9, 0.1)
-        .map((v) => animate(v, speed))
-        .map(fixed5f)
-    ).toEqual([8, 8.2, 8.4, 8.6, 8.8, 9, 0.2, 0.4, 0.6, 0.8]);
-
-    expect(
-      range(5, 5.9, 0.1)
-        .map((v) => animate(v, speed))
-        .map(fixed5f)
-    ).toEqual([1, 1.2, 1.4, 1.6, 1.8, 2, 2.2, 2.4, 2.6, 2.8]);
-
-    expect(
-      range(6, 6.9, 0.1)
-        .map((v) => animate(v, speed))
-        .map(fixed5f)
-    ).toEqual([3, 3.2, 3.4, 3.6, 3.8, 4, 4.2, 4.4, 4.6, 4.8]);
-
-    expect(
-      range(7, 7.9, 0.1)
-        .map((v) => animate(v, speed))
-        .map(fixed5f)
-    ).toEqual([5, 5.2, 5.4, 5.6, 5.8, 6, 6.2, 6.4, 6.6, 6.8]);
-
-    expect(
-      range(8, 8.9, 0.1)
-        .map((v) => animate(v, speed))
-        .map(fixed5f)
-    ).toEqual([7, 7.2, 7.4, 7.6, 7.8, 8, 8.2, 8.4, 8.6, 8.8]);
-
-    expect(
-      range(9, 9.9, 0.1)
-        .map((v) => animate(v, speed))
-        .map(fixed5f)
-    ).toEqual([9, 0.2, 0.4, 0.6, 0.8, 1, 1.2, 1.4, 1.6, 1.8]);
-
-    expect(
-      range(10, 10.9, 0.1)
-        .map((v) => animate(v, speed))
-        .map(fixed5f)
-    ).toEqual([2, 2.2, 2.4, 2.6, 2.8, 3, 3.2, 3.4, 3.6, 3.8]);
-
-    expect(
-      range(11, 11.9, 0.1)
-        .map((v) => animate(v, speed))
-        .map(fixed5f)
-    ).toEqual([4, 4.2, 4.4, 4.6, 4.8, 5, 5.2, 5.4, 5.6, 5.8]);
-
-    expect(
-      range(12, 12.9, 0.1)
-        .map((v) => animate(v, speed))
-        .map(fixed5f)
-    ).toEqual([6, 6.2, 6.4, 6.6, 6.8, 7, 7.2, 7.4, 7.6, 7.8]);
+    ).toEqual([
+      0, 0.2, 0.4, 0.6, 0.8, 1, 1.2, 1.4, 1.6, 1.8, 2, 2.2, 2.4, 2.6, 2.8, 3, 3.2, 3.4, 3.6, 3.8, 4,
+      4.2, 4.4, 4.6, 4.8, 5, 5.2, 5.4, 5.6, 5.8, 6, 6.2, 6.4, 6.6, 6.8, 7, 7.2, 7.4, 7.6, 7.8, 8,
+      8.2, 8.4, 8.6, 8.8, 9, 0.2, 0.4, 0.6, 0.8, 1, 1.2, 1.4, 1.6, 1.8, 2, 2.2, 2.4, 2.6, 2.8, 3,
+      3.2, 3.4, 3.6, 3.8, 4, 4.2, 4.4, 4.6, 4.8, 5, 5.2, 5.4, 5.6, 5.8, 6, 6.2, 6.4, 6.6, 6.8, 7,
+      7.2, 7.4, 7.6, 7.8, 8, 8.2, 8.4, 8.6, 8.8, 9, 0.2, 0.4, 0.6, 0.8, 1, 1.2, 1.4, 1.6, 1.8, 2,
+      2.2, 2.4, 2.6, 2.8, 3, 3.2, 3.4, 3.6, 3.8, 4, 4.2, 4.4, 4.6, 4.8, 5, 5.2, 5.4, 5.6, 5.8,
+    ]);
   });
 });
