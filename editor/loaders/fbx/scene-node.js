@@ -398,7 +398,7 @@ export class AnimationLayer extends SceneNode {
   }
 
   get duration() {
-    return this.animationCurveNodes[0].items[0].animation.duration;
+    return this.animationCurveNodes[0]?.items[0]?.animation.duration;
   }
 
   add(node) {
