@@ -68,12 +68,13 @@ export class Playback {
     this._elapsed = new Elapsed(ms);
     this.state = null;
     this.speed = 1;
+    this.duration = 0;
   }
 
-  elapsed = (ms, duration, speed) => {
+  elapsed = (ms, speed) => {
     return this.state === "play"
-      ? this._elapsed.time(ms, duration, speed)
-      : this._elapsed.time(this._elapsed._pauseMs, duration, speed);
+      ? this._elapsed.time(ms, this.duration, speed)
+      : this._elapsed.time(this._elapsed._pauseMs, this.duration, speed);
   };
 
   reset = (ms) => {
@@ -102,20 +103,18 @@ export class Playback {
     return this;
   };
 
-  updateOffset = (ms, duration, speed) => {
-    // NOTE: this is tightly coupled to the duration because the calculations
-    // of the state that store in the _elapsed timer are derrived from the
-    // provided duration.  So using updateOffset should only really be shared
-    // for animation tracks with the same duration.
-    // This behavior is a signal that playback should be initialized with a
-    // duration if updateOffset is used, but for now a note is sufficient.
+  setDuration = (duration) => {
+    this.duration = duration;
+    return this;
+  };
 
+  updateOffset = (ms, speed) => {
     if (this.speed === speed || speed == null) {
       return this;
     }
 
-    const a = this.elapsed(ms, duration, speed);
-    const b = this.elapsed(ms, duration, this.speed);
+    const a = this.elapsed(ms, speed);
+    const b = this.elapsed(ms, this.speed);
     const v = (a - b) / speed;
 
     this.skip(-v);
