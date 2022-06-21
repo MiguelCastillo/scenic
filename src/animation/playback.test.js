@@ -191,35 +191,39 @@ describe("playback speed test", () => {
     it("with animation paused", () => {
       const playback = new Playback().pause(5500).setDuration(10000);
       const ms = 7500;
-      const speed = 1.75;
+      const newSpeed = 1.75;
 
-      const a = playback.elapsed(ms, playback.speed);
-      expect(a).toEqual(5500);
-      const b = playback.elapsed(ms, speed);
-      expect(b).toEqual(9625);
+      // Default speed is 1.
+      expect(playback.elapsed(ms)).toEqual(5500);
 
-      playback.updateSpeed(ms, speed);
+      playback.setSpeed(1);
+      expect(playback.elapsed(ms)).toEqual(5500);
 
-      const c = playback.elapsed(ms, speed);
-      expect(Math.round(c)).toEqual(5500);
-      expect(Math.round(playback.elapsed(ms))).toEqual(3143);
+      playback.setSpeed(newSpeed);
+      expect(playback.elapsed(ms)).toEqual(9625);
+
+      playback.setSpeed(1);
+      expect(playback.elapsed(ms)).toEqual(5500);
+
+      playback.updateSpeed(ms, newSpeed);
+      expect(Math.round(playback.elapsed(ms))).toEqual(5500);
     });
 
     it("with animation playing", () => {
       const playback = new Playback().play(5500).setDuration(10000);
       const ms = 7500;
-      const speed = 1.75;
+      const newSpeed = 1.75;
 
-      const a = playback.elapsed(ms, speed);
-      expect(a).toEqual(3500);
-      const b = playback.elapsed(ms, playback.speed);
-      expect(b).toEqual(2000);
+      expect(playback.elapsed(ms)).toEqual(2000);
 
-      playback.updateSpeed(ms, speed);
+      playback.setSpeed(newSpeed);
+      expect(playback.elapsed(ms)).toEqual(3500);
 
-      const c = playback.elapsed(ms, speed);
-      expect(Math.round(c)).toEqual(b);
-      expect(Math.round(playback.elapsed(ms))).toEqual(1143);
+      playback.setSpeed(1);
+      expect(playback.elapsed(ms)).toEqual(2000);
+
+      playback.updateSpeed(ms, newSpeed);
+      expect(Math.round(playback.elapsed(ms))).toEqual(2000);
     });
 
     // This is a tricky situation that when broken causes animation to run
@@ -235,8 +239,8 @@ describe("playback speed test", () => {
       playback.updateSpeed(1000, -1);
       playback.updateSpeed(4000, 0.5);
       playback.play();
-      expect(playback.elapsed(7000, 0.5)).toEqual(3500);
-      expect(playback.elapsed(7500, 0.5)).toEqual(3750);
+      expect(playback.elapsed(7000)).toEqual(3500);
+      expect(playback.elapsed(7500)).toEqual(3750);
     });
 
     // This is a tricky situation that when broken causes animation to run
@@ -252,8 +256,8 @@ describe("playback speed test", () => {
       playback.updateSpeed(1000, -0.5);
       playback.updateSpeed(4000, 1);
       playback.play();
-      expect(playback.elapsed(7000, 1)).toEqual(7000);
-      expect(playback.elapsed(7500, 1)).toEqual(7500);
+      expect(playback.elapsed(7000)).toEqual(7000);
+      expect(playback.elapsed(7500)).toEqual(7500);
     });
   });
 
@@ -262,9 +266,7 @@ describe("playback speed test", () => {
 
     expect(
       range(-0.5, 0.5, 0.05)
-        .map((s) => {
-          return playback.elapsed(500, s);
-        })
+        .map((s) => playback.setSpeed(s).elapsed(500))
         .map(fixed5f)
     ).toEqual([
       9750, 9775, 9800, 9825, 9850, 9875, 9900, 9925, 9950, 9975, 0, 25, 50, 75, 100, 125, 150, 175,
@@ -277,9 +279,7 @@ describe("playback speed test", () => {
 
     expect(
       range(-0.5, 0.5, 0.05)
-        .map((s) => {
-          return playback.elapsed(5000, s);
-        })
+        .map((s) => playback.setSpeed(s).elapsed(5000))
         .map(fixed5f)
     ).toEqual([
       7500, 7750, 8000, 8250, 8500, 8750, 9000, 9250, 9500, 9750, 0, 250, 500, 750, 1000, 1250,
@@ -288,31 +288,25 @@ describe("playback speed test", () => {
   });
 
   it("with advancing time and positive speed", () => {
-    const speed = 1;
     const playback = new Playback().play(5000).setDuration(10000);
 
-    expect(playback.elapsed(0, speed)).toEqual(5000);
+    expect(playback.elapsed(0)).toEqual(5000);
 
     expect(
       range(6000, 7000, 100)
-        .map((v) => {
-          return playback.elapsed(v, speed);
-        })
+        .map((v) => playback.elapsed(v))
         .map(fixed5f)
     ).toEqual([1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000]);
   });
 
   it("with advancing time and negative speed", () => {
-    const speed = -1;
-    const playback = new Playback().play(5000).setDuration(10000);
+    const playback = new Playback().play(5000).setSpeed(-1).setDuration(10000);
 
-    expect(playback.elapsed(0, speed)).toEqual(5000);
+    expect(playback.elapsed(0)).toEqual(5000);
 
     expect(
       range(7000, 8000, 100)
-        .map((v) => {
-          return playback.elapsed(v, speed);
-        })
+        .map((v) => playback.elapsed(v))
         .map(fixed5f)
     ).toEqual([8000, 7900, 7800, 7700, 7600, 7500, 7400, 7300, 7200, 7100, 7000]);
   });

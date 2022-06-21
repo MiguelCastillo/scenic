@@ -71,10 +71,14 @@ export class Playback {
     this.duration = 0;
   }
 
-  elapsed = (ms, speed) => {
+  _calculateElapsed = (ms, duration, speed) => {
     return this.state === "play"
-      ? this._elapsed.time(ms, this.duration, speed)
-      : this._elapsed.time(this._elapsed._pauseMs, this.duration, speed);
+      ? this._elapsed.time(ms, duration, speed)
+      : this._elapsed.time(this._elapsed._pauseMs, duration, speed);
+  };
+
+  elapsed = (ms) => {
+    return this._calculateElapsed(ms, this.duration, this.speed);
   };
 
   reset = (ms) => {
@@ -108,21 +112,30 @@ export class Playback {
     return this;
   };
 
-  // updateSpeed sets the speed for playback and also updates offsets for
+  // setSpeed sets the new speed directly with no transitions between speed.
+  // Using this directly once playback has started will causes animations
+  // to jump frames.  Use updateSpeed once animations have started.
+  setSpeed = (speed) => {
+    this.speed = speed;
+    return this;
+  };
+
+  // updateSpeed sets the speed for playback and also updates time offsets for
   // smoothly transitioning to the new speed. If you set the speed directly
   // then times generated for playback will potentially cause frames to be
   // skipped and the animation will look jumpy.
+  // This relies on the milliseconds for the current tick so that calling
+  // elapsed returns the normalized elapsed time. Meaning, calling elapsed with
+  // the milliseconds for the current tick will return the same exact elapsed
+  // value before and after calling updateSpeed with the same milliseconds.
+  // Thus you usually call updateSpeed and in the same tick you call elapsed.
   updateSpeed = (ms, speed) => {
     if (this.speed === speed || speed == null) {
       return this;
     }
 
-    const a = this.elapsed(ms, speed);
-    const b = this.elapsed(ms, this.speed);
-    const v = (a - b) / speed;
-
-    this.skip(-v);
-    this.speed = speed;
-    return this;
+    const a = this._calculateElapsed(ms, this.duration, speed);
+    const b = this._calculateElapsed(ms, this.duration, this.speed);
+    return this.skip((b - a) / speed).setSpeed(speed);
   };
 }

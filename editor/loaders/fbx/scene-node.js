@@ -8,8 +8,6 @@ import {Animation as AnimationSceneNode} from "../../../src/scene/animation.js";
 import {AnimateScalar} from "../../../src/animation/keyframe.js";
 import {Playback as AnimationPlayback} from "../../../src/animation/playback.js";
 
-const minSpeed = 0.001;
-
 const AnimatableInterface = (superclass) =>
   class extends superclass {
     constructor(options) {
@@ -470,14 +468,10 @@ function getAnimation(context, animatableNode) {
     return;
   }
 
-  const animationState = context.sceneManager.getNodeStateByID(animation.id);
   const curves = findCurveNodesInLayer(stack.animationLayers[0], animatableNode.animationNodes);
   const playback = stack.playback;
 
-  const {translation, rotation, scale} = evaluateAnimation(
-    playback.elapsed(context.ms, animationState.speed === 0 ? minSpeed : animationState.speed),
-    curves
-  );
+  const {translation, rotation, scale} = evaluateAnimation(playback.elapsed(context.ms), curves);
 
   if (!translation && !rotation && !scale) {
     return;
@@ -528,6 +522,8 @@ function findCurveNodesInLayer(layer, animationNodes) {
   return animationNodes.filter((n) => layer.animationCurveNodesByName[n.name]);
 }
 
+const MIN_ANIMATION_SPEED = 0.001;
+
 function maybeUpdatePlayback(context, animationNode) {
   const stack = animationNode?.currentStack;
   if (!stack) {
@@ -575,5 +571,5 @@ function maybeUpdatePlayback(context, animationNode) {
     }
   }
 
-  playback.updateSpeed(ms, animationState.speed === 0 ? minSpeed : animationState.speed);
+  playback.updateSpeed(ms, animationState.speed === 0 ? MIN_ANIMATION_SPEED : animationState.speed);
 }
