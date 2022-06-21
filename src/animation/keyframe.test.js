@@ -26,7 +26,7 @@ describe("animate2v", () => {
     ]);
 
     const playback = new Playback().play().setDuration(animator.duration);
-    const animate = (ms, speed) => animator.animate(playback.elapsed(ms, speed));
+    const animate = (ms) => animator.animate(playback.elapsed(ms));
 
     // (6-1)*0 + 1 = 0 + 1 = 1
     // (7-2)*0 + 2 = 0 + 2 = 2
@@ -102,7 +102,7 @@ describe("animate3v", () => {
     ]);
 
     const playback = new Playback().play().setDuration(animator.duration);
-    const animate = (ms, speed) => animator.animate(playback.elapsed(ms, speed));
+    const animate = (ms) => animator.animate(playback.elapsed(ms));
 
     // (6-1)*0 + 1 = 0 + 1 = 1
     // (7-2)*0 + 2 = 0 + 2 = 2
@@ -175,39 +175,38 @@ describe("animate3v", () => {
       [6, 7, 8],
     ]);
 
-    const speed = -1;
-    const playback = new Playback().play().setDuration(animator.duration);
-    const animate = (ms, speed) => animator.animate(playback.elapsed(ms, speed));
+    const playback = new Playback().play().setDuration(animator.duration).setSpeed(-1);
+    const animate = (ms) => animator.animate(playback.elapsed(ms));
 
     // (6-1)*(0) + 1 = 5*(0) + 1 = 1
     // (7-2)*(0) + 2 = 6*(0) + 2 = 2
     // (8-3)*(0) + 3 = 7*(0) + 3 = 3
-    expect(animate(0, speed)).toEqual([1, 2, 3]);
+    expect(animate(0)).toEqual([1, 2, 3]);
 
     // (6-1)*(0.5) + 1 = 5*(0.5) + 1 = 3.5
     // (7-2)*(0.5) + 2 = 5*(0.5) + 2 = 4.5
     // (8-3)*(0.5) + 3 = 5*(0.5) + 3 = 5.5
-    expect(animate(500, speed)).toEqual([3.5, 4.5, 5.5]);
+    expect(animate(500)).toEqual([3.5, 4.5, 5.5]);
 
     // (6-1)*(0.25) + 1 = 5*(0.25) + 1 = 2.25
     // (7-2)*(0.25) + 2 = 5*(0.25) + 2 = 3.25
     // (8-3)*(0.25) + 3 = 5*(0.25) + 3 = 4.25
-    expect(animate(750, speed)).toEqual([2.25, 3.25, 4.25]);
+    expect(animate(750)).toEqual([2.25, 3.25, 4.25]);
 
     // (6-1)*(0.15) + 1 = 5*(0.15) + 1 = 1.75
     // (7-2)*(0.15) + 2 = 5*(0.15) + 2 = 2.75
     // (8-3)*(0.15) + 3 = 5*(0.15) + 3 = 3.75
-    expect(animate(850, speed)).toEqual([1.75, 2.75, 3.75]);
+    expect(animate(850)).toEqual([1.75, 2.75, 3.75]);
 
     // (6-1)*(1) + 1 = 5*(1) + 1 = 6
     // (7-2)*(1) + 2 = 5*(1) + 2 = 7
     // (8-3)*(1) + 3 = 5*(1) + 3 = 8
-    expect(animate(1000, speed)).toEqual([6, 7, 8]);
+    expect(animate(1000)).toEqual([6, 7, 8]);
 
     // (6-1)*(.999) + 1 = 5*(0.999) + 1 = 5.995
     // (7-2)*(.999) + 2 = 5*(0.999) + 2 = 6.995
     // (8-3)*(.999) + 3 = 5*(0.999) + 3 = 7.995
-    expect(animate(1001, speed)).toEqual([5.995, 6.995, 7.995]);
+    expect(animate(1001)).toEqual([5.995, 6.995, 7.995]);
   });
 });
 
@@ -215,7 +214,7 @@ describe("animateScalar", () => {
   it("with varying length time intervals", () => {
     const animator = new AnimateScalar([0, 1, 2, 3], [0, 2000, 5000, 10000]);
     const playback = new Playback().play().setDuration(animator.duration);
-    const animate = (ms, speed) => animator.animate(playback.elapsed(ms, speed));
+    const animate = (ms) => animator.animate(playback.elapsed(ms));
 
     expect(animate(0)).toEqual(0);
     expect(animate(1000)).toEqual(0.5);
@@ -233,12 +232,11 @@ describe("animateScalar", () => {
   describe("with 4 curve points with time range of -10 to 10 seconds, iterating 1 millisecond at a time", () => {
     const animator = new AnimateScalar([0, 1, 2, 3]);
     const frameRange = range(-10, 10, 1);
-    const playback = new Playback().play().setDuration(animator.duration);
-    const animate = (ms, speed) => animator.animate(playback.elapsed(ms, speed));
 
-    it("speed of 1", () => {
-      const speed = 1;
-      const frames = frameRange.map((v) => animate(v, speed)).map(fixed5f);
+    it("default speed of 1", () => {
+      const playback = new Playback().play().setDuration(animator.duration);
+      const animate = (ms) => animator.animate(playback.elapsed(ms));
+      const frames = frameRange.map((v) => animate(v)).map(fixed5f);
       expect(frames).toEqual([
         2.99, 2.991, 2.992, 2.993, 2.994, 2.995, 2.996, 2.997, 2.998, 2.999, 0, 0.001, 0.002, 0.003,
         0.004, 0.005, 0.006, 0.007, 0.008, 0.009, 0.01,
@@ -246,8 +244,9 @@ describe("animateScalar", () => {
     });
 
     it("speed of -1 (reversed animation)", () => {
-      const speed = -1;
-      const frames = frameRange.map((v) => animate(v, speed)).map(fixed5f);
+      const playback = new Playback().play().setDuration(animator.duration).setSpeed(-1);
+      const animate = (ms) => animator.animate(playback.elapsed(ms));
+      const frames = frameRange.map((v) => animate(v)).map(fixed5f);
       expect(frames).toEqual([
         0.01, 0.009, 0.008, 0.007, 0.006, 0.005, 0.004, 0.003, 0.002, 0.001, 0, 2.999, 2.998, 2.997,
         2.996, 2.995, 2.994, 2.993, 2.992, 2.991, 2.99,
@@ -259,35 +258,35 @@ describe("animateScalar", () => {
     const frames = range(0, 360);
     const times = range(0, 360);
     const animator = new AnimateScalar(frames, times);
-    const playback = new Playback().play().setDuration(animator.duration);
-    const animate = (ms, speed) => animator.animate(playback.elapsed(ms, speed));
 
-    it("speed of 1", () => {
-      const speed = 1;
+    it("default speed of 1", () => {
+      const playback = new Playback().play().setDuration(animator.duration);
+      const animate = (ms) => animator.animate(playback.elapsed(ms));
 
       // This test illustrates the confusing behavior around animation looping.
       // Please see getFrameIndex for more details.
-      expect(times.map((t) => animate(t, speed))).toEqual(frames);
+      expect(times.map((t) => animate(t))).toEqual(frames);
 
       // At 361 seconds, we are going to render frame 2; animation produces
       // frame indexes which are 0 based index. So index 1 is the second frame.
       // We don't see rendering of frame at index 0 (frame 1).
-      expect(animate(359, speed)).toEqual(359);
-      expect(animate(360, speed)).toEqual(360);
-      expect(animate(361, speed)).toEqual(1);
-      expect(animate(362, speed)).toEqual(2);
+      expect(animate(359)).toEqual(359);
+      expect(animate(360)).toEqual(360);
+      expect(animate(361)).toEqual(1);
+      expect(animate(362)).toEqual(2);
     });
 
-    test("speed of 2", () => {
-      const speed = 2;
+    it("speed of 2", () => {
+      const playback = new Playback().play().setDuration(animator.duration).setSpeed(2);
+      const animate = (ms) => animator.animate(playback.elapsed(ms));
 
       // Here it looks like we are skipping two frames when we transition to the
       // new loop. Meaning that it seems like we skipped frame 0 and frame 1 and
       // instead start the new loop at frame 2.
-      expect(animate(359, speed)).toEqual(358);
-      expect(animate(360, speed)).toEqual(360);
-      expect(animate(361, speed)).toEqual(2);
-      expect(animate(362, speed)).toEqual(4);
+      expect(animate(359)).toEqual(358);
+      expect(animate(360)).toEqual(360);
+      expect(animate(361)).toEqual(2);
+      expect(animate(362)).toEqual(4);
     });
   });
 });
@@ -354,18 +353,14 @@ describe("FBX animation curve values", () => {
 
   const animator = new AnimateScalar(frames, keyTimes);
 
-  it("speed 1", () => {
-    const speed = 1;
+  it("default speed of 1", () => {
     const playback = new Playback().play().setDuration(animator.duration);
-    expect(keyTimes.map((t) => animator.animate(playback.elapsed(t, speed)))).toEqual(frames);
+    expect(keyTimes.map((t) => animator.animate(playback.elapsed(t)))).toEqual(frames);
   });
 
   it("speed -1 (reverse)", () => {
-    const speed = -1;
-    const playback = new Playback().play().setDuration(animator.duration);
-    expect(keyTimes.map((t) => animator.animate(playback.elapsed(t, speed)))).toEqual(
-      frames.reverse()
-    );
+    const playback = new Playback().play().setDuration(animator.duration).setSpeed(-1);
+    expect(keyTimes.map((t) => animator.animate(playback.elapsed(t)))).toEqual(frames.reverse());
   });
 });
 
@@ -373,15 +368,14 @@ describe("Animation with different speeds", () => {
   const times = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
   const frames = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
   const animator = new AnimateScalar(frames, times);
-  const playback = new Playback().play().setDuration(animator.duration);
-  const animate = (ms, speed) => animator.animate(playback.elapsed(ms, speed), speed);
 
-  it("speed 1", () => {
-    const speed = 1;
+  it("default speed 1", () => {
+    const playback = new Playback().play().setDuration(animator.duration);
+    const animate = (ms) => animator.animate(playback.elapsed(ms));
 
     expect(
       range(0, 11.9, 0.1)
-        .map((v) => animate(v, speed))
+        .map((v) => animate(v))
         .map(fixed5f)
     ).toEqual([
       0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8,
@@ -395,11 +389,12 @@ describe("Animation with different speeds", () => {
   });
 
   it("speed 1.5", () => {
-    const speed = 1.5;
+    const playback = new Playback().play().setDuration(animator.duration).setSpeed(1.5);
+    const animate = (ms) => animator.animate(playback.elapsed(ms));
 
     expect(
       range(0, 11.9, 0.1)
-        .map((v) => animate(v, speed))
+        .map((v) => animate(v))
         .map(fixed5f)
     ).toEqual([
       0, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9, 1.05, 1.2, 1.35, 1.5, 1.65, 1.8, 1.95, 2.1, 2.25, 2.4,
@@ -414,11 +409,12 @@ describe("Animation with different speeds", () => {
   });
 
   it("speed 2", () => {
-    const speed = 2;
+    const playback = new Playback().play().setDuration(animator.duration).setSpeed(2);
+    const animate = (ms) => animator.animate(playback.elapsed(ms));
 
     expect(
       range(0, 11.9, 0.1)
-        .map((v) => animate(v, speed))
+        .map((v) => animate(v))
         .map(fixed5f)
     ).toEqual([
       0, 0.2, 0.4, 0.6, 0.8, 1, 1.2, 1.4, 1.6, 1.8, 2, 2.2, 2.4, 2.6, 2.8, 3, 3.2, 3.4, 3.6, 3.8, 4,
