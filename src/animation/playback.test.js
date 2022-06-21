@@ -187,7 +187,7 @@ describe("Pause/Play animation", () => {
 });
 
 describe("playback speed test", () => {
-  describe("updateOffset", () => {
+  describe("updateSpeed", () => {
     it("with animation paused", () => {
       const playback = new Playback().pause(5500).setDuration(10000);
       const ms = 7500;
@@ -198,7 +198,7 @@ describe("playback speed test", () => {
       const b = playback.elapsed(ms, speed);
       expect(b).toEqual(9625);
 
-      playback.updateOffset(ms, speed);
+      playback.updateSpeed(ms, speed);
 
       const c = playback.elapsed(ms, speed);
       expect(Math.round(c)).toEqual(5500);
@@ -215,7 +215,7 @@ describe("playback speed test", () => {
       const b = playback.elapsed(ms, playback.speed);
       expect(b).toEqual(2000);
 
-      playback.updateOffset(ms, speed);
+      playback.updateSpeed(ms, speed);
 
       const c = playback.elapsed(ms, speed);
       expect(Math.round(c)).toEqual(b);
@@ -224,16 +224,16 @@ describe("playback speed test", () => {
 
     // This is a tricky situation that when broken causes animation to run
     // backwards when tho playback speed is positive.
-    // The issue is when we call updateOffset with a negative speed and then
+    // The issue is when we call updateSpeed with a negative speed and then
     // call it again with a positive speed that is smaller than the negative
     // speed; e.g. -1 and 0.5. This causes elapsed time calculations to go
-    // backwards because updateOffset will make _elapsed._offset very negative
+    // backwards because updateSpeed will make _elapsed._offset very negative
     // so all elapsed numbers come out as negative.
     it("with unstarted animation, using negative speed and then positive speed - first case", () => {
       const playback = new Playback().setDuration(10000);
 
-      playback.updateOffset(1000, -1);
-      playback.updateOffset(4000, 0.5);
+      playback.updateSpeed(1000, -1);
+      playback.updateSpeed(4000, 0.5);
       playback.play();
       expect(playback.elapsed(7000, 0.5)).toEqual(3500);
       expect(playback.elapsed(7500, 0.5)).toEqual(3750);
@@ -241,16 +241,16 @@ describe("playback speed test", () => {
 
     // This is a tricky situation that when broken causes animation to run
     // backwards when tho playback speed is positive.
-    // The issue is when we call updateOffset with a negative speed and then
+    // The issue is when we call updateSpeed with a negative speed and then
     // call it again with a positive speed that is bigger than the negative
     // speed; e.g. -0.5 and 1. This causes elapsed time calculations to go
-    // backwards because updateOffset will make _elapsed._offset very negative
+    // backwards because updateSpeed will make _elapsed._offset very negative
     // so all elapsed numbers come out as negative.
     it("with unstarted animation, using negative speed and then positive speed - second case", () => {
       const playback = new Playback().setDuration(10000);
 
-      playback.updateOffset(1000, -0.5);
-      playback.updateOffset(4000, 1);
+      playback.updateSpeed(1000, -0.5);
+      playback.updateSpeed(4000, 1);
       playback.play();
       expect(playback.elapsed(7000, 1)).toEqual(7000);
       expect(playback.elapsed(7500, 1)).toEqual(7500);

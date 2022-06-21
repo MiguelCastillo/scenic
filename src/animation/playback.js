@@ -108,7 +108,11 @@ export class Playback {
     return this;
   };
 
-  updateOffset = (ms, speed) => {
+  // updateSpeed sets the speed for playback and also updates offsets for
+  // smoothly transitioning to the new speed. If you set the speed directly
+  // then times generated for playback will potentially cause frames to be
+  // skipped and the animation will look jumpy.
+  updateSpeed = (ms, speed) => {
     if (this.speed === speed || speed == null) {
       return this;
     }
