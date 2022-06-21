@@ -380,12 +380,17 @@ export class AnimationStack extends SceneNode {
     this.playback = new AnimationPlayback();
   }
 
-  get duration() {
-    return this.animationLayers[0].duration;
-  }
-
   add(node) {
     this.animationLayers.push(node);
+
+    if (this.playback.duration && node.duration !== this.playback.duration) {
+      // eslint-disable-next-line
+      console.warn(
+        `animation playback duration has different values. current ${this.playback.duratin}. new ${node.duration}`
+      );
+    }
+
+    this.playback.setDuration(node.duration);
     return this;
   }
 }
@@ -470,11 +475,7 @@ function getAnimation(context, animatableNode) {
   const playback = stack.playback;
 
   const {translation, rotation, scale} = evaluateAnimation(
-    playback.elapsed(
-      context.ms,
-      stack.duration,
-      animationState.speed === 0 ? minSpeed : animationState.speed
-    ),
+    playback.elapsed(context.ms, animationState.speed === 0 ? minSpeed : animationState.speed),
     curves
   );
 
@@ -574,9 +575,5 @@ function maybeUpdatePlayback(context, animationNode) {
     }
   }
 
-  playback.updateOffset(
-    ms,
-    stack.duration,
-    animationState.speed === 0 ? minSpeed : animationState.speed
-  );
+  playback.updateOffset(ms, animationState.speed === 0 ? minSpeed : animationState.speed);
 }

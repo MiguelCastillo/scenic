@@ -140,7 +140,7 @@ describe("Pause/Play animation", () => {
   let playback = new Playback();
 
   it("pausing with time reset 0", () => {
-    playback.reset(0).play();
+    playback.reset(0).play().setDuration(Number.MAX_SAFE_INTEGER);
     expect(playback.elapsed(0)).toEqual(0);
     expect(playback.elapsed(100)).toEqual(100);
 
@@ -154,7 +154,7 @@ describe("Pause/Play animation", () => {
   });
 
   it("pausing with time reset 1", () => {
-    playback.reset(1).play();
+    playback.reset(1).play().setDuration(Number.MAX_SAFE_INTEGER);
     expect(playback.elapsed(1)).toEqual(0);
     expect(playback.elapsed(2)).toEqual(1);
 
@@ -189,39 +189,35 @@ describe("Pause/Play animation", () => {
 describe("playback speed test", () => {
   describe("updateOffset", () => {
     it("with animation paused", () => {
-      const playback = new Playback().pause(5500);
-
-      const duration = 10000;
+      const playback = new Playback().pause(5500).setDuration(10000);
       const ms = 7500;
       const speed = 1.75;
 
-      const a = playback.elapsed(ms, duration, playback.speed);
+      const a = playback.elapsed(ms, playback.speed);
       expect(a).toEqual(5500);
-      const b = playback.elapsed(ms, duration, speed);
+      const b = playback.elapsed(ms, speed);
       expect(b).toEqual(9625);
 
-      playback.updateOffset(ms, duration, speed);
+      playback.updateOffset(ms, speed);
 
-      const c = playback.elapsed(ms, duration, speed);
+      const c = playback.elapsed(ms, speed);
       expect(Math.round(c)).toEqual(5500);
       expect(Math.round(playback.elapsed(ms))).toEqual(3143);
     });
 
     it("with animation playing", () => {
-      const playback = new Playback().play(5500);
-
-      const duration = 10000;
+      const playback = new Playback().play(5500).setDuration(10000);
       const ms = 7500;
       const speed = 1.75;
 
-      const a = playback.elapsed(ms, duration, speed);
+      const a = playback.elapsed(ms, speed);
       expect(a).toEqual(3500);
-      const b = playback.elapsed(ms, duration, playback.speed);
+      const b = playback.elapsed(ms, playback.speed);
       expect(b).toEqual(2000);
 
-      playback.updateOffset(ms, duration, speed);
+      playback.updateOffset(ms, speed);
 
-      const c = playback.elapsed(ms, duration, speed);
+      const c = playback.elapsed(ms, speed);
       expect(Math.round(c)).toEqual(b);
       expect(Math.round(playback.elapsed(ms))).toEqual(1143);
     });
@@ -234,14 +230,13 @@ describe("playback speed test", () => {
     // backwards because updateOffset will make _elapsed._offset very negative
     // so all elapsed numbers come out as negative.
     it("with unstarted animation, using negative speed and then positive speed - first case", () => {
-      const playback = new Playback();
-      const duration = 10000;
+      const playback = new Playback().setDuration(10000);
 
-      playback.updateOffset(1000, duration, -1);
-      playback.updateOffset(4000, duration, 0.5);
+      playback.updateOffset(1000, -1);
+      playback.updateOffset(4000, 0.5);
       playback.play();
-      expect(playback.elapsed(7000, duration, 0.5)).toEqual(3500);
-      expect(playback.elapsed(7500, duration, 0.5)).toEqual(3750);
+      expect(playback.elapsed(7000, 0.5)).toEqual(3500);
+      expect(playback.elapsed(7500, 0.5)).toEqual(3750);
     });
 
     // This is a tricky situation that when broken causes animation to run
@@ -252,24 +247,23 @@ describe("playback speed test", () => {
     // backwards because updateOffset will make _elapsed._offset very negative
     // so all elapsed numbers come out as negative.
     it("with unstarted animation, using negative speed and then positive speed - second case", () => {
-      const playback = new Playback();
-      const duration = 10000;
+      const playback = new Playback().setDuration(10000);
 
-      playback.updateOffset(1000, duration, -0.5);
-      playback.updateOffset(4000, duration, 1);
+      playback.updateOffset(1000, -0.5);
+      playback.updateOffset(4000, 1);
       playback.play();
-      expect(playback.elapsed(7000, duration, 1)).toEqual(7000);
-      expect(playback.elapsed(7500, duration, 1)).toEqual(7500);
+      expect(playback.elapsed(7000, 1)).toEqual(7000);
+      expect(playback.elapsed(7500, 1)).toEqual(7500);
     });
   });
 
   it("with speed range or -.5 to .5 at 500 milliseconds into the animation", () => {
-    const playback = new Playback().play();
+    const playback = new Playback().play().setDuration(10000);
 
     expect(
       range(-0.5, 0.5, 0.05)
         .map((s) => {
-          return playback.elapsed(500, 10000, s);
+          return playback.elapsed(500, s);
         })
         .map(fixed5f)
     ).toEqual([
@@ -279,12 +273,12 @@ describe("playback speed test", () => {
   });
 
   it("with speed range or -.5 to .5 at 5 seconds into the animation", () => {
-    const playback = new Playback().play();
+    const playback = new Playback().play().setDuration(10000);
 
     expect(
       range(-0.5, 0.5, 0.05)
         .map((s) => {
-          return playback.elapsed(5000, 10000, s);
+          return playback.elapsed(5000, s);
         })
         .map(fixed5f)
     ).toEqual([
@@ -294,32 +288,30 @@ describe("playback speed test", () => {
   });
 
   it("with advancing time and positive speed", () => {
-    const duration = 10000;
     const speed = 1;
-    const playback = new Playback().play(5000);
+    const playback = new Playback().play(5000).setDuration(10000);
 
-    expect(playback.elapsed(0, duration, speed)).toEqual(5000);
+    expect(playback.elapsed(0, speed)).toEqual(5000);
 
     expect(
       range(6000, 7000, 100)
         .map((v) => {
-          return playback.elapsed(v, duration, speed);
+          return playback.elapsed(v, speed);
         })
         .map(fixed5f)
     ).toEqual([1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000]);
   });
 
   it("with advancing time and negative speed", () => {
-    const duration = 10000;
     const speed = -1;
-    const playback = new Playback().play(5000);
+    const playback = new Playback().play(5000).setDuration(10000);
 
-    expect(playback.elapsed(0, duration, speed)).toEqual(5000);
+    expect(playback.elapsed(0, speed)).toEqual(5000);
 
     expect(
       range(7000, 8000, 100)
         .map((v) => {
-          return playback.elapsed(v, duration, speed);
+          return playback.elapsed(v, speed);
         })
         .map(fixed5f)
     ).toEqual([8000, 7900, 7800, 7700, 7600, 7500, 7400, 7300, 7200, 7100, 7000]);

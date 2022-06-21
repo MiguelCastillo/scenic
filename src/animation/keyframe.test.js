@@ -25,8 +25,8 @@ describe("animate2v", () => {
       [6, 7],
     ]);
 
-    const playback = new Playback().play();
-    const animate = (ms, speed) => animator.animate(playback.elapsed(ms, animator.duration, speed));
+    const playback = new Playback().play().setDuration(animator.duration);
+    const animate = (ms, speed) => animator.animate(playback.elapsed(ms, speed));
 
     // (6-1)*0 + 1 = 0 + 1 = 1
     // (7-2)*0 + 2 = 0 + 2 = 2
@@ -101,8 +101,8 @@ describe("animate3v", () => {
       [6, 7, 8],
     ]);
 
-    const playback = new Playback().play();
-    const animate = (ms, speed) => animator.animate(playback.elapsed(ms, animator.duration, speed));
+    const playback = new Playback().play().setDuration(animator.duration);
+    const animate = (ms, speed) => animator.animate(playback.elapsed(ms, speed));
 
     // (6-1)*0 + 1 = 0 + 1 = 1
     // (7-2)*0 + 2 = 0 + 2 = 2
@@ -176,8 +176,8 @@ describe("animate3v", () => {
     ]);
 
     const speed = -1;
-    const playback = new Playback().play();
-    const animate = (ms, speed) => animator.animate(playback.elapsed(ms, animator.duration, speed));
+    const playback = new Playback().play().setDuration(animator.duration);
+    const animate = (ms, speed) => animator.animate(playback.elapsed(ms, speed));
 
     // (6-1)*(0) + 1 = 5*(0) + 1 = 1
     // (7-2)*(0) + 2 = 6*(0) + 2 = 2
@@ -214,8 +214,8 @@ describe("animate3v", () => {
 describe("animateScalar", () => {
   it("with varying length time intervals", () => {
     const animator = new AnimateScalar([0, 1, 2, 3], [0, 2000, 5000, 10000]);
-    const playback = new Playback().play();
-    const animate = (ms, speed) => animator.animate(playback.elapsed(ms, animator.duration, speed));
+    const playback = new Playback().play().setDuration(animator.duration);
+    const animate = (ms, speed) => animator.animate(playback.elapsed(ms, speed));
 
     expect(animate(0)).toEqual(0);
     expect(animate(1000)).toEqual(0.5);
@@ -233,8 +233,8 @@ describe("animateScalar", () => {
   describe("with 4 curve points with time range of -10 to 10 seconds, iterating 1 millisecond at a time", () => {
     const animator = new AnimateScalar([0, 1, 2, 3]);
     const frameRange = range(-10, 10, 1);
-    const playback = new Playback().play();
-    const animate = (ms, speed) => animator.animate(playback.elapsed(ms, animator.duration, speed));
+    const playback = new Playback().play().setDuration(animator.duration);
+    const animate = (ms, speed) => animator.animate(playback.elapsed(ms, speed));
 
     it("speed of 1", () => {
       const speed = 1;
@@ -259,8 +259,8 @@ describe("animateScalar", () => {
     const frames = range(0, 360);
     const times = range(0, 360);
     const animator = new AnimateScalar(frames, times);
-    const playback = new Playback().play();
-    const animate = (ms, speed) => animator.animate(playback.elapsed(ms, animator.duration, speed));
+    const playback = new Playback().play().setDuration(animator.duration);
+    const animate = (ms, speed) => animator.animate(playback.elapsed(ms, speed));
 
     it("speed of 1", () => {
       const speed = 1;
@@ -356,18 +356,16 @@ describe("FBX animation curve values", () => {
 
   it("speed 1", () => {
     const speed = 1;
-    const playback = new Playback().play();
-    expect(
-      keyTimes.map((t) => animator.animate(playback.elapsed(t, animator.duration, speed)))
-    ).toEqual(frames);
+    const playback = new Playback().play().setDuration(animator.duration);
+    expect(keyTimes.map((t) => animator.animate(playback.elapsed(t, speed)))).toEqual(frames);
   });
 
   it("speed -1 (reverse)", () => {
     const speed = -1;
-    const playback = new Playback().play();
-    expect(
-      keyTimes.map((t) => animator.animate(playback.elapsed(t, animator.duration, speed)))
-    ).toEqual(frames.reverse());
+    const playback = new Playback().play().setDuration(animator.duration);
+    expect(keyTimes.map((t) => animator.animate(playback.elapsed(t, speed)))).toEqual(
+      frames.reverse()
+    );
   });
 });
 
@@ -375,9 +373,8 @@ describe("Animation with different speeds", () => {
   const times = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
   const frames = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
   const animator = new AnimateScalar(frames, times);
-  const playback = new Playback().play();
-  const animate = (ms, speed) =>
-    animator.animate(playback.elapsed(ms, animator.duration, speed), speed);
+  const playback = new Playback().play().setDuration(animator.duration);
+  const animate = (ms, speed) => animator.animate(playback.elapsed(ms, speed), speed);
 
   it("speed 1", () => {
     const speed = 1;
