@@ -112,25 +112,26 @@ export class Playback {
     return this;
   };
 
-  // setSpeed sets the new speed directly with no transitions between speed.
-  // Using this directly once playback has started will causes animations
-  // to jump frames.  Use updateSpeed once animations have started.
-  setSpeed = (speed) => {
-    this.speed = speed;
-    return this;
-  };
-
-  // updateSpeed sets the speed for playback and also updates time offsets for
-  // smoothly transitioning to the new speed. If you set the speed directly
-  // then times generated for playback will potentially cause frames to be
-  // skipped and the animation will look jumpy.
-  // This relies on the milliseconds for the current tick so that calling
-  // elapsed returns the normalized elapsed time. Meaning, calling elapsed with
+  // setSpeed sets the speed for playback. When the milliseconds for the
+  // current tick are provided then this also updates time offsets for
+  // smoothly transitioning to the new speed. If you do not provide the
+  // milliseconds and the animation has started then then times generated for
+  // playback will potentially cause frames to be skipped and the animation
+  // will look jumpy when using the new speed for the first time to generate
+  // elapsed time.
+  // When milliseconds for the current tick are provided then calling playback
+  // elapsed will return the normalized elapsed time when you provide the same
+  // milliseconds to playback.elapsed. Meaning, calling elapsed  with
   // the milliseconds for the current tick will return the same exact elapsed
-  // value before and after calling updateSpeed with the same milliseconds.
-  // Thus you usually call updateSpeed and in the same tick you call elapsed.
-  updateSpeed = (ms, speed) => {
+  // value before and after calling setSpeed with the same milliseconds.
+  // Thus you usually call setSpeed and in the same tick you call elapsed.
+  setSpeed = (speed, ms) => {
     if (this.speed === speed || speed == null) {
+      return this;
+    }
+
+    if (ms == null) {
+      this.speed = speed;
       return this;
     }
 

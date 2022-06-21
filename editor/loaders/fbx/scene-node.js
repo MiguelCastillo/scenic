@@ -571,5 +571,5 @@ function maybeUpdatePlayback(context, animationNode) {
     }
   }
 
-  playback.updateSpeed(ms, animationState.speed === 0 ? MIN_ANIMATION_SPEED : animationState.speed);
+  playback.setSpeed(animationState.speed === 0 ? MIN_ANIMATION_SPEED : animationState.speed, ms);
 }
