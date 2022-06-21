@@ -575,5 +575,5 @@ function maybeUpdatePlayback(context, animationNode) {
     }
   }
 
-  playback.updateOffset(ms, animationState.speed === 0 ? minSpeed : animationState.speed);
+  playback.updateSpeed(ms, animationState.speed === 0 ? minSpeed : animationState.speed);
 }
