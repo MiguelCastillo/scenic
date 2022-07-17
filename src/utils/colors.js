@@ -1,4 +1,4 @@
-import {fixed3f} from "./math/float.js";
+import {fixed3f} from "../math/float.js";
 
 export function rgbToHex(r, g, b) {
   let hex = [convert1to255(r), convert1to255(g), convert1to255(b)]

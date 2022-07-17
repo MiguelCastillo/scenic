@@ -5,7 +5,7 @@ import {Error} from "./app/error.jsx";
 import {Console} from "./app/console.jsx";
 import {Loading} from "./app/loading.jsx";
 import {onReady} from "../src/dom/ready.js";
-import * as webgl from "../src/webgl.js";
+import * as webgl from "../src/renderer/webgl.js";
 
 import _console from "./logging.js";
 

@@ -22,7 +22,7 @@ import {loadShaders} from "./shader-factory.js";
 import {startRenderLoop} from "./render-loop.js";
 
 import {createFrameRateCounter} from "./fps-counter.js";
-import {getDebugData} from "../src/webgl.js";
+import {getDebugData} from "../src/renderer/webgl.js";
 
 const sceneObjectsID = "scene objects";
 const axisProjectionID = "axis projection";
