@@ -1,11 +1,11 @@
-import {Node as SceneNode} from "../src/scene/node.js";
-import {Light as SceneLight} from "../src/scene/light.js";
-import {Projection} from "../src/scene/projection.js";
-import {StaticMesh} from "../src/scene/static-mesh.js";
-import {SkinnedMesh} from "../src/scene/skinned-mesh.js";
-import {buildTraversal} from "../src/scene/traversal.js";
-import {SceneManager} from "../src/scene/scene-manager.js";
-import {StateManager} from "../src/scene/state-manager.js";
+import {Node as SceneNode} from "../packages/scene/node.js";
+import {Light as SceneLight} from "../packages/scene/light.js";
+import {Projection} from "../packages/scene/projection.js";
+import {StaticMesh} from "../packages/scene/static-mesh.js";
+import {SkinnedMesh} from "../packages/scene/skinned-mesh.js";
+import {buildTraversal} from "../packages/scene/traversal.js";
+import {SceneManager} from "../packages/scene/scene-manager.js";
+import {StateManager} from "../packages/scene/state-manager.js";
 
 export function createScene(config) {
   // The state manager is the first thing we create. This is built from all

@@ -6,7 +6,7 @@ import {hideBin} from "yargs/helpers";
 
 import fs from "fs";
 import path from "path";
-import {FbxFile, findChildByName, getNodeName} from "../src/formats/fbxfile.js";
+import {FbxFile, findChildByName, getNodeName} from "../packages/formats/fbxfile.js";
 
 let _indentCache = {};
 function _indent(indent, char = "\t") {

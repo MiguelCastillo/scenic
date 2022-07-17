@@ -2,15 +2,15 @@ import fs from "fs";
 import path from "path";
 import "webgl-mock";
 
-import {fixedFloat} from "../../../src/math/float.js";
-import * as mat4 from "../../../src/math/matrix4.js";
-import {getIndexed3DComponents} from "../../../src/math/geometry.js";
+import {fixedFloat} from "../../../packages/math/float.js";
+import * as mat4 from "../../../packages/math/matrix4.js";
+import {getIndexed3DComponents} from "../../../packages/math/geometry.js";
 
 import {
   FbxFile,
   decodePolygonVertexIndexes,
   Node as FbxNode,
-} from "../../../src/formats/fbxfile.js";
+} from "../../../packages/formats/fbxfile.js";
 
 import {
   buildSceneNode,
@@ -20,8 +20,8 @@ import {
 
 import {addShaderCacheEntry} from "../../shader-factory.js";
 import {createScene} from "../../scene-factory.js";
-import {Animation} from "../../../src/scene/animation";
-import {bubbleTraversal} from "../../../src/scene/traversal.js";
+import {Animation} from "../../../packages/scene/animation";
+import {bubbleTraversal} from "../../../packages/scene/traversal.js";
 
 const float1 = fixedFloat(1);
 

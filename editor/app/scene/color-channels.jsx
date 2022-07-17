@@ -1,5 +1,5 @@
 import * as React from "react";
-import {rgbToHex, hexToRgb} from "../../../src/utils/colors.js";
+import {rgbToHex, hexToRgb} from "../../../packages/utils/colors.js";
 
 export class ColorChannels extends React.Component {
   handleChange = (evt) => {

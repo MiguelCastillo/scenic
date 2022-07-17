@@ -1,7 +1,7 @@
-import * as mat4 from "../../../src/math/matrix4.js";
-import {fixed5f} from "../../../src/math/float.js";
-import {getTBNVectorsFromTriangles} from "../../../src/math/tbn-matrix.js";
-import {getIndexedComponents} from "../../../src/math/geometry.js";
+import * as mat4 from "../../../packages/math/matrix4.js";
+import {fixed5f} from "../../../packages/math/float.js";
+import {getTBNVectorsFromTriangles} from "../../../packages/math/tbn-matrix.js";
+import {getIndexedComponents} from "../../../packages/math/geometry.js";
 import {createShaderProgram} from "../../shader-factory.js";
 
 import {
@@ -9,7 +9,7 @@ import {
   VertexBufferData,
   TextureVertexBufferData,
   VertexBufferIndexes,
-} from "../../../src/renderer/vertexbuffer.js";
+} from "../../../packages/renderer/vertexbuffer.js";
 
 import {BrinaryFileLoader} from "../base-loader.js";
 
@@ -21,11 +21,11 @@ import {
   findPropertyValueByName,
   decodePolygonVertexIndexes,
   polygonVertexIndexToDirect,
-} from "../../../src/formats/fbxfile.js";
+} from "../../../packages/formats/fbxfile.js";
 
-import {findChildrenByType} from "../../../src/scene/node.js";
-import {Material as MaterialSceneNode} from "../../../src/scene/material.js";
-import {Texture as TextureSceneNode} from "../../../src/scene/texture.js";
+import {findChildrenByType} from "../../../packages/scene/node.js";
+import {Material as MaterialSceneNode} from "../../../packages/scene/material.js";
+import {Texture as TextureSceneNode} from "../../../packages/scene/texture.js";
 
 import {
   Mesh,

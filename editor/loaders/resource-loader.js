@@ -1,4 +1,4 @@
-import {treeGetMatches} from "../../src/scene/traversal.js";
+import {treeGetMatches} from "../../packages/scene/traversal.js";
 
 import {Loader as ObjFileLoader, buildSceneNode as objBuildSceneNode} from "./obj/loader.js";
 
