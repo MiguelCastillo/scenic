@@ -1,12 +1,16 @@
-import * as mat4 from "../../../src/math/matrix4.js";
+import * as mat4 from "../../../packages/math/matrix4.js";
 
-import {VertexBuffer, VertexBufferData} from "../../../src/renderer/vertexbuffer.js";
-import {Node as SceneNode, findParentByType, findChildrenByType} from "../../../src/scene/node.js";
-import {Mesh as MeshSceneNode} from "../../../src/scene/mesh.js";
-import {Renderable as RenderableSceneNode} from "../../../src/scene/renderable.js";
-import {Animation as AnimationSceneNode} from "../../../src/scene/animation.js";
-import {AnimateScalar} from "../../../src/animation/keyframe.js";
-import {Playback as AnimationPlayback} from "../../../src/animation/playback.js";
+import {VertexBuffer, VertexBufferData} from "../../../packages/renderer/vertexbuffer.js";
+import {
+  Node as SceneNode,
+  findParentByType,
+  findChildrenByType,
+} from "../../../packages/scene/node.js";
+import {Mesh as MeshSceneNode} from "../../../packages/scene/mesh.js";
+import {Renderable as RenderableSceneNode} from "../../../packages/scene/renderable.js";
+import {Animation as AnimationSceneNode} from "../../../packages/scene/animation.js";
+import {AnimateScalar} from "../../../packages/animation/keyframe.js";
+import {Playback as AnimationPlayback} from "../../../packages/animation/playback.js";
 
 const AnimatableInterface = (superclass) =>
   class extends superclass {

@@ -10,10 +10,10 @@ import "./logging.js";
 import {
   PerspectiveProjectionMatrix,
   OrthographicProjectionMatrix,
-} from "../src/math/projections.js";
-import * as vec3 from "../src/math/vector3.js";
-import * as easings from "../src/math/easings.js";
-import {Subscription} from "../src/dom/events.js";
+} from "../packages/math/projections.js";
+import * as vec3 from "../packages/math/vector3.js";
+import * as easings from "../packages/math/easings.js";
+import {Subscription} from "../packages/dom/events.js";
 
 import {createSplitPanel} from "./split-panel.js";
 import {createScene, buildDefaultState} from "./scene-factory.js";
@@ -22,7 +22,7 @@ import {loadShaders} from "./shader-factory.js";
 import {startRenderLoop} from "./render-loop.js";
 
 import {createFrameRateCounter} from "./fps-counter.js";
-import {getDebugData} from "../src/renderer/webgl.js";
+import {getDebugData} from "../packages/renderer/webgl.js";
 
 const sceneObjectsID = "scene objects";
 const axisProjectionID = "axis projection";

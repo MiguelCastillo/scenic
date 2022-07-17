@@ -1,6 +1,6 @@
-import {normalizeTriangleVertices} from "../../../src/math/geometry.js";
+import {normalizeTriangleVertices} from "../../../packages/math/geometry.js";
 
-import {VertexBuffer, VertexBufferData} from "../../../src/renderer/vertexbuffer.js";
+import {VertexBuffer, VertexBufferData} from "../../../packages/renderer/vertexbuffer.js";
 
 import {WorkerLoader} from "../base-loader.js";
 

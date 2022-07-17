@@ -1,4 +1,4 @@
-import {Subscription} from "../src/dom/events.js";
+import {Subscription} from "../packages/dom/events.js";
 
 export function createSplitPanel(el) {
   let resizeEnabled = false;

@@ -2,7 +2,7 @@ import {
   ShaderProgram,
   compileShaderSource,
   parseVertexShaderAttributes,
-} from "../src/shaders/program.js";
+} from "../packages/shaders/program.js";
 
 const shaderCache = {};
 

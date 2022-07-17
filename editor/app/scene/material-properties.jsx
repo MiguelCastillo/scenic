@@ -2,7 +2,7 @@ import * as React from "react";
 import {ColorChannels} from "./color-channels.jsx";
 import {WithNodeState} from "./with-node-state.jsx";
 
-import {fixed3f} from "../../../src/math/float.js";
+import {fixed3f} from "../../../packages/math/float.js";
 
 export class MaterialProperties extends WithNodeState {
   handleChangeColor = (value) => {
