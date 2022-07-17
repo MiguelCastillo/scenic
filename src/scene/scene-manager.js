@@ -1,5 +1,5 @@
-import {bubbleTraversal} from "./scene/traversal.js";
-import {Node, findChildByID} from "./scene/node.js";
+import {bubbleTraversal} from "./traversal.js";
+import {Node, findChildByID} from "./node.js";
 
 export class SceneManager {
   constructor(stateManager) {

@@ -2,7 +2,7 @@
  * API for loading different file types in a web worker.
  */
 
-import {Timer} from "../../src/timer.js";
+import {Timer} from "../../src/utils/timer.js";
 
 export class BaseLoader {
   load() {

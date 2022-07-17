@@ -4,8 +4,8 @@ import {Projection} from "../src/scene/projection.js";
 import {StaticMesh} from "../src/scene/static-mesh.js";
 import {SkinnedMesh} from "../src/scene/skinned-mesh.js";
 import {buildTraversal} from "../src/scene/traversal.js";
-import {SceneManager} from "../src/scene-manager.js";
-import {StateManager} from "../src/state-manager.js";
+import {SceneManager} from "../src/scene/scene-manager.js";
+import {StateManager} from "../src/scene/state-manager.js";
 
 export function createScene(config) {
   // The state manager is the first thing we create. This is built from all
