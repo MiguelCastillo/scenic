@@ -1,6 +1,6 @@
 import {Node, findChildByID, _clearIDsForTests} from "./node.js";
 
-import * as mat4 from "../math/matrix4.js";
+import {mat4} from "@scenic/math";
 
 describe("Scene Node add/remove child", () => {
   it("two new node - first ID 1 and second with ID 2", () => {

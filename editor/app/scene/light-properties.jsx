@@ -1,8 +1,8 @@
 import * as React from "react";
+import {float} from "@scenic/math";
+
 import {ColorChannels} from "./color-channels.jsx";
 import {WithNodeState} from "./with-node-state.jsx";
-
-import {fixed3f} from "../../../packages/math/float.js";
 
 export class LightProperties extends WithNodeState {
   handleChangeColor = (value) => {
@@ -24,7 +24,7 @@ export class LightProperties extends WithNodeState {
       ...nodeState,
       light: {
         ...nodeState.light,
-        intensity: fixed3f(evt.target.value),
+        intensity: float.fixed3f(evt.target.value),
       },
     });
   };

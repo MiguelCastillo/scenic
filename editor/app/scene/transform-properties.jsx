@@ -2,7 +2,7 @@ import * as React from "react";
 import {Coordinates} from "./coordinates.jsx";
 import {WithNodeState} from "./with-node-state.jsx";
 
-import {fixed3f} from "../../../packages/math/float.js";
+import {float} from "@scenic/math";
 import {normalizeLeadingZero} from "./utils.js";
 
 export class TransformProperties extends WithNodeState {
@@ -25,7 +25,7 @@ export class TransformProperties extends WithNodeState {
       value = "0";
     }
     value = normalizeLeadingZero(value);
-    this._handleChange("position", axis, fixed3f(value));
+    this._handleChange("position", axis, float.fixed3f(value));
   };
 
   handleChangeRotation = (axis, value) => {
@@ -33,7 +33,7 @@ export class TransformProperties extends WithNodeState {
       value = "0";
     }
     value = normalizeLeadingZero(value);
-    this._handleChange("rotation", axis, fixed3f(value));
+    this._handleChange("rotation", axis, float.fixed3f(value));
   };
 
   handleChangeScale = (axis, value) => {
@@ -41,7 +41,7 @@ export class TransformProperties extends WithNodeState {
       value = "1";
     }
     value = normalizeLeadingZero(value);
-    this._handleChange("scale", axis, fixed3f(value));
+    this._handleChange("scale", axis, float.fixed3f(value));
   };
 
   render() {

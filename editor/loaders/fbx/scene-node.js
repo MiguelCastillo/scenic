@@ -1,4 +1,4 @@
-import * as mat4 from "../../../packages/math/matrix4.js";
+import {mat4} from "@scenic/math";
 
 import {VertexBuffer, VertexBufferData} from "../../../packages/renderer/vertexbuffer.js";
 import {

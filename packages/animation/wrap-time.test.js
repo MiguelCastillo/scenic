@@ -1,6 +1,5 @@
 import {wrapTime} from "./wrap-time.js";
-import {range} from "../math/range.js";
-import {fixed5f} from "../math/float.js";
+import {range, float} from "@scenic/math";
 
 describe("wrapRtime with duration of 5 at different speeds", () => {
   it("speed 1", () => {
@@ -8,9 +7,10 @@ describe("wrapRtime with duration of 5 at different speeds", () => {
     const duration = 5;
 
     expect(
-      range(0, 6.9, 0.1)
+      range
+        .range(0, 6.9, 0.1)
         .map((v) => wrapTime(v, duration, speed))
-        .map(fixed5f)
+        .map(float.fixed5f)
     ).toEqual([
       0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8,
       1.9, 2, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 3, 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7,
@@ -24,9 +24,10 @@ describe("wrapRtime with duration of 5 at different speeds", () => {
     const duration = 5;
 
     expect(
-      range(0, 11.9, 0.1)
+      range
+        .range(0, 11.9, 0.1)
         .map((v) => wrapTime(v, duration, speed))
-        .map(fixed5f)
+        .map(float.fixed5f)
     ).toEqual([
       0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 1, 1.125, 1.25, 1.375, 1.5, 1.625, 1.75,
       1.875, 2, 2.125, 2.25, 2.375, 2.5, 2.625, 2.75, 2.875, 3, 3.125, 3.25, 3.375, 3.5, 3.625,
@@ -44,9 +45,10 @@ describe("wrapRtime with duration of 5 at different speeds", () => {
     const duration = 5;
 
     expect(
-      range(0, 11.9, 0.1)
+      range
+        .range(0, 11.9, 0.1)
         .map((v) => wrapTime(v, duration, speed))
-        .map(fixed5f)
+        .map(float.fixed5f)
     ).toEqual([
       0, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9, 1.05, 1.2, 1.35, 1.5, 1.65, 1.8, 1.95, 2.1, 2.25, 2.4,
       2.55, 2.7, 2.85, 3, 3.15, 3.3, 3.45, 3.6, 3.75, 3.9, 4.05, 4.2, 4.35, 4.5, 4.65, 4.8, 4.95,
@@ -59,17 +61,19 @@ describe("wrapRtime with duration of 5 at different speeds", () => {
     ]);
 
     expect(
-      range(11000, 11000.9, 0.1)
+      range
+        .range(11000, 11000.9, 0.1)
         .map((v) => wrapTime(v, duration, speed))
-        .map(fixed5f)
+        .map(float.fixed5f)
     ).toEqual([5, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9, 1.05, 1.2, 1.35]);
   });
 
   it("with varying speed between -0.5 and 0.5", () => {
     expect(
-      range(-0.5, 0.5, 0.05)
+      range
+        .range(-0.5, 0.5, 0.05)
         .map((s) => wrapTime(500, 10000, s))
-        .map(fixed5f)
+        .map(float.fixed5f)
     ).toEqual([
       -250, -225, -200, -175, -150, -125, -100, -75, -50, -25, 0, 25, 50, 75, 100, 125, 150, 175,
       200, 225, 250,

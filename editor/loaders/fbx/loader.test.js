@@ -2,9 +2,7 @@ import fs from "fs";
 import path from "path";
 import "webgl-mock";
 
-import {fixedFloat} from "../../../packages/math/float.js";
-import * as mat4 from "../../../packages/math/matrix4.js";
-import {getIndexed3DComponents} from "../../../packages/math/geometry.js";
+import {float, mat4, geometry as geo} from "@scenic/math";
 
 import {
   FbxFile,
@@ -23,7 +21,7 @@ import {createScene} from "../../scene-factory.js";
 import {Animation} from "../../../packages/scene/animation";
 import {bubbleTraversal} from "../../../packages/scene/traversal.js";
 
-const float1 = fixedFloat(1);
+const float1 = float.fixedFloat(1);
 
 function mockShaders(shaders) {
   shaders.forEach((s) => {
@@ -343,7 +341,7 @@ test("unpacked polygon indexes mapped to triangle indexes", () => {
   // vertices in the order in which they are indexed.
   // So we need to reindex UV and normals coordinates so that the first
   // vertex points to the correct UV and Normal.
-  const trianglesVertices = getIndexed3DComponents(vertices, triangulatedIndexes);
+  const trianglesVertices = geo.getIndexed3DComponents(vertices, triangulatedIndexes);
   expect(trianglesVertices).toEqual([
     -0.0882214605808258,
     1.9469735622406006,

@@ -10,11 +10,7 @@ import {
   polygonVertexIndexToDirect,
 } from "./fbxfile.js";
 
-import {
-  getIndexed3DComponents,
-  getIndexed2DComponents,
-  normalizeTriangleVertices,
-} from "../math/geometry.js";
+import {geometry as geo} from "@scenic/math";
 
 test("parse binary cube", () => {
   const file = fs.readFileSync(path.join(__dirname, "../../resources/fbx/__testdata__/cube.fbx"));
@@ -135,7 +131,7 @@ test("parse binary cube", () => {
     13, 2,
   ]);
 
-  const UVCoordinates = getIndexed2DComponents(UV, UVIndex);
+  const UVCoordinates = geo.getIndexed2DComponents(UV, UVIndex);
 
   // prettier-ignore
   expect(UVCoordinates).toEqual([
@@ -199,8 +195,8 @@ test("match calculated normals to normals from file", () => {
     const normalIndexes = polygonVertexIndexToDirect(polygonVertexIndex);
     const vertexIndexes = decodePolygonVertexIndexes(polygonVertexIndex);
 
-    const a = getIndexed3DComponents(normals, normalIndexes);
-    const b = normalizeTriangleVertices(getIndexed3DComponents(vertices, vertexIndexes));
+    const a = geo.getIndexed3DComponents(normals, normalIndexes);
+    const b = geo.normalizeTriangleVertices(geo.getIndexed3DComponents(vertices, vertexIndexes));
     expect(a).toEqual(b);
   }
 });
@@ -375,7 +371,7 @@ test("render by unpacked polygon index mind bender", () => {
   // vertices in the order in which they are indexed.
   // So we need to reindex UV and normals coordinates so that the first
   // vertex points to the correct UV and Normal.
-  const trianglesVertices = getIndexed3DComponents(vertices, triangulatedIndexes);
+  const trianglesVertices = geo.getIndexed3DComponents(vertices, triangulatedIndexes);
 
   // prettier-ignore
   expect(trianglesVertices).toEqual([
@@ -490,7 +486,7 @@ test("render by unpacked polygon index mind bender", () => {
     0,  1,  0,   // n24
   ];
 
-  const trianglesNormals = getIndexed3DComponents(normals, reindexedPolygonIndexes);
+  const trianglesNormals = geo.getIndexed3DComponents(normals, reindexedPolygonIndexes);
 
   // prettier-ignore
   expect(trianglesNormals).toEqual([
@@ -571,7 +567,7 @@ test("render by unpacked polygon index mind bender", () => {
     0.375, 0.5,    // 2
   ];
 
-  const triangleUVs = getIndexed2DComponents(UVCoordinates, reindexedPolygonIndexes);
+  const triangleUVs = geo.getIndexed2DComponents(UVCoordinates, reindexedPolygonIndexes);
 
   // prettier-ignore
   expect(triangleUVs).toEqual([

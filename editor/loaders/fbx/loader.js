@@ -1,7 +1,4 @@
-import * as mat4 from "../../../packages/math/matrix4.js";
-import {fixed5f} from "../../../packages/math/float.js";
-import {getTBNVectorsFromTriangles} from "../../../packages/math/tbn-matrix.js";
-import {getIndexedComponents} from "../../../packages/math/geometry.js";
+import {mat4, float, tbnMatrix, geometry as geo} from "@scenic/math";
 import {createShaderProgram} from "../../shader-factory.js";
 
 import {
@@ -435,7 +432,7 @@ function sceneNodeFromConnection(gl, rootConnection, sceneManager, relativeRootS
       case "AnimationCurve": {
         let times = findPropertyValueByName(fbxNode, "KeyTime");
         let values = findPropertyValueByName(fbxNode, "KeyValueFloat");
-        times = times.map((t) => parseInt(t) / KTIME_ONE_MSECOND).map(fixed5f);
+        times = times.map((t) => parseInt(t) / KTIME_ONE_MSECOND).map(float.fixed3f);
         sceneNode = new AnimationCurve(times, values, pname, {name});
         break;
       }
@@ -515,7 +512,12 @@ function buildGeometryLayers(fbxGeometry, normalSmoothing) {
   // for bump lighting.
   //
   if (uv && uv.length) {
-    const [t, b, n] = getTBNVectorsFromTriangles(vertices, uv, renderIndexes, normalSmoothing);
+    const [t, b, n] = tbnMatrix.getTBNVectorsFromTriangles(
+      vertices,
+      uv,
+      renderIndexes,
+      normalSmoothing
+    );
     tangents = t;
     bitangents = b;
     normals = n;
@@ -639,7 +641,7 @@ function getLayerData(fbxGeometry, layerDataName) {
   const referenceInformationType = findPropertyValueByName(layer, "ReferenceInformationType");
   if (referenceInformationType === "IndexToDirect") {
     const indexes = findPropertyValueByName(layer, layerMap[layerDataName].indexName);
-    components = getIndexedComponents(components, indexes, componentsPerVertex);
+    components = geo.getIndexedComponents(components, indexes, componentsPerVertex);
   }
 
   // We do not need to deal with ByPolygonVertex here because things are

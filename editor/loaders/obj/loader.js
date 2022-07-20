@@ -1,11 +1,7 @@
-import {normalizeTriangleVertices} from "../../../packages/math/geometry.js";
-
+import {geometry as geo} from "@scenic/math";
 import {VertexBuffer, VertexBufferData} from "../../../packages/renderer/vertexbuffer.js";
-
 import {WorkerLoader} from "../base-loader.js";
-
 import {isLight, isStaticMesh, isSkinnedMesh} from "../../scene-factory.js";
-
 import {createShaderProgram} from "../../shader-factory.js";
 
 /**
@@ -27,7 +23,7 @@ export function buildSceneNode(gl, model, sceneNode /*, sceneManager*/) {
 
   if (!normals.byteLength && !normals.length) {
     vertexBuffer.withNormals(
-      new VertexBufferData(gl, normalizeTriangleVertices(new Float32Array(vertices)))
+      new VertexBufferData(gl, geo.normalizeTriangleVertices(new Float32Array(vertices)))
     );
   } else {
     vertexBuffer.withNormals(new VertexBufferData(gl, normals));

@@ -1,4 +1,4 @@
-import {fixed3f} from "../math/float.js";
+import {float} from "@scenic/math";
 
 export function rgbToHex(r, g, b) {
   let hex = [convert1to255(r), convert1to255(g), convert1to255(b)]
@@ -25,5 +25,5 @@ function convert1to255(v /*number*/) {
 }
 
 function convert255to1(v /*number*/) {
-  return fixed3f(v / 255);
+  return float.fixed3f(v / 255);
 }
