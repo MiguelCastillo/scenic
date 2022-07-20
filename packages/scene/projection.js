@@ -1,5 +1,5 @@
 import {Node} from "./node.js";
-import {Matrix4} from "../math/matrix4.js";
+import {mat4} from "@scenic/math";
 
 export class Projection extends Node {
   constructor({type = null, ...options}) {
@@ -9,7 +9,7 @@ export class Projection extends Node {
     }
 
     super({type, ...options});
-    this.projectionMatrix = Matrix4.identity();
+    this.projectionMatrix = mat4.Matrix4.identity();
   }
 
   withProjection(matrix) {

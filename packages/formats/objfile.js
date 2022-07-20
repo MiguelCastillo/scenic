@@ -9,7 +9,7 @@
 // https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/frontFace
 //
 
-import {getIndexed3DComponents} from "../math/geometry.js";
+import {geometry as geo} from "@scenic/math";
 
 const DEFAULT_GROUP_NAME = "__default_group_" + Math.floor(Math.random() * Math.floor(10000));
 const COMMENT = "#";
@@ -53,10 +53,10 @@ export class ObjFile {
         }
 
         const {faces} = group;
-        const v = getIndexed3DComponents(obj.vertices, faces.vertices);
-        const vc = getIndexed3DComponents(obj.colors, faces.vertices);
-        const vn = getIndexed3DComponents(obj.normals, faces.normals);
-        const vt = getIndexed3DComponents(obj.textures, faces.textures);
+        const v = geo.getIndexed3DComponents(obj.vertices, faces.vertices);
+        const vc = geo.getIndexed3DComponents(obj.colors, faces.vertices);
+        const vn = geo.getIndexed3DComponents(obj.normals, faces.normals);
+        const vt = geo.getIndexed3DComponents(obj.textures, faces.textures);
 
         return {
           vertices: result.vertices.concat(v),
@@ -86,7 +86,7 @@ export class ObjFile {
         return result;
       }
 
-      return result.concat(getIndexed3DComponents(objVerts, group.faces.vertices));
+      return result.concat(geo.getIndexed3DComponents(objVerts, group.faces.vertices));
     }, []);
   }
 
@@ -102,7 +102,7 @@ export class ObjFile {
         return result;
       }
 
-      return result.concat(getIndexed3DComponents(objVerts, group.faces.normals));
+      return result.concat(geo.getIndexed3DComponents(objVerts, group.faces.normals));
     }, []);
   }
 
@@ -118,12 +118,12 @@ export class ObjFile {
         return result;
       }
 
-      return result.concat(getIndexed3DComponents(objVerts, group.faces.vertices));
+      return result.concat(geo.getIndexed3DComponents(objVerts, group.faces.vertices));
     }, []);
   }
 
   static getIndexed3DComponents(vertices, indexes) {
-    return getIndexed3DComponents(vertices, indexes);
+    return geo.getIndexed3DComponents(vertices, indexes);
   }
 }
 

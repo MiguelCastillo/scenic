@@ -1,6 +1,6 @@
 import {Renderable} from "./renderable.js";
 import {findParentItemsWithItemTypeName} from "./traversal.js";
-import * as vec3 from "../math/vector3.js";
+import {vec3} from "@scenic/math";
 
 export class Mesh extends Renderable {
   render(context) {

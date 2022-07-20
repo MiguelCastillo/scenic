@@ -1,4 +1,4 @@
-import * as mat4 from "../math/matrix4.js";
+import {mat4} from "@scenic/math";
 import {findChildDeepBreadthFirst, findChildrenDeepBreadthFirst} from "./traversal.js";
 
 const identityMatrix4 = mat4.Matrix4.identity();

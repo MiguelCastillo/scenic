@@ -36,6 +36,7 @@
     "@babel/preset-env": "^7.18.2",
     "@babel/preset-react": "^7.17.12",
     "@bit/loader-text": "^1.2.1",
+    "@scenic/math": "*",
     "eslint": "^8.17.0",
     "eslint-plugin-react": "^7.30.0",
     "husky": "^8.0.1",
@@ -51,5 +52,8 @@
   "lint-staged": {
     "*.js": "eslint --cache --fix",
     "*.{js,css,md}": "prettier --write"
-  }
+  },
+  "workspaces": [
+    "packages/*"
+  ]
 }

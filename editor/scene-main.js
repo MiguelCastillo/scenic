@@ -7,12 +7,7 @@
 // This will inject buffering into `console` so that we can access it later.
 import "./logging.js";
 
-import {
-  PerspectiveProjectionMatrix,
-  OrthographicProjectionMatrix,
-} from "../packages/math/projections.js";
-import * as vec3 from "../packages/math/vector3.js";
-import * as easings from "../packages/math/easings.js";
+import {projections, vec3, easings} from "@scenic/math";
 import {Subscription} from "../packages/dom/events.js";
 
 import {createSplitPanel} from "./split-panel.js";
@@ -228,7 +223,7 @@ function createPerspectiveProjectionMatrix(width, height, fov = 90, near = 0, fa
   // in screen space, but when we render to can convert all things to clip
   // space for the hardward to properly cull out and rasterize everything
   // we render.
-  return PerspectiveProjectionMatrix.create(fov, width, height, near, far);
+  return projections.PerspectiveProjectionMatrix.create(fov, width, height, near, far);
 }
 
 function createOrthographicProjectionMatrix(width, height, far = 1000) {
@@ -238,7 +233,7 @@ function createOrthographicProjectionMatrix(width, height, far = 1000) {
   // in screen space, but when we render to can convert all things to clip
   // space for the hardward to properly cull out and rasterize everything
   // we render.
-  return OrthographicProjectionMatrix.create(width, height, far);
+  return projections.OrthographicProjectionMatrix.create(width, height, far);
 }
 
 export const doRenderLoop = (gl) => {

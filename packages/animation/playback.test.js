@@ -1,60 +1,59 @@
 import {Elapsed, Playback} from "./playback.js";
-import {range} from "../math/range.js";
-import {fixed5f} from "../math/float.js";
+import {range, float} from "@scenic/math";
 
 describe("elapsed time", () => {
   it("with time moving from negative to positive skipping forward and backwards", () => {
     let elapsed = new Elapsed();
     expect(elapsed.resume(0).time(0)).toEqual(0);
 
-    expect(range(-800, 800, 100).map((t) => elapsed.time(t, 400))).toEqual([
+    expect(range.range(-800, 800, 100).map((t) => elapsed.time(t, 400))).toEqual([
       400, 100, 200, 300, 400, 100, 200, 300, 0, 100, 200, 300, 400, 100, 200, 300, 400,
     ]);
 
     elapsed.skip(-100);
-    expect(range(-1200, 1200, 100).map((t) => elapsed.time(t, 400))).toEqual([
+    expect(range.range(-1200, 1200, 100).map((t) => elapsed.time(t, 400))).toEqual([
       300, 400, 100, 200, 300, 400, 100, 200, 300, 400, 100, 200, 300, 0, 100, 200, 300, 400, 100,
       200, 300, 400, 100, 200, 300,
     ]);
 
     elapsed.skip(-100);
-    expect(range(-1200, 1200, 100).map((t) => elapsed.time(t, 400))).toEqual([
+    expect(range.range(-1200, 1200, 100).map((t) => elapsed.time(t, 400))).toEqual([
       200, 300, 400, 100, 200, 300, 400, 100, 200, 300, 400, 100, 200, 300, 0, 100, 200, 300, 400,
       100, 200, 300, 400, 100, 200,
     ]);
 
     elapsed.skip(-100);
-    expect(range(-1200, 1200, 100).map((t) => elapsed.time(t, 400))).toEqual([
+    expect(range.range(-1200, 1200, 100).map((t) => elapsed.time(t, 400))).toEqual([
       100, 200, 300, 400, 100, 200, 300, 400, 100, 200, 300, 400, 100, 200, 300, 0, 100, 200, 300,
       400, 100, 200, 300, 400, 100,
     ]);
 
     elapsed.skip(200);
-    expect(range(-1200, 1200, 100).map((t) => elapsed.time(t, 400))).toEqual([
+    expect(range.range(-1200, 1200, 100).map((t) => elapsed.time(t, 400))).toEqual([
       300, 400, 100, 200, 300, 400, 100, 200, 300, 400, 100, 200, 300, 0, 100, 200, 300, 400, 100,
       200, 300, 400, 100, 200, 300,
     ]);
 
     elapsed.skip(300);
-    expect(range(-1200, 1200, 100).map((t) => elapsed.time(t, 400))).toEqual([
+    expect(range.range(-1200, 1200, 100).map((t) => elapsed.time(t, 400))).toEqual([
       200, 300, 400, 100, 200, 300, 400, 100, 200, 300, 0, 100, 200, 300, 400, 100, 200, 300, 400,
       100, 200, 300, 400, 100, 200,
     ]);
 
     elapsed.skip(-100);
-    expect(range(-1200, 1200, 100).map((t) => elapsed.time(t, 400))).toEqual([
+    expect(range.range(-1200, 1200, 100).map((t) => elapsed.time(t, 400))).toEqual([
       100, 200, 300, 400, 100, 200, 300, 400, 100, 200, 300, 0, 100, 200, 300, 400, 100, 200, 300,
       400, 100, 200, 300, 400, 100,
     ]);
 
     elapsed.skip(-500);
-    expect(range(-1200, 1200, 100).map((t) => elapsed.time(t, 400))).toEqual([
+    expect(range.range(-1200, 1200, 100).map((t) => elapsed.time(t, 400))).toEqual([
       400, 100, 200, 300, 400, 100, 200, 300, 400, 100, 200, 300, 400, 100, 200, 300, 0, 100, 200,
       300, 400, 100, 200, 300, 400,
     ]);
 
     elapsed.skip(-400);
-    expect(range(-1200, 1200, 100).map((t) => elapsed.time(t, 400))).toEqual([
+    expect(range.range(-1200, 1200, 100).map((t) => elapsed.time(t, 400))).toEqual([
       400, 100, 200, 300, 400, 100, 200, 300, 400, 100, 200, 300, 400, 100, 200, 300, 400, 100, 200,
       300, 0, 100, 200, 300, 400,
     ]);
@@ -79,7 +78,7 @@ describe("elapsed time", () => {
     expect(elapsed.time(800)).toEqual(300);
 
     elapsed.resume(700);
-    expect(range(-1000, 1000, 100).map((t) => elapsed.time(t, 600))).toEqual([
+    expect(range.range(-1000, 1000, 100).map((t) => elapsed.time(t, 600))).toEqual([
       400, 500, 600, 100, 200, 300, 400, 500, 600, 100, 200, 300, 400, 500, 0, 100, 200, 300, 400,
       500, 600,
     ]);
@@ -265,9 +264,10 @@ describe("playback speed test", () => {
     const playback = new Playback().play().setDuration(10000);
 
     expect(
-      range(-0.5, 0.5, 0.05)
+      range
+        .range(-0.5, 0.5, 0.05)
         .map((s) => playback.setSpeed(s).elapsed(500))
-        .map(fixed5f)
+        .map(float.fixed5f)
     ).toEqual([
       9750, 9775, 9800, 9825, 9850, 9875, 9900, 9925, 9950, 9975, 0, 25, 50, 75, 100, 125, 150, 175,
       200, 225, 250,
@@ -278,9 +278,10 @@ describe("playback speed test", () => {
     const playback = new Playback().play().setDuration(10000);
 
     expect(
-      range(-0.5, 0.5, 0.05)
+      range
+        .range(-0.5, 0.5, 0.05)
         .map((s) => playback.setSpeed(s).elapsed(5000))
-        .map(fixed5f)
+        .map(float.fixed5f)
     ).toEqual([
       7500, 7750, 8000, 8250, 8500, 8750, 9000, 9250, 9500, 9750, 0, 250, 500, 750, 1000, 1250,
       1500, 1750, 2000, 2250, 2500,
@@ -293,9 +294,10 @@ describe("playback speed test", () => {
     expect(playback.elapsed(0)).toEqual(5000);
 
     expect(
-      range(6000, 7000, 100)
+      range
+        .range(6000, 7000, 100)
         .map((v) => playback.elapsed(v))
-        .map(fixed5f)
+        .map(float.fixed5f)
     ).toEqual([1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000]);
   });
 
@@ -305,9 +307,10 @@ describe("playback speed test", () => {
     expect(playback.elapsed(0)).toEqual(5000);
 
     expect(
-      range(7000, 8000, 100)
+      range
+        .range(7000, 8000, 100)
         .map((v) => playback.elapsed(v))
-        .map(fixed5f)
+        .map(float.fixed5f)
     ).toEqual([8000, 7900, 7800, 7700, 7600, 7500, 7400, 7300, 7200, 7100, 7000]);
   });
 });

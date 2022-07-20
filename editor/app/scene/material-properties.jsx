@@ -2,7 +2,7 @@ import * as React from "react";
 import {ColorChannels} from "./color-channels.jsx";
 import {WithNodeState} from "./with-node-state.jsx";
 
-import {fixed3f} from "../../../packages/math/float.js";
+import {float} from "@scenic/math";
 
 export class MaterialProperties extends WithNodeState {
   handleChangeColor = (value) => {
@@ -39,7 +39,7 @@ export class MaterialProperties extends WithNodeState {
       ...nodeState,
       material: {
         ...nodeState.material,
-        reflectiveness: fixed3f(evt.target.value),
+        reflectiveness: float.fixed3f(evt.target.value),
       },
     });
   };

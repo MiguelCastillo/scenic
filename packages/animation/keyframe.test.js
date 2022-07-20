@@ -1,7 +1,6 @@
 import {Animate2v, Animate3v, AnimateScalar} from "./keyframe.js";
 import {Playback} from "./playback.js";
-import {range} from "../math/range.js";
-import {fixed5f} from "../math/float.js";
+import {range, float} from "@scenic/math";
 
 // Let's disable console log to keep the reports clean.
 jest.spyOn(console, "log").mockImplementation(() => {});
@@ -219,11 +218,11 @@ describe("animateScalar", () => {
     expect(animate(0)).toEqual(0);
     expect(animate(1000)).toEqual(0.5);
     expect(animate(2000)).toEqual(1);
-    expect(fixed5f(animate(2500))).toEqual(1.16667);
-    expect(fixed5f(animate(3000))).toEqual(1.33333);
-    expect(fixed5f(animate(3500))).toEqual(1.5);
-    expect(fixed5f(animate(4000))).toEqual(1.66667);
-    expect(fixed5f(animate(4500))).toEqual(1.83333);
+    expect(float.fixed5f(animate(2500))).toEqual(1.16667);
+    expect(float.fixed5f(animate(3000))).toEqual(1.33333);
+    expect(float.fixed5f(animate(3500))).toEqual(1.5);
+    expect(float.fixed5f(animate(4000))).toEqual(1.66667);
+    expect(float.fixed5f(animate(4500))).toEqual(1.83333);
     expect(animate(5000)).toEqual(2);
     expect(animate(7500)).toEqual(2.5);
     expect(animate(10000)).toEqual(3);
@@ -231,12 +230,12 @@ describe("animateScalar", () => {
 
   describe("with 4 curve points with time range of -10 to 10 seconds, iterating 1 millisecond at a time", () => {
     const animator = new AnimateScalar([0, 1, 2, 3]);
-    const frameRange = range(-10, 10, 1);
+    const frameRange = range.range(-10, 10, 1);
 
     it("default speed of 1", () => {
       const playback = new Playback().play().setDuration(animator.duration);
       const animate = (ms) => animator.animate(playback.elapsed(ms));
-      const frames = frameRange.map((v) => animate(v)).map(fixed5f);
+      const frames = frameRange.map((v) => animate(v)).map(float.fixed5f);
       expect(frames).toEqual([
         2.99, 2.991, 2.992, 2.993, 2.994, 2.995, 2.996, 2.997, 2.998, 2.999, 0, 0.001, 0.002, 0.003,
         0.004, 0.005, 0.006, 0.007, 0.008, 0.009, 0.01,
@@ -246,7 +245,7 @@ describe("animateScalar", () => {
     it("speed of -1 (reversed animation)", () => {
       const playback = new Playback().play().setDuration(animator.duration).setSpeed(-1);
       const animate = (ms) => animator.animate(playback.elapsed(ms));
-      const frames = frameRange.map((v) => animate(v)).map(fixed5f);
+      const frames = frameRange.map((v) => animate(v)).map(float.fixed5f);
       expect(frames).toEqual([
         0.01, 0.009, 0.008, 0.007, 0.006, 0.005, 0.004, 0.003, 0.002, 0.001, 0, 2.999, 2.998, 2.997,
         2.996, 2.995, 2.994, 2.993, 2.992, 2.991, 2.99,
@@ -255,8 +254,8 @@ describe("animateScalar", () => {
   });
 
   describe("frame range from 0 to 360 (degrees)", () => {
-    const frames = range(0, 360);
-    const times = range(0, 360);
+    const frames = range.range(0, 360);
+    const times = range.range(0, 360);
     const animator = new AnimateScalar(frames, times);
 
     it("default speed of 1", () => {
@@ -374,9 +373,10 @@ describe("Animation with different speeds", () => {
     const animate = (ms) => animator.animate(playback.elapsed(ms));
 
     expect(
-      range(0, 11.9, 0.1)
+      range
+        .range(0, 11.9, 0.1)
         .map((v) => animate(v))
-        .map(fixed5f)
+        .map(float.fixed5f)
     ).toEqual([
       0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8,
       1.9, 2, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 3, 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7,
@@ -393,9 +393,10 @@ describe("Animation with different speeds", () => {
     const animate = (ms) => animator.animate(playback.elapsed(ms));
 
     expect(
-      range(0, 11.9, 0.1)
+      range
+        .range(0, 11.9, 0.1)
         .map((v) => animate(v))
-        .map(fixed5f)
+        .map(float.fixed5f)
     ).toEqual([
       0, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9, 1.05, 1.2, 1.35, 1.5, 1.65, 1.8, 1.95, 2.1, 2.25, 2.4,
       2.55, 2.7, 2.85, 3, 3.15, 3.3, 3.45, 3.6, 3.75, 3.9, 4.05, 4.2, 4.35, 4.5, 4.65, 4.8, 4.95,
@@ -413,9 +414,10 @@ describe("Animation with different speeds", () => {
     const animate = (ms) => animator.animate(playback.elapsed(ms));
 
     expect(
-      range(0, 11.9, 0.1)
+      range
+        .range(0, 11.9, 0.1)
         .map((v) => animate(v))
-        .map(fixed5f)
+        .map(float.fixed5f)
     ).toEqual([
       0, 0.2, 0.4, 0.6, 0.8, 1, 1.2, 1.4, 1.6, 1.8, 2, 2.2, 2.4, 2.6, 2.8, 3, 3.2, 3.4, 3.6, 3.8, 4,
       4.2, 4.4, 4.6, 4.8, 5, 5.2, 5.4, 5.6, 5.8, 6, 6.2, 6.4, 6.6, 6.8, 7, 7.2, 7.4, 7.6, 7.8, 8,

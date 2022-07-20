@@ -1,5 +1,4 @@
-import {lerp} from "../math/lerp.js";
-import {fixed5f} from "../math/float.js";
+import {lerp, float} from "@scenic/math";
 
 // Keyframe animation is the notion that state changes over time in which the
 // state is defined by a frame; frames are snapshots of some state at discrete
@@ -74,7 +73,7 @@ export class KeyController {
     // We truncate frame data because there are frames with very tiny deltas
     // that result in noise or no actual practical outputs. So we skip those
     // and save on the cycles.
-    this.frames = frames.map(fixed5f);
+    this.frames = frames.map(float.fixed5f);
     this.segmentCount = frameCount - 1;
 
     if (duration !== -1) {
@@ -187,7 +186,7 @@ export class AnimateScalar extends Animation {
   animate = (ms, speed, ease) => {
     const [delta, index] = this.controller.getFrameIndex(ms, speed);
     const frames = this.frames;
-    return lerp(delta, frames[index], frames[index + 1], ease);
+    return lerp.lerp(delta, frames[index], frames[index + 1], ease);
   };
 }
 
@@ -196,7 +195,7 @@ export class Animate2v extends Animation {
     const [delta, index] = this.controller.getFrameIndex(ms, speed);
     const f1 = this.frames[index];
     const f2 = this.frames[index + 1];
-    return [lerp(delta, f1[0], f2[0], ease), lerp(delta, f1[1], f2[1], ease)];
+    return [lerp.lerp(delta, f1[0], f2[0], ease), lerp.lerp(delta, f1[1], f2[1], ease)];
   };
 }
 
@@ -206,9 +205,9 @@ export class Animate3v extends Animation {
     const f1 = this.frames[index];
     const f2 = this.frames[index + 1];
     return [
-      lerp(delta, f1[0], f2[0], ease),
-      lerp(delta, f1[1], f2[1], ease),
-      lerp(delta, f1[2], f2[2], ease),
+      lerp.lerp(delta, f1[0], f2[0], ease),
+      lerp.lerp(delta, f1[1], f2[1], ease),
+      lerp.lerp(delta, f1[2], f2[2], ease),
     ];
   };
 }
