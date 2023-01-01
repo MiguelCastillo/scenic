@@ -1,5 +1,6 @@
 import {geometry as geo} from "@scenic/math";
-import {VertexBuffer, VertexBufferData} from "../../../packages/renderer/vertexbuffer.js";
+import {VertexBuffer, VertexBufferData} from "@scenic/renderer";
+
 import {WorkerLoader} from "../base-loader.js";
 import {isLight, isStaticMesh, isSkinnedMesh} from "../../scene-factory.js";
 import {createShaderProgram} from "../../shader-factory.js";

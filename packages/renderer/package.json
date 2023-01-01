@@ -1,0 +1,21 @@
+{
+  "name": "@scenic/renderer",
+  "version": "0.0.0",
+  "description": "scenic webgl rendering library",
+  "main": "dist/index.js",
+  "devDependencies": {},
+  "scripts": {
+    "test": "jest",
+    "build": "pakit src/index.js --out dist/index.js --minify true --umd @scenic/renderer"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MiguelCastillo/scenic.git"
+  },
+  "author": "Miguel Castillo <manchagnu@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/MiguelCastillo/scenic/issues"
+  },
+  "homepage": "https://github.com/MiguelCastillo/scenic#readme"
+}

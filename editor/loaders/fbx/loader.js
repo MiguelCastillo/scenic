@@ -6,7 +6,7 @@ import {
   VertexBufferData,
   TextureVertexBufferData,
   VertexBufferIndexes,
-} from "../../../packages/renderer/vertexbuffer.js";
+} from "@scenic/renderer";
 
 import {BrinaryFileLoader} from "../base-loader.js";
 

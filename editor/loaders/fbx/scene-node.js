@@ -1,6 +1,7 @@
 import {mat4} from "@scenic/math";
 
-import {VertexBuffer, VertexBufferData} from "../../../packages/renderer/vertexbuffer.js";
+import {VertexBuffer, VertexBufferData} from "@scenic/renderer";
+
 import {
   Node as SceneNode,
   findParentByType,
