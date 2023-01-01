@@ -9,6 +9,7 @@ import "./logging.js";
 
 import {projections, vec3, easings} from "@scenic/math";
 import {events as domEvents} from "@scenic/dom";
+import {webgl} from "@scenic/renderer";
 
 import {createSplitPanel} from "./split-panel.js";
 import {createScene, buildDefaultState} from "./scene-factory.js";
@@ -17,7 +18,6 @@ import {loadShaders} from "./shader-factory.js";
 import {startRenderLoop} from "./render-loop.js";
 
 import {createFrameRateCounter} from "./fps-counter.js";
-import {getDebugData} from "../packages/renderer/webgl.js";
 
 const sceneObjectsID = "scene objects";
 const axisProjectionID = "axis projection";
@@ -237,7 +237,7 @@ function createOrthographicProjectionMatrix(width, height, far = 1000) {
 }
 
 export const doRenderLoop = (gl) => {
-  const {vendor, renderer, limits, contextAttributes} = getDebugData(gl);
+  const {vendor, renderer, limits, contextAttributes} = webgl.getDebugData(gl);
 
   // eslint-disable-next-line no-console
   console.log("Vendor:", vendor);

@@ -1,8 +1,4 @@
-import {
-  ShaderProgram,
-  compileShaderSource,
-  parseVertexShaderAttributes,
-} from "../packages/shaders/program.js";
+import {ShaderProgram, compileShaderSource, parseVertexShaderAttributes} from "@scenic/renderer";
 
 const shaderCache = {};
 

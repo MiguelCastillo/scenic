@@ -1,12 +1,12 @@
 import React from "react";
 import {createRoot} from "react-dom/client";
 import {ready as domReady} from "@scenic/dom";
+import {webgl} from "@scenic/renderer";
 
 import {SceneGraph} from "./app/app.jsx";
 import {Error} from "./app/error.jsx";
 import {Console} from "./app/console.jsx";
 import {Loading} from "./app/loading.jsx";
-import * as webgl from "../packages/renderer/webgl.js";
 
 import _console from "./logging.js";
 
