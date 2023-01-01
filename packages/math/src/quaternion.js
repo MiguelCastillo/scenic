@@ -1,4 +1,4 @@
-// Quaternions rotate by default in a ZYX order, which is aligns with
+// Quaternions rotate by default in a ZYX order, which aligns with
 // how matrix4 rotation generates matrices as well. This is why it is
 // easy to interchange quaternion rotation with matrix rotation.
 //
@@ -51,7 +51,7 @@ export function identity() {
 export function rotation(dest, [w, x, y, z]) {
   const halfAngle = w / 2;
   const sinHalfAngle = Math.sin(degToRad(halfAngle));
-  dest[0] = cos(halfAngle);
+  dest[0] = Math.cos(halfAngle);
   dest[1] = x * sinHalfAngle;
   dest[2] = y * sinHalfAngle;
   dest[3] = z * sinHalfAngle;
@@ -64,15 +64,15 @@ export function fromEulerAngles(dest, degreeX, degreeY, degreeZ) {
   // Roll = degreeX
   // Pith = degreeY
   // Yaw = degreeZ
-  const halfX = degreeX * 0.5,
-    halfY = degreeY * 0.5,
-    halfZ = degreeZ * 0.5;
-  const sx = Math.sin(degToRad(halfX));
-  const cx = Math.cos(degToRad(halfX));
-  const sy = Math.sin(degToRad(halfY));
-  const cy = Math.cos(degToRad(halfY));
-  const sz = Math.sin(degToRad(halfZ));
-  const cz = Math.cos(degToRad(halfZ));
+  const halfX = degToRad(degreeX * 0.5);
+  const halfY = degToRad(degreeY * 0.5);
+  const halfZ = degToRad(degreeZ * 0.5);
+  const sx = Math.sin(halfX);
+  const cx = Math.cos(halfX);
+  const sy = Math.sin(halfY);
+  const cy = Math.cos(halfY);
+  const sz = Math.sin(halfZ);
+  const cz = Math.cos(halfZ);
 
   dest[0] = cx * cy * cz + sx * sy * sz;
   dest[1] = sx * cy * cz - cx * sy * sz;
@@ -85,18 +85,22 @@ export function fromEulerAngles(dest, degreeX, degreeY, degreeZ) {
 export function toEulerAngle(dest, [w, x, y, z]) {
   let asin = 2 * (w * y - x * z);
   asin = asin < -1 ? -1 : asin > 1 ? 1 : asin;
-  dest[1] = fixed7f(radToDeg(Math.asin(asin))); // Pitch
-  const _90deg = dest[1];
+  const degAngle = fixed7f(radToDeg(Math.asin(asin))); // Pitch
+  dest[1] = degAngle;
 
-  if (_90deg === 90) {
+  if (degAngle === 90) {
     dest[0] = 0;
     dest[2] = radToDeg(-2 * Math.atan2(x, w));
-  } else if (_90deg === -90) {
+  } else if (degAngle === -90) {
     dest[0] = 0;
     dest[2] = radToDeg(2 * Math.atan2(x, w));
   } else {
-    dest[0] = radToDeg(Math.atan2(2 * (w * x + y * z), w * w - x * x - y * y + z * z)); // Roll
-    dest[2] = radToDeg(Math.atan2(2 * (w * z + x * y), w * w + x * x - y * y - z * z)); // Yaw
+    const xx = x * x;
+    const yy = y * y;
+    const zz = z * z;
+    const ww = w * w;
+    dest[0] = radToDeg(Math.atan2(2 * (w * x + y * z), ww - xx - yy + zz)); // Roll
+    dest[2] = radToDeg(Math.atan2(2 * (w * z + x * y), ww + xx - yy - zz)); // Yaw
   }
   return dest;
 }
@@ -119,16 +123,27 @@ export function toRotationMatrix(dest, [w, x, y, z]) {
   // quaternion. Whereas the form above (inhomogeneous) would generate
   // matrices that are no longer orthogonal, which causes distortion.
   // https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
-  dest[0] = w * w + x * x - y * y - z * z;
-  dest[1] = 2 * (x * y - z * w);
-  dest[2] = 2 * (x * z + y * w);
+  const xx = x * x;
+  const xy = x * y;
+  const xz = x * z;
+  const xw = x * w;
+  const yy = y * y;
+  const yz = y * z;
+  const yw = y * w;
+  const zz = z * z;
+  const zw = z * w;
+  const ww = w * w;
 
-  dest[4] = 2 * (x * y + z * w);
-  dest[5] = w * w - x * x + y * y - z * z;
-  dest[6] = 2 * (y * z - x * w);
+  dest[0] = ww + xx - yy - zz;
+  dest[1] = 2 * (xy - zw);
+  dest[2] = 2 * (xz + yw);
 
-  dest[8] = 2 * (x * z - y * w);
-  dest[9] = 2 * (y * z + x * w);
-  dest[10] = w * w - x * x - y * y + z * z;
+  dest[4] = 2 * (xy + zw);
+  dest[5] = ww - xx + yy - zz;
+  dest[6] = 2 * (yz - xw);
+
+  dest[8] = 2 * (xz - yw);
+  dest[9] = 2 * (yz + xw);
+  dest[10] = ww - xx - yy + zz;
   return dest;
 }
