@@ -5,7 +5,7 @@
   "main": "src/index.js",
   "scripts": {
     "test": "jest",
-    "lint": "eslint --config .eslintrc.js --ext .js --ext .jsx editor src",
+    "lint": "eslint --config .eslintrc.js --ext .js --ext .jsx editor packages",
     "start": "3dub --config .3dub-prod.js",
     "start-dev": "pm2 start dev.config.js",
     "stop-dev": "pm2 delete server build-scene build-editor build-fileformats",
