@@ -1,10 +1,11 @@
 import React from "react";
 import {createRoot} from "react-dom/client";
+import {ready as domReady} from "@scenic/dom";
+
 import {SceneGraph} from "./app/app.jsx";
 import {Error} from "./app/error.jsx";
 import {Console} from "./app/console.jsx";
 import {Loading} from "./app/loading.jsx";
-import {onReady} from "../packages/dom/ready.js";
 import * as webgl from "../packages/renderer/webgl.js";
 
 import _console from "./logging.js";
@@ -49,7 +50,7 @@ export class App {
 // Whenever the DOM is ready is when we want to start doing work on rendering
 // the scene. That's because the canvas where we render stuff needs to be
 // ready for creating the webgl context.
-onReady(() => {
+domReady.onReady(() => {
   // webgl context! There is where we render all the stuff. This is
   // the thing that renders to screen.
   const gl = webgl.createContext(document.querySelector("#glCanvas"));

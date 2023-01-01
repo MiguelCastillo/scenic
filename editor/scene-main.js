@@ -8,7 +8,7 @@
 import "./logging.js";
 
 import {projections, vec3, easings} from "@scenic/math";
-import {Subscription} from "../packages/dom/events.js";
+import {events as domEvents} from "@scenic/dom";
 
 import {createSplitPanel} from "./split-panel.js";
 import {createScene, buildDefaultState} from "./scene-factory.js";
@@ -87,14 +87,14 @@ function createSceneUpdater(gl, sceneManager) {
   // Update canvas width/height whenever the window is resized. clientHeight
   // and clientWidth are the window.innerHeight and window.innerWidth. it is
   // just a convenient accessor for the global object dimensions.
-  Subscription.create(window).on("resize", () => {
+  domEvents.Subscription.create(window).on("resize", () => {
     handleResize();
   });
 
   const splitPanelEl = document.getElementById("app-panel");
   createSplitPanel(splitPanelEl);
 
-  Subscription.create(splitPanelEl).on("panel:resize", () => {
+  domEvents.Subscription.create(splitPanelEl).on("panel:resize", () => {
     handleResize();
   });
 
@@ -102,7 +102,7 @@ function createSceneUpdater(gl, sceneManager) {
   const worldRotation = new easings.WeightedItems(easings.easeInQuart);
   const worldTranslation = new easings.WeightedItems(easings.easeInQuart);
   const mousetrapEl = document.getElementById("mousetrap");
-  Subscription.create(mousetrapEl)
+  domEvents.Subscription.create(mousetrapEl)
     .on("click", (/*evt*/) => {
       mousetrapEl.requestPointerLock();
     })

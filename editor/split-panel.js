@@ -1,4 +1,4 @@
-import {Subscription} from "../packages/dom/events.js";
+import {events as domEvents} from "@scenic/dom";
 
 export function createSplitPanel(el) {
   let resizeEnabled = false;
@@ -8,11 +8,11 @@ export function createSplitPanel(el) {
     throw new Error("Unable to find resizer element");
   }
 
-  Subscription.create(resizerEl).on("mousedown", () => {
+  domEvents.Subscription.create(resizerEl).on("mousedown", () => {
     resizeEnabled = true;
   });
 
-  Subscription.create(el)
+  domEvents.Subscription.create(el)
     .on("mouseup", () => {
       resizeEnabled = false;
     })
