@@ -1,13 +1,14 @@
 module.exports = {
+  root: true,
   parser: "@babel/eslint-parser",
   parserOptions: {
     sourceType: "module",
+    requireConfigFile: false,
   },
   env: {
     browser: true,
     commonjs: true,
   },
-  extends: ["plugin:react/recommended"],
   rules: {
     curly: 2,
     "no-console": 2,
@@ -25,13 +26,5 @@ module.exports = {
     "no-trailing-spaces": 0,
     "eol-last": 2,
     "react/prop-types": 0,
-  },
-  settings: {
-    // This has react because this configuration is also used by the scene
-    // editor which is a react app.
-    // TODO(miguel): add new eslint file in the scene editor
-    react: {
-      version: "detect",
-    },
   },
 };

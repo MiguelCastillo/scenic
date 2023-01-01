@@ -1,5 +1,1 @@
-{
-  "plugins": ["@babel/plugin-proposal-class-properties"],
-  "presets": ["@babel/preset-env"],
-  "sourceMap": false
-}
+../.babelrc.json
