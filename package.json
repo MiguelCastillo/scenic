@@ -39,6 +39,7 @@
     "@scenic/math": "*",
     "@scenic/dom": "*",
     "@scenic/renderer": "*",
+    "@scenic/animation": "*",
     "eslint": "^8.17.0",
     "eslint-plugin-react": "^7.30.0",
     "husky": "^8.0.1",

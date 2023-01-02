@@ -1,6 +1,9 @@
 import {mat4} from "@scenic/math";
-
 import {VertexBuffer, VertexBufferData} from "@scenic/renderer";
+import {
+  keyframe as sceneAnimationKeyframe,
+  playback as sceneAnimationPlayback,
+} from "@scenic/animation";
 
 import {
   Node as SceneNode,
@@ -10,8 +13,6 @@ import {
 import {Mesh as MeshSceneNode} from "../../../packages/scene/mesh.js";
 import {Renderable as RenderableSceneNode} from "../../../packages/scene/renderable.js";
 import {Animation as AnimationSceneNode} from "../../../packages/scene/animation.js";
-import {AnimateScalar} from "../../../packages/animation/keyframe.js";
-import {Playback as AnimationPlayback} from "../../../packages/animation/playback.js";
 
 const AnimatableInterface = (superclass) =>
   class extends superclass {
@@ -32,8 +33,8 @@ const AnimatableInterface = (superclass) =>
     preRender(context) {
       maybeUpdatePlayback(context, this.relativeRoot.animation);
 
-      const animation = getAnimation(context, this);
-      if (!animation) {
+      const animationTransform = getAnimationTransform(context, this);
+      if (!animationTransform) {
         super.preRender(context);
         return;
       }
@@ -44,7 +45,7 @@ const AnimatableInterface = (superclass) =>
         translation = transform.position,
         rotation = transform.rotation,
         scale = transform.scale,
-      } = animation;
+      } = animationTransform;
 
       // https://help.autodesk.com/view/FBX/2017/ENU/?guid=__cpp_ref__transformations_2main_8cxx_example_html
       let animationMatrix = mat4.Matrix4.trs(translation, rotation, scale);
@@ -380,7 +381,7 @@ export class AnimationStack extends SceneNode {
   constructor(options) {
     super(Object.assign({}, options, {type: "fbx-animation-stack"}));
     this.animationLayers = [];
-    this.playback = new AnimationPlayback();
+    this.playback = new sceneAnimationPlayback.Playback();
   }
 
   add(node) {
@@ -447,7 +448,7 @@ export class AnimationCurve extends SceneNode {
     this.times = times;
     this.values = values;
     this.pname = pname;
-    this.animation = new AnimateScalar(values, times);
+    this.animation = new sceneAnimationKeyframe.AnimateScalar(values, times);
   }
 
   getValue(ms) {
@@ -464,7 +465,7 @@ function getTransformAnimation(animation, defaultValues) {
   return transform;
 }
 
-function getAnimation(context, animatableNode) {
+function getAnimationTransform(context, animatableNode) {
   // relative root is a skinned mesh node, which will have an animation
   // property in it for easy access to the animation node.
   const animation = animatableNode.relativeRoot.animation;
