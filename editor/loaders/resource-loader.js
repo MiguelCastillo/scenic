@@ -1,9 +1,6 @@
 import {treeGetMatches} from "../../packages/scene/traversal.js";
-
 import {Loader as ObjFileLoader, buildSceneNode as objBuildSceneNode} from "./obj/loader.js";
-
 import {Loader as FbxFileLoader, buildSceneNode as fbxBuildSceneNode} from "./fbx/loader.js";
-
 import {isLight, isStaticMesh, isSkinnedMesh} from "../scene-factory.js";
 
 export function createResourceLoader(gl, sceneManager) {

@@ -1,0 +1,21 @@
+{
+  "name": "@scenic/fbx",
+  "version": "0.0.0",
+  "description": "scenic library for parsing FBX files",
+  "main": "dist/index.js",
+  "devDependencies": {},
+  "scripts": {
+    "test": "jest",
+    "build": "pakit src/fbxfile.js --out dist/index.js --minify true --umd @scenic/fbx"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MiguelCastillo/scenic.git"
+  },
+  "author": "Miguel Castillo <manchagnu@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/MiguelCastillo/scenic/issues"
+  },
+  "homepage": "https://github.com/MiguelCastillo/scenic#readme"
+}
