@@ -6,6 +6,7 @@
   "devDependencies": {},
   "scripts": {
     "test": "jest",
+    "lint": "eslint ./src",
     "build": "pakit src/index.js --out dist/index.js --minify true --umd @scenic/math"
   },
   "repository": {
