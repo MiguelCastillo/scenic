@@ -4,11 +4,7 @@ import "webgl-mock";
 
 import {float, mat4, geometry as geo} from "@scenic/math";
 
-import {
-  FbxFile,
-  decodePolygonVertexIndexes,
-  Node as FbxNode,
-} from "../../../packages/formats/fbxfile.js";
+import {FbxFile, decodePolygonVertexIndexes, Node as FbxNode} from "@scenic/fbx";
 
 import {
   buildSceneNode,
@@ -58,7 +54,7 @@ jest.spyOn(console, "log").mockImplementation(() => {});
 
 describe("fbx Loader", () => {
   test("loading cube.fbx", () => {
-    const model = loadModel("../../../resources/fbx/__testdata__/cube.fbx");
+    const model = loadModel("./__testdata__/cube.fbx");
     expect(model).toBeInstanceOf(FbxNode);
 
     const sceneNodeFxbCube = {
@@ -80,7 +76,7 @@ describe("fbx Loader", () => {
   });
 
   describe("cube armature animation", () => {
-    const model = loadModel("../../../resources/fbx/__testdata__/cubearmature_simple.fbx");
+    const model = loadModel("./__testdata__/cubearmature_simple.fbx");
     const sceneNodeConfig = {
       id: "cube armature",
       type: "skinned-mesh",

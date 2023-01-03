@@ -1,5 +1,4 @@
 import {mat4, float, tbnMatrix, geometry as geo} from "@scenic/math";
-import {createShaderProgram} from "../../shader-factory.js";
 
 import {
   VertexBuffer,
@@ -7,8 +6,6 @@ import {
   TextureVertexBufferData,
   VertexBufferIndexes,
 } from "@scenic/renderer";
-
-import {BrinaryFileLoader} from "../base-loader.js";
 
 import {
   FbxFile,
@@ -18,7 +15,10 @@ import {
   findPropertyValueByName,
   decodePolygonVertexIndexes,
   polygonVertexIndexToDirect,
-} from "../../../packages/formats/fbxfile.js";
+} from "@scenic/fbx";
+
+import {createShaderProgram} from "../../shader-factory.js";
+import {BrinaryFileLoader} from "../base-loader.js";
 
 import {findChildrenByType} from "../../../packages/scene/node.js";
 import {Material as MaterialSceneNode} from "../../../packages/scene/material.js";

@@ -270,7 +270,7 @@ test("parse cube with texture vertices", () => {
 });
 
 test("large obj with unknown attributes still loads correctly", () => {
-  const objContent = fs.readFileSync(path.join(__dirname, "../../resources/obj/airboat.obj"));
+  const objContent = fs.readFileSync(path.join(__dirname, "../__testdata__/airboat.obj"));
   const obj = ObjFile.create(objContent.toString());
 
   expect(obj.groups.length).toEqual(17);

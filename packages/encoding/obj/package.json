@@ -1,0 +1,21 @@
+{
+  "name": "@scenic/obj",
+  "version": "0.0.0",
+  "description": "scenic library for parsing OBJ files",
+  "main": "dist/index.js",
+  "devDependencies": {},
+  "scripts": {
+    "test": "jest",
+    "build": "pakit src/objfile.js --out dist/index.js --minify true --umd @scenic/obj"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MiguelCastillo/scenic.git"
+  },
+  "author": "Miguel Castillo <manchagnu@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/MiguelCastillo/scenic/issues"
+  },
+  "homepage": "https://github.com/MiguelCastillo/scenic#readme"
+}

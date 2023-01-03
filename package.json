@@ -40,6 +40,8 @@
     "@scenic/dom": "*",
     "@scenic/renderer": "*",
     "@scenic/animation": "*",
+    "@scenic/fbx": "*",
+    "@scenic/obj": "*",
     "eslint": "^8.17.0",
     "eslint-plugin-react": "^7.30.0",
     "husky": "^8.0.1",
@@ -57,6 +59,7 @@
     "*.{js,css,md}": "prettier --write"
   },
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "packages/encoding/*"
   ]
 }
