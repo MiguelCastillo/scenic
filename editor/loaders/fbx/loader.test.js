@@ -4,6 +4,8 @@ import "webgl-mock";
 
 import {float, mat4, geometry as geo} from "@scenic/math";
 
+import {Animation, traversal} from "@scenic/scene";
+
 import {FbxFile, decodePolygonVertexIndexes, Node as FbxNode} from "@scenic/fbx";
 
 import {
@@ -14,8 +16,6 @@ import {
 
 import {addShaderCacheEntry} from "../../shader-factory.js";
 import {createScene} from "../../scene-factory.js";
-import {Animation} from "../../../packages/scene/animation";
-import {bubbleTraversal} from "../../../packages/scene/traversal.js";
 
 const float1 = float.fixedFloat(1);
 
@@ -157,7 +157,7 @@ describe("fbx Loader", () => {
       // bone hierarchy is animated and its transforms are propagated
       // to the meshes (skins) they animate.
       let context = {gl, sceneManager, ms: 0};
-      bubbleTraversal(bubbleDown(context), () => {})(sceneNode);
+      traversal.bubbleTraversal(bubbleDown(context), () => {})(sceneNode);
 
       for (const tdata of Object.values(testData)) {
         actual = mat4.Matrix4.identity()
@@ -197,7 +197,7 @@ describe("fbx Loader", () => {
       for (const [ms, degrees, expectedPreCalculated] of timerotation) {
         let context = {gl, sceneManager, ms};
         animation.currentStack.playback.play(0);
-        bubbleTraversal(bubbleDown(context), () => {})(sceneNode);
+        traversal.bubbleTraversal(bubbleDown(context), () => {})(sceneNode);
 
         let tdata = testData["Right Bone - Model_LimbNode"];
         actual = mat4.Matrix4.identity()

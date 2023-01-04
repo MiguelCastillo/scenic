@@ -1,4 +1,4 @@
-import {Node, findParentByType} from "./node.js";
+import {Node} from "./node.js";
 import {Renderable} from "./renderable.js";
 
 export class Material extends Node {
@@ -52,7 +52,7 @@ export class Material extends Node {
   }
 
   render() {
-    const renderable = findParentByType(this, Renderable);
+    const renderable = Node.findParentByType(this, Renderable);
 
     if (renderable) {
       renderable.shaderProgram.addUniforms([

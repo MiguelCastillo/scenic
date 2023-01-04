@@ -1,11 +1,13 @@
-import {Node as SceneNode} from "../packages/scene/node.js";
-import {Light as SceneLight} from "../packages/scene/light.js";
-import {Projection} from "../packages/scene/projection.js";
-import {StaticMesh} from "../packages/scene/static-mesh.js";
-import {SkinnedMesh} from "../packages/scene/skinned-mesh.js";
-import {buildTraversal} from "../packages/scene/traversal.js";
-import {SceneManager} from "../packages/scene/scene-manager.js";
-import {StateManager} from "../packages/scene/state-manager.js";
+import {
+  Node as SceneNode,
+  Light as SceneLight,
+  Projection,
+  StaticMesh,
+  SkinnedMesh,
+  SceneManager,
+  StateManager,
+  traversal,
+} from "@scenic/scene";
 
 export function createScene(config) {
   // The state manager is the first thing we create. This is built from all
@@ -44,7 +46,7 @@ export function createScene(config) {
     return new SceneNode(nodeConfig);
   }
 
-  const traverse = buildTraversal(buildSceneNode, buildSceneParentNode);
+  const traverse = traversal.buildTraversal(buildSceneNode, buildSceneParentNode);
   const sceneNode = traverse(config);
   return sceneManager.withSceneNodes(sceneNode.items);
 }
@@ -93,5 +95,5 @@ export function buildDefaultState(config) {
     return parent;
   };
 
-  return buildTraversal(buildNode, buildParent)(config);
+  return traversal.buildTraversal(buildNode, buildParent)(config);
 }

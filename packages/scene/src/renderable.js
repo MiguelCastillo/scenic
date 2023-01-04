@@ -1,4 +1,5 @@
 import {mat4} from "@scenic/math";
+
 import {Node} from "./node.js";
 import {Projection} from "./projection.js";
 

@@ -1,0 +1,24 @@
+{
+  "name": "@scenic/scene",
+  "version": "0.0.0",
+  "description": "scenic library for managing scenes",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "jest",
+    "lint": "eslint ./src",
+    "build": "pakit src/index.js --out dist/index.js --minify true --umd @scenic/scene"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MiguelCastillo/scenic.git"
+  },
+  "author": "Miguel Castillo <manchagnu@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/MiguelCastillo/scenic/issues"
+  },
+  "homepage": "https://github.com/MiguelCastillo/scenic#readme",
+  "dependencies": {
+    "@scenic/math": "^0.0.0"
+  }
+}
