@@ -1,5 +1,5 @@
 import {bubbleTraversal} from "./traversal.js";
-import {Node, findChildByID} from "./node.js";
+import {Node} from "./node.js";
 
 export class SceneManager {
   constructor(stateManager) {
@@ -31,7 +31,7 @@ export class SceneManager {
   }
 
   getNodeByID(id) {
-    return findChildByID(this.document, id);
+    return Node.findChildByID(this.document, id);
   }
 
   render(ms, gl) {

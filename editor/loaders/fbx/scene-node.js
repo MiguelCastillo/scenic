@@ -7,12 +7,10 @@ import {
 
 import {
   Node as SceneNode,
-  findParentByType,
-  findChildrenByType,
-} from "../../../packages/scene/node.js";
-import {Mesh as MeshSceneNode} from "../../../packages/scene/mesh.js";
-import {Renderable as RenderableSceneNode} from "../../../packages/scene/renderable.js";
-import {Animation as AnimationSceneNode} from "../../../packages/scene/animation.js";
+  Mesh as MeshSceneNode,
+  Renderable as RenderableSceneNode,
+  Animation as AnimationSceneNode,
+} from "@scenic/scene";
 
 const AnimatableInterface = (superclass) =>
   class extends superclass {
@@ -146,7 +144,7 @@ export class Geometry extends SceneNode {
   }
 
   render() {
-    let renderable = findParentByType(this, RenderableSceneNode);
+    let renderable = SceneNode.findParentByType(this, RenderableSceneNode);
     if (!renderable) {
       return;
     }
@@ -230,7 +228,7 @@ export class Armature extends AnimatableInterface(RenderableSceneNode) {
   // happens automatically when bonesByID is called at runtime.
   registerBones() {
     this._bonesByID = null;
-    const bones = findChildrenByType(this, Bone);
+    const bones = SceneNode.findChildrenByType(this, Bone);
     if (bones.length) {
       this._bonesByID = {};
       for (const bone of bones) {
@@ -301,7 +299,7 @@ export class Bone extends AnimatableInterface(SceneNode) {
   }
 
   render(context) {
-    const armature = findParentByType(this, Armature);
+    const armature = SceneNode.findParentByType(this, Armature);
     if (this.parent === armature || !armature.renderEnabled) {
       return;
     }

@@ -1,6 +1,6 @@
-import {Node, findChildByID, _clearIDsForTests} from "./node.js";
-
 import {mat4} from "@scenic/math";
+
+import {Node, _clearIDsForTests} from "./node.js";
 
 describe("Scene Node add/remove child", () => {
   it("two new node - first ID 1 and second with ID 2", () => {
@@ -81,7 +81,7 @@ describe("findChildByID", () => {
       new Node({id: "child.3"}),
     ]);
 
-    expect(findChildByID(root, "child.3")).toMatchObject({
+    expect(Node.findChildByID(root, "child.3")).toMatchObject({
       id: "child.3",
     });
   });
@@ -106,7 +106,7 @@ describe("findChildByID", () => {
       ]),
     ]);
 
-    expect(findChildByID(root, "child.3.3")).toMatchObject({
+    expect(Node.findChildByID(root, "child.3.3")).toMatchObject({
       id: "child.3.3",
     });
   });
@@ -173,7 +173,7 @@ describe("findChildByID", () => {
         ]),
     ]);
 
-    expect(findChildByID(root, "child.3.3.3")).toMatchObject({
+    expect(Node.findChildByID(root, "child.3.3.3")).toMatchObject({
       id: "child.3.3.3",
     });
   });

@@ -1,5 +1,6 @@
-import {Node} from "./node.js";
 import {mat4} from "@scenic/math";
+
+import {Node} from "./node.js";
 
 export class Projection extends Node {
   constructor({type = null, ...options}) {

@@ -1,4 +1,4 @@
-import {treeGetMatches} from "../../packages/scene/traversal.js";
+import {traversal} from "@scenic/scene";
 import {Loader as ObjFileLoader, buildSceneNode as objBuildSceneNode} from "./obj/loader.js";
 import {Loader as FbxFileLoader, buildSceneNode as fbxBuildSceneNode} from "./fbx/loader.js";
 import {isLight, isStaticMesh, isSkinnedMesh} from "../scene-factory.js";
@@ -51,7 +51,7 @@ export function createResourceLoader(gl, sceneManager) {
 
 export function getResourcesFromConfig(config) {
   // TODO(miguel): do we really need to filter out by node type?
-  const traverse = treeGetMatches(
+  const traverse = traversal.treeGetMatches(
     (item) =>
       (isStaticMesh(item) || isSkinnedMesh(item) || isLight(item)) &&
       !!item.resource &&

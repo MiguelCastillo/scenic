@@ -1,4 +1,4 @@
-import {Node, findParentByType} from "./node.js";
+import {Node} from "./node.js";
 import {Renderable} from "./renderable.js";
 
 // The code in the Texture is basically all lifted from:
@@ -68,7 +68,7 @@ export class Texture extends Node {
   }
 
   render() {
-    let renderable = findParentByType(this, Renderable);
+    let renderable = Node.findParentByType(this, Renderable);
     if (renderable) {
       const {textureID, textureType} = this;
       let enabledName, enabledId;

@@ -1,4 +1,5 @@
 import {mat4} from "@scenic/math";
+
 import {findChildDeepBreadthFirst, findChildrenDeepBreadthFirst} from "./traversal.js";
 
 const identityMatrix4 = mat4.Matrix4.identity();
@@ -129,36 +130,36 @@ export class Node {
     }
     return this;
   }
-}
 
-export function findParentByType(sceneNode, ParentType) {
-  let parent = sceneNode.parent;
-  while (parent && !(parent instanceof ParentType)) {
-    parent = parent.parent;
+  static findParentByType(sceneNode, ParentType) {
+    let parent = sceneNode.parent;
+    while (parent && !(parent instanceof ParentType)) {
+      parent = parent.parent;
+    }
+    return parent;
   }
-  return parent;
-}
 
-// Breadth first search!
-export function findChildrenByType(sceneNode, ChildType) {
-  return findChildrenDeepBreadthFirst(sceneNode, (x) => x instanceof ChildType);
-}
+  // Breadth first search!
+  static findChildrenByType(sceneNode, ChildType) {
+    return findChildrenDeepBreadthFirst(sceneNode, (x) => x instanceof ChildType);
+  }
 
-// Breadth first search!
-export function findChildByType(sceneNode, ChildType) {
-  return findChildDeepBreadthFirst(sceneNode, (x) => x instanceof ChildType);
-}
+  // Breadth first search!
+  static findChildByType(sceneNode, ChildType) {
+    return findChildDeepBreadthFirst(sceneNode, (x) => x instanceof ChildType);
+  }
 
-export function findChildByID(sceneNode, ID) {
-  const groups = [[sceneNode]];
-  for (const nodes of groups) {
-    for (const node of nodes) {
-      if (node.childrenByID[ID]) {
-        return node.childrenByID[ID];
-      }
+  static findChildByID(sceneNode, ID) {
+    const groups = [[sceneNode]];
+    for (const nodes of groups) {
+      for (const node of nodes) {
+        if (node.childrenByID[ID]) {
+          return node.childrenByID[ID];
+        }
 
-      if (node.items.length) {
-        groups[groups.length] = node.items;
+        if (node.items.length) {
+          groups[groups.length] = node.items;
+        }
       }
     }
   }

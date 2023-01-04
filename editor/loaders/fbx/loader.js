@@ -8,6 +8,12 @@ import {
 } from "@scenic/renderer";
 
 import {
+  Node as SceneNode,
+  Material as MaterialSceneNode,
+  Texture as TextureSceneNode,
+} from "@scenic/scene";
+
+import {
   FbxFile,
   getNodeName,
   findChildByName,
@@ -19,10 +25,6 @@ import {
 
 import {createShaderProgram} from "../../shader-factory.js";
 import {BrinaryFileLoader} from "../base-loader.js";
-
-import {findChildrenByType} from "../../../packages/scene/node.js";
-import {Material as MaterialSceneNode} from "../../../packages/scene/material.js";
-import {Texture as TextureSceneNode} from "../../../packages/scene/texture.js";
 
 import {
   Mesh,
@@ -684,7 +686,7 @@ const MAX_BONES_PER_VERTEX = 4;
 // bones for a vertex, then we will ONLY pick the 4 with the most influence
 // on the vertex and drop the rest.
 export function buildSkinAnimation(gl, sceneNode) {
-  for (const geometry of findChildrenByType(sceneNode, Geometry)) {
+  for (const geometry of SceneNode.findChildrenByType(sceneNode, Geometry)) {
     const bonedata = {};
 
     // All the bone weights for a particular vertex are usually scattered across
@@ -692,7 +694,7 @@ export function buildSkinAnimation(gl, sceneNode) {
     // weights for how much bones influence vertices. So we go thru all the
     // these clusters and aggregate all the weight for every vertex by the
     // vertex index.
-    for (const skin of findChildrenByType(geometry, SkinDeformer)) {
+    for (const skin of SceneNode.findChildrenByType(geometry, SkinDeformer)) {
       for (let i = 0; i < skin.items.length; i++) {
         const cluster = skin.items[i];
         // boneIndex matches the bone matrices in vertex shader
@@ -862,7 +864,7 @@ function buildArmature(sceneNode) {
 }
 
 function initMaterialsState(sceneNode, sceneManager) {
-  findChildrenByType(sceneNode, MaterialSceneNode).forEach((material) => {
+  SceneNode.findChildrenByType(sceneNode, MaterialSceneNode).forEach((material) => {
     sceneManager.updateNodeStateByID(material.id, {
       material: {
         reflectiveness: material.reflectionFactor,
@@ -876,9 +878,9 @@ function initMaterialsState(sceneNode, sceneManager) {
 }
 
 function initShaderProgramsForMeshes(gl, sceneNode) {
-  findChildrenByType(sceneNode, Mesh).forEach((mesh) => {
-    const textures = findChildrenByType(mesh, TextureSceneNode);
-    const materials = findChildrenByType(mesh, MaterialSceneNode);
+  SceneNode.findChildrenByType(sceneNode, Mesh).forEach((mesh) => {
+    const textures = SceneNode.findChildrenByType(mesh, TextureSceneNode);
+    const materials = SceneNode.findChildrenByType(mesh, MaterialSceneNode);
 
     // If the mesh has any textures, then we use phong-texture. We have a
     // separate shader specifically for handling textures because if the
@@ -900,7 +902,7 @@ function initShaderProgramsForMeshes(gl, sceneNode) {
 }
 
 function initShaderProgramsForArmatures(gl, sceneNode) {
-  findChildrenByType(sceneNode, Armature).forEach((armature) => {
+  SceneNode.findChildrenByType(sceneNode, Armature).forEach((armature) => {
     armature.withShaderProgram(createShaderProgram(gl, "flat-material"));
   });
 }

@@ -4,8 +4,8 @@
   "description": "Scene graph rendering",
   "main": "src/index.js",
   "scripts": {
-    "test": "jest ./editor ./packages/scene ./packages/utils && npm run test --workspaces",
-    "lint": "eslint --ext .js --ext .jsx ./editor ./packages/scene ./packages/utils && npm run lint --workspaces",
+    "test": "jest ./editor ./packages/utils && npm run test --workspaces",
+    "lint": "eslint --ext .js --ext .jsx ./editor ./packages/utils && npm run lint --workspaces",
     "start": "3dub --config .3dub-prod.js",
     "start-dev": "pm2 start dev.config.js",
     "stop-dev": "pm2 delete server build-scene build-editor build-fileformats",
@@ -42,6 +42,7 @@
     "@scenic/animation": "*",
     "@scenic/fbx": "*",
     "@scenic/obj": "*",
+    "@scenic/scene": "*",
     "eslint": "^8.17.0",
     "eslint-plugin-react": "^7.30.0",
     "husky": "^8.0.1",
