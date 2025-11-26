@@ -3,6 +3,9 @@
   "version": "0.0.0",
   "description": "scenic animation library",
   "main": "dist/index.js",
+  "dependencies": {
+    "@scenic/math": "*"
+  },
   "devDependencies": {},
   "scripts": {
     "test": "jest",

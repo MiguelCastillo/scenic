@@ -4,6 +4,9 @@
   "description": "scenic library for parsing FBX files",
   "main": "dist/index.js",
   "devDependencies": {},
+  "dependencies": {
+    "pako": "^2.0.4"
+  },
   "scripts": {
     "test": "jest",
     "lint": "eslint ./src",
