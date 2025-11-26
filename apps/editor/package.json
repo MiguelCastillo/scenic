@@ -2,7 +2,6 @@
     "name": "@scene/editor",
     "version": "0.0.0",
     "description": "Editor for scenic",
-    "main": "src/index.js",
     "dependencies": {
         "@scenic/math": "*",
         "@scenic/dom": "*",
@@ -16,10 +15,10 @@
     "scripts": {
         "test": "jest ./",
         "lint": "eslint --ext .js --ext .jsx ./",
-        "editor": "pakit --config .pakit-editor.js",
-        "scene": "pakit --config .pakit-scene.js",
-        "fileformats": "pakit --config .pakit-fileformats.js",
-        "build": "npm run scene -- --minify && npm run editor -- --minify && npm run fileformats -- --minify"
+        "build:editor": "pakit --config .pakit-editor.js",
+        "build:scene": "pakit --config .pakit-scene.js",
+        "build:fileformats": "pakit --config .pakit-fileformats.js",
+        "build": "npm run build:scene -- --minify && npm run build:editor -- --minify && npm run build:fileformats -- --minify"
     },
     "repository": {
         "type": "git",

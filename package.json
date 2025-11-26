@@ -11,7 +11,7 @@
     "stop-dev": "pm2 delete server build-scene build-editor build-fileformats",
     "monit": "pm2 monit",
     "logs": "pm2 logs",
-    "build": "npm run build --workspaces",
+    "build": "npm run build --workspace=packages/math --workspace=packages/encoding --workspace=packages --workspace=apps",
     "prepare": "husky install"
   },
   "author": "Miguel Castillo",
@@ -48,8 +48,9 @@
     "*.{js,css,md}": "prettier --write"
   },
   "workspaces": [
-    "apps/*",
+    "packages/math",
+    "packages/encoding/*",
     "packages/*",
-    "packages/encoding/*"
+    "apps/*"
   ]
 }
