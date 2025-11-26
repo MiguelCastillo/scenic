@@ -2,9 +2,7 @@
 
 Scene graph renderer. Early work in progress.
 
-Scenic uses a configuraton first approach where you define the hierarcy of
-nodes in your scene. You are also welcome to manually put together the
-nodes in a scene yourself if that's what you prefer.
+Scenic uses a configuraton first approach to define a scene.
 
 You can take at this sample scene rendering skinned animation in scenic editor,
 which is an application that renders a scene. [Scenic Editor](https://scenic-editor.herokuapp.com/editor/index.html)
@@ -31,9 +29,6 @@ some geometry for rendering.
 
 ## Dev
 
-Node versions supported are 14 thru 17. Node 18 causes issues with some dependencies, we are staying away for now.
-We are running prod in Heroku, which will pick the highest value in the range, so prod runs on node 17. Heroku will automatically run `npm run build` and `npm run start`, so those are configured to run as prod scripts; no file watching, minification, no livereload.
-
 On a fresh clone, please run `npm install` to get all your dependencies ready.
 
 To start up the dev server you can `npm run start-dev`. That will startup
@@ -51,3 +46,7 @@ Currently, there are three bundles generated:
 1. The editor. This is an app with a default scene where you can test and experiment with Scenic core. For example, this is where most of the logic for FBX file animation exists while implementing support for it. Eventually this is will get renamed to playground.
 2. Fileformat. This is meant to be loaded in a webworker to parsing Obj files. This can be easily extended to support parsing other file formats if needed.
 3. Scenic. This is Scenic core - everything in `src`.
+
+## Prod
+
+TBD
