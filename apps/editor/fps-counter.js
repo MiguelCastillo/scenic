@@ -6,24 +6,24 @@
 // we need them for frame rate calculations.
 export function createFrameRateCounter() {
   let lastMs = 0;
-  let lapsedMs = 0;
+  let elapsedMs = 0;
   let frameCount = 0;
   let frameRate = 0;
 
   return function calculateFrameRate(ms) {
     // Report frame rate. How many frames a second did we get.
-    lapsedMs = ms - lastMs;
+    elapsedMs = ms - lastMs;
     frameCount++;
 
-    if (lapsedMs > 1000) {
-      frameRate = Math.floor(frameCount * (1000 / lapsedMs));
+    if (elapsedMs > 1000) {
+      frameRate = Math.floor(frameCount * (1000 / elapsedMs));
       lastMs = ms;
       frameCount = 0;
     }
 
     return {
       frameRate,
-      lapsedMs,
+      elapsedMs,
     };
   };
 }
