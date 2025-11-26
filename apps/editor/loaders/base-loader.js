@@ -2,7 +2,7 @@
  * API for loading different file types in a web worker.
  */
 
-import {Timer} from "../../packages/utils/timer.js";
+import {Timer} from "@scenic/utils";
 
 export class BaseLoader {
   load() {

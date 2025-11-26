@@ -1,6 +1,6 @@
 module.exports = {
-  src: ["editor/app-main.jsx"],
-  dest: "editor/dist/editor.js",
+  src: ["app-main.jsx"],
+  dest: "dist/editor.js",
   watch: false,
   minify: false,
 

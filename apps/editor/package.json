@@ -1,0 +1,34 @@
+{
+    "name": "@scene/editor",
+    "version": "0.0.0",
+    "description": "Editor for scenic",
+    "main": "src/index.js",
+    "dependencies": {
+        "@scenic/math": "*",
+        "@scenic/dom": "*",
+        "@scenic/renderer": "*",
+        "@scenic/animation": "*",
+        "@scenic/fbx": "*",
+        "@scenic/obj": "*",
+        "@scenic/scene": "*"
+    },
+    "devDependencies": {},
+    "scripts": {
+        "test": "jest ./",
+        "lint": "eslint --ext .js --ext .jsx ./",
+        "editor": "pakit --config .pakit-editor.js",
+        "scene": "pakit --config .pakit-scene.js",
+        "fileformats": "pakit --config .pakit-fileformats.js",
+        "build": "npm run scene -- --minify && npm run editor -- --minify && npm run fileformats -- --minify"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/MiguelCastillo/scenic.git"
+    },
+    "author": "Miguel Castillo <manchagnu@gmail.com>",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/MiguelCastillo/scenic/issues"
+    },
+    "homepage": "https://github.com/MiguelCastillo/scenic#readme"
+}

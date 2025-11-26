@@ -4,17 +4,14 @@
   "description": "Scene graph rendering",
   "main": "src/index.js",
   "scripts": {
-    "test": "jest ./editor ./packages/utils && npm run test --workspaces",
-    "lint": "eslint --ext .js --ext .jsx ./editor ./packages/utils && npm run lint --workspaces",
+    "test": "npm run test --workspaces",
+    "lint": "npm run lint --workspaces",
     "start": "3dub --config .3dub-prod.js",
     "start-dev": "pm2 start dev.config.js",
     "stop-dev": "pm2 delete server build-scene build-editor build-fileformats",
     "monit": "pm2 monit",
     "logs": "pm2 logs",
-    "editor": "pakit --config editor/.pakit-editor.js",
-    "scene": "pakit --config editor/.pakit-scene.js",
-    "fileformats": "pakit --config editor/.pakit-fileformats.js",
-    "build": "npm run build --workspaces && npm run scene -- --minify && npm run editor -- --minify && npm run fileformats -- --minify",
+    "build": "npm run build --workspaces",
     "prepare": "husky install"
   },
   "author": "Miguel Castillo",
@@ -35,13 +32,6 @@
     "@babel/preset-env": "^7.18.2",
     "@babel/preset-react": "^7.17.12",
     "@bit/loader-text": "^1.2.1",
-    "@scenic/math": "*",
-    "@scenic/dom": "*",
-    "@scenic/renderer": "*",
-    "@scenic/animation": "*",
-    "@scenic/fbx": "*",
-    "@scenic/obj": "*",
-    "@scenic/scene": "*",
     "eslint": "^8.17.0",
     "eslint-plugin-react": "^7.30.0",
     "husky": "^8.0.1",
@@ -55,10 +45,10 @@
     "webgl-mock": "^0.1.7"
   },
   "lint-staged": {
-    "*.js": "eslint --cache --fix",
     "*.{js,css,md}": "prettier --write"
   },
   "workspaces": [
+    "apps/*",
     "packages/*",
     "packages/encoding/*"
   ]
