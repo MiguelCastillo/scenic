@@ -64,7 +64,7 @@ domReady.onReady(() => {
   app.init();
 
   window.scene
-    .doRenderLoop(gl)
+    .doRenderLoop(gl, "scenes/skinning-mesh-animation-dancing-character.json")
     .then(({registerRefreshRateUpdater, resourceLoader, sceneManager, refreshProjection}) => {
       app.ready({resourceLoader, sceneManager, refreshProjection});
 

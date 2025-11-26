@@ -890,7 +890,7 @@ function initShaderProgramsForMeshes(gl, sceneNode) {
     // So we want to make sure we pick a shader that can handle textures
     // if the mesh has any, otherwise use an equivalent shader without
     // texturing.
-    const shaderName = textures.length ? "phong-texture" : "phong-lighting";
+    const shaderName = textures.length ? "shaders/phong-texture" : "shaders/phong-lighting";
     mesh.withShaderProgram(createShaderProgram(gl, shaderName));
 
     // We add a default texture so that objects can be seen by default
@@ -903,7 +903,7 @@ function initShaderProgramsForMeshes(gl, sceneNode) {
 
 function initShaderProgramsForArmatures(gl, sceneNode) {
   SceneNode.findChildrenByType(sceneNode, Armature).forEach((armature) => {
-    armature.withShaderProgram(createShaderProgram(gl, "flat-material"));
+    armature.withShaderProgram(createShaderProgram(gl, "shaders/flat-material"));
   });
 }
 

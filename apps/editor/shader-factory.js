@@ -17,8 +17,8 @@ export function loadShaders(names) {
       // File extensions for shaders aren't quite standard, however I have
       // chosen what is used here:
       // https://www.khronos.org/opengles/sdk/tools/Reference-Compiler/
-      const vertexShaderPath = "/editor/shaders/" + shaderName + ".vert";
-      const fragmentShaderPath = "/editor/shaders/" + shaderName + ".frag";
+      const vertexShaderPath = shaderName + ".vert";
+      const fragmentShaderPath = shaderName + ".frag";
 
       return Promise.all([
         fetch(vertexShaderPath).then((resp) => resp.text()),

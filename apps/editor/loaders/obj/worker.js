@@ -1,10 +1,10 @@
-importScripts("/editor/dist/file-formats.js");
+importScripts("/apps/editor/dist/file-formats.js");
 
 // Worker
 onmessage = (evt) => {
   const file = evt.data.file;
   const invertDirection = evt.data.invertDirection;
-  const timer = new fileformats.Timer();
+  const timer = new fileformats.timer.Timer();
 
   timer.start();
   fetch(file)
