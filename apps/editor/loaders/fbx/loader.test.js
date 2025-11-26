@@ -21,7 +21,7 @@ const float1 = float.fixedFloat(1);
 
 function mockShaders(shaders) {
   shaders.forEach((s) => {
-    const shaderDir = path.join(__dirname, "../../shaders/");
+    const shaderDir = path.join(__dirname, "../../");
     addShaderCacheEntry(
       s,
       fs.readFileSync(shaderDir + s + ".vert") + "",
@@ -67,7 +67,7 @@ describe("fbx Loader", () => {
     gl.getShaderInfoLog = jest.fn(() => {
       return "";
     });
-    mockShaders(["phong-lighting"]);
+    mockShaders(["shaders/phong-lighting"]);
 
     const sceneNode = sceneManager.getNodeByID(sceneNodeFxbCube.id);
     buildSceneNode(gl, model, sceneNode, sceneManager);
@@ -86,7 +86,7 @@ describe("fbx Loader", () => {
     gl.getShaderInfoLog = jest.fn(() => {
       return "";
     });
-    mockShaders(["phong-lighting", "flat-material"]);
+    mockShaders(["shaders/phong-lighting", "shaders/flat-material"]);
     const sceneNode = sceneManager.getNodeByID(sceneNodeConfig.id);
     buildSceneNode(gl, model, sceneNode, sceneManager);
     const animation = sceneNode.items.find((x) => x instanceof Animation);
