@@ -1,9 +1,9 @@
 import * as React from "react";
-import {rgbToHex, hexToRgb} from "../../../packages/utils/colors.js";
+import {colors} from "@scenic/utils";
 
 export class ColorChannels extends React.Component {
   handleChange = (evt) => {
-    this.props.onChange(hexToRgb(evt.target.value));
+    this.props.onChange(colors.hexToRgb(evt.target.value));
   };
 
   render() {
@@ -11,7 +11,7 @@ export class ColorChannels extends React.Component {
     return (
       <div className="color-picker">
         {/* <label>rgb({data[0]}, {data[1]}, {data[2]})</label> */}
-        <input type="color" onInput={(evt) => this.handleChange(evt)} value={rgbToHex(...data)} />
+        <input type="color" onInput={(evt) => this.handleChange(evt)} value={colors.rgbToHex(...data)} />
       </div>
     );
   }
