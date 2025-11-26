@@ -196,8 +196,8 @@ function createSceneUpdater(gl, sceneManager) {
 
     // Let's write out the number of frames per second that we are able to
     // render.
-    const {frameRate, lapsedMs} = getFrameRate(ms);
-    if (lapsedMs > 1000 && lastFps !== frameRate) {
+    const {frameRate, elapsedMs} = getFrameRate(ms);
+    if (elapsedMs > 1000 && lastFps !== frameRate) {
       lastFps = frameRate;
       refreshRateUpdater(frameRate);
     }
