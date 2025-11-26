@@ -236,7 +236,7 @@ function createOrthographicProjectionMatrix(width, height, far = 1000) {
   return projections.OrthographicProjectionMatrix.create(width, height, far);
 }
 
-export const doRenderLoop = (gl) => {
+export const doRenderLoop = (gl, sceneConfigFile) => {
   const {vendor, renderer, limits, contextAttributes} = webgl.getDebugData(gl);
 
   // eslint-disable-next-line no-console
@@ -250,7 +250,7 @@ export const doRenderLoop = (gl) => {
   // eslint-disable-next-line no-console
   console.log("Browser:", window.clientInformation.userAgent);
 
-  return fetch("/editor/scenes/skinning-mesh-animation-dancing-character.json")
+  return fetch(sceneConfigFile)
     .then((response) => response.json())
     .then((config) => loadScene(gl, config));
 };

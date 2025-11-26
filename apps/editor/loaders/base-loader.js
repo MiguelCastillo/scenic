@@ -2,7 +2,7 @@
  * API for loading different file types in a web worker.
  */
 
-import {Timer} from "@scenic/utils";
+import {timer} from "@scenic/utils";
 
 export class BaseLoader {
   load() {
@@ -12,10 +12,10 @@ export class BaseLoader {
 
 export class TextFileLoader extends BaseLoader {
   load(file) {
-    const timer = new Timer();
+    const t = new timer.Timer();
     return fetch(file).then((res) => {
       // eslint-disable-next-line no-console
-      console.log("Downloaded:", file, `${timer.elapsed()} seconds`);
+      console.log("Downloaded:", file, `${t.elapsed()} seconds`);
       return res.text();
     });
   }
@@ -23,10 +23,10 @@ export class TextFileLoader extends BaseLoader {
 
 export class BrinaryFileLoader extends BaseLoader {
   load(file) {
-    const timer = new Timer();
+    const t = new timer.Timer();
     return fetch(file).then((res) => {
       // eslint-disable-next-line no-console
-      console.log("Downloaded:", file, `${timer.elapsed()} seconds`);
+      console.log("Downloaded:", file, `${t.elapsed()} seconds`);
       return res.arrayBuffer();
     });
   }

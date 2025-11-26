@@ -10,7 +10,7 @@ import {createShaderProgram} from "../../shader-factory.js";
  */
 export class Loader extends WorkerLoader {
   constructor() {
-    super(new Worker("/editor/loaders/obj/worker.js"));
+    super(new Worker("/apps/editor/loaders/obj/worker.js"));
   }
 }
 
@@ -36,9 +36,9 @@ export function buildSceneNode(gl, model, sceneNode /*, sceneManager*/) {
 
   let shaderProgram;
   if (isStaticMesh(sceneNode) || isSkinnedMesh(sceneNode)) {
-    shaderProgram = createShaderProgram(gl, "phong-lighting");
+    shaderProgram = createShaderProgram(gl, "shaders/phong-lighting");
   } else if (isLight(sceneNode)) {
-    shaderProgram = createShaderProgram(gl, "flat-material");
+    shaderProgram = createShaderProgram(gl, "shaders/flat-material");
   } else {
     throw new Error(
       "Unable to intialize shader program because node is not a static-mesh or light"
