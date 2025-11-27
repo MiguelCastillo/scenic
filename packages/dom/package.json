@@ -7,7 +7,7 @@
   "scripts": {
     "test": "echo no tests",
     "lint": "eslint ./src",
-    "build": "pakit src/index.js --out dist/index.js --minify true --umd @scenic/dom"
+    "build": "pakit src/index.js --out dist/index.js --minify true --eslint false --umd @scenic/dom"
   },
   "repository": {
     "type": "git",
