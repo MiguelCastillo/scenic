@@ -4,6 +4,7 @@ module.exports = {
   umd: "scene",
   watch: false,
   minify: false,
+  eslint: false,
 
   loaders: {
     cache: {

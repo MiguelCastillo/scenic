@@ -3,6 +3,7 @@ module.exports = {
   dest: "dist/editor.js",
   watch: false,
   minify: false,
+  eslint: false,
 
   loaders: {
     cache: {
