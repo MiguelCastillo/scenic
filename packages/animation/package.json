@@ -10,7 +10,7 @@
   "scripts": {
     "test": "jest",
     "lint": "eslint ./src",
-    "build": "pakit src/index.js --out dist/index.js --minify true --umd @scenic/animation"
+    "build": "pakit src/index.js --out dist/index.js --minify true --eslint false --umd @scenic/animation"
   },
   "repository": {
     "type": "git",
