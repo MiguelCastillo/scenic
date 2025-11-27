@@ -4,6 +4,7 @@ module.exports = {
   umd: "fileformats",
   watch: false,
   minify: false,
+  eslint: false,
 
   loaders: {
     cache: {
