@@ -48,7 +48,7 @@ export function createScene(config) {
 
   const traverse = traversal.buildTraversal(buildSceneNode, buildSceneParentNode);
   const sceneNode = traverse(config);
-  return sceneManager.withSceneNodes(sceneNode.items);
+  return sceneManager.withNodes(sceneNode.items);
 }
 
 export function isProjection(nodeConfig) {
