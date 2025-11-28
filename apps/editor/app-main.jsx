@@ -10,71 +10,39 @@ import {Loading} from "./app/loading.jsx";
 
 import _console from "./logging.js";
 
-export class App {
-  constructor({loadingRoot, sceneGraphRoot, errorRoot}) {
-    this.loadingRoot = loadingRoot;
-    this.sceneGraphRoot = sceneGraphRoot;
-    this.errorRoot = errorRoot;
-  }
-
-  init() {
-    // Let's show our app loading spinner
-    this.loadingRoot.render(<Loading isLoading={true} />);
-  }
-
-  ready({sceneManager, resourceLoader, refreshProjection}) {
-    // Let's mount the scene tree viewer
-    this.sceneGraphRoot.render(
-      <SceneGraph
-        sceneManager={sceneManager}
-        resourceLoader={resourceLoader}
-        refreshProjection={refreshProjection}
-      />
-    );
-
-    this.loadingRoot.render(<Loading isLoading={false} />);
-  }
-
-  error(err) {
-    this.loadingRoot.render(<Loading isLoading={false} />);
-
-    this.errorRoot.render(
-      <>
-        <Error error={err} />
-        <Console buffer={_console.buffer} />
-      </>
-    );
-  }
-}
-
-// Whenever the DOM is ready is when we want to start doing work on rendering
-// the scene. That's because the canvas where we render stuff needs to be
-// ready for creating the webgl context.
 domReady.onReady(() => {
-  // webgl context! There is where we render all the stuff. This is
-  // the thing that renders to screen.
   const gl = webgl.createContext(document.querySelector("#glCanvas"));
-
-  const app = new App({
-    loadingRoot: createRoot(document.querySelector("#loading-container")),
-    sceneGraphRoot: createRoot(document.querySelector("#scene-graph-container")),
-    errorRoot: createRoot(document.querySelector("#error-container")),
-  });
-
-  app.init();
+  const errorRoot = createRoot(document.querySelector("#error-container"));
+  const loadingRoot = createRoot(document.querySelector("#loading-container"))
+  loadingRoot.render(<Loading isLoading={true} />);
 
   window.scene
     .doRenderLoop(gl, "scenes/skinning-mesh-animation-dancing-character.json")
     .then(({registerRefreshRateUpdater, resourceLoader, sceneManager, refreshProjection}) => {
-      app.ready({resourceLoader, sceneManager, refreshProjection});
+      const mainRoot = createRoot(document.querySelector("#scene-graph-container"));
+
+      mainRoot.render(
+        <SceneGraph
+          sceneManager={sceneManager}
+          resourceLoader={resourceLoader}
+          refreshProjection={refreshProjection}
+        />
+      );
 
       const fpsEl = document.querySelector("#fps");
       registerRefreshRateUpdater((fps) => {
         fpsEl.innerHTML = fps;
       });
+
+      loadingRoot.render(<Loading isLoading={false} />);
     })
     .catch((ex) => {
-      // Report error
-      app.error(ex);
+      loadingRoot.render(<Loading isLoading={false} />);
+      errorRoot.render(
+        <>
+          <Error error={ex} />
+          <Console buffer={_console.buffer} />
+        </>
+      );
     });
 });
