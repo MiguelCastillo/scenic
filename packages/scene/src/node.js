@@ -3,18 +3,18 @@ import {mat4} from "@scenic/math";
 import {findChildDeepBreadthFirst, findChildrenDeepBreadthFirst} from "./traversal.js";
 
 const identityMatrix4 = mat4.Matrix4.identity();
-let _id = 0;
+let _id = 1;
 let _ids = {};
-const _getID = () => (_ids[++_id] = _id);
+const _nextID = () => (_id += 1);
 
 export class Node {
   constructor({type, name, id}) {
-    if (id != null) {
-      if (_id[id]) {
-        throw new Error(`duplicate id ${id}. please provide a unique id if you must provide one.`);
-      }
-    } else {
-      id = _getID();
+    if (id == null) {
+      id = _nextID();
+    }
+
+    if (_ids[id]) {
+      throw new Error(`duplicate id ${id}. please provide a unique id if you must provide one.`);
     }
 
     Object.assign(this, {
@@ -36,11 +36,10 @@ export class Node {
 
   // preRender is a hook that is called when the scene tree is traversing down.
   preRender(context) {
-    const node = this;
-    const transform = context?.sceneManager?.getNodeStateByID(node.id)?.transform;
+    const transform = context?.sceneManager?.getNodeStateByID(this.id)?.transform;
 
     if (transform) {
-      node.withLocalMatrix(
+      this.withLocalMatrix(
         mat4.Matrix4.trs(transform.position, transform.rotation, transform.scale)
       );
     }
@@ -57,18 +56,12 @@ export class Node {
     // local node matrices so that each node is rendered relative to each other,
     // very similar to absolute positiong in CSS.
     let localMatrix = this.localMatrix;
+    let parentWorldMatrix = this.parent.worldMatrix;
 
-    // Root nodes don't have a parent node so there is not parent world matrix.
-    let parentWorldMatrix = node.parent?.worldMatrix;
-
-    if (parentWorldMatrix) {
-      if (localMatrix !== identityMatrix4) {
-        node.withWorldMatrix(parentWorldMatrix.multiply(localMatrix));
-      } else {
-        node.withWorldMatrix(parentWorldMatrix);
-      }
-    } else if (localMatrix !== identityMatrix4) {
-      node.withWorldMatrix(localMatrix);
+    if (localMatrix === identityMatrix4) {
+      this.withWorldMatrix(parentWorldMatrix);
+    } else {
+      this.withWorldMatrix(parentWorldMatrix.multiply(localMatrix));
     }
   }
 

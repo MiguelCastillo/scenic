@@ -1,10 +1,11 @@
 import {bubbleTraversal} from "./traversal.js";
 import {Node} from "./node.js";
+import {Scene} from "./scene.js";
 
 export class SceneManager {
   constructor(stateManager) {
     this.stateManager = stateManager;
-    this.document = new Node({type: "document"});
+    this.scene = new Scene();
   }
 
   getNodeStateByID(id) {
@@ -16,22 +17,22 @@ export class SceneManager {
   }
 
   addNode(node) {
-    this.document.add(node);
+    this.scene.add(node);
     return this;
   }
 
   removeNode(node) {
-    this.document.remove(node);
+    this.scene.remove(node);
     return this;
   }
 
-  withSceneNodes(nodes) {
-    this.document.clear().addItems(nodes);
+  withNodes(nodes) {
+    this.scene.clear().addItems(nodes);
     return this;
   }
 
   getNodeByID(id) {
-    return Node.findChildByID(this.document, id);
+    return Node.findChildByID(this.scene, id);
   }
 
   render(ms, gl) {
@@ -68,6 +69,6 @@ export class SceneManager {
     };
 
     const traverse = bubbleTraversal(bubbleDown, bubbleUp);
-    this.document.items.forEach(traverse);
+    this.scene.items.forEach(traverse);
   }
 }

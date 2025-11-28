@@ -5,6 +5,7 @@ import {Mesh} from "./mesh.js";
 import {Node} from "./node.js";
 import {Projection} from "./projection.js";
 import {Renderable} from "./renderable.js";
+import {Scene} from "./scene.js";
 import {SceneManager} from "./scene-manager.js";
 import {SkinnedMesh} from "./skinned-mesh.js";
 import {StateManager} from "./state-manager.js";
@@ -20,6 +21,7 @@ export {
   Node,
   Projection,
   Renderable,
+  Scene,
   SceneManager,
   SkinnedMesh,
   StateManager,
