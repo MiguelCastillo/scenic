@@ -16,6 +16,9 @@ domReady.onReady(() => {
   const loadingRoot = createRoot(document.querySelector("#loading-container"))
   loadingRoot.render(<Loading isLoading={true} />);
 
+  // window.scene is exported from scene-main.js via the UMD export.
+  // See .pakit-scene.js for more details.
+  // TODO(miguel): add a way to load a scene from the editor.
   window.scene
     .doRenderLoop(gl, "scenes/skinning-mesh-animation-dancing-character.json")
     .then(({registerRefreshRateUpdater, resourceLoader, sceneManager, refreshProjection}) => {
