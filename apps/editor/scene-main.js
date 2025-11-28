@@ -236,6 +236,10 @@ function createOrthographicProjectionMatrix(width, height, far = 1000) {
   return projections.OrthographicProjectionMatrix.create(width, height, far);
 }
 
+// doRenderLoop is exported to the global object (window in the browser)
+// This is accomplished via the build/bundling process by configuring this
+// file as the main entry point with a UMD export. See .pakit-scene.js for
+// more details.
 export const doRenderLoop = (gl, sceneConfigFile) => {
   const {vendor, renderer, limits, contextAttributes} = webgl.getDebugData(gl);
 
