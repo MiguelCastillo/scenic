@@ -1,6 +1,7 @@
 import {mat4} from "@scenic/math";
 
 import {Node, _clearIDsForTests} from "./node.js";
+import {Scene} from "./scene.js";
 
 describe("Scene Node add/remove child", () => {
   it("two new node - first ID 1 and second with ID 2", () => {
@@ -43,7 +44,7 @@ describe("Scene Node add/remove child", () => {
 describe("Scene Node reprender/render", () => {
   it("preRender sets Identity world/local matrix for root nodes", () => {
     _clearIDsForTests();
-    const root = new Node({id: "groot"});
+    const root = new Scene({id: "groot"});
 
     root.preRender();
     expect(root.worldMatrix.data).toEqual(mat4.identity());
@@ -52,7 +53,7 @@ describe("Scene Node reprender/render", () => {
 
   it("preRender propagates parent matrices", () => {
     _clearIDsForTests();
-    const root = new Node({id: "groot"});
+    const root = new Scene({id: "groot"});
     const child = new Node({id: "child.1"});
     const grandchild = new Node({id: "child.1.1"});
     root.add(child.add(grandchild));
