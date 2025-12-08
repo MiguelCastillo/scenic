@@ -12,6 +12,7 @@
     "monit": "pm2 monit",
     "logs": "pm2 logs",
     "build": "npm run build --workspace=packages/math --workspace=packages/encoding --workspace=packages --workspace=apps",
+    "build:prod": "npm run build:prod --workspace=packages/math --workspace=packages/encoding --workspace=packages --workspace=apps",
     "prepare": "husky install"
   },
   "author": "Miguel Castillo",
