@@ -6,7 +6,8 @@
   "scripts": {
     "test": "jest",
     "lint": "eslint ./src",
-    "build": "pakit src/index.js --out dist/index.js --minify true --eslint false --umd @scenic/scene"
+    "build": "pakit src/index.js --out dist/index.js --minify false --eslint false --umd @scenic/scene",
+    "build:prod": "pakit src/index.js --out dist/index.js --minify true --eslint false --umd @scenic/scene"
   },
   "repository": {
     "type": "git",

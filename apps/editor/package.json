@@ -18,7 +18,8 @@
         "build:editor": "pakit --config .pakit-editor.js",
         "build:scene": "pakit --config .pakit-scene.js",
         "build:fileformats": "pakit --config .pakit-fileformats.js",
-        "build": "npm run build:scene -- --minify && npm run build:editor -- --minify && npm run build:fileformats -- --minify"
+        "build": "npm run build:scene -- --minify false && npm run build:editor -- --minify false && npm run build:fileformats -- --minify false",
+        "build:prod": "npm run build:scene -- --minify && npm run build:editor -- --minify && npm run build:fileformats -- --minify"
     },
     "repository": {
         "type": "git",
