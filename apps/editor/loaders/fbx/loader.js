@@ -78,12 +78,18 @@ let animationID = 0;
 const _clusterMetadata = {};
 const _geometryMetadata = {};
 
-// We cache textures by filename so that if different parts of an FBX file
-// needs the same texture we can just use what's already cache instead.
-const _textureCache = {};
-
 export function buildSceneNode(gl, fbxDocument, sceneNode, sceneManager) {
+  // Release the GPU resources from a previous build before replacing them.
+  sceneNode.dispose(gl);
   sceneNode.clear();
+
+  // We cache textures by filename so that if different parts of an FBX file
+  // need the same texture we can just use what's already cached instead.
+  // The cache is per document so that every texture belongs to the scene it
+  // was built for and is deleted with it. Texture IDs are texture units, so
+  // starting them at 0 for each document also keeps them within the GPU's
+  // limit.
+  const textureCache = {};
 
   const nodeWrappersByID = {
     "0,0": {
@@ -123,7 +129,9 @@ export function buildSceneNode(gl, fbxDocument, sceneNode, sceneManager) {
 
   sceneNode.addItems(
     nodeWrappersByID["0,0"].connections
-      .map((connection) => sceneNodeFromConnection(gl, connection, sceneManager, sceneNode))
+      .map((connection) =>
+        sceneNodeFromConnection(gl, connection, sceneManager, sceneNode, textureCache)
+      )
       .filter(Boolean)
   );
 
@@ -138,7 +146,9 @@ export function buildSceneNode(gl, fbxDocument, sceneNode, sceneManager) {
       animationNode.add(
         animationStack.addItems(
           nodeWrappersByID[stackID].connections
-            .map((connection) => sceneNodeFromConnection(gl, connection, sceneManager, sceneNode))
+            .map((connection) =>
+              sceneNodeFromConnection(gl, connection, sceneManager, sceneNode, textureCache)
+            )
             .filter(Boolean)
         )
       );
@@ -185,7 +195,13 @@ export function buildSceneNode(gl, fbxDocument, sceneNode, sceneManager) {
 
 // sceneNodeFromConnection traverses the fbx tree of nodes depth first
 // creating scene nodes for each relevant of the fbx file.
-function sceneNodeFromConnection(gl, rootConnection, sceneManager, relativeRootSceneNode) {
+function sceneNodeFromConnection(
+  gl,
+  rootConnection,
+  sceneManager,
+  relativeRootSceneNode,
+  textureCache
+) {
   const sceneNode = createSceneNode(rootConnection, relativeRootSceneNode);
   if (!sceneNode) {
     return;
@@ -396,15 +412,15 @@ function sceneNodeFromConnection(gl, rootConnection, sceneManager, relativeRootS
         const filepath = "/resources/textures/" + filename;
         let type = pname ? pname.toLowerCase() : "diffusecolor";
 
-        if (!_textureCache[filepath]) {
-          const textureID = Object.keys(_textureCache).length;
-          _textureCache[filepath] = {
+        if (!textureCache[filepath]) {
+          const textureID = Object.keys(textureCache).length;
+          textureCache[filepath] = {
             id: textureID,
             texture: new TextureSceneNode(textureID, type, {name}).load(gl, filepath),
           };
         }
 
-        sceneNode = _textureCache[filepath].texture.clone();
+        sceneNode = textureCache[filepath].texture.clone();
         break;
       }
 

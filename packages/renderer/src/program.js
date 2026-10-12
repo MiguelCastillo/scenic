@@ -98,6 +98,13 @@ export class ShaderProgram {
     return this;
   }
 
+  // dispose deletes the linked WebGL program. Clones share that program, so
+  // only its owner should call this. The compiled shaders are left alone
+  // because they can be shared by other programs.
+  dispose() {
+    this.gl.deleteProgram(this.program);
+  }
+
   clone() {
     const shaderProgram = new ShaderProgram(this.gl, this.program);
     shaderProgram._attributes = [...this._attributes];

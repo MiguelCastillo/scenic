@@ -213,12 +213,13 @@ export const renderScene = async (gl, config) => {
   // This starts the render loop to render the scene!
   const stopRenderLoop = startRenderLoop(gl, updateScene, renderFrame);
 
-  // dispose tears down everything this call set up so that another scene can
-  // be rendered in its place. GPU resources (buffers, textures, programs) are
-  // not released yet.
+  // dispose tears down everything this call set up, including the GPU
+  // resources of every node in the scene, so that another scene can be
+  // rendered in its place.
   function dispose() {
     stopRenderLoop();
     resourceLoader.dispose();
+    sceneManager.dispose(gl);
   }
 
   try {

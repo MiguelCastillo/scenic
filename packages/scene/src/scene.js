@@ -1,3 +1,5 @@
+import {mat4} from "@scenic/math";
+
 import {Node} from "./node.js";
 
 // Scene is the root container node of a scene graph. It is used to manage the scene

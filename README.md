@@ -2,10 +2,12 @@
 
 Scene graph renderer. Early work in progress.
 
-Scenic uses a configuraton first approach to define a scene.
+Scenic uses a configuration first approach to define a scene: a scene is a JSON
+file describing a tree of nodes and their state, and Scenic builds and renders
+that tree with WebGL.
 
-You can take at this sample scene rendering skinned animation in scenic editor,
-which is an application that renders a scene. [Scenic Editor](https://scenic-editor.herokuapp.com/editor/index.html)
+The editor app renders a scene that you pick from a list. Here it is rendering
+skinned animation:
 
 ![dancing-character](https://user-images.githubusercontent.com/1457701/163882070-23ef08d0-a0da-4b0b-95e7-f36e8c84186d.gif)
 
@@ -13,9 +15,148 @@ Quick intro:
 
 1. Click on the rendering canvas to enter interactive mode (enable mouse tracking on the canvas)
 2. One (and two fingers on mouse track) will rotate the scene on its origin
-3. Crtl + one (or two fingers on mouse track) will translate the scene along the Z axies
+3. Ctrl + one (or two fingers on mouse track) will translate the scene along the Z axis
 4. Shift + one (or two fingers on mouse track) will translate the scene along the X and Y axis
 5. Press ESC to exit interactive mode
+6. Use "Change scene" in the scene graph panel to switch to another scene
+
+## Architecture
+
+### Scene config and state
+
+A scene file like
+[`apps/editor/scenes/bump-lighting-sphere.json`](apps/editor/scenes/bump-lighting-sphere.json)
+describes a tree of nodes. Each node has a `type`, a `name`, optional state
+such as `transform` and `material`, and optionally a `resource` file to load
+its shape from. The rest of this section uses a made-up `donut` node as its
+example: a static mesh whose shape is loaded from an OBJ file of a torus.
+
+```json
+{
+  "name": "donut",
+  "type": "static-mesh",
+  "resource": "/resources/obj/torus.obj",
+  "material": {"color": [0.8, 0.5, 0.2, 1]}
+}
+```
+
+Building a scene splits that config in two:
+
+- The **`SceneManager`** holds the tree of nodes: what exists and how it is
+  nested.
+- The **`StateManager`** holds the state of every node, keyed by node ID:
+  transforms, materials, lights, animation settings. Nodes read their state
+  from it every frame, and the editor's panels write to it.
+
+### Renderable, Mesh and Geometry
+
+Drawing is split across three kinds of nodes:
+
+- A **`Renderable`** is a node that can draw. It owns a shader program and has
+  a per-frame _draw list_ (`vertexBuffers`) of buffers to draw.
+- A **`Mesh`** is a `Renderable` that draws lit, shaded surfaces. It reads its
+  material and the scene's lights from the state manager and sets them as
+  shader uniforms. `StaticMesh` and `SkinnedMesh` are the two kinds of mesh.
+- A **`Geometry`** is the shape: it owns a `VertexBuffer` (positions, normals,
+  UVs, indexes, ...). It is _not_ a renderable. Every frame it adds its buffer
+  to the draw list of its closest parent `Renderable`.
+
+`Light` is also a `Renderable`. It draws its marker shape unlit, from the same
+kind of `Geometry`-filled draw list.
+
+#### What extends what
+
+```text
+Node                    every node in the scene graph
+├── Renderable          has a shader program and a per-frame draw list
+│   ├── Mesh            draws lit, shaded surfaces
+│   │   ├── StaticMesh
+│   │   └── SkinnedMesh
+│   └── Light           draws its marker shape unlit
+└── Geometry            owns a VertexBuffer; not a Renderable
+```
+
+### From config to a static mesh
+
+Using the `donut` as the example:
+
+```mermaid
+flowchart TB
+  config["scene JSON<br/>(describes the donut)"]
+  factory["createScene<br/>(builds the scene from the config)"]
+  state[("StateManager<br/>(stores the donut's material)")]
+  mesh["StaticMesh donut<br/>(created from the config)"]
+  loader["ResourceLoader<br/>(parses torus.obj)"]
+  build["OBJ buildSceneNode<br/>(builds the donut's shape and shader)"]
+  geometry["Geometry<br/>(child of the donut, holds the VertexBuffer<br/>and deletes it with the donut)"]
+  program["ShaderProgram phong-lighting<br/>(held by the donut, deleted with it)"]
+
+  config --> factory
+  factory --> state
+  factory --> mesh
+  mesh --> loader
+  loader --> build
+  build --> geometry
+  build --> program
+```
+
+1. `createScene` turns the config into a `StaticMesh` node and puts its
+   `material` into the state manager.
+2. The resource loader parses `torus.obj` in a web worker.
+3. The OBJ loader's `buildSceneNode` creates a `VertexBuffer` from the parsed
+   vertices, wraps it in a `Geometry` child of the mesh, and gives the mesh a
+   `phong-lighting` shader program.
+
+The resulting scene graph:
+
+```text
+Projection "world projection"
+└── StaticMesh "donut"       ← Renderable: shader program + draw list
+    └── Geometry "geometry"  ← owns the VertexBuffer
+```
+
+FBX models follow the same pattern with more node types: an FBX `Mesh` has
+`Geometry`, `Material` and `Texture` children, and the FBX `Geometry` adds
+skinning on top of the scene `Geometry`.
+
+### Rendering a frame
+
+`SceneManager.render` walks the tree depth first. It calls `preRender` on the
+way down (parents before children) and `render` on the way up (children
+before parents). So by the time a mesh renders, its children have already
+filled its draw list:
+
+```mermaid
+sequenceDiagram
+  participant SM as SceneManager
+  participant Mesh as StaticMesh donut
+  participant Geo as Geometry
+  participant State as StateManager
+  participant SP as ShaderProgram
+
+  Note over SM,SP: down the tree
+  SM->>Mesh: preRender()
+  Mesh->>Mesh: clear draw list, update world matrix
+  SM->>Geo: preRender()
+
+  Note over SM,SP: up the tree, children first
+  SM->>Geo: render()
+  Geo->>Mesh: addVertexBuffer(vertexBuffer)
+  SM->>Mesh: render()
+  Mesh->>State: read material and lights
+  Mesh->>SP: set lighting, material and matrix uniforms
+  Mesh->>SP: render(vertexBuffer) for each buffer in the draw list
+```
+
+Other children configure their parent the same way. A `Texture` adds its
+texture uniforms to the parent's shader program when it renders.
+
+### Disposing a scene
+
+`renderScene` returns a `dispose` function, and the editor calls it before
+rendering another scene. It stops the render loop, stops loading resources,
+and calls `SceneManager.dispose(gl)`, which walks the tree so that every node
+deletes the GPU resources it owns.
 
 ## File formats
 
@@ -33,19 +174,33 @@ On a fresh clone, please run `npm install` to get all your dependencies ready.
 
 To start up the dev server you can `npm run start-dev`. That will startup
 the build system, file watching, and your local dev server. To load up the
-editor you can navigate to http://localhost:3000/editor/index.html.
+editor you can navigate to http://localhost:3000/apps/editor/index.html.
 To stop the dev server you can use `npm run stop-dev`.
 To see the build processes you can use `npm run monit`. Or if you want an aggregated logs for the build and dev server you can use `npm run logs`.
 
+The dev watchers only rebuild the editor bundles. If you change anything under
+`packages/`, run `npm run build` to rebuild the packages too.
+
 The usual `npm run test` will run all the tests.
 
-If you just want to build all the artifacts for prod, you can use `npm run build` which will minify bundles.
+`npm run build` builds every package and the editor without minification,
+which keeps things faster and easier to debug in the browser. Use
+`npm run build:prod` for minified bundles.
 
-Currently, there are three bundles generated:
+The editor generates three bundles:
 
-1. The editor. This is an app with a default scene where you can test and experiment with Scenic core. For example, this is where most of the logic for FBX file animation exists while implementing support for it. Eventually this is will get renamed to playground.
-2. Fileformat. This is meant to be loaded in a webworker to parsing Obj files. This can be easily extended to support parsing other file formats if needed.
-3. Scenic. This is Scenic core - everything in `src`.
+1. The editor app (`dist/editor.js`). This is the UI: the scene selector,
+   the scene graph panel, and the canvas and input handling. Eventually this
+   will get renamed to playground.
+2. The scene bundle (`dist/scene.js`), exported as `window.scene`. This is
+   where scenes are built and rendered with `renderScene`, and where most of
+   the logic for FBX animation lives while support for it is implemented.
+3. File formats (`dist/file-formats.js`). This is meant to be loaded in a web
+   worker for parsing OBJ files. This can be easily extended to support
+   parsing other file formats if needed.
+
+The engine itself lives in the `@scenic/*` packages under `packages/`. See
+[`packages/README.md`](packages/README.md).
 
 ## Prod
 

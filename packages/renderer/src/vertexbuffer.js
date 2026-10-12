@@ -15,6 +15,10 @@ class VertexBufferArray {
 
     gl.bindBuffer(bufferType, buffer);
   }
+
+  dispose() {
+    this.gl.deleteBuffer(this.buffer);
+  }
 }
 
 // VertexBufferData is largely for vertex positions and normals, which are
@@ -30,6 +34,16 @@ export class VertexBufferData extends VertexBufferArray {
     // be rendering triangles, so componentsPerVertex defaults to 3 since a
     // triangle has 3 vertices.
     this.componentsPerVertex = componentsPerVertex;
+  }
+
+  // update replaces the buffer contents in place, which is cheaper than
+  // creating a new buffer for data that changes every frame.
+  update(data) {
+    const {gl, buffer, bufferType} = this;
+
+    this.data = new Float32Array(data);
+    gl.bindBuffer(bufferType, buffer);
+    gl.bufferData(bufferType, this.data, gl.STATIC_DRAW);
   }
 }
 
@@ -52,20 +66,32 @@ export class TextureVertexBufferData extends VertexBufferArray {
 // It makes it simpler to find all the relevant buffers in one place. This is
 // meant to be provided to a shader program that can bind the buffers to
 // attributes in a vertex shader.
+const vertexBufferComponents = [
+  "indexes",
+  "positions",
+  "colors",
+  "normals",
+  "textureCoords",
+  "tangents",
+  "bitangents",
+  "weights",
+  "boneids",
+];
+
 export class VertexBuffer {
   constructor(options = {}) {
-    [
-      "indexes",
-      "positions",
-      "colors",
-      "normals",
-      "textureCoords",
-      "tangents",
-      "bitangents",
-      "weights",
-      "boneids",
-    ].forEach((component) => {
+    vertexBufferComponents.forEach((component) => {
       this[component] = options[component];
+    });
+  }
+
+  // dispose deletes the buffers of every component. Clones share those
+  // buffers, so only the owner of the original should call this.
+  dispose() {
+    vertexBufferComponents.forEach((component) => {
+      if (this[component]) {
+        this[component].dispose();
+      }
     });
   }
 

@@ -1,4 +1,5 @@
 import {Animation} from "./animation.js";
+import {Geometry} from "./geometry.js";
 import {Light} from "./light.js";
 import {Material} from "./material.js";
 import {Mesh} from "./mesh.js";
@@ -15,6 +16,7 @@ import * as traversal from "./traversal.js";
 
 export {
   Animation,
+  Geometry,
   Light,
   Material,
   Mesh,

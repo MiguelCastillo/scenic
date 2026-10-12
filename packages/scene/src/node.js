@@ -67,6 +67,16 @@ export class Node {
 
   render() {}
 
+  // dispose releases the GPU resources held by this node and its descendants.
+  // Nodes that own GPU resources override this to delete them and then call
+  // super.dispose(gl). The node stays in the tree; call clear or remove to
+  // detach it.
+  dispose(gl) {
+    for (const node of this.items) {
+      node.dispose(gl);
+    }
+  }
+
   withLocalMatrix(matrix) {
     this.localMatrix = matrix;
     return this;

@@ -5,6 +5,7 @@ import {isLight, isStaticMesh, isSkinnedMesh} from "../scene-factory.js";
 
 export function createResourceLoader(gl, sceneManager) {
   const cache = {};
+  let disposed = false;
 
   // File loader mappings to file extension.
   const loaderManager = new LoaderManager()
@@ -35,6 +36,13 @@ export function createResourceLoader(gl, sceneManager) {
     }
 
     return cache[filename].then((data) => {
+      // A load can finish after the scene was disposed, for example when
+      // another resource failed to load. Building it now would create GPU
+      // resources that nothing will ever delete.
+      if (disposed) {
+        return;
+      }
+
       const sceneNode = sceneManager.getNodeByID(node.id);
       if (!sceneNode) {
         throw new Error(`unable to load resource. scene node with "${node.id}" was not found.`);
@@ -46,7 +54,10 @@ export function createResourceLoader(gl, sceneManager) {
   return {
     loadMany,
     load,
-    dispose: () => loaderManager.dispose(),
+    dispose: () => {
+      disposed = true;
+      loaderManager.dispose();
+    },
   };
 }
 

@@ -1,5 +1,6 @@
 import {geometry as geo} from "@scenic/math";
 import {VertexBuffer, VertexBufferData} from "@scenic/renderer";
+import {Geometry as GeometrySceneNode} from "@scenic/scene";
 
 import {WorkerLoader} from "../base-loader.js";
 import {isLight, isStaticMesh, isSkinnedMesh} from "../../scene-factory.js";
@@ -15,6 +16,8 @@ export class Loader extends WorkerLoader {
 }
 
 export function buildSceneNode(gl, model, sceneNode /*, sceneManager*/) {
+  // Release the GPU resources from a previous build before replacing them.
+  sceneNode.dispose(gl);
   sceneNode.clear();
   let {vertices, normals, colors} = model;
 
@@ -45,5 +48,8 @@ export function buildSceneNode(gl, model, sceneNode /*, sceneManager*/) {
     );
   }
 
-  sceneNode.addVertexBuffer(vertexBuffer).withShaderProgram(shaderProgram);
+  // The geometry child owns the vertex buffer and adds it to this node's draw
+  // list every frame.
+  sceneNode.add(new GeometrySceneNode({name: "geometry"}, vertexBuffer));
+  sceneNode.withShaderProgram(shaderProgram);
 }

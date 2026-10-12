@@ -10,6 +10,7 @@ import {
   Mesh as MeshSceneNode,
   Renderable as RenderableSceneNode,
   Animation as AnimationSceneNode,
+  Geometry as GeometrySceneNode,
 } from "@scenic/scene";
 
 const AnimatableInterface = (superclass) =>
@@ -95,9 +96,9 @@ export class Mesh extends AnimatableInterface(MeshSceneNode) {
   preRender(context) {
     super.preRender(context);
 
-    // descendents of Mesh will add vertex buffers that are needed to be
-    // rendered every frame. So we need to clear it up when we are setting
-    // up the render state.
+    // Renderable clears its draw list in preRender, but AnimatableInterface
+    // skips super.preRender when an animation transform applies. So the draw
+    // list is cleared here too, before the Geometry children add to it.
     this.vertexBuffers = [];
   }
 
@@ -112,11 +113,10 @@ export class Mesh extends AnimatableInterface(MeshSceneNode) {
   }
 }
 
-export class Geometry extends SceneNode {
+export class Geometry extends GeometrySceneNode {
   constructor(options, vertexBuffer) {
-    super({...options, type: "fbx-geometry"});
+    super({...options, type: "fbx-geometry"}, vertexBuffer);
     this._skinningEnabled = true;
-    this.vertexBuffer = vertexBuffer;
     this.skinDeformers = [];
   }
 
@@ -143,13 +143,24 @@ export class Geometry extends SceneNode {
     }
   }
 
+  dispose(gl) {
+    if (this._boneMatrixTexture) {
+      gl.deleteTexture(this._boneMatrixTexture);
+      this._boneMatrixTexture = null;
+    }
+
+    super.dispose(gl);
+  }
+
   render() {
+    // Adds the vertex buffer to the parent renderable's draw list.
+    super.render();
+
     let renderable = SceneNode.findParentByType(this, RenderableSceneNode);
     if (!renderable) {
       return;
     }
 
-    renderable.addVertexBuffer(this.vertexBuffer);
     if (this.skinningEnabled) {
       let boneMatrices = [];
 
@@ -246,6 +257,8 @@ export class Armature extends AnimatableInterface(RenderableSceneNode) {
 
   preRender(context) {
     super.preRender(context);
+    // Cleared here as well as in Renderable because AnimatableInterface skips
+    // super.preRender when an animation transform applies.
     this.vertexBuffers = [];
     this.renderables = [];
   }
@@ -317,14 +330,34 @@ export class Bone extends AnimatableInterface(SceneNode) {
     const b = [dataB[3], dataB[7], dataB[11]];
 
     const {gl} = context;
-    armature.addRenderable({
-      vertexBuffer: new VertexBuffer({
-        positions: new VertexBufferData(gl, [a[0], a[1], a[2], b[0], b[1], b[2]]),
+    const positions = [a[0], a[1], a[2], b[0], b[1], b[2]];
+
+    // The bone moves every frame, so the line's buffers are created once and
+    // its positions are updated in place rather than allocating new buffers
+    // on every frame.
+    if (!this._lineVertexBuffer) {
+      this._lineVertexBuffer = new VertexBuffer({
+        positions: new VertexBufferData(gl, positions),
         colors: new VertexBufferData(gl, [0.7, 1, 1, 1, 1, 1, 1, 1]),
-      }),
+      });
+    } else {
+      this._lineVertexBuffer.positions.update(positions);
+    }
+
+    armature.addRenderable({
+      vertexBuffer: this._lineVertexBuffer,
       worldMatrix: mat4.Matrix4.identity(),
       primitiveType: gl.LINES,
     });
+  }
+
+  dispose(gl) {
+    if (this._lineVertexBuffer) {
+      this._lineVertexBuffer.dispose();
+      this._lineVertexBuffer = null;
+    }
+
+    super.dispose(gl);
   }
 }
 

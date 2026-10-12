@@ -35,6 +35,11 @@ export class SceneManager {
     return Node.findChildByID(this.scene, id);
   }
 
+  // dispose releases the GPU resources held by every node in the scene.
+  dispose(gl) {
+    this.scene.dispose(gl);
+  }
+
   render(ms, gl) {
     const context = {
       gl,

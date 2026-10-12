@@ -24,9 +24,29 @@ export const RenderableInterface = (superclass) =>
       return this;
     }
 
+    // vertexBuffers is the list of buffers to draw this frame. It is cleared
+    // in preRender, and child nodes such as Geometry add their buffers to it
+    // when they render, which happens before their parent renders. Adding a
+    // buffer does not transfer ownership; whoever created it deletes it.
     addVertexBuffer(vertexBuffer) {
       this.vertexBuffers.push(vertexBuffer);
       return this;
+    }
+
+    preRender(context) {
+      this.vertexBuffers = [];
+      super.preRender(context);
+    }
+
+    // The renderable owns its shader program, since withShaderProgram keeps a
+    // clone of what it is given.
+    dispose(gl) {
+      if (this.shaderProgram) {
+        this.shaderProgram.dispose();
+        this.shaderProgram = null;
+      }
+
+      super.dispose(gl);
     }
 
     getProjectionMatrix() {

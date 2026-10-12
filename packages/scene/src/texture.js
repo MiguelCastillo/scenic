@@ -40,6 +40,12 @@ export class Texture extends Node {
     );
 
     getImage(filepath).then((image) => {
+      // The texture may have been deleted while the image was downloading
+      // because the scene it belongs to was disposed.
+      if (!gl.isTexture(this.texture)) {
+        return;
+      }
+
       gl.bindTexture(gl.TEXTURE_2D, this.texture);
       gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, srcFormat, srcType, image);
 
@@ -59,6 +65,16 @@ export class Texture extends Node {
     });
 
     return this;
+  }
+
+  // Clones share the same WebGL texture, so each of them deleting it is
+  // expected: deleting an already deleted WebGL object has no effect.
+  dispose(gl) {
+    if (this.texture) {
+      gl.deleteTexture(this.texture);
+    }
+
+    super.dispose(gl);
   }
 
   clone() {
