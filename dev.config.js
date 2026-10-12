@@ -8,10 +8,10 @@ module.exports = {
       ignore_watch: ["node_modules"],
     },
     {
-      name: "build-scene",
+      name: "build-editor-scene",
       script: "npm",
-      args: "run scene -- --watch",
-      watch: ["editor/.pakit-scene.js"],
+      args: "run build:scene --workspace=apps/editor -- --watch",
+      watch: ["apps/editor/.pakit-scene.js"],
       ignore_watch: ["node_modules"],
       env: {
         NODE_ENV: "development",
@@ -21,10 +21,10 @@ module.exports = {
       },
     },
     {
-      name: "build-editor",
+      name: "build-editor-app",
       script: "npm",
-      args: "run editor -- --watch",
-      watch: ["editor/.pakit-editor.js"],
+      args: "run build:editor --workspace=apps/editor -- --watch",
+      watch: ["apps/editor/.pakit-editor.js"],
       ignore_watch: ["node_modules"],
       env: {
         NODE_ENV: "development",
@@ -34,10 +34,10 @@ module.exports = {
       },
     },
     {
-      name: "build-fileformats",
+      name: "build-editor-fileformats",
       script: "npm",
-      args: "run fileformats -- --watch",
-      watch: ["editor/.pakit-fileformats.js"],
+      args: "run build:fileformats --workspace=apps/editor -- --watch",
+      watch: ["apps/editor/.pakit-fileformats.js"],
       ignore_watch: ["node_modules"],
       env: {
         NODE_ENV: "development",
