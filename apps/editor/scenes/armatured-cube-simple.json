@@ -1,6 +1,6 @@
 {
   "preload": {
-    "shaders": ["phong-lighting", "phong-texture", "flat-material"]
+    "shaders": ["shaders/phong-lighting", "shaders/phong-texture", "shaders/flat-material"]
   },
   "items": [
     {
@@ -132,7 +132,7 @@
             {
               "name": "cube animation with armature (simpler)",
               "type": "skinned-mesh",
-              "resource": "/resources/fbx/__testdata__/cubearmature_simple.fbx",
+              "resource": "/packages/encoding/fbx/__testdata__/cubearmature_simple.fbx",
               "normalSmoothing": false,
               "material": {
                 "reflectiveness": 1

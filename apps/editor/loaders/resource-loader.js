@@ -46,6 +46,7 @@ export function createResourceLoader(gl, sceneManager) {
   return {
     loadMany,
     load,
+    dispose: () => loaderManager.dispose(),
   };
 }
 
@@ -95,5 +96,9 @@ class LoaderManager {
     }
 
     return this.loaders[fileExtension];
+  }
+
+  dispose() {
+    Object.values(this.loaders).forEach(({loader}) => loader.dispose());
   }
 }

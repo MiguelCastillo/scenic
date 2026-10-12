@@ -115,6 +115,7 @@ export class Subscription {
 
     for (var evt in evts) {
       evtName = evt;
+      fn = evts[evtName];
 
       handlers = this._events[evtName];
       if (handlers && ~handlers.indexOf(fn)) {

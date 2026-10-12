@@ -1,9 +1,9 @@
 {
   "preload": {
     "shaders": [
-      "phong-lighting",
-      "phong-texture",
-      "flat-material"
+      "shaders/phong-lighting",
+      "shaders/phong-texture",
+      "shaders/flat-material"
     ]
   },
   "items": [

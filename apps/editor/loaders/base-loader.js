@@ -8,6 +8,10 @@ export class BaseLoader {
   load() {
     throw new Error("Must implement load");
   }
+
+  // dispose releases whatever the loader holds on to. Loaders that only
+  // fetch hold nothing, so this is a no-op unless overridden.
+  dispose() {}
 }
 
 export class TextFileLoader extends BaseLoader {
@@ -51,5 +55,10 @@ export class WorkerLoader extends BaseLoader {
       this.pending[file] = {resolve, reject};
       this.worker.postMessage({file, ...options});
     });
+  }
+
+  // Loads still pending when the worker is terminated never settle.
+  dispose() {
+    this.worker.terminate();
   }
 }

@@ -8,10 +8,8 @@
 import "./logging.js";
 
 import {projections, vec3, easings} from "@scenic/math";
-import {events as domEvents} from "@scenic/dom";
 import {webgl} from "@scenic/renderer";
 
-import {createSplitPanel} from "./split-panel.js";
 import {createScene, buildDefaultState} from "./scene-factory.js";
 import {createResourceLoader, getResourcesFromConfig} from "./loaders/resource-loader.js";
 import {loadShaders} from "./shader-factory.js";
@@ -46,20 +44,23 @@ function applyWorldTranslation(sceneManager, translateX, translateY, translateZ)
 }
 
 // Helper function for providing the ability to update a scene and to also
-// render it.
+// render it. Nothing in here touches the DOM; the app owns the canvas size and
+// input events and drives the scene through the functions returned here.
 function createSceneUpdater(gl, sceneManager) {
   const getFrameRate = createFrameRateCounter();
 
   let axisProjectionMatrix, perspectiveProjectionMatrix;
 
+  // Projections are sized from the canvas drawing buffer, which the app keeps
+  // the same size as the canvas is displayed. Call this whenever that size or
+  // the projection settings change.
   function refreshProjection() {
-    const {canvas} = gl;
-    const {clientWidth, clientHeight} = canvas;
+    const {width, height} = gl.canvas;
 
     const worldProjectionState = sceneManager.getNodeStateByID(worldProjectionID);
     perspectiveProjectionMatrix = createPerspectiveProjectionMatrix(
-      clientWidth,
-      clientHeight,
+      width,
+      height,
       worldProjectionState.projection.fov,
       worldProjectionState.projection.near,
       worldProjectionState.projection.far
@@ -67,96 +68,25 @@ function createSceneUpdater(gl, sceneManager) {
 
     const axisProjectionState = sceneManager.getNodeStateByID(axisProjectionID);
     axisProjectionMatrix = createOrthographicProjectionMatrix(
-      clientWidth,
-      clientHeight,
+      width,
+      height,
       axisProjectionState.projection.far
     );
   }
 
-  function handleResize() {
-    const {canvas} = gl;
-    const {clientWidth, clientHeight} = canvas;
-    canvas.width = clientWidth;
-    canvas.height = clientHeight;
-    refreshProjection();
-  }
+  refreshProjection();
 
-  // Initialize projections and canvas dimensions.
-  handleResize();
+  // rotateWorld and translateWorld move the scene objects right away. The
+  // ease variants spread the movement over the next few frames instead.
+  const rotateWorld = (rotateX, rotateY) => applyWorldRotation(sceneManager, rotateX, rotateY);
+  const translateWorld = (translateX, translateY, translateZ) =>
+    applyWorldTranslation(sceneManager, translateX, translateY, translateZ);
 
-  // Update canvas width/height whenever the window is resized. clientHeight
-  // and clientWidth are the window.innerHeight and window.innerWidth. it is
-  // just a convenient accessor for the global object dimensions.
-  domEvents.Subscription.create(window).on("resize", () => {
-    handleResize();
-  });
-
-  const splitPanelEl = document.getElementById("app-panel");
-  createSplitPanel(splitPanelEl);
-
-  domEvents.Subscription.create(splitPanelEl).on("panel:resize", () => {
-    handleResize();
-  });
-
-  let enableWorldTranslation = false;
   const worldRotation = new easings.WeightedItems(easings.easeInQuart);
   const worldTranslation = new easings.WeightedItems(easings.easeInQuart);
-  const mousetrapEl = document.getElementById("mousetrap");
-  domEvents.Subscription.create(mousetrapEl)
-    .on("click", (/*evt*/) => {
-      mousetrapEl.requestPointerLock();
-    })
-    .on("mousedown", (/*evt*/) => {
-      enableWorldTranslation = true;
-    })
-    .on("mouseup", (/*evt*/) => {
-      enableWorldTranslation = false;
-    })
-    .on("mousemove", (evt) => {
-      if (document.pointerLockElement === mousetrapEl) {
-        const devicePixelRatio = window.devicePixelRatio;
-        const translationRatio = devicePixelRatio * 6;
-        const rotationRatio = devicePixelRatio * 2;
-
-        if (enableWorldTranslation || evt.shiftKey) {
-          worldTranslation.start([
-            evt.movementX / translationRatio,
-            -evt.movementY / translationRatio,
-            0,
-          ]);
-        } else if (evt.ctrlKey) {
-          worldTranslation.start([0, 0, evt.movementY / translationRatio]);
-        } else {
-          worldRotation.start([evt.movementY / rotationRatio, evt.movementX / rotationRatio]);
-        }
-      }
-    })
-    .on("wheel", (evt) => {
-      // Prevent leaving the page when scrolling left/right with a trackpad
-      evt.preventDefault();
-
-      if (document.pointerLockElement === mousetrapEl) {
-        const devicePixelRatio = window.devicePixelRatio;
-        const rotationRatio = devicePixelRatio * 6;
-
-        if (evt.shiftKey) {
-          applyWorldTranslation(
-            sceneManager,
-            -(evt.deltaX / rotationRatio),
-            evt.deltaY / rotationRatio,
-            0
-          );
-        } else if (evt.ctrlKey) {
-          applyWorldTranslation(sceneManager, 0, 0, -(evt.deltaY / rotationRatio));
-        } else {
-          applyWorldRotation(
-            sceneManager,
-            -evt.deltaY / devicePixelRatio,
-            -evt.deltaX / devicePixelRatio
-          );
-        }
-      }
-    });
+  const easeWorldRotation = (rotateX, rotateY) => worldRotation.start([rotateX, rotateY]);
+  const easeWorldTranslation = (translateX, translateY, translateZ) =>
+    worldTranslation.start([translateX, translateY, translateZ]);
 
   // This is the logic for updating the scene state and the scene graph with the
   // new scene state. This is the logic for the game itself.
@@ -191,7 +121,7 @@ function createSceneUpdater(gl, sceneManager) {
     refreshRateUpdater = cb;
   };
 
-  function renderScene(ms) {
+  function renderFrame(ms) {
     sceneManager.render(ms, gl);
 
     // Let's write out the number of frames per second that we are able to
@@ -205,9 +135,13 @@ function createSceneUpdater(gl, sceneManager) {
 
   return {
     updateScene,
-    renderScene,
+    renderFrame,
     refreshProjection,
     registerRefreshRateUpdater,
+    rotateWorld,
+    translateWorld,
+    easeWorldRotation,
+    easeWorldTranslation,
   };
 }
 
@@ -236,11 +170,11 @@ function createOrthographicProjectionMatrix(width, height, far = 1000) {
   return projections.OrthographicProjectionMatrix.create(width, height, far);
 }
 
-// doRenderLoop is exported to the global object (window in the browser)
+// renderScene is exported to the global object (window in the browser)
 // This is accomplished via the build/bundling process by configuring this
 // file as the main entry point with a UMD export. See .pakit-scene.js for
 // more details.
-export const doRenderLoop = (gl, sceneConfigFile) => {
+export const renderScene = async (gl, config) => {
   const {vendor, renderer, limits, contextAttributes} = webgl.getDebugData(gl);
 
   // eslint-disable-next-line no-console
@@ -251,15 +185,7 @@ export const doRenderLoop = (gl, sceneConfigFile) => {
   console.log("Limits:", JSON.stringify(limits));
   // eslint-disable-next-line no-console
   console.log("Context:", JSON.stringify(contextAttributes));
-  // eslint-disable-next-line no-console
-  console.log("Browser:", window.clientInformation.userAgent);
 
-  return fetch(sceneConfigFile)
-    .then((response) => response.json())
-    .then((config) => loadScene(gl, config));
-};
-
-function loadScene(gl, config) {
   const start = Date.now();
 
   const sceneConfig = buildDefaultState(config);
@@ -273,26 +199,52 @@ function loadScene(gl, config) {
 
   // Two functions to update the scene state and another for actually render
   // the scene based on the updated scene state.
-  const {updateScene, renderScene, refreshProjection, registerRefreshRateUpdater} =
-    createSceneUpdater(gl, sceneManager);
+  const {
+    updateScene,
+    renderFrame,
+    refreshProjection,
+    registerRefreshRateUpdater,
+    rotateWorld,
+    translateWorld,
+    easeWorldRotation,
+    easeWorldTranslation,
+  } = createSceneUpdater(gl, sceneManager);
 
   // This starts the render loop to render the scene!
-  startRenderLoop(gl, updateScene, renderScene);
+  const stopRenderLoop = startRenderLoop(gl, updateScene, renderFrame);
 
-  // First thing is to load the shaders so that loading renderable
-  // resources have them when they are getting built.
-  return loadShaders(sceneConfig.preload.shaders)
-    .then(() => resourceLoader.loadMany(getResourcesFromConfig(sceneConfig)))
-    .then(() => {
-      // eslint-disable-next-line
-      console.log(`Load time: ${(Date.now() - start) / 1000} secs`);
+  // dispose tears down everything this call set up so that another scene can
+  // be rendered in its place. GPU resources (buffers, textures, programs) are
+  // not released yet.
+  function dispose() {
+    stopRenderLoop();
+    resourceLoader.dispose();
+  }
 
-      return {
-        loadScene: (config) => loadScene(gl, config),
-        resourceLoader,
-        sceneManager,
-        refreshProjection,
-        registerRefreshRateUpdater,
-      };
-    });
-}
+  try {
+    // First thing is to load the shaders so that loading renderable
+    // resources have them when they are getting built.
+    await loadShaders(sceneConfig.preload.shaders);
+    await resourceLoader.loadMany(getResourcesFromConfig(sceneConfig));
+  } catch (ex) {
+    // The caller never receives dispose when loading fails, so tear down
+    // here; otherwise the render loop would keep running.
+    dispose();
+    throw ex;
+  }
+
+  // eslint-disable-next-line
+  console.log(`Load time: ${(Date.now() - start) / 1000} secs`);
+
+  return {
+    resourceLoader,
+    sceneManager,
+    refreshProjection,
+    registerRefreshRateUpdater,
+    rotateWorld,
+    translateWorld,
+    easeWorldRotation,
+    easeWorldTranslation,
+    dispose,
+  };
+};
