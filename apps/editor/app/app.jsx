@@ -25,7 +25,7 @@ export class SceneGraph extends React.Component {
   };
 
   render() {
-    const {sceneManager, resourceLoader, refreshProjection, onChangeScene} = this.props;
+    const {sceneManager, resourceLoader, onChangeScene} = this.props;
     const {selectedNode} = this.state;
 
     const nodeSelectionContext = {
@@ -36,7 +36,6 @@ export class SceneGraph extends React.Component {
     const sceneContext = {
       updateScene: this.handleSceneUpdate,
       resourceLoader,
-      refreshProjection,
       sceneManager,
     };
 

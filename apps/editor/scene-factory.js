@@ -1,12 +1,13 @@
 import {
+  Camera,
   Node as SceneNode,
   Light as SceneLight,
-  Projection,
   StaticMesh,
   SkinnedMesh,
   SceneManager,
   StateManager,
   traversal,
+  Viewport,
 } from "@scenic/scene";
 
 export function createScene(config) {
@@ -39,8 +40,10 @@ export function createScene(config) {
       return new SkinnedMesh(nodeConfig);
     } else if (isLight(nodeConfig)) {
       return new SceneLight(nodeConfig);
-    } else if (isProjection(nodeConfig)) {
-      return new Projection(nodeConfig);
+    } else if (isViewport(nodeConfig)) {
+      return new Viewport(nodeConfig);
+    } else if (isCamera(nodeConfig)) {
+      return new Camera(nodeConfig);
     }
 
     return new SceneNode(nodeConfig);
@@ -51,8 +54,12 @@ export function createScene(config) {
   return sceneManager.withNodes(sceneNode.items);
 }
 
-export function isProjection(nodeConfig) {
-  return nodeConfig.type === "perspective" || nodeConfig.type === "orthographic";
+export function isViewport(nodeConfig) {
+  return nodeConfig.type === "viewport";
+}
+
+export function isCamera(nodeConfig) {
+  return nodeConfig.type === "camera";
 }
 
 export function isLight(nodeConfig) {

@@ -1,0 +1,152 @@
+import {mat4} from "@scenic/math";
+
+import {Camera} from "./camera.js";
+import {SceneManager} from "./scene-manager.js";
+import {StateManager} from "./state-manager.js";
+import {Viewport} from "./viewport.js";
+
+// clipPosition applies a view-projection the way the vertex shaders do. Its
+// data is column-major because it is uploaded without transposing.
+function clipPosition(viewProjectionMatrix, [x, y, z]) {
+  const m = viewProjectionMatrix.data;
+  return [0, 1, 2, 3].map((row) => m[row] * x + m[4 + row] * y + m[8 + row] * z + m[12 + row]);
+}
+
+function createCamera(name, position = [0, 0, 0], rotation = [0, 0, 0]) {
+  return new Camera({name})
+    .withWorldMatrix(mat4.Matrix4.trs(position, rotation, [1, 1, 1]))
+    .updateProjection({type: "perspective", fov: 90, near: 1, far: 1000}, 100, 100);
+}
+
+// sceneManagerWithState stands in for a SceneManager when a test only needs
+// node state.
+function sceneManagerWithState(statesByID) {
+  return {getNodeStateByID: (id) => statesByID[id]};
+}
+
+describe("Viewport.viewProjectionMatrix", () => {
+  test("puts a point the camera looks straight at in the middle of clip space", () => {
+    const viewport = new Viewport({name: "world"}).add(createCamera("camera", [0, 0, 300]));
+    const [x, y, z, w] = clipPosition(viewport.viewProjectionMatrix, [0, 0, 0]);
+
+    expect(x / w).toBeCloseTo(0, 5);
+    expect(y / w).toBeCloseTo(0, 5);
+    expect(w).toBeGreaterThan(0);
+    expect(Math.abs(z / w)).toBeLessThan(1);
+  });
+
+  test("puts a point to the camera's right on the right of clip space", () => {
+    const viewport = new Viewport({name: "world"}).add(createCamera("camera", [0, 0, 300]));
+    const [x, , , w] = clipPosition(viewport.viewProjectionMatrix, [50, 0, 0]);
+
+    expect(x / w).toBeGreaterThan(0);
+  });
+
+  test("follows the camera when it is turned", () => {
+    // A yaw of 90 degrees turns the camera from looking down -Z to -X.
+    const viewport = new Viewport({name: "world"}).add(
+      createCamera("camera", [0, 0, 0], [0, 90, 0])
+    );
+    const [x, y, , w] = clipPosition(viewport.viewProjectionMatrix, [-300, 0, 0]);
+
+    expect(x / w).toBeCloseTo(0, 5);
+    expect(y / w).toBeCloseTo(0, 5);
+    expect(w).toBeGreaterThan(0);
+  });
+});
+
+describe("Viewport.activeCamera", () => {
+  test("is the first camera added", () => {
+    const front = createCamera("front");
+    const viewport = new Viewport({name: "world"}).add(front).add(createCamera("side"));
+
+    expect(viewport.cameras).toHaveLength(2);
+    expect(viewport.activeCamera).toBe(front);
+  });
+
+  test("is the camera named by activeCamera in the viewport's state", () => {
+    const side = createCamera("side");
+    const viewport = new Viewport({name: "world", id: "world"})
+      .add(createCamera("front"))
+      .add(side);
+
+    viewport.updateActiveCamera(sceneManagerWithState({world: {activeCamera: "side"}}));
+
+    expect(viewport.activeCamera).toBe(side);
+  });
+
+  test("falls back to the first camera and warns when no camera has that name", () => {
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
+    const front = createCamera("front");
+    const viewport = new Viewport({name: "world", id: "world"}).add(front);
+    const sceneManager = sceneManagerWithState({world: {activeCamera: "missing"}});
+
+    viewport.updateActiveCamera(sceneManager).updateActiveCamera(sceneManager);
+
+    expect(viewport.activeCamera).toBe(front);
+    expect(warn).toHaveBeenCalledTimes(1);
+    warn.mockRestore();
+  });
+});
+
+describe("Viewport.remove", () => {
+  test("throws when removing the last camera", () => {
+    const camera = createCamera("camera");
+    const viewport = new Viewport({name: "world"}).add(camera);
+
+    expect(() => viewport.remove(camera)).toThrow(/last camera of viewport "world"/);
+    expect(viewport.cameras).toEqual([camera]);
+  });
+
+  test("makes the next camera active when the active one is removed", () => {
+    const front = createCamera("front");
+    const side = createCamera("side");
+    const viewport = new Viewport({name: "world"}).add(front).add(side);
+
+    viewport.remove(front);
+
+    expect(viewport.activeCamera).toBe(side);
+  });
+
+  test("keeps the active camera when another camera is removed", () => {
+    const front = createCamera("front");
+    const side = createCamera("side");
+    const viewport = new Viewport({name: "world"}).add(front).add(side);
+
+    viewport.remove(side);
+
+    expect(viewport.activeCamera).toBe(front);
+  });
+});
+
+describe("SceneManager.withNodes", () => {
+  function createSceneManager(cameraProjection) {
+    const items = [{id: "world", items: [{id: "camera", projection: cameraProjection}]}];
+    return new SceneManager(new StateManager(items));
+  }
+
+  test("rejects a viewport without a camera", () => {
+    const sceneManager = createSceneManager({type: "perspective"});
+    const viewport = new Viewport({name: "world", id: "world"});
+
+    expect(() => sceneManager.withNodes([viewport])).toThrow(/viewport "world" has no camera/);
+  });
+
+  test("rejects a camera with an unknown projection type", () => {
+    const sceneManager = createSceneManager({type: "fisheye"});
+    const viewport = new Viewport({name: "world", id: "world"}).add(
+      new Camera({name: "camera", id: "camera"})
+    );
+
+    expect(() => sceneManager.withNodes([viewport])).toThrow(/projection type "fisheye"/);
+  });
+
+  test("accepts viewports that each have a camera", () => {
+    const sceneManager = createSceneManager({type: "perspective"});
+    const viewport = new Viewport({name: "world", id: "world"}).add(
+      new Camera({name: "camera", id: "camera"})
+    );
+
+    expect(() => sceneManager.withNodes([viewport])).not.toThrow();
+  });
+});

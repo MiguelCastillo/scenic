@@ -95,7 +95,7 @@
 // https://danceswithcode.net/engineeringnotes/rotations_in_3d/rotations_in_3d_part1.html
 //
 
-import {degToRad} from "./angles.js";
+import {degToRad, radToDeg} from "./angles.js";
 import {matrixFloatPrecision} from "./float.js";
 import {
   generateRotationMatrix,
@@ -295,6 +295,30 @@ export function rotate(dest, degreesX, degreesY, degreesZ) {
   dest[9] = cy * sx;
   dest[10] = cy * cx;
   return dest;
+}
+
+// rotationAngles is the inverse of rotate: it returns the [x, y, z] degrees
+// that rotate would need to produce the rotation in the upper 3x3 of data.
+// The matrix must be a pure rotation (no scaling). This lets code that only
+// has a rotation matrix, such as the inverse of a camera's rotation, write it
+// back as the Euler angles that scene node transforms use.
+export function rotationAngles(data) {
+  // rotate stores -sin(y) at _20, so y comes straight from it. Clamp to guard
+  // against floating point drift just outside [-1, 1].
+  const sy = Math.max(-1, Math.min(1, -data[_20]));
+  const y = Math.asin(sy);
+
+  // When cos(y) is 0 (y is +/-90 degrees) x and z rotate around the same axis
+  // and only their sum or difference is known, so z is set to 0 and x takes
+  // the whole rotation.
+  if (Math.abs(sy) > 0.9999999) {
+    const x = sy > 0 ? Math.atan2(data[_01], data[_02]) : Math.atan2(-data[_01], -data[_02]);
+    return [radToDeg(x), radToDeg(y), 0];
+  }
+
+  const x = Math.atan2(data[_21], data[_22]);
+  const z = Math.atan2(data[_10], data[_00]);
+  return [radToDeg(x), radToDeg(y), radToDeg(z)];
 }
 
 export function multiply(dest, a, b) {

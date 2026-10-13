@@ -13,11 +13,12 @@ skinned animation:
 
 Quick intro:
 
-1. Click on the rendering canvas to enter interactive mode (enable mouse tracking on the canvas)
-2. One (and two fingers on mouse track) will rotate the scene on its origin
-3. Ctrl + one (or two fingers on mouse track) will translate the scene along the Z axis
-4. Shift + one (or two fingers on mouse track) will translate the scene along the X and Y axis
-5. Press ESC to exit interactive mode
+1. Click on the rendering canvas to take control of the camera
+2. Move the mouse to look around
+3. W and S fly forward and back, A and D fly left and right, E and Q fly up
+   and down
+4. Scroll (or two fingers on a trackpad) to fly forward, back, left and right
+5. Press ESC to let go of the camera
 6. Use "Change scene" in the scene graph panel to switch to another scene
 
 ## Architecture
@@ -47,6 +48,65 @@ Building a scene splits that config in two:
 - The **`StateManager`** holds the state of every node, keyed by node ID:
   transforms, materials, lights, animation settings. Nodes read their state
   from it every frame, and the editor's panels write to it.
+
+### Viewports and cameras
+
+A **`Viewport`** is a part of the scene seen through a camera. Its items are
+what it draws, and its cameras are the angles it can draw them from. The
+editor's scenes have two viewports: `world`, with the lights and models, and
+`axis`, with the axis gizmo in the corner.
+
+A **`Camera`** is a lens plus a placement:
+
+- Its `projection` block is the lens. Its `type` is one of:
+  - `perspective`, which makes things further away look smaller. It takes
+    `fov` (the vertical field of view in degrees), `near` and `far`.
+  - `orthographic`, which keeps things the same size however far away they
+    are. It takes `far`, and is measured in pixels from the bottom left of the
+    canvas, which is what the axis gizmo needs.
+- Its `transform` places it in the world like any other node. It looks down
+  its own -Z axis.
+
+A viewport can have several cameras, and draws through one of them at a time:
+the camera named by `activeCamera` in the viewport's state, or its first camera
+when that is not set. Switching cameras is a state change:
+
+```js
+sceneManager.updateNodeStateByID("world", {activeCamera: "side camera"});
+```
+
+Each camera keeps its own state, so switching back returns to where that camera
+was left. A name that matches no camera falls back to the first camera, with a
+warning in the console.
+
+A viewport must always have a camera. Loading a scene with a viewport that has
+no camera fails with an error that names the viewport, and removing a
+viewport's last camera throws.
+
+```json
+{
+  "name": "world",
+  "type": "viewport",
+  "items": [
+    {
+      "name": "camera",
+      "type": "camera",
+      "projection": {"type": "perspective", "fov": 30, "near": 1, "far": 10000},
+      "transform": {"position": [0, 0, 300]},
+      "camera": {"speed": 200, "maxPitch": 89}
+    }
+  ]
+}
+```
+
+The camera's rotation is `[pitch, yaw, 0]` in degrees. The editor flies the
+world viewport's active camera by changing its transform in the state manager,
+so lights and models stay where they are in the world while the camera moves
+around them. The `camera` block sets how it flies:
+
+- `speed`: how fast it flies, in scene units per second.
+- `maxPitch`: how far up or down it can look, in degrees. Looking straight up
+  or down would flip the camera over, so keep this under 90.
 
 ### Renderable, Mesh and Geometry
 
@@ -110,7 +170,7 @@ flowchart TB
 The resulting scene graph:
 
 ```text
-Projection "world projection"
+Viewport "world"
 └── StaticMesh "donut"       ← Renderable: shader program + draw list
     └── Geometry "geometry"  ← owns the VertexBuffer
 ```
@@ -121,10 +181,11 @@ skinning on top of the scene `Geometry`.
 
 ### Rendering a frame
 
-`SceneManager.render` walks the tree depth first. It calls `preRender` on the
-way down (parents before children) and `render` on the way up (children
-before parents). So by the time a mesh renders, its children have already
-filled its draw list:
+`SceneManager.render` walks the tree twice. The first pass calls `preRender` on
+every node, parents before children, so that every world matrix is up to date,
+including the camera's. The second pass calls `render` on every node, children
+before parents, so by the time a mesh renders its children have already filled
+its draw list:
 
 ```mermaid
 sequenceDiagram
@@ -134,12 +195,12 @@ sequenceDiagram
   participant State as StateManager
   participant SP as ShaderProgram
 
-  Note over SM,SP: down the tree
+  Note over SM,SP: first pass, parents first
   SM->>Mesh: preRender()
   Mesh->>Mesh: clear draw list, update world matrix
   SM->>Geo: preRender()
 
-  Note over SM,SP: up the tree, children first
+  Note over SM,SP: second pass, children first
   SM->>Geo: render()
   Geo->>Mesh: addVertexBuffer(vertexBuffer)
   SM->>Mesh: render()

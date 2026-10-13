@@ -7,41 +7,19 @@
 // This will inject buffering into `console` so that we can access it later.
 import "./logging.js";
 
-import {projections, vec3, easings} from "@scenic/math";
+import {mat4} from "@scenic/math";
 import {webgl} from "@scenic/renderer";
 
 import {createScene, buildDefaultState} from "./scene-factory.js";
 import {createResourceLoader, getResourcesFromConfig} from "./loaders/resource-loader.js";
 import {loadShaders} from "./shader-factory.js";
 import {startRenderLoop} from "./render-loop.js";
+import {createFreeFlyBehavior} from "./camera-behaviors/free-fly.js";
 
 import {createFrameRateCounter} from "./fps-counter.js";
 
-const sceneObjectsID = "scene objects";
-const axisProjectionID = "axis projection";
-const worldProjectionID = "world projection";
-
-function applyWorldRotation(sceneManager, rotateX, rotateY, rotateZ = 0) {
-  const sceneObjects = sceneManager.getNodeStateByID(sceneObjectsID);
-
-  sceneManager.updateNodeStateByID(sceneObjectsID, {
-    transform: {
-      ...sceneObjects.transform,
-      rotation: vec3.add([rotateX, rotateY, rotateZ], sceneObjects.transform.rotation),
-    },
-  });
-}
-
-function applyWorldTranslation(sceneManager, translateX, translateY, translateZ) {
-  const sceneObjects = sceneManager.getNodeStateByID(sceneObjectsID);
-
-  sceneManager.updateNodeStateByID(sceneObjectsID, {
-    transform: {
-      ...sceneObjects.transform,
-      position: vec3.add([translateX, translateY, translateZ], sceneObjects.transform.position),
-    },
-  });
-}
+const worldViewportID = "world";
+const axisGizmoID = "axis gizmo";
 
 // Helper function for providing the ability to update a scene and to also
 // render it. Nothing in here touches the DOM; the app owns the canvas size and
@@ -49,70 +27,46 @@ function applyWorldTranslation(sceneManager, translateX, translateY, translateZ)
 function createSceneUpdater(gl, sceneManager) {
   const getFrameRate = createFrameRateCounter();
 
-  let axisProjectionMatrix, perspectiveProjectionMatrix;
+  const getCamera = () => sceneManager.getNodeByID(worldViewportID).activeCamera;
 
-  // Projections are sized from the canvas drawing buffer, which the app keeps
-  // the same size as the canvas is displayed. Call this whenever that size or
-  // the projection settings change.
-  function refreshProjection() {
-    const {width, height} = gl.canvas;
+  // A camera behavior decides how the world viewport's active camera responds
+  // to the player's input. The app sends input to it through four calls, so
+  // switching how the camera moves (from free-fly to third person, say) means
+  // swapping this behavior and nothing else:
+  // - turn(rightDegrees, upDegrees): turn in response to looking around, such
+  //   as moving the mouse.
+  // - move(forward, right, up): move once by the given distances in scene
+  //   units, such as for scrolling.
+  // - setMovement({forward, right, up}): keep moving while input is held down,
+  //   such as keys. Each value is -1, 0 or 1.
+  // - update(seconds): called every frame with the seconds since the last one,
+  //   to apply the movement that is held down.
+  const cameraBehavior = createFreeFlyBehavior(sceneManager, getCamera);
 
-    const worldProjectionState = sceneManager.getNodeStateByID(worldProjectionID);
-    perspectiveProjectionMatrix = createPerspectiveProjectionMatrix(
-      width,
-      height,
-      worldProjectionState.projection.fov,
-      worldProjectionState.projection.near,
-      worldProjectionState.projection.far
-    );
-
-    const axisProjectionState = sceneManager.getNodeStateByID(axisProjectionID);
-    axisProjectionMatrix = createOrthographicProjectionMatrix(
-      width,
-      height,
-      axisProjectionState.projection.far
-    );
-  }
-
-  refreshProjection();
-
-  // rotateWorld and translateWorld move the scene objects right away. The
-  // ease variants spread the movement over the next few frames instead.
-  const rotateWorld = (rotateX, rotateY) => applyWorldRotation(sceneManager, rotateX, rotateY);
-  const translateWorld = (translateX, translateY, translateZ) =>
-    applyWorldTranslation(sceneManager, translateX, translateY, translateZ);
-
-  const worldRotation = new easings.WeightedItems(easings.easeInQuart);
-  const worldTranslation = new easings.WeightedItems(easings.easeInQuart);
-  const easeWorldRotation = (rotateX, rotateY) => worldRotation.start([rotateX, rotateY]);
-  const easeWorldTranslation = (translateX, translateY, translateZ) =>
-    worldTranslation.start([translateX, translateY, translateZ]);
+  let lastFrameMs = null;
 
   // This is the logic for updating the scene state and the scene graph with the
   // new scene state. This is the logic for the game itself.
-  function updateScene(/*ms*/) {
-    sceneManager.getNodeByID(worldProjectionID).withProjection(perspectiveProjectionMatrix);
+  function updateScene(ms) {
+    // Seconds since the last frame, capped so that the camera does not jump
+    // after the page has been in the background and frames were paused.
+    const seconds = lastFrameMs === null ? 0 : Math.min((ms - lastFrameMs) / 1000, 0.1);
+    lastFrameMs = ms;
 
-    const axisProjection = sceneManager
-      .getNodeByID(axisProjectionID)
-      .withProjection(axisProjectionMatrix);
+    cameraBehavior.update(seconds);
 
-    const sceneObjectsTransform = sceneManager.getNodeStateByID(sceneObjectsID).transform;
-
-    const axisProjcetionState = sceneManager.getNodeStateByID(axisProjection.id);
-    sceneManager.updateNodeStateByID(axisProjection.id, {
+    // The axis gizmo shows the world's axes as the camera sees them, so it is
+    // rotated by the inverse of the camera's rotation. The inverse of a
+    // rotation matrix is its transpose.
+    const [pitch, yaw] = sceneManager.getNodeStateByID(getCamera().id).transform.rotation;
+    const cameraRotation = mat4.rotate(mat4.identity(), pitch, yaw, 0);
+    const axisGizmoState = sceneManager.getNodeStateByID(axisGizmoID);
+    sceneManager.updateNodeStateByID(axisGizmoID, {
       transform: {
-        ...axisProjcetionState.transform,
-        rotation: sceneObjectsTransform.rotation,
+        ...axisGizmoState.transform,
+        rotation: mat4.rotationAngles(mat4.transpose(cameraRotation)),
       },
     });
-
-    if (worldRotation.update()) {
-      applyWorldRotation(sceneManager, ...worldRotation.getWeighted());
-    }
-    if (worldTranslation.update()) {
-      applyWorldTranslation(sceneManager, ...worldTranslation.getWeighted());
-    }
   }
 
   let lastFps = 0;
@@ -136,38 +90,11 @@ function createSceneUpdater(gl, sceneManager) {
   return {
     updateScene,
     renderFrame,
-    refreshProjection,
     registerRefreshRateUpdater,
-    rotateWorld,
-    translateWorld,
-    easeWorldRotation,
-    easeWorldTranslation,
+    turnCamera: cameraBehavior.turn,
+    moveCamera: cameraBehavior.move,
+    setCameraMovement: cameraBehavior.setMovement,
   };
-}
-
-// Projection matrix projects pixel space to clip space which has the range of
-// -1 to 1 on every axis. Coordinates defined in client code is much simpler to
-// reason about in pixel space, but when rasterizing it is much simpler for the
-// low level engines to work with clip space, which is used for determining
-// what geometry can be culled out.
-function createPerspectiveProjectionMatrix(width, height, fov = 90, near = 0, far = 1000) {
-  // Primitives are clipped to a space coordinate that ranges from -1 to 1
-  // in all axis. This is what the hardware wants, so we need to project
-  // screen space to clip space so that all things that we render can be
-  // in screen space, but when we render to can convert all things to clip
-  // space for the hardward to properly cull out and rasterize everything
-  // we render.
-  return projections.PerspectiveProjectionMatrix.create(fov, width, height, near, far);
-}
-
-function createOrthographicProjectionMatrix(width, height, far = 1000) {
-  // Primitives are clipped to a space coordinate that ranges from -1 to 1
-  // in all axis. This is what the hardware wants, so we need to project
-  // screen space to clip space so that all things that we render can be
-  // in screen space, but when we render to can convert all things to clip
-  // space for the hardward to properly cull out and rasterize everything
-  // we render.
-  return projections.OrthographicProjectionMatrix.create(width, height, far);
 }
 
 // renderScene is exported to the global object (window in the browser)
@@ -202,12 +129,10 @@ export const renderScene = async (gl, config) => {
   const {
     updateScene,
     renderFrame,
-    refreshProjection,
     registerRefreshRateUpdater,
-    rotateWorld,
-    translateWorld,
-    easeWorldRotation,
-    easeWorldTranslation,
+    turnCamera,
+    moveCamera,
+    setCameraMovement,
   } = createSceneUpdater(gl, sceneManager);
 
   // This starts the render loop to render the scene!
@@ -240,12 +165,10 @@ export const renderScene = async (gl, config) => {
   return {
     resourceLoader,
     sceneManager,
-    refreshProjection,
     registerRefreshRateUpdater,
-    rotateWorld,
-    translateWorld,
-    easeWorldRotation,
-    easeWorldTranslation,
+    turnCamera,
+    moveCamera,
+    setCameraMovement,
     dispose,
   };
 };

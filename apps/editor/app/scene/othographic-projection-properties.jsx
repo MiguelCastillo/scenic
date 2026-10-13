@@ -12,8 +12,6 @@ export class OrthographicProjectionProperties extends WithNodeState {
         far: parseInt(evt.target.value),
       },
     });
-
-    this.context.refreshProjection();
   };
 
   render() {

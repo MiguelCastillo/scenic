@@ -6,6 +6,8 @@ import {
   invert,
   adjoint,
   determinant,
+  rotate,
+  rotationAngles,
 } from "./matrix4.js";
 import {matrixFloatPrecision} from "./float.js";
 
@@ -332,4 +334,52 @@ describe("Determinant function", () => {
 
 function _fixZeros(v) {
   return v === -0 ? 0 : v;
+}
+
+describe("rotationAngles", () => {
+  const expectSameRotation = (actual, expected) => {
+    const a = rotate(identity16(), ...actual);
+    const b = rotate(identity16(), ...expected);
+    for (let i = 0; i < 16; i++) {
+      expect(a[i]).toBeCloseTo(b[i], 5);
+    }
+  };
+
+  test.each([
+    [0, 0, 0],
+    [30, 0, 0],
+    [0, 45, 0],
+    [0, 0, 60],
+    [-20, 60, 10],
+    [80, -70, -45],
+  ])("returns the angles rotate(%d, %d, %d) was built from", (x, y, z) => {
+    const angles = rotationAngles(rotate(identity16(), x, y, z));
+    expect(angles[0]).toBeCloseTo(x, 3);
+    expect(angles[1]).toBeCloseTo(y, 3);
+    expect(angles[2]).toBeCloseTo(z, 3);
+  });
+
+  // Past 90 degrees on y, or exactly at +/-90, more than one set of angles
+  // gives the same rotation, so these compare rotations instead of angles.
+  test.each([
+    [-20, 135, 10],
+    [80, -170, -45],
+    [20, 90, 0],
+    [0, -90, 35],
+  ])("returns angles for the same rotation as rotate(%d, %d, %d)", (x, y, z) => {
+    expectSameRotation(rotationAngles(rotate(identity16(), x, y, z)), [x, y, z]);
+  });
+
+  test("returns angles for the inverse of a yaw then pitch rotation", () => {
+    const camera = rotate(identity16(), 25, 120, 0);
+    const inverse = transpose(camera);
+    const roundTrip = rotate(identity16(), ...rotationAngles(inverse));
+    for (let i = 0; i < 16; i++) {
+      expect(roundTrip[i]).toBeCloseTo(inverse[i], 5);
+    }
+  });
+});
+
+function identity16() {
+  return [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
 }

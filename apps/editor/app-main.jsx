@@ -44,14 +44,12 @@ domReady.onReady(() => {
   createSplitPanel(splitPanelEl);
 
   // Keep the canvas drawing buffer the same size as the canvas is displayed so
-  // rendering is not stretched, then let the scene rebuild its projections.
-  // clientWidth and clientHeight are the canvas' displayed size.
+  // rendering is not stretched. clientWidth and clientHeight are the canvas'
+  // displayed size. Cameras rebuild their projections from the drawing buffer
+  // size every frame, so they pick up the new size on their own.
   function resizeCanvas() {
     canvas.width = canvas.clientWidth;
     canvas.height = canvas.clientHeight;
-    if (currentScene) {
-      currentScene.refreshProjection();
-    }
   }
 
   resizeCanvas();
@@ -96,13 +94,12 @@ domReady.onReady(() => {
       .then((config) => window.scene.renderScene(gl, config))
       .then((scene) => {
         currentScene = scene;
-        const {registerRefreshRateUpdater, resourceLoader, sceneManager, refreshProjection} = scene;
+        const {registerRefreshRateUpdater, resourceLoader, sceneManager} = scene;
 
         sceneGraphRoot.render(
           <SceneGraph
             sceneManager={sceneManager}
             resourceLoader={resourceLoader}
-            refreshProjection={refreshProjection}
             onChangeScene={showSceneSelector}
           />
         );
@@ -127,40 +124,58 @@ domReady.onReady(() => {
   showSceneSelector();
 });
 
-// subscribeToSceneInput turns mouse and trackpad input on the mousetrap into
-// movement of the current scene. Clicking the mousetrap locks the pointer to
-// it, and input only moves the scene while the pointer is locked.
+// How far the camera turns, in degrees, per pixel of mouse movement, and how
+// far it flies, in scene units, per pixel of wheel or trackpad scrolling.
+const cameraTurnDegreesPerPixel = 0.1;
+const cameraScrollDistancePerPixel = 0.5;
+
+// Keys that fly the camera while they are held, by KeyboardEvent.code so that
+// they stay in the same place on every keyboard layout.
+const cameraMovementKeys = {
+  KeyW: {forward: 1},
+  KeyS: {forward: -1},
+  KeyD: {right: 1},
+  KeyA: {right: -1},
+  KeyE: {up: 1},
+  KeyQ: {up: -1},
+};
+
+// subscribeToSceneInput maps the mouse and keyboard onto the current scene's
+// camera controls. How the camera responds is up to its camera behavior (see
+// camera-behaviors/ and where scene-main.js creates it). Clicking the
+// mousetrap locks the pointer to it, and input only moves the camera while
+// the pointer is locked, so typing in the editor's panels is left alone.
+// Pressing Escape releases the lock.
 function subscribeToSceneInput(mousetrapEl, getCurrentScene) {
-  let enableWorldTranslation = false;
+  const isPointerLocked = () => document.pointerLockElement === mousetrapEl;
+  const heldKeys = new Set();
+
+  function updateCameraMovement() {
+    const scene = getCurrentScene();
+    if (!scene) {
+      return;
+    }
+
+    const movement = {forward: 0, right: 0, up: 0};
+    for (const code of heldKeys) {
+      for (const [direction, amount] of Object.entries(cameraMovementKeys[code])) {
+        movement[direction] += amount;
+      }
+    }
+    scene.setCameraMovement(movement);
+  }
 
   domEvents.Subscription.create(mousetrapEl)
     .on("click", (/*evt*/) => {
       mousetrapEl.requestPointerLock();
     })
-    .on("mousedown", (/*evt*/) => {
-      enableWorldTranslation = true;
-    })
-    .on("mouseup", (/*evt*/) => {
-      enableWorldTranslation = false;
-    })
     .on("mousemove", (evt) => {
       const scene = getCurrentScene();
-      if (scene && document.pointerLockElement === mousetrapEl) {
-        const devicePixelRatio = window.devicePixelRatio;
-        const translationRatio = devicePixelRatio * 6;
-        const rotationRatio = devicePixelRatio * 2;
-
-        if (enableWorldTranslation || evt.shiftKey) {
-          scene.easeWorldTranslation(
-            evt.movementX / translationRatio,
-            -evt.movementY / translationRatio,
-            0
-          );
-        } else if (evt.ctrlKey) {
-          scene.easeWorldTranslation(0, 0, evt.movementY / translationRatio);
-        } else {
-          scene.easeWorldRotation(evt.movementY / rotationRatio, evt.movementX / rotationRatio);
-        }
+      if (scene && isPointerLocked()) {
+        scene.turnCamera(
+          evt.movementX * cameraTurnDegreesPerPixel,
+          -evt.movementY * cameraTurnDegreesPerPixel
+        );
       }
     })
     .on("wheel", (evt) => {
@@ -168,17 +183,43 @@ function subscribeToSceneInput(mousetrapEl, getCurrentScene) {
       evt.preventDefault();
 
       const scene = getCurrentScene();
-      if (scene && document.pointerLockElement === mousetrapEl) {
-        const devicePixelRatio = window.devicePixelRatio;
-        const rotationRatio = devicePixelRatio * 6;
+      if (scene && isPointerLocked()) {
+        scene.moveCamera(
+          -evt.deltaY * cameraScrollDistancePerPixel,
+          evt.deltaX * cameraScrollDistancePerPixel,
+          0
+        );
+      }
+    });
 
-        if (evt.shiftKey) {
-          scene.translateWorld(-(evt.deltaX / rotationRatio), evt.deltaY / rotationRatio, 0);
-        } else if (evt.ctrlKey) {
-          scene.translateWorld(0, 0, -(evt.deltaY / rotationRatio));
-        } else {
-          scene.rotateWorld(-evt.deltaY / devicePixelRatio, -evt.deltaX / devicePixelRatio);
-        }
+  domEvents.Subscription.create(document)
+    .on("keydown", (evt) => {
+      if (!isPointerLocked()) {
+        return;
+      }
+
+      if (!cameraMovementKeys[evt.code]) {
+        return;
+      }
+
+      evt.preventDefault();
+      heldKeys.add(evt.code);
+      updateCameraMovement();
+    })
+    .on("keyup", (evt) => {
+      if (!cameraMovementKeys[evt.code]) {
+        return;
+      }
+
+      heldKeys.delete(evt.code);
+      updateCameraMovement();
+    })
+    // Keys released while the pointer was unlocked never send keyup here, so
+    // everything is treated as released when the lock is lost.
+    .on("pointerlockchange", () => {
+      if (!isPointerLocked()) {
+        heldKeys.clear();
+        updateCameraMovement();
       }
     });
 }

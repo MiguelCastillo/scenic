@@ -1,6 +1,7 @@
 import {bubbleTraversal} from "./traversal.js";
 import {Node} from "./node.js";
 import {Scene} from "./scene.js";
+import {Viewport} from "./viewport.js";
 
 export class SceneManager {
   constructor(stateManager) {
@@ -26,8 +27,34 @@ export class SceneManager {
     return this;
   }
 
+  // withNodes replaces the scene's nodes. It throws if the nodes break a rule
+  // that rendering depends on, so that a bad scene config fails when it is
+  // loaded with an error that says what is wrong, instead of rendering
+  // nothing:
+  // - every viewport has at least one camera.
+  // - every camera's projection type is "perspective" or "orthographic".
   withNodes(nodes) {
     this.scene.clear().addItems(nodes);
+
+    for (const viewport of Node.findChildrenByType(this.scene, Viewport)) {
+      if (!viewport.cameras.length) {
+        throw new Error(
+          `viewport "${viewport.name}" has no camera; add an item with "type": "camera" to it`
+        );
+      }
+
+      for (const camera of viewport.cameras) {
+        const type = this.getNodeStateByID(camera.id)?.projection?.type;
+        if (type !== "perspective" && type !== "orthographic") {
+          throw new Error(
+            `camera "${camera.name}" has projection type "${type}"; use "perspective" or "orthographic"`
+          );
+        }
+      }
+
+      viewport.updateActiveCamera(this);
+    }
+
     return this;
   }
 
@@ -63,17 +90,31 @@ export class SceneManager {
     // things like sorting of object based on spatial positining and collision
     // detection. It can also allows to render any object we need without
     // concerns about depencies on other objects' location in space.
-    const bubbleDown = (node /*, parent*/) => {
-      node.preRender(context);
-      return node;
-    };
+    //
+    // The scene is walked twice. The first pass runs every preRender, parents
+    // before children, so that every world matrix is up to date. The second
+    // pass runs every render, children before parents, so that children such
+    // as Geometry fill their parent's draw list before the parent draws.
+    // Finishing the first pass before starting the second means a node that
+    // renders can rely on the world matrix of any other node in the scene,
+    // such as the camera or the bones of a skeleton, no matter where in the
+    // tree that node is.
+    const preRenderPass = bubbleTraversal(
+      (node) => {
+        node.preRender(context);
+        return node;
+      },
+      () => {}
+    );
 
-    // We can render on the way up
-    const bubbleUp = (node) => {
-      node.render(context);
-    };
+    const renderPass = bubbleTraversal(
+      (node) => node,
+      (node) => {
+        node.render(context);
+      }
+    );
 
-    const traverse = bubbleTraversal(bubbleDown, bubbleUp);
-    this.scene.items.forEach(traverse);
+    this.scene.items.forEach(preRenderPass);
+    this.scene.items.forEach(renderPass);
   }
 }

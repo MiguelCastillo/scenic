@@ -4,7 +4,7 @@ import {StaticMeshDetailsPanel} from "./scene/static-mesh-details-panel.jsx";
 import {SkinnedMeshDetailsPanel} from "./scene/skinned-mesh-details-panel.jsx";
 import {LightDetailsPanel} from "./scene/light-details-panel.jsx";
 import {TransformDetailsPanel} from "./scene/transform-details-panel.jsx";
-import {ProjectionDetailsPanel} from "./scene/projection-details-panel.jsx";
+import {CameraDetailsPanel} from "./scene/camera-details-panel.jsx";
 import {MaterialDetailsPanel} from "./scene/material-details-panel.jsx";
 
 export class NodeDetailsPanel extends React.Component {
@@ -17,9 +17,8 @@ export class NodeDetailsPanel extends React.Component {
 
     let children = null;
     switch (node.type) {
-      case "perspective":
-      case "orthographic":
-        children = <ProjectionDetailsPanel node={node} />;
+      case "camera":
+        children = <CameraDetailsPanel node={node} />;
         break;
       case "static-mesh":
         children = <StaticMeshDetailsPanel node={node} />;

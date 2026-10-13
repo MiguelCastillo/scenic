@@ -139,7 +139,7 @@ export class Mesh extends Renderable {
 
   static render(node) {
     const {shaderProgram, worldMatrix, vertexBuffers} = node;
-    const projectionMatrix = node.getProjectionMatrix();
+    const projectionMatrix = node.getViewProjectionMatrix();
 
     const uniforms = [
       {

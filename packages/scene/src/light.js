@@ -13,7 +13,7 @@ export class Light extends Renderable {
       return;
     }
 
-    const projectionMatrix = this.getProjectionMatrix();
+    const projectionMatrix = this.getViewProjectionMatrix();
 
     // State of the thing we are rendering.
     const renderableState = sceneManager.getNodeStateByID(this.id);

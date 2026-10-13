@@ -12,8 +12,6 @@ export class PerspectiveProjectionProperties extends WithNodeState {
         [which]: parseInt(evt.target.value),
       },
     });
-
-    this.context.refreshProjection();
   };
 
   handleChangeFOV = (evt) => {

@@ -270,7 +270,7 @@ export class Armature extends AnimatableInterface(RenderableSceneNode) {
 
     const shaderProgram = this.shaderProgram;
     const gl = shaderProgram.gl;
-    const projectionMatrix = this.getProjectionMatrix();
+    const projectionMatrix = this.getViewProjectionMatrix();
 
     gl.disable(gl.DEPTH_TEST);
 

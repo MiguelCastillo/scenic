@@ -1,7 +1,7 @@
 import {mat4} from "@scenic/math";
 
 import {Node} from "./node.js";
-import {Projection} from "./projection.js";
+import {Viewport} from "./viewport.js";
 
 const _identity = mat4.Matrix4.identity();
 
@@ -49,13 +49,15 @@ export const RenderableInterface = (superclass) =>
       super.dispose(gl);
     }
 
-    getProjectionMatrix() {
-      let projectionNode = this;
-      while (projectionNode && !(projectionNode instanceof Projection)) {
-        projectionNode = projectionNode.parent;
+    // getViewProjectionMatrix is the view-projection of the closest parent
+    // Viewport, which takes this renderable from world space to clip space.
+    getViewProjectionMatrix() {
+      let viewport = this;
+      while (viewport && !(viewport instanceof Viewport)) {
+        viewport = viewport.parent;
       }
 
-      return projectionNode ? projectionNode.projectionMatrix : _identity;
+      return viewport ? viewport.viewProjectionMatrix : _identity;
     }
   };
 
