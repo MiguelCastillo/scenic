@@ -121,6 +121,12 @@ export class ShaderProgram {
       this._uniformsUpdates[key](gl, this._uniformsByName[key]);
     });
 
+    // Vertex attributes enabled for this draw, which are disabled again once
+    // it is done. Enabled attributes are global WebGL state, and an attribute
+    // left enabled after its buffer is deleted makes every later draw fail
+    // with INVALID_OPERATION, even draws whose shaders never read it.
+    const enabledAttributeIndexes = [];
+
     for (const attr of this._attributes) {
       // We add `s` because the attribure in the shader is singular and the
       // buffer is plurar.  E.g. the vertex shader has `position` and the
@@ -133,13 +139,12 @@ export class ShaderProgram {
 
         // Enable this shader attribute.
         gl.enableVertexAttribArray(index);
+        enabledAttributeIndexes.push(index);
 
         // enableVertexAttribArray binds this shader attribute and the currently
         // bound ARRAY_BUFFER we are rendering. So before calling enable on an
         // attribute, you must have called bindBuffer.
         gl.vertexAttribPointer(index, size, type, normalized, stride, offset);
-      } else {
-        gl.disableVertexAttribArray(attr.index);
       }
     }
 
@@ -171,6 +176,10 @@ export class ShaderProgram {
       throw new Error(
         "neither indexes or positions that are configured. must provide one to render."
       );
+    }
+
+    for (const index of enabledAttributeIndexes) {
+      gl.disableVertexAttribArray(index);
     }
   }
 
