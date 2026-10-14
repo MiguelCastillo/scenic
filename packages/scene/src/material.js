@@ -54,7 +54,9 @@ export class Material extends Node {
   render() {
     const renderable = Node.findParentByType(this, Renderable);
 
-    if (renderable) {
+    // A renderable can be waiting for its shader program to load, and then
+    // there is nothing to configure yet.
+    if (renderable?.shaderProgram) {
       renderable.shaderProgram.addUniforms([
         {
           name: "ambientColor",

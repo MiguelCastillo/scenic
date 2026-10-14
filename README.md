@@ -258,8 +258,9 @@ flowchart TB
   state[("StateManager<br/>(stores the donut's material)")]
   mesh["StaticMesh donut<br/>(created from the config)"]
   loader["ResourceLoader<br/>(parses torus.obj)"]
-  build["OBJ buildSceneNode<br/>(builds the donut's shape and shader)"]
+  build["OBJ buildSceneNode<br/>(builds the donut's shape)"]
   geometry["Geometry<br/>(child of the donut, holds the VertexBuffer<br/>and deletes it with the donut)"]
+  registry["shader registry<br/>(picks phong-lighting for a mesh with geometry)"]
   program["ShaderProgram phong-lighting<br/>(held by the donut, deleted with it)"]
 
   config --> factory
@@ -268,15 +269,17 @@ flowchart TB
   mesh --> loader
   loader --> build
   build --> geometry
-  build --> program
+  geometry --> registry
+  registry --> program
 ```
 
 1. `createScene` turns the config into a `StaticMesh` node and puts its
    `material` into the state manager.
 2. The resource loader parses `torus.obj` in a web worker.
 3. The OBJ loader's `buildSceneNode` creates a `VertexBuffer` from the parsed
-   vertices, wraps it in a `Geometry` child of the mesh, and gives the mesh a
-   `phong-lighting` shader program.
+   vertices and wraps it in a `Geometry` child of the mesh.
+4. The shader registry gives the mesh a `phong-lighting` shader program, now
+   that it has geometry to draw (see [Shaders](#shaders)).
 
 The resulting scene graph:
 
@@ -289,6 +292,32 @@ Viewport "world"
 FBX models follow the same pattern with more node types: an FBX `Mesh` has
 `Geometry`, `Material` and `Texture` children, and the FBX `Geometry` adds
 skinning on top of the scene `Geometry`.
+
+### Shaders
+
+Which shader a renderable draws with is decided by a `ShaderRegistry` from
+`@scenic/renderer`, and it is the only place shader programs are created. The
+editor creates one (`apps/editor/shader-registry.js`), and code that defines a
+renderable registers its shader on it next to the renderable, as a name or as
+a function that picks one for a particular node:
+
+```js
+shaderRegistry.register(Grid, "shaders/flat-material");
+shaderRegistry.register(Mesh, (mesh) => (hasGeometry(mesh) ? "shaders/phong-lighting" : null));
+```
+
+A node uses the registration of its most specific class, so the FBX `Mesh`
+registers its own choice over the scene `Mesh`'s: the textured shader when it
+has textures. A function returns null for a node that draws nothing, such as
+the config node an FBX model is loaded into, so it gets no program.
+
+The editor's `applyShaders` gives every renderable in a subtree that has no
+program the one the registry picks, loading each shader file the first time it
+is needed. It runs when a scene starts, for renderables like grids, and after
+the resource loader builds a model. It stays in the editor, along with loading
+the shader files, because it finds renderables with `@scenic/scene`'s classes,
+and a copy of those bundled into `@scenic/renderer` would not match the
+editor's nodes.
 
 ### Rendering a frame
 

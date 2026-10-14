@@ -2,33 +2,44 @@ import {ShaderProgram, compileShaderSource, parseVertexShaderAttributes} from "@
 
 const shaderCache = {};
 
-// loadShaders pre-emptively loads shader sources that can be used later to
-// create shader programs. Before calling `createShaderProgram`, please call
-// this method with the shaders sources you want to make available to
-// create shader programs.  This two step dance allows us to load a while
-// bunch of shader sources in cache first because creating shader programs
-// on demand synchronously.
-// If you want to be able to asynchrounousely create shader program without
-// preloading shader sources, then use createShaderProgramAsync.
+// Shaders that are being downloaded, by name, so that asking for a shader
+// again while it downloads waits for the same download instead of starting
+// another.
+const pendingLoads = {};
+
+// loadShaders loads shader sources into the cache so that createShaderProgram
+// can create shader programs from them. Shaders are loaded when something is
+// about to need them, such as a loader about to build a model, rather than all
+// up front. A shader that is already cached is not loaded again.
+// If you want to create a shader program in one step, use
+// createShaderProgramAsync.
 export function loadShaders(names) {
-  const pendingShaders = names
-    .filter((shaderName) => !shaderCache[shaderName])
-    .map((shaderName) => {
-      // File extensions for shaders aren't quite standard, however I have
-      // chosen what is used here:
-      // https://www.khronos.org/opengles/sdk/tools/Reference-Compiler/
-      const vertexShaderPath = shaderName + ".vert";
-      const fragmentShaderPath = shaderName + ".frag";
+  return Promise.all(
+    names
+      .filter((shaderName) => !shaderCache[shaderName])
+      .map((shaderName) => {
+        if (!pendingLoads[shaderName]) {
+          // File extensions for shaders aren't quite standard, however I have
+          // chosen what is used here:
+          // https://www.khronos.org/opengles/sdk/tools/Reference-Compiler/
+          const vertexShaderPath = shaderName + ".vert";
+          const fragmentShaderPath = shaderName + ".frag";
 
-      return Promise.all([
-        fetch(vertexShaderPath).then((resp) => resp.text()),
-        fetch(fragmentShaderPath).then((resp) => resp.text()),
-      ]).then(([vertexShaderSource, fragmentShaderSource]) => {
-        addShaderCacheEntry(shaderName, vertexShaderSource, fragmentShaderSource);
-      });
-    });
+          pendingLoads[shaderName] = Promise.all([
+            fetch(vertexShaderPath).then((resp) => resp.text()),
+            fetch(fragmentShaderPath).then((resp) => resp.text()),
+          ])
+            .then(([vertexShaderSource, fragmentShaderSource]) => {
+              addShaderCacheEntry(shaderName, vertexShaderSource, fragmentShaderSource);
+            })
+            .finally(() => {
+              delete pendingLoads[shaderName];
+            });
+        }
 
-  return Promise.all(pendingShaders);
+        return pendingLoads[shaderName];
+      })
+  );
 }
 
 // createShaderProgramAsync will dynamically load shader sources, cache them,

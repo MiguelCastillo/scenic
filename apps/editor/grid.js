@@ -1,6 +1,8 @@
 import {VertexBuffer, VertexBufferData} from "@scenic/renderer";
 import {Renderable} from "@scenic/scene";
 
+import {shaderRegistry} from "./shader-registry.js";
+
 // Grid draws a flat grid of lines across its local X/Z plane, centered on its
 // origin, such as a floor to see things move against. Its transform places it
 // like any other node. It draws unlit, with the shader program it is given.
@@ -90,3 +92,5 @@ export class Grid extends Renderable {
     super.dispose(gl);
   }
 }
+
+shaderRegistry.register(Grid, "shaders/flat-material");

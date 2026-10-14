@@ -23,7 +23,6 @@ import {
   polygonVertexIndexToDirect,
 } from "@scenic/fbx";
 
-import {createShaderProgram} from "../../shader-factory.js";
 import {BrinaryFileLoader} from "../base-loader.js";
 
 import {
@@ -78,6 +77,8 @@ let animationID = 0;
 const _clusterMetadata = {};
 const _geometryMetadata = {};
 
+// The shaders buildSceneNode creates shader programs with. The resource loader
+// loads them before building a node.
 export function buildSceneNode(gl, fbxDocument, sceneNode, sceneManager) {
   // Release the GPU resources from a previous build before replacing them.
   sceneNode.dispose(gl);
@@ -192,9 +193,9 @@ export function buildSceneNode(gl, fbxDocument, sceneNode, sceneManager) {
   // bone indexes and weights for geometry deformation.
   buildSkinAnimation(gl, sceneNode);
 
-  // We want to find all the meshes and initialize shader programs for each.
-  initShaderProgramsForMeshes(gl, sceneNode);
-  initShaderProgramsForArmatures(gl, sceneNode);
+  // Give meshes without a material a default one. Their shader programs are
+  // created afterwards, by the shader registry.
+  addDefaultMaterials(sceneNode);
 }
 
 // sceneNodeFromConnection traverses the fbx tree of nodes depth first
@@ -898,33 +899,13 @@ function initMaterialsState(sceneNode, sceneManager) {
   });
 }
 
-function initShaderProgramsForMeshes(gl, sceneNode) {
+function addDefaultMaterials(sceneNode) {
   SceneNode.findChildrenByType(sceneNode, Mesh).forEach((mesh) => {
-    const textures = SceneNode.findChildrenByType(mesh, TextureSceneNode);
-    const materials = SceneNode.findChildrenByType(mesh, MaterialSceneNode);
-
-    // If the mesh has any textures, then we use phong-texture. We have a
-    // separate shader specifically for handling textures because if the
-    // a shader defined a sample2D type and does not call the `texture`
-    // method in the shader then we get the warning:
-    // "there is no texture bound to the unit 0".
-    // So we want to make sure we pick a shader that can handle textures
-    // if the mesh has any, otherwise use an equivalent shader without
-    // texturing.
-    const shaderName = textures.length ? "shaders/phong-texture" : "shaders/phong-lighting";
-    mesh.withShaderProgram(createShaderProgram(gl, shaderName));
-
-    // We add a default texture so that objects can be seen by default
-    // in a scene. Without this, meshes will be rendered completely black.
-    if (!materials.length) {
+    // We add a default material so that objects can be seen by default in a
+    // scene. Without this, meshes will be rendered completely black.
+    if (!SceneNode.findChildrenByType(mesh, MaterialSceneNode).length) {
       mesh.add(new MaterialSceneNode({name: "default material"}));
     }
-  });
-}
-
-function initShaderProgramsForArmatures(gl, sceneNode) {
-  SceneNode.findChildrenByType(sceneNode, Armature).forEach((armature) => {
-    armature.withShaderProgram(createShaderProgram(gl, "shaders/flat-material"));
   });
 }
 

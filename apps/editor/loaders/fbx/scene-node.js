@@ -11,7 +11,10 @@ import {
   Renderable as RenderableSceneNode,
   Animation as AnimationSceneNode,
   Geometry as GeometrySceneNode,
+  Texture as TextureSceneNode,
 } from "@scenic/scene";
+
+import {shaderRegistry} from "../../shader-registry.js";
 
 const AnimatableInterface = (superclass) =>
   class extends superclass {
@@ -156,8 +159,11 @@ export class Geometry extends GeometrySceneNode {
     // Adds the vertex buffer to the parent renderable's draw list.
     super.render();
 
+    // The parent renderable has no shader program until the shader registry
+    // gives it one, which can be a few frames after the model is built, and
+    // then there is nothing to configure yet.
     let renderable = SceneNode.findParentByType(this, RenderableSceneNode);
-    if (!renderable) {
+    if (!renderable?.shaderProgram) {
       return;
     }
 
@@ -610,3 +616,15 @@ function maybeUpdatePlayback(context, animationNode) {
 
   playback.updateSpeed(ms, animationState.speed === 0 ? MIN_ANIMATION_SPEED : animationState.speed);
 }
+
+// An FBX mesh draws with the textured shader when it has any textures. The
+// shaders are separate because a shader with a sampler2D that is never used
+// makes WebGL warn "there is no texture bound to the unit 0".
+shaderRegistry.register(Mesh, (mesh) =>
+  SceneNode.findChildByType(mesh, TextureSceneNode)
+    ? "shaders/phong-texture"
+    : "shaders/phong-lighting"
+);
+
+// An armature draws its bones as lines, unlit.
+shaderRegistry.register(Armature, "shaders/flat-material");

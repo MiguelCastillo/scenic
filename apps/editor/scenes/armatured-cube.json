@@ -1,7 +1,4 @@
 {
-  "preload": {
-    "shaders": ["shaders/phong-lighting", "shaders/phong-texture", "shaders/flat-material"]
-  },
   "items": [
     {
       "name": "axis",

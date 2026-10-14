@@ -4,7 +4,6 @@ import {Geometry as GeometrySceneNode} from "@scenic/scene";
 
 import {WorkerLoader} from "../base-loader.js";
 import {isLight, isStaticMesh, isSkinnedMesh} from "../../scene-factory.js";
-import {createShaderProgram} from "../../shader-factory.js";
 
 /**
  * File loader for obj formatted files.
@@ -37,19 +36,12 @@ export function buildSceneNode(gl, model, sceneNode /*, sceneManager*/) {
     vertexBuffer.withColors(new VertexBufferData(gl, colors));
   }
 
-  let shaderProgram;
-  if (isStaticMesh(sceneNode) || isSkinnedMesh(sceneNode)) {
-    shaderProgram = createShaderProgram(gl, "shaders/phong-lighting");
-  } else if (isLight(sceneNode)) {
-    shaderProgram = createShaderProgram(gl, "shaders/flat-material");
-  } else {
-    throw new Error(
-      "Unable to intialize shader program because node is not a static-mesh or light"
-    );
+  if (!isStaticMesh(sceneNode) && !isSkinnedMesh(sceneNode) && !isLight(sceneNode)) {
+    throw new Error("OBJ files can only be loaded into a static-mesh, skinned-mesh or light");
   }
 
   // The geometry child owns the vertex buffer and adds it to this node's draw
-  // list every frame.
+  // list every frame. The node's shader program is created afterwards, by the
+  // shader registry.
   sceneNode.add(new GeometrySceneNode({name: "geometry"}, vertexBuffer));
-  sceneNode.withShaderProgram(shaderProgram);
 }

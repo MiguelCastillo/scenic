@@ -85,7 +85,10 @@ export class Texture extends Node {
 
   render() {
     let renderable = Node.findParentByType(this, Renderable);
-    if (renderable) {
+
+    // A renderable can be waiting for its shader program to load, and then
+    // there is nothing to configure yet.
+    if (renderable?.shaderProgram) {
       const {textureID, textureType} = this;
       let enabledName, enabledId;
 

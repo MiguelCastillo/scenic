@@ -1,6 +1,7 @@
 import {traversal} from "@scenic/scene";
 import {Loader as ObjFileLoader, buildSceneNode as objBuildSceneNode} from "./obj/loader.js";
 import {Loader as FbxFileLoader, buildSceneNode as fbxBuildSceneNode} from "./fbx/loader.js";
+import {applyShaders} from "../shader-registry.js";
 import {isLight, isStaticMesh, isSkinnedMesh} from "../scene-factory.js";
 
 export function createResourceLoader(gl, sceneManager) {
@@ -48,6 +49,10 @@ export function createResourceLoader(gl, sceneManager) {
         throw new Error(`unable to load resource. scene node with "${node.id}" was not found.`);
       }
       buildSceneNode(gl, data, sceneNode, sceneManager);
+
+      // Now that the node is built, give its renderables the shader programs
+      // they draw with.
+      return applyShaders(gl, sceneNode, () => disposed);
     });
   }
 

@@ -7,6 +7,8 @@ import {
 
 import {ShaderProgram, compileShaderSource, parseVertexShaderAttributes} from "./program.js";
 
+import {ShaderRegistry} from "./shader-registry.js";
+
 import * as webgl from "./webgl.js";
 
 export {
@@ -17,5 +19,6 @@ export {
   ShaderProgram,
   compileShaderSource,
   parseVertexShaderAttributes,
+  ShaderRegistry,
   webgl,
 };
