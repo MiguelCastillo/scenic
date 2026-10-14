@@ -177,6 +177,15 @@
                 "scale": [1, 1, 1],
                 "position": [0, 0, 0],
                 "rotation": [0, 0, 0]
+              },
+              "script": {
+                "src": "scripts/hover.js",
+                "settings": {
+                  "bob": 5,
+                  "roll": 6,
+                  "pitch": 2,
+                  "period": 6
+                }
               }
             }
           ]

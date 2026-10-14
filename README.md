@@ -245,6 +245,16 @@ because the editor names its code with `//# sourceURL`.
 The dancing character's three lights each run `apps/editor/scripts/orbit.js`,
 with phases of 0, 120 and 240 degrees, so they circle the dancer evenly spaced.
 
+The Jedi star fighter runs `apps/editor/scripts/hover.js`, which makes it bob,
+bank and tip its nose as if it were holding position in the air:
+
+```json
+"script": {
+  "src": "scripts/hover.js",
+  "settings": {"bob": 5, "roll": 6, "pitch": 2, "period": 6}
+}
+```
+
 ### Reference floor
 
 A `grid` node draws a flat grid of lines on the ground, to make it easier to
