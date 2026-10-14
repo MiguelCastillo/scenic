@@ -86,8 +86,34 @@
             "position": [0, 100, 700]
           },
           "camera": {
-            "speed": 200,
-            "maxPitch": 89
+            "freeFly": {
+              "speed": 200,
+              "maxPitch": 89
+            },
+            "firstPerson": {
+              "target": {
+                "nodeID": "skinning mesh animation",
+                "boneName": "mixamorig:Head - Model_LimbNode"
+              },
+              "offset": {
+                "position": [0, 6.4, 9.3],
+                "rotation": [0, 180, 0]
+              },
+              "maxPitch": 80
+            },
+            "thirdPerson": {
+              "target": {
+                "nodeID": "skinning mesh animation",
+                "boneName": "mixamorig:Hips - Model_LimbNode"
+              },
+              "offset": [0, 40, 0],
+              "distance": 400,
+              "minDistance": 100,
+              "maxDistance": 1500,
+              "rotation": [-15, 0],
+              "maxPitch": 80,
+              "followTime": 0.4
+            }
           }
         },
         {

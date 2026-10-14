@@ -86,8 +86,10 @@
             "position": [0, 0, 300]
           },
           "camera": {
-            "speed": 200,
-            "maxPitch": 89
+            "freeFly": {
+              "speed": 200,
+              "maxPitch": 89
+            }
           }
         },
         {

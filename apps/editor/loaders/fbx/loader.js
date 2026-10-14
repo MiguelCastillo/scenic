@@ -99,10 +99,14 @@ export function buildSceneNode(gl, fbxDocument, sceneNode, sceneManager) {
 
   const globalSettings = findChildByName(fbxDocument, "GlobalSettings");
 
+  // Names are made unique within this document only, so a model's node names
+  // are the same every time it is loaded. Camera behaviors and other config
+  // refer to bones by these names.
+  const nameCounts = {};
   const objects = findChildByName(fbxDocument, "Objects");
   for (const node of objects.children) {
     nodeWrappersByID[node.attributes[0]] = {
-      name: generateFbxNodeName(node),
+      name: generateFbxNodeName(node, nameCounts),
       node,
       connections: [],
     };
@@ -557,16 +561,17 @@ function buildGeometryLayers(fbxGeometry, normalSmoothing) {
   };
 }
 
-let _idxNameMap = {};
-function generateFbxNodeName(fbxNode) {
+// generateFbxNodeName names an FBX node, adding _n1, _n2 and so on to names
+// already used in the same document. nameCounts counts the names used so far.
+function generateFbxNodeName(fbxNode, nameCounts) {
   const name = getNodeName(fbxNode);
-  if (_idxNameMap[name] == null) {
-    _idxNameMap[name] = 0;
+  if (nameCounts[name] == null) {
+    nameCounts[name] = 0;
   } else {
-    _idxNameMap[name]++;
+    nameCounts[name]++;
   }
 
-  const index = _idxNameMap[name] === 0 ? "" : "_n" + _idxNameMap[name];
+  const index = nameCounts[name] === 0 ? "" : "_n" + nameCounts[name];
   return name + index;
 }
 

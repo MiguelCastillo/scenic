@@ -1,0 +1,27 @@
+{
+  "name": "@scenic/camera",
+  "version": "0.0.0",
+  "description": "scenic camera behaviors: free-fly, first-person and third-person cameras",
+  "main": "dist/index.js",
+  "dependencies": {
+    "@scenic/math": "*",
+    "@scenic/scene": "*"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "jest",
+    "lint": "eslint ./src",
+    "build": "pakit src/index.js --out dist/index.js --minify false --eslint false --umd @scenic/camera",
+    "build:prod": "pakit src/index.js --out dist/index.js --minify true --eslint false --umd @scenic/camera"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MiguelCastillo/scenic.git"
+  },
+  "author": "Miguel Castillo <manchagnu@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/MiguelCastillo/scenic/issues"
+  },
+  "homepage": "https://github.com/MiguelCastillo/scenic#readme"
+}

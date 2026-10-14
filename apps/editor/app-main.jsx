@@ -140,9 +140,13 @@ const cameraMovementKeys = {
   KeyQ: {up: -1},
 };
 
+// The key that switches the camera between its modes, such as free-fly and
+// first-person.
+const toggleCameraModeKey = "KeyV";
+
 // subscribeToSceneInput maps the mouse and keyboard onto the current scene's
 // camera controls. How the camera responds is up to its camera behavior (see
-// camera-behaviors/ and where scene-main.js creates it). Clicking the
+// the @scenic/camera package and where scene-main.js creates it). Clicking the
 // mousetrap locks the pointer to it, and input only moves the camera while
 // the pointer is locked, so typing in the editor's panels is left alone.
 // Pressing Escape releases the lock.
@@ -195,6 +199,18 @@ function subscribeToSceneInput(mousetrapEl, getCurrentScene) {
   domEvents.Subscription.create(document)
     .on("keydown", (evt) => {
       if (!isPointerLocked()) {
+        return;
+      }
+
+      if (evt.code === toggleCameraModeKey && !evt.repeat) {
+        evt.preventDefault();
+        const scene = getCurrentScene();
+        if (scene) {
+          scene.toggleCameraMode();
+          // The new mode starts with no movement, so tell it about any keys
+          // that are still held.
+          updateCameraMovement();
+        }
         return;
       }
 

@@ -14,13 +14,14 @@ import {vec3} from "@scenic/math";
 // so flying forward goes where it is looking. Up follows the world, which is
 // Y-up, so flying up or down only changes altitude.
 //
-// How it flies comes from the "camera" block of the camera's node in the scene
-// config:
+// How it flies comes from "freeFly" in the "camera" block of the camera's node
+// in the scene config:
 // - speed: how fast it flies, in scene units per second.
 // - maxPitch: how far up or down it can look, in degrees. Looking straight up
 //   or down would flip it over, so keep this under 90.
 export function createFreeFlyBehavior(sceneManager, getCamera) {
   const getCameraState = () => sceneManager.getNodeStateByID(getCamera().id);
+  const getSettings = () => getCameraState().camera.freeFly;
   const setCameraTransform = (transform) => {
     sceneManager.updateNodeStateByID(getCamera().id, {
       transform: {...getCameraState().transform, ...transform},
@@ -35,9 +36,9 @@ export function createFreeFlyBehavior(sceneManager, getCamera) {
   // Turning right lowers the yaw, because a positive yaw turns the camera to
   // its left (counterclockwise when seen from above).
   function turn(rightDegrees, upDegrees) {
-    const {transform, camera} = getCameraState();
-    const [pitch, yaw] = transform.rotation;
-    const newPitch = Math.max(-camera.maxPitch, Math.min(camera.maxPitch, pitch + upDegrees));
+    const [pitch, yaw] = getCameraState().transform.rotation;
+    const {maxPitch} = getSettings();
+    const newPitch = Math.max(-maxPitch, Math.min(maxPitch, pitch + upDegrees));
     setCameraTransform({rotation: [newPitch, yaw - rightDegrees, 0]});
   }
 
@@ -91,7 +92,7 @@ export function createFreeFlyBehavior(sceneManager, getCamera) {
   function update(seconds) {
     const {forward, right, up} = movement;
     if (forward || right || up) {
-      const distance = getCameraState().camera.speed * seconds;
+      const distance = getSettings().speed * seconds;
       move(forward * distance, right * distance, up * distance);
     }
   }

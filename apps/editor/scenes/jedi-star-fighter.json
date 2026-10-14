@@ -86,8 +86,22 @@
             "position": [0, 0, 300]
           },
           "camera": {
-            "speed": 200,
-            "maxPitch": 89
+            "freeFly": {
+              "speed": 200,
+              "maxPitch": 89
+            },
+            "thirdPerson": {
+              "target": {
+                "nodeID": "jedi star fight"
+              },
+              "offset": [0, 30, 0],
+              "distance": 450,
+              "minDistance": 150,
+              "maxDistance": 2000,
+              "rotation": [-15, 0],
+              "maxPitch": 80,
+              "followTime": 0.4
+            }
           }
         },
         {

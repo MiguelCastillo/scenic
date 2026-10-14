@@ -9,17 +9,20 @@ import "./logging.js";
 
 import {mat4} from "@scenic/math";
 import {webgl} from "@scenic/renderer";
+import {cameraModes} from "@scenic/camera";
 
 import {createScene, buildDefaultState} from "./scene-factory.js";
 import {createResourceLoader, getResourcesFromConfig} from "./loaders/resource-loader.js";
 import {loadShaders} from "./shader-factory.js";
 import {startRenderLoop} from "./render-loop.js";
-import {createFreeFlyBehavior} from "./camera-behaviors/free-fly.js";
 
 import {createFrameRateCounter} from "./fps-counter.js";
 
 const worldViewportID = "world";
 const axisGizmoID = "axis gizmo";
+
+// The camera mode a camera uses when it has no other.
+const defaultCameraMode = "free-fly";
 
 // Helper function for providing the ability to update a scene and to also
 // render it. Nothing in here touches the DOM; the app owns the canvas size and
@@ -29,19 +32,37 @@ function createSceneUpdater(gl, sceneManager) {
 
   const getCamera = () => sceneManager.getNodeByID(worldViewportID).activeCamera;
 
-  // A camera behavior decides how the world viewport's active camera responds
-  // to the player's input. The app sends input to it through four calls, so
-  // switching how the camera moves (from free-fly to third person, say) means
-  // swapping this behavior and nothing else:
-  // - turn(rightDegrees, upDegrees): turn in response to looking around, such
-  //   as moving the mouse.
-  // - move(forward, right, up): move once by the given distances in scene
-  //   units, such as for scrolling.
-  // - setMovement({forward, right, up}): keep moving while input is held down,
-  //   such as keys. Each value is -1, 0 or 1.
-  // - update(seconds): called every frame with the seconds since the last one,
-  //   to apply the movement that is held down.
-  const cameraBehavior = createFreeFlyBehavior(sceneManager, getCamera);
+  // A camera behavior from @scenic/camera decides how the world viewport's
+  // active camera responds to the player's input (see that package's index.js
+  // for the calls every behavior provides). Which behavior is in use is the camera mode, set by `cameraMode` in the
+  // world viewport's state. When the mode is missing, unknown, or one the
+  // active camera has no settings for, the camera uses free-fly. A new
+  // behavior is created whenever the mode changes, so each mode starts fresh.
+  const getCameraModes = () => {
+    const settings = sceneManager.getNodeStateByID(getCamera().id).camera;
+    return Object.keys(cameraModes).filter((mode) => settings[cameraModes[mode].settingsKey]);
+  };
+
+  let cameraMode = null;
+  let cameraBehavior = null;
+  function getCameraBehavior() {
+    const mode = sceneManager.getNodeStateByID(worldViewportID).cameraMode;
+    const nextMode = getCameraModes().includes(mode) ? mode : defaultCameraMode;
+    if (nextMode !== cameraMode) {
+      cameraMode = nextMode;
+      cameraBehavior = cameraModes[nextMode].createBehavior(sceneManager, getCamera);
+    }
+    return cameraBehavior;
+  }
+
+  // toggleCameraMode switches the world viewport to the next camera mode the
+  // active camera has settings for, going back to the first after the last.
+  function toggleCameraMode() {
+    getCameraBehavior();
+    const modes = getCameraModes();
+    const next = modes[(modes.indexOf(cameraMode) + 1) % modes.length];
+    sceneManager.updateNodeStateByID(worldViewportID, {cameraMode: next});
+  }
 
   let lastFrameMs = null;
 
@@ -53,13 +74,13 @@ function createSceneUpdater(gl, sceneManager) {
     const seconds = lastFrameMs === null ? 0 : Math.min((ms - lastFrameMs) / 1000, 0.1);
     lastFrameMs = ms;
 
-    cameraBehavior.update(seconds);
+    getCameraBehavior().update(seconds);
 
     // The axis gizmo shows the world's axes as the camera sees them, so it is
     // rotated by the inverse of the camera's rotation. The inverse of a
     // rotation matrix is its transpose.
-    const [pitch, yaw] = sceneManager.getNodeStateByID(getCamera().id).transform.rotation;
-    const cameraRotation = mat4.rotate(mat4.identity(), pitch, yaw, 0);
+    const {rotation} = sceneManager.getNodeStateByID(getCamera().id).transform;
+    const cameraRotation = mat4.rotate(mat4.identity(), ...rotation);
     const axisGizmoState = sceneManager.getNodeStateByID(axisGizmoID);
     sceneManager.updateNodeStateByID(axisGizmoID, {
       transform: {
@@ -91,9 +112,10 @@ function createSceneUpdater(gl, sceneManager) {
     updateScene,
     renderFrame,
     registerRefreshRateUpdater,
-    turnCamera: cameraBehavior.turn,
-    moveCamera: cameraBehavior.move,
-    setCameraMovement: cameraBehavior.setMovement,
+    turnCamera: (...args) => getCameraBehavior().turn(...args),
+    moveCamera: (...args) => getCameraBehavior().move(...args),
+    setCameraMovement: (...args) => getCameraBehavior().setMovement(...args),
+    toggleCameraMode,
   };
 }
 
@@ -133,6 +155,7 @@ export const renderScene = async (gl, config) => {
     turnCamera,
     moveCamera,
     setCameraMovement,
+    toggleCameraMode,
   } = createSceneUpdater(gl, sceneManager);
 
   // This starts the render loop to render the scene!
@@ -169,6 +192,7 @@ export const renderScene = async (gl, config) => {
     turnCamera,
     moveCamera,
     setCameraMovement,
+    toggleCameraMode,
     dispose,
   };
 };

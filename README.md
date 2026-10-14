@@ -18,8 +18,12 @@ Quick intro:
 3. W and S fly forward and back, A and D fly left and right, E and Q fly up
    and down
 4. Scroll (or two fingers on a trackpad) to fly forward, back, left and right
-5. Press ESC to let go of the camera
-6. Use "Change scene" in the scene graph panel to switch to another scene
+5. Press V to switch camera mode, in scenes with a character (the dancing
+   character): first V looks out through the character's eyes, the next
+   follows it from behind, and the next flies freely again. Looking through the
+   eyes, the mouse looks around. Orbiting, the mouse orbits and scrolling zooms
+6. Press ESC to let go of the camera
+7. Use "Change scene" in the scene graph panel to switch to another scene
 
 ## Architecture
 
@@ -93,20 +97,103 @@ viewport's last camera throws.
       "type": "camera",
       "projection": {"type": "perspective", "fov": 30, "near": 1, "far": 10000},
       "transform": {"position": [0, 0, 300]},
-      "camera": {"speed": 200, "maxPitch": 89}
+      "camera": {"freeFly": {"speed": 200, "maxPitch": 89}}
     }
   ]
 }
 ```
 
-The camera's rotation is `[pitch, yaw, 0]` in degrees. The editor flies the
-world viewport's active camera by changing its transform in the state manager,
-so lights and models stay where they are in the world while the camera moves
-around them. The `camera` block sets how it flies:
+#### Camera modes
 
-- `speed`: how fast it flies, in scene units per second.
-- `maxPitch`: how far up or down it can look, in degrees. Looking straight up
-  or down would flip the camera over, so keep this under 90.
+The editor controls the world viewport's active camera in one of a few modes,
+and V switches between them. Each mode is a camera behavior in the
+`@scenic/camera` package (`packages/camera/`), and the one in use is
+`cameraMode` in the world viewport's state. A camera can only use the modes its
+`camera` block has settings for; free-fly is used otherwise.
+
+- **Free-fly** (`freeFly`) flies the camera around the scene. Its rotation is
+  `[pitch, yaw, 0]` in degrees, and lights and models stay where they are in
+  the world while it moves around them.
+  - `speed`: how fast it flies, in scene units per second.
+  - `maxPitch`: how far up or down it can look, in degrees. Looking straight up
+    or down would flip the camera over, so keep this under 90.
+- **First-person** (`firstPerson`) looks out from a node, such as a
+  character's head bone, and moves with it, animation included. The mouse looks
+  around from there, and the camera cannot move on its own.
+  - `target`: the node to look out from (see targets below).
+  - `offset`: where the camera sits relative to the target, in the target's
+    own coordinates, as `{"position": [x, y, z], "rotation": [x, y, z]}`.
+  - `maxPitch`: how far up or down it can look from where the target faces, in
+    degrees.
+- **Third-person** (`thirdPerson`) stays behind a node, such as a character,
+  and follows it as it moves and turns. When the node turns, the camera swings
+  around with it, staying level: only the node's heading counts, not its
+  leaning or tilting. The node's front is its local +Z axis. The mouse orbits
+  around it from there, and scrolling zooms in and out.
+  - `target`: the node to orbit and follow (see targets below).
+  - `offset`: where the orbit's pivot is relative to the target's position, in
+    world coordinates, as `[x, y, z]`.
+  - `distance`, `minDistance`, `maxDistance`: how far from the pivot the camera
+    starts, and how close and far zooming can go, in scene units.
+  - `rotation`: the orbit it starts with, as `[pitch, yaw]` in degrees,
+    relative to behind the target. A yaw of 0 is directly behind it, and a
+    negative pitch looks down at it.
+  - `maxPitch`: how far above or below the target it can orbit, in degrees.
+  - `followTime`: how quickly the camera catches up when the target turns, in
+    seconds. After `followTime` it has closed about two thirds of the gap, so a
+    quick turn swings the view around smoothly instead of snapping. 0 keeps it
+    exactly behind.
+
+A **target** names a node in two parts, `{"nodeID": ..., "boneName": ...}`,
+so that it picks out one character even when several share the same model:
+
+- `nodeID`: the ID of a node from the scene config, such as a character. Node
+  IDs are unique.
+- `boneName`: the name of a node inside the `nodeID` node, such as a bone of a
+  character's skeleton. It is only looked up there, where a skeleton's bone
+  names are unique. Without it, the target is the `nodeID` node itself, which
+  is how a model without a skeleton is targeted: the Jedi star fighter's
+  third-person camera uses `{"nodeID": "jedi star fight"}`.
+
+The camera waits until the target exists, since a model's bones only exist
+once it has loaded, and finds it again if the model is rebuilt. An FBX model's
+node names are the same every time it loads; a name that repeats within one
+file gets `_n1`, `_n2` and so on.
+
+V cycles through the modes in that order, skipping the ones the active camera
+has no settings for. The dancing character's camera has all three:
+
+```json
+"camera": {
+  "freeFly": {"speed": 200, "maxPitch": 89},
+  "firstPerson": {
+    "target": {
+      "nodeID": "skinning mesh animation",
+      "boneName": "mixamorig:Head - Model_LimbNode"
+    },
+    "offset": {"position": [0, 6.4, 9.3], "rotation": [0, 180, 0]},
+    "maxPitch": 80
+  },
+  "thirdPerson": {
+    "target": {
+      "nodeID": "skinning mesh animation",
+      "boneName": "mixamorig:Hips - Model_LimbNode"
+    },
+    "offset": [0, 40, 0],
+    "distance": 400,
+    "minDistance": 100,
+    "maxDistance": 1500,
+    "rotation": [-15, 0],
+    "maxPitch": 80,
+    "followTime": 0.4
+  }
+}
+```
+
+The first-person offset puts the camera between the eyes, and turns it around
+to face the same way as the head: the camera looks down its own -Z axis, and
+the head's front is its +Z. The third-person offset moves the orbit's pivot up
+from the hips to the chest.
 
 ### Renderable, Mesh and Geometry
 
