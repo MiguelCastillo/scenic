@@ -181,20 +181,11 @@
           "items": [
             {
               "name": "rocket",
-              "type": "static-mesh",
-              "resource": "/resources/obj/rocket.obj",
-              "material": {
-                "color": [0, 0, 0, 1],
-                "reflectiveness": 1,
-                "specular": 0.6,
-                "shininess": 64
-              },
-              "ambient": {
-                "color": [0.3, 0.3, 0.35]
-              },
+              "type": "transform",
               "transform": {
                 "position": [-450, 0, 0],
-                "rotation": [-90, 180, 0]
+                "rotation": [-90, 180, 0],
+                "scale": [1, 1, 1]
               },
               "script": {
                 "src": "scripts/hover.js",
@@ -202,26 +193,58 @@
                   "bob": 4,
                   "roll": 4,
                   "pitch": 2,
-                  "period": 5.0
+                  "period": 5.0,
+                  "throttle": 0.3
                 }
-              }
+              },
+              "items": [
+                {
+                  "name": "rocket body",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/rocket.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.6,
+                    "shininess": 64
+                  },
+                  "ambient": {
+                    "color": [0.3, 0.3, 0.35]
+                  }
+                },
+                {
+                  "name": "rocket flame",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/flame.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 0
+                  },
+                  "ambient": {
+                    "color": [1, 1, 1]
+                  },
+                  "transform": {
+                    "position": [0, 0, -66.1],
+                    "rotation": [0, 0, 0],
+                    "scale": [8, 8, 8]
+                  },
+                  "script": {
+                    "src": "scripts/flame.js",
+                    "settings": {
+                      "flicker": 0.15,
+                      "speed": 1
+                    }
+                  }
+                }
+              ]
             },
             {
               "name": "rocket-slender",
-              "type": "static-mesh",
-              "resource": "/resources/obj/rocket-slender.obj",
-              "material": {
-                "color": [0, 0, 0, 1],
-                "reflectiveness": 1,
-                "specular": 0.6,
-                "shininess": 64
-              },
-              "ambient": {
-                "color": [0.3, 0.3, 0.35]
-              },
+              "type": "transform",
               "transform": {
                 "position": [-300, 0, 0],
-                "rotation": [-90, 180, 0]
+                "rotation": [-90, 180, 0],
+                "scale": [1, 1, 1]
               },
               "script": {
                 "src": "scripts/hover.js",
@@ -229,26 +252,130 @@
                   "bob": 4,
                   "roll": 4,
                   "pitch": 2,
-                  "period": 5.4
+                  "period": 5.4,
+                  "throttle": 0.3
                 }
-              }
+              },
+              "items": [
+                {
+                  "name": "rocket-slender body",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/rocket-slender.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.6,
+                    "shininess": 64
+                  },
+                  "ambient": {
+                    "color": [0.3, 0.3, 0.35]
+                  }
+                },
+                {
+                  "name": "rocket-slender flame",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/flame.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 0
+                  },
+                  "ambient": {
+                    "color": [1, 1, 1]
+                  },
+                  "transform": {
+                    "position": [0, 0, -78.563],
+                    "rotation": [0, 0, 0],
+                    "scale": [6.5, 6.5, 6.5]
+                  },
+                  "script": {
+                    "src": "scripts/flame.js",
+                    "settings": {
+                      "flicker": 0.15,
+                      "speed": 1
+                    }
+                  }
+                },
+                {
+                  "name": "rocket-slender booster flame 1",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/flame.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 0
+                  },
+                  "ambient": {
+                    "color": [1, 1, 1]
+                  },
+                  "transform": {
+                    "position": [0, 70, -77.606],
+                    "rotation": [0, 0, 0],
+                    "scale": [3.85, 3.85, 3.85]
+                  },
+                  "script": {
+                    "src": "scripts/flame.js",
+                    "settings": {
+                      "flicker": 0.15,
+                      "speed": 1
+                    }
+                  }
+                },
+                {
+                  "name": "rocket-slender booster flame 2",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/flame.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 0
+                  },
+                  "ambient": {
+                    "color": [1, 1, 1]
+                  },
+                  "transform": {
+                    "position": [-60.622, -35, -77.606],
+                    "rotation": [0, 0, 0],
+                    "scale": [3.85, 3.85, 3.85]
+                  },
+                  "script": {
+                    "src": "scripts/flame.js",
+                    "settings": {
+                      "flicker": 0.15,
+                      "speed": 1
+                    }
+                  }
+                },
+                {
+                  "name": "rocket-slender booster flame 3",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/flame.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 0
+                  },
+                  "ambient": {
+                    "color": [1, 1, 1]
+                  },
+                  "transform": {
+                    "position": [60.622, -35, -77.606],
+                    "rotation": [0, 0, 0],
+                    "scale": [3.85, 3.85, 3.85]
+                  },
+                  "script": {
+                    "src": "scripts/flame.js",
+                    "settings": {
+                      "flicker": 0.15,
+                      "speed": 1
+                    }
+                  }
+                }
+              ]
             },
             {
               "name": "rocket-1",
-              "type": "static-mesh",
-              "resource": "/resources/obj/rocket-1.obj",
-              "material": {
-                "color": [0, 0, 0, 1],
-                "reflectiveness": 1,
-                "specular": 0.6,
-                "shininess": 64
-              },
-              "ambient": {
-                "color": [0.3, 0.3, 0.35]
-              },
+              "type": "transform",
               "transform": {
                 "position": [-150, 0, 0],
-                "rotation": [-90, 180, 0]
+                "rotation": [-90, 180, 0],
+                "scale": [1, 1, 1]
               },
               "script": {
                 "src": "scripts/hover.js",
@@ -256,26 +383,130 @@
                   "bob": 4,
                   "roll": 4,
                   "pitch": 2,
-                  "period": 5.8
+                  "period": 5.8,
+                  "throttle": 0.3
                 }
-              }
+              },
+              "items": [
+                {
+                  "name": "rocket-1 body",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/rocket-1.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.6,
+                    "shininess": 64
+                  },
+                  "ambient": {
+                    "color": [0.3, 0.3, 0.35]
+                  }
+                },
+                {
+                  "name": "rocket-1 flame",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/flame.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 0
+                  },
+                  "ambient": {
+                    "color": [1, 1, 1]
+                  },
+                  "transform": {
+                    "position": [0, 0, -67.287],
+                    "rotation": [0, 0, 0],
+                    "scale": [5.837, 5.837, 5.837]
+                  },
+                  "script": {
+                    "src": "scripts/flame.js",
+                    "settings": {
+                      "flicker": 0.15,
+                      "speed": 1
+                    }
+                  }
+                },
+                {
+                  "name": "rocket-1 booster flame 1",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/flame.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 0
+                  },
+                  "ambient": {
+                    "color": [1, 1, 1]
+                  },
+                  "transform": {
+                    "position": [0, 64.634, -67.036],
+                    "rotation": [0, 0, 0],
+                    "scale": [3.811, 3.811, 3.811]
+                  },
+                  "script": {
+                    "src": "scripts/flame.js",
+                    "settings": {
+                      "flicker": 0.15,
+                      "speed": 1
+                    }
+                  }
+                },
+                {
+                  "name": "rocket-1 booster flame 2",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/flame.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 0
+                  },
+                  "ambient": {
+                    "color": [1, 1, 1]
+                  },
+                  "transform": {
+                    "position": [-55.975, -32.317, -67.036],
+                    "rotation": [0, 0, 0],
+                    "scale": [3.811, 3.811, 3.811]
+                  },
+                  "script": {
+                    "src": "scripts/flame.js",
+                    "settings": {
+                      "flicker": 0.15,
+                      "speed": 1
+                    }
+                  }
+                },
+                {
+                  "name": "rocket-1 booster flame 3",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/flame.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 0
+                  },
+                  "ambient": {
+                    "color": [1, 1, 1]
+                  },
+                  "transform": {
+                    "position": [55.975, -32.317, -67.036],
+                    "rotation": [0, 0, 0],
+                    "scale": [3.811, 3.811, 3.811]
+                  },
+                  "script": {
+                    "src": "scripts/flame.js",
+                    "settings": {
+                      "flicker": 0.15,
+                      "speed": 1
+                    }
+                  }
+                }
+              ]
             },
             {
               "name": "rocket-2",
-              "type": "static-mesh",
-              "resource": "/resources/obj/rocket-2.obj",
-              "material": {
-                "color": [0, 0, 0, 1],
-                "reflectiveness": 1,
-                "specular": 0.6,
-                "shininess": 64
-              },
-              "ambient": {
-                "color": [0.3, 0.3, 0.35]
-              },
+              "type": "transform",
               "transform": {
                 "position": [0, 0, 0],
-                "rotation": [-90, 180, 0]
+                "rotation": [-90, 180, 0],
+                "scale": [1, 1, 1]
               },
               "script": {
                 "src": "scripts/hover.js",
@@ -283,26 +514,58 @@
                   "bob": 4,
                   "roll": 4,
                   "pitch": 2,
-                  "period": 6.2
+                  "period": 6.2,
+                  "throttle": 0.3
                 }
-              }
+              },
+              "items": [
+                {
+                  "name": "rocket-2 body",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/rocket-2.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.6,
+                    "shininess": 64
+                  },
+                  "ambient": {
+                    "color": [0.3, 0.3, 0.35]
+                  }
+                },
+                {
+                  "name": "rocket-2 flame",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/flame.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 0
+                  },
+                  "ambient": {
+                    "color": [1, 1, 1]
+                  },
+                  "transform": {
+                    "position": [0, 0, -71.664],
+                    "rotation": [0, 0, 0],
+                    "scale": [9.692, 9.692, 9.692]
+                  },
+                  "script": {
+                    "src": "scripts/flame.js",
+                    "settings": {
+                      "flicker": 0.15,
+                      "speed": 1
+                    }
+                  }
+                }
+              ]
             },
             {
               "name": "rocket-3",
-              "type": "static-mesh",
-              "resource": "/resources/obj/rocket-3.obj",
-              "material": {
-                "color": [0, 0, 0, 1],
-                "reflectiveness": 1,
-                "specular": 0.6,
-                "shininess": 64
-              },
-              "ambient": {
-                "color": [0.3, 0.3, 0.35]
-              },
+              "type": "transform",
               "transform": {
                 "position": [150, 0, 0],
-                "rotation": [-90, 180, 0]
+                "rotation": [-90, 180, 0],
+                "scale": [1, 1, 1]
               },
               "script": {
                 "src": "scripts/hover.js",
@@ -310,26 +573,130 @@
                   "bob": 4,
                   "roll": 4,
                   "pitch": 2,
-                  "period": 6.6
+                  "period": 6.6,
+                  "throttle": 0.3
                 }
-              }
+              },
+              "items": [
+                {
+                  "name": "rocket-3 body",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/rocket-3.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.6,
+                    "shininess": 64
+                  },
+                  "ambient": {
+                    "color": [0.3, 0.3, 0.35]
+                  }
+                },
+                {
+                  "name": "rocket-3 flame",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/flame.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 0
+                  },
+                  "ambient": {
+                    "color": [1, 1, 1]
+                  },
+                  "transform": {
+                    "position": [0, 0, -74.762],
+                    "rotation": [0, 0, 0],
+                    "scale": [5.594, 5.594, 5.594]
+                  },
+                  "script": {
+                    "src": "scripts/flame.js",
+                    "settings": {
+                      "flicker": 0.15,
+                      "speed": 1
+                    }
+                  }
+                },
+                {
+                  "name": "rocket-3 booster flame 1",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/flame.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 0
+                  },
+                  "ambient": {
+                    "color": [1, 1, 1]
+                  },
+                  "transform": {
+                    "position": [0, 62.831, -75.641],
+                    "rotation": [0, 0, 0],
+                    "scale": [3.94, 3.94, 3.94]
+                  },
+                  "script": {
+                    "src": "scripts/flame.js",
+                    "settings": {
+                      "flicker": 0.15,
+                      "speed": 1
+                    }
+                  }
+                },
+                {
+                  "name": "rocket-3 booster flame 2",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/flame.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 0
+                  },
+                  "ambient": {
+                    "color": [1, 1, 1]
+                  },
+                  "transform": {
+                    "position": [-54.413, -31.415, -75.641],
+                    "rotation": [0, 0, 0],
+                    "scale": [3.94, 3.94, 3.94]
+                  },
+                  "script": {
+                    "src": "scripts/flame.js",
+                    "settings": {
+                      "flicker": 0.15,
+                      "speed": 1
+                    }
+                  }
+                },
+                {
+                  "name": "rocket-3 booster flame 3",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/flame.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 0
+                  },
+                  "ambient": {
+                    "color": [1, 1, 1]
+                  },
+                  "transform": {
+                    "position": [54.413, -31.415, -75.641],
+                    "rotation": [0, 0, 0],
+                    "scale": [3.94, 3.94, 3.94]
+                  },
+                  "script": {
+                    "src": "scripts/flame.js",
+                    "settings": {
+                      "flicker": 0.15,
+                      "speed": 1
+                    }
+                  }
+                }
+              ]
             },
             {
               "name": "rocket-4",
-              "type": "static-mesh",
-              "resource": "/resources/obj/rocket-4.obj",
-              "material": {
-                "color": [0, 0, 0, 1],
-                "reflectiveness": 1,
-                "specular": 0.6,
-                "shininess": 64
-              },
-              "ambient": {
-                "color": [0.3, 0.3, 0.35]
-              },
+              "type": "transform",
               "transform": {
                 "position": [300, 0, 0],
-                "rotation": [-90, 180, 0]
+                "rotation": [-90, 180, 0],
+                "scale": [1, 1, 1]
               },
               "script": {
                 "src": "scripts/hover.js",
@@ -337,26 +704,58 @@
                   "bob": 4,
                   "roll": 4,
                   "pitch": 2,
-                  "period": 7.0
+                  "period": 7.0,
+                  "throttle": 0.3
                 }
-              }
+              },
+              "items": [
+                {
+                  "name": "rocket-4 body",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/rocket-4.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.6,
+                    "shininess": 64
+                  },
+                  "ambient": {
+                    "color": [0.3, 0.3, 0.35]
+                  }
+                },
+                {
+                  "name": "rocket-4 flame",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/flame.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 0
+                  },
+                  "ambient": {
+                    "color": [1, 1, 1]
+                  },
+                  "transform": {
+                    "position": [0, 0, -68.835],
+                    "rotation": [0, 0, 0],
+                    "scale": [8.588, 8.588, 8.588]
+                  },
+                  "script": {
+                    "src": "scripts/flame.js",
+                    "settings": {
+                      "flicker": 0.15,
+                      "speed": 1
+                    }
+                  }
+                }
+              ]
             },
             {
               "name": "rocket-custom",
-              "type": "static-mesh",
-              "resource": "/resources/obj/rocket-custom.obj",
-              "material": {
-                "color": [0, 0, 0, 1],
-                "reflectiveness": 1,
-                "specular": 0.6,
-                "shininess": 64
-              },
-              "ambient": {
-                "color": [0.3, 0.3, 0.35]
-              },
+              "type": "transform",
               "transform": {
                 "position": [450, 0, 0],
-                "rotation": [-90, 180, 0]
+                "rotation": [-90, 180, 0],
+                "scale": [1, 1, 1]
               },
               "script": {
                 "src": "scripts/hover.js",
@@ -364,9 +763,50 @@
                   "bob": 4,
                   "roll": 4,
                   "pitch": 2,
-                  "period": 7.4
+                  "period": 7.4,
+                  "throttle": 0.3
                 }
-              }
+              },
+              "items": [
+                {
+                  "name": "rocket-custom body",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/rocket-custom.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.6,
+                    "shininess": 64
+                  },
+                  "ambient": {
+                    "color": [0.3, 0.3, 0.35]
+                  }
+                },
+                {
+                  "name": "rocket-custom flame",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/flame.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 0
+                  },
+                  "ambient": {
+                    "color": [1, 1, 1]
+                  },
+                  "transform": {
+                    "position": [0, 0, -66.1],
+                    "rotation": [0, 0, 0],
+                    "scale": [8, 8, 8]
+                  },
+                  "script": {
+                    "src": "scripts/flame.js",
+                    "settings": {
+                      "flicker": 0.15,
+                      "speed": 1
+                    }
+                  }
+                }
+              ]
             }
           ]
         }

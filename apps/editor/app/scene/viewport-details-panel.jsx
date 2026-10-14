@@ -1,6 +1,7 @@
 import * as React from "react";
 import {FogProperties} from "./fog-properties.jsx";
 import {InfoDetailsProperties} from "./info-details-properties.jsx";
+import {ScriptProperties, useScriptTab} from "./script-properties.jsx";
 import {PanelToolbar} from "../components/panel-toolbar.jsx";
 import {Panel, PanelHeader, PanelBody} from "../components/panel.jsx";
 
@@ -11,6 +12,7 @@ import "./scene-node-details.css";
 export const ViewportDetailsPanel = (props) => {
   const [selectedView, setSelectedView] = React.useState("info-details");
   const {node} = props;
+  const scriptTab = useScriptTab(node);
 
   let children = null;
   switch (selectedView) {
@@ -19,6 +21,9 @@ export const ViewportDetailsPanel = (props) => {
       break;
     case "fog":
       children = <FogProperties node={node} />;
+      break;
+    case "script":
+      children = <ScriptProperties node={node} />;
       break;
   }
 
@@ -30,7 +35,7 @@ export const ViewportDetailsPanel = (props) => {
       </PanelHeader>
       <PanelBody>
         <PanelToolbar
-          tabs={["info-details", "fog"]}
+          tabs={["info-details", "fog", scriptTab]}
           onTabSelected={setSelectedView}
           selectedTab={selectedView}
         />

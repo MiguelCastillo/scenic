@@ -2,6 +2,7 @@ import * as React from "react";
 import {TransformProperties} from "./transform-properties.jsx";
 import {MaterialProperties} from "./material-properties.jsx";
 import {InfoDetailsProperties} from "./info-details-properties.jsx";
+import {ScriptProperties, useScriptTab} from "./script-properties.jsx";
 import {PanelToolbar} from "../components/panel-toolbar.jsx";
 import {Panel, PanelHeader, PanelBody} from "../components/panel.jsx";
 
@@ -10,6 +11,7 @@ import "./scene-node-details.css";
 export const StaticMeshDetailsPanel = (props) => {
   const [selectedView, setSelectedView] = React.useState("info-details");
   const {node} = props;
+  const scriptTab = useScriptTab(node);
 
   let children = null;
   switch (selectedView) {
@@ -22,6 +24,9 @@ export const StaticMeshDetailsPanel = (props) => {
     case "material":
       children = <MaterialProperties node={node} />;
       break;
+    case "script":
+      children = <ScriptProperties node={node} />;
+      break;
   }
 
   return (
@@ -32,7 +37,7 @@ export const StaticMeshDetailsPanel = (props) => {
       </PanelHeader>
       <PanelBody>
         <PanelToolbar
-          tabs={["info-details", "transform", "material"]}
+          tabs={["info-details", "transform", "material", scriptTab]}
           onTabSelected={setSelectedView}
           selectedTab={selectedView}
         />

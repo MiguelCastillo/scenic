@@ -2,6 +2,7 @@ import * as React from "react";
 import {TransformProperties} from "./transform-properties.jsx";
 import {MaterialProperties} from "./material-properties.jsx";
 import {InfoDetailsProperties} from "./info-details-properties.jsx";
+import {ScriptProperties, useScriptTab} from "./script-properties.jsx";
 import {AnimationProperties} from "./animation-properties.jsx";
 import {PanelToolbar} from "../components/panel-toolbar.jsx";
 import {Panel, PanelHeader, PanelBody} from "../components/panel.jsx";
@@ -11,6 +12,7 @@ import "./scene-node-details.css";
 export const SkinnedMeshDetailsPanel = (props) => {
   const [selectedView, setSelectedView] = React.useState("animation");
   const {node} = props;
+  const scriptTab = useScriptTab(node);
 
   const hasAnimation = node.animation && node.animation.type === "animation";
   let children = null;
@@ -29,6 +31,9 @@ export const SkinnedMeshDetailsPanel = (props) => {
         children = <AnimationProperties node={node.animation} />;
       }
       break;
+    case "script":
+      children = <ScriptProperties node={node} />;
+      break;
   }
 
   return (
@@ -39,7 +44,7 @@ export const SkinnedMeshDetailsPanel = (props) => {
       </PanelHeader>
       <PanelBody className="scene-node-details-body">
         <PanelToolbar
-          tabs={["info-details", "transform", "material", hasAnimation && "animation"]}
+          tabs={["info-details", "transform", "material", hasAnimation && "animation", scriptTab]}
           onTabSelected={setSelectedView}
           selectedTab={selectedView}
         />
