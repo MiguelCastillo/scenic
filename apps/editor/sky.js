@@ -16,13 +16,22 @@ import {shaderRegistry} from "./shader-registry.js";
 // only where nothing else has been drawn, so it can be anywhere in its
 // viewport. Its transform does nothing.
 //
+// A sky holds the outdoor lights: lights among its children light everything
+// outdoors under the sky, as if they were beside it (see findLights in
+// @scenic/scene's mesh.js), such as the sun and a soft fill from the rest of
+// the sky. The light marked with "sun": true in its light settings is the
+// sun, and the sky paints its sun where that light shines from. Lights shine
+// from the direction of their position, so moving the sun moves both the sun
+// in the sky and the shading.
+//
 // Its settings come from "sky" in its state, and all are optional (see
 // defaults):
 // - zenithColor, horizonColor, groundColor: the sky straight up, the sky at
 //   the horizon, and the ground below it, as [r, g, b].
 // - sunColor: the sun and its glow, as [r, g, b].
-// - sunElevation, sunAzimuth: where the sun is, in degrees: how high above
-//   the horizon, and how far around from the +Z axis toward +X.
+// - sunElevation, sunAzimuth: where the sun is when none of the sky's lights
+//   is marked as the sun (see below), in degrees: how high above the horizon,
+//   and how far around from the +Z axis toward +X.
 // - cloudCover: how much of the sky is cloud, 0 to 1.
 // - cloudScale: how big the clouds are. Bigger is bigger clouds.
 // - cloudSpeed: how fast the clouds drift.
@@ -81,14 +90,7 @@ export class Sky extends Renderable {
     // is the transpose of the inverse.
     const inverseViewProjection = mat4.invert(mat4.identity(), this.getViewProjectionMatrix().data);
 
-    const [elevation, azimuth] = [settings.sunElevation, settings.sunAzimuth].map(
-      (degrees) => (degrees * Math.PI) / 180
-    );
-    const sunDirection = [
-      Math.cos(elevation) * Math.sin(azimuth),
-      Math.sin(elevation),
-      Math.cos(elevation) * Math.cos(azimuth),
-    ];
+    const sunDirection = this.getSunDirection(sceneManager, settings);
 
     const vec3Uniform = (name, value) => ({
       name,
@@ -130,6 +132,29 @@ export class Sky extends Renderable {
     this.shaderProgram.render(this.triangle);
     gl.depthMask(true);
     gl.depthFunc(gl.LESS);
+  }
+
+  // getSunDirection is the direction the sun is in: toward the position of
+  // the sky's light marked as the sun, the same way lights shine (see
+  // Mesh.configureLighting), or from the sky's elevation and azimuth without
+  // one.
+  getSunDirection(sceneManager, settings) {
+    const sun = (this.childrenByTypeName.light || [])
+      .map(({id}) => sceneManager.getNodeStateByID(id))
+      .find((state) => state?.light?.sun);
+    const position = sun?.transform?.position;
+    if (position) {
+      return position;
+    }
+
+    const [elevation, azimuth] = [settings.sunElevation, settings.sunAzimuth].map(
+      (degrees) => (degrees * Math.PI) / 180
+    );
+    return [
+      Math.cos(elevation) * Math.sin(azimuth),
+      Math.sin(elevation),
+      Math.cos(elevation) * Math.cos(azimuth),
+    ];
   }
 
   dispose(gl) {

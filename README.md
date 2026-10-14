@@ -371,9 +371,33 @@ The flying rocket's scene has one:
 {
   "name": "sky",
   "type": "sky",
-  "sky": {"horizonColor": [0.75, 0.88, 1], "cloudCover": 0.55, "mountainHeight": 7}
+  "sky": {"horizonColor": [0.75, 0.88, 1], "cloudCover": 0.55},
+  "items": [
+    {
+      "name": "sun",
+      "type": "light",
+      "light": {"sun": true, "intensity": 0.8},
+      "transform": {"position": [1229, 1721, 2128]}
+    },
+    {
+      "name": "fill",
+      "type": "light",
+      "light": {"intensity": 0.55, "color": [0.7, 0.82, 1]},
+      "transform": {"position": [-1229, 1200, -2128]}
+    }
+  ]
 }
 ```
+
+A sky holds the outdoor lights as its children: here the sun, and a soft
+sky-blue fill from the other side that lights what the sun doesn't reach. The
+light marked `"sun": true` is the sun, and the sky paints its sun in the
+direction that light shines from, so moving it, in the scene config or its
+Transform tab, moves both the sun and the shading. The Light tab of a light in
+a sky has a Sun checkbox. The sky's lights light what is outdoors: meshes use
+the lights of their nearest ancestor that has any, counting the lights inside
+its sky, so a building with lamps of its own keeps the sky's lights out.
+Without a sun, the sky places its sun with `sunElevation` and `sunAzimuth`.
 
 The sky is a shader rather than images or a mesh (`apps/editor/sky.js` and
 `shaders/sky.frag`): one triangle covering the screen at the far plane, where

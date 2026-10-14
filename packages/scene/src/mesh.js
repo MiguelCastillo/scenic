@@ -1,7 +1,27 @@
 import {vec3} from "@scenic/math";
 
 import {Renderable} from "./renderable.js";
-import {findParentItemsWithItemTypeName} from "./traversal.js";
+
+// findLights returns the lights that shine on a node. It walks up from the
+// node to the first ancestor (or the node itself) that has lights among its
+// children, and returns those. Lights inside a sky child count too, so the
+// sun shines on everything outdoors. Since the walk stops at the first
+// ancestor with lights, a building with its own lamps keeps the sun out of
+// everything inside it.
+const findLights = (node) => {
+  for (let current = node; current; current = current.parent) {
+    const skies = current.childrenByTypeName.sky || [];
+    const lights = [
+      ...(current.childrenByTypeName.light || []),
+      ...skies.flatMap((sky) => sky.childrenByTypeName.light || []),
+    ];
+    if (lights.length) {
+      return lights;
+    }
+  }
+
+  return [];
+};
 
 // specularDefaults are the specular settings of a material that does not set
 // its own: a moderate shine.
@@ -45,13 +65,11 @@ export class Mesh extends Renderable {
   }
 
   // getLightsState provides the current state of all the lights that affect
-  // this mesh. This is merely calculated based on the first parent that is
-  // found that has light objects. Override this if you need a mesh to provide
-  // lights state differently.
+  // this mesh: the lights of the first parent that is found that has any,
+  // including the lights inside its sky (see findLights). Override this if
+  // you need a mesh to provide lights state differently.
   getLightsState(context) {
-    return findParentItemsWithItemTypeName(this, "light").map(({id}) =>
-      context.sceneManager.getNodeStateByID(id)
-    );
+    return findLights(this).map(({id}) => context.sceneManager.getNodeStateByID(id));
   }
 
   static configureLighting(shaderProgram, lights) {
