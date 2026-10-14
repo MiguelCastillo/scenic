@@ -56,6 +56,11 @@ export class InfoDetailsProperties extends WithNodeState {
     const canSelectFile =
       node.type === "static-mesh" || node.type === "skinned-mesh" || node.type === "light";
 
+    // The camera mode belongs to the camera the controls fly, so it is only
+    // shown for that camera.
+    const {cameraControls} = this.context;
+    const cameraMode = cameraControls?.cameraID === node.id ? cameraControls.mode : null;
+
     return (
       <div className="node-properties info-details">
         <div className="name">
@@ -75,6 +80,12 @@ export class InfoDetailsProperties extends WithNodeState {
             value={node.type}
           />
         </div>
+        {cameraMode ? (
+          <div className="camera-mode">
+            <label>Camera mode</label>
+            <input readOnly type="text" value={cameraMode} />
+          </div>
+        ) : null}
         {canSelectFile ? (
           <div className="resource">
             <label>Resource</label>

@@ -64,6 +64,14 @@ function createSceneUpdater(gl, sceneManager) {
     sceneManager.updateNodeStateByID(worldViewportID, {cameraMode: next});
   }
 
+  // getCameraControls returns which camera the controls fly and the camera
+  // mode they fly it in: the mode actually in use, after falling back to
+  // free-fly, rather than what the viewport's state asks for.
+  function getCameraControls() {
+    getCameraBehavior();
+    return {cameraID: getCamera().id, mode: cameraMode};
+  }
+
   let lastFrameMs = null;
 
   // This is the logic for updating the scene state and the scene graph with the
@@ -116,6 +124,7 @@ function createSceneUpdater(gl, sceneManager) {
     moveCamera: (...args) => getCameraBehavior().move(...args),
     setCameraMovement: (...args) => getCameraBehavior().setMovement(...args),
     toggleCameraMode,
+    getCameraControls,
   };
 }
 
@@ -156,6 +165,7 @@ export const renderScene = async (gl, config) => {
     moveCamera,
     setCameraMovement,
     toggleCameraMode,
+    getCameraControls,
   } = createSceneUpdater(gl, sceneManager);
 
   // This starts the render loop to render the scene!
@@ -193,6 +203,7 @@ export const renderScene = async (gl, config) => {
     moveCamera,
     setCameraMovement,
     toggleCameraMode,
+    getCameraControls,
     dispose,
   };
 };

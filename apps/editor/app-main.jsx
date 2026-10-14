@@ -56,7 +56,23 @@ domReady.onReady(() => {
   domEvents.Subscription.create(window).on("resize", resizeCanvas);
   domEvents.Subscription.create(splitPanelEl).on("panel:resize", resizeCanvas);
 
-  subscribeToSceneInput(document.getElementById("mousetrap"), () => currentScene);
+  subscribeToSceneInput(document.getElementById("mousetrap"), () => currentScene, renderSceneGraph);
+
+  // renderSceneGraph renders the scene graph panel for the current scene. It
+  // is rendered again when the camera mode changes, so that the panels show
+  // the mode in use. Rendering the same SceneGraph again keeps its state, such
+  // as the selected node.
+  function renderSceneGraph() {
+    const {resourceLoader, sceneManager, getCameraControls} = currentScene;
+    sceneGraphRoot.render(
+      <SceneGraph
+        sceneManager={sceneManager}
+        resourceLoader={resourceLoader}
+        cameraControls={getCameraControls()}
+        onChangeScene={showSceneSelector}
+      />
+    );
+  }
 
   // Cancel is only offered when there is a scene to go back to.
   function showSceneSelector() {
@@ -94,15 +110,9 @@ domReady.onReady(() => {
       .then((config) => window.scene.renderScene(gl, config))
       .then((scene) => {
         currentScene = scene;
-        const {registerRefreshRateUpdater, resourceLoader, sceneManager} = scene;
+        const {registerRefreshRateUpdater} = scene;
 
-        sceneGraphRoot.render(
-          <SceneGraph
-            sceneManager={sceneManager}
-            resourceLoader={resourceLoader}
-            onChangeScene={showSceneSelector}
-          />
-        );
+        renderSceneGraph();
 
         registerRefreshRateUpdater((fps) => {
           fpsEl.innerHTML = fps;
@@ -150,7 +160,7 @@ const toggleCameraModeKey = "KeyV";
 // mousetrap locks the pointer to it, and input only moves the camera while
 // the pointer is locked, so typing in the editor's panels is left alone.
 // Pressing Escape releases the lock.
-function subscribeToSceneInput(mousetrapEl, getCurrentScene) {
+function subscribeToSceneInput(mousetrapEl, getCurrentScene, onCameraModeChange) {
   const isPointerLocked = () => document.pointerLockElement === mousetrapEl;
   const heldKeys = new Set();
 
@@ -207,6 +217,7 @@ function subscribeToSceneInput(mousetrapEl, getCurrentScene) {
         const scene = getCurrentScene();
         if (scene) {
           scene.toggleCameraMode();
+          onCameraModeChange();
           // The new mode starts with no movement, so tell it about any keys
           // that are still held.
           updateCameraMovement();
