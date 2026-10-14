@@ -70,9 +70,9 @@
       "name": "world",
       "type": "viewport",
       "fog": {
-        "color": [0, 0, 0],
+        "color": [0.75, 0.88, 1],
         "near": 2500,
-        "far": 8000
+        "far": 9000
       },
       "items": [
         {
@@ -158,17 +158,38 @@
           }
         },
         {
+          "name": "sky",
+          "type": "sky",
+          "sky": {
+            "zenithColor": [0.25, 0.5, 0.95],
+            "horizonColor": [0.75, 0.88, 1],
+            "groundColor": [0.45, 0.62, 0.42],
+            "sunColor": [1, 0.95, 0.8],
+            "sunElevation": 35,
+            "sunAzimuth": 30,
+            "cloudCover": 0.55,
+            "cloudScale": 1,
+            "cloudSpeed": 1,
+            "cloudColor": [1, 1, 1],
+            "cloudShadeColor": [0.72, 0.78, 0.92],
+            "mountainHeight": 7,
+            "farMountainColor": [0.58, 0.68, 0.88],
+            "nearMountainColor": [0.38, 0.48, 0.66]
+          }
+        },
+        {
           "name": "floor",
           "type": "grid",
           "transform": {
             "position": [0, 0, 0]
           },
           "grid": {
-            "size": 20000,
-            "spacing": 200
+            "spacing": 200,
+            "lineWidth": 1,
+            "fillColor": [0.45, 0.62, 0.42]
           },
           "material": {
-            "color": [0.35, 0.35, 0.35, 1]
+            "color": [0.78, 0.88, 0.72, 1]
           }
         },
         {

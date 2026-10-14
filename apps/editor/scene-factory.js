@@ -11,6 +11,7 @@ import {
 } from "@scenic/scene";
 
 import {Grid} from "./grid.js";
+import {Sky} from "./sky.js";
 
 export function createScene(config) {
   // The state manager is the first thing we create. This is built from all
@@ -48,6 +49,8 @@ export function createScene(config) {
       return new Camera(nodeConfig);
     } else if (isGrid(nodeConfig)) {
       return new Grid(nodeConfig);
+    } else if (isSky(nodeConfig)) {
+      return new Sky(nodeConfig);
     }
 
     return new SceneNode(nodeConfig);
@@ -64,6 +67,10 @@ export function isViewport(nodeConfig) {
 
 export function isGrid(nodeConfig) {
   return nodeConfig.type === "grid";
+}
+
+export function isSky(nodeConfig) {
+  return nodeConfig.type === "sky";
 }
 
 export function isCamera(nodeConfig) {

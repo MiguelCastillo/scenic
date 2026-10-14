@@ -1,97 +1,121 @@
+import {mat4} from "@scenic/math";
 import {VertexBuffer, VertexBufferData} from "@scenic/renderer";
 import {Renderable} from "@scenic/scene";
 
 import {shaderRegistry} from "./shader-registry.js";
 
 // Grid draws a flat grid of lines across its local X/Z plane, centered on its
-// origin, such as a floor to see things move against. Its transform places it
-// like any other node. It draws unlit, with the shader program it is given.
+// origin, such as a floor to see things move against. It draws unlit.
+//
+// The lines are not geometry: the grid draws one flat square, and its shader
+// works out where the lines are from each pixel's position on it. Lines are
+// smoothed to the screen's pixels, so they stay crisp up close, and they fade
+// out in the distance where cells get too small to tell apart. A grid can be
+// finite, a square of a given size placed by its transform, or infinite: a
+// square that follows the camera, as far as it can see, so the grid never
+// ends however far anything flies. The lines stay put in the world as the
+// square follows the camera. An infinite grid lies flat at its transform's
+// height and ignores its rotation and scale.
 //
 // Its settings come from its state:
 // - grid.size: how far the grid reaches from one edge to the other, in scene
-//   units, along both X and Z.
+//   units, along both X and Z. Leave it out, or 0, for an infinite grid.
 // - grid.spacing: the distance between lines, in scene units.
+// - grid.lineWidth: how thick lines are, in pixels. Optional, 1 by default.
+// - grid.fillColor: the color between the lines, as [r, g, b], which makes
+//   the grid a solid floor. Optional; without it only the lines are drawn and
+//   whatever is behind shows between them.
 // - material.color: the color of the lines, as [r, g, b, a].
-//
-// The grid builds and owns the vertex buffer for its lines, and draws it as
-// lines rather than through the draw list, which holds triangle meshes. The
-// buffer is rebuilt when size or spacing change.
 export class Grid extends Renderable {
   constructor(options) {
     super({...options, type: "grid"});
-    this.lines = null;
-    this._linesFor = null;
+    this.square = null;
   }
 
   preRender(context) {
     super.preRender(context);
 
-    const {size, spacing} = context.sceneManager.getNodeStateByID(this.id).grid;
-    if (this._linesFor?.size === size && this._linesFor?.spacing === spacing) {
-      return;
+    // The square the grid is drawn on, from -1 to 1 along X and Z. Render
+    // stretches and places it.
+    if (!this.square) {
+      const corners = [-1, 0, -1, 1, 0, -1, 1, 0, 1, -1, 0, -1, 1, 0, 1, -1, 0, 1];
+      this.square = new VertexBuffer({positions: new VertexBufferData(context.gl, corners)});
     }
-
-    // Lines run from one edge to the other, every spacing units from the
-    // center out, so there is always a line through the origin along X and Z.
-    const half = size / 2;
-    const positions = [];
-    for (let offset = 0; offset <= half; offset += spacing) {
-      for (const at of offset === 0 ? [0] : [offset, -offset]) {
-        positions.push(-half, 0, at, half, 0, at);
-        positions.push(at, 0, -half, at, 0, half);
-      }
-    }
-
-    if (this.lines) {
-      this.lines.dispose();
-    }
-    this.lines = new VertexBuffer({positions: new VertexBufferData(context.gl, positions)});
-    this._linesFor = {size, spacing};
   }
 
   render(context) {
-    if (!this.lines || !this.shaderProgram) {
+    if (!this.square || !this.shaderProgram) {
       return;
     }
 
-    const projectionMatrix = this.getViewProjectionMatrix();
-    const {worldMatrix} = this;
-    const {color} = context.sceneManager.getNodeStateByID(this.id).material;
+    const {gl, sceneManager} = context;
+    const state = sceneManager.getNodeStateByID(this.id);
+    const {size, spacing, lineWidth = 1, fillColor} = state.grid;
+    const lineColor = state.material.color;
 
-    this.shaderProgram
-      .setUniforms([
-        {
-          name: "projectionMatrix",
-          update: (gl, {index}) => {
-            gl.uniformMatrix4fv(index, false, projectionMatrix.data);
-          },
-        },
-        {
-          name: "worldMatrix",
-          update: (gl, {index}) => {
-            gl.uniformMatrix4fv(index, true, worldMatrix.data);
-          },
-        },
-        {
-          name: "materialColor",
-          update: (gl, {index}) => {
-            gl.uniform4fv(index, color);
-          },
-        },
-        ...this.getViewUniforms(),
-      ])
-      .render(this.lines, context.gl.LINES);
+    // plane takes the square to where it is drawn in the world, and the
+    // square's corners are coordScale grid units from its center, which is
+    // coordOffset from the grid's origin. Grid units are scene units along
+    // the grid, measured from its origin, so that lines go through it.
+    let plane;
+    let coordScale;
+    let coordOffset;
+    if (size > 0) {
+      const half = size / 2;
+      plane = mat4.multiply(mat4.identity(), this.worldMatrix.data, mat4.scale(half, 1, half));
+      coordScale = half;
+      coordOffset = [0, 0];
+    } else {
+      // An infinite grid's square is centered under the camera and reaches as
+      // far as the camera sees. Matrix4 data is row-major, so positions are
+      // the last column of world matrices.
+      const camera = this.getViewport().activeCamera;
+      const far = sceneManager.getNodeStateByID(camera.id).projection?.far || 10000;
+      const c = camera.worldMatrix.data;
+      const o = this.worldMatrix.data;
+      plane = mat4.multiply(
+        mat4.identity(),
+        mat4.translate(c[3], o[7], c[11]),
+        mat4.scale(far, 1, far)
+      );
+      coordScale = far;
+      coordOffset = [c[3] - o[3], c[11] - o[11]];
+    }
+
+    this.shaderProgram.setUniforms([
+      {
+        name: "projectionMatrix",
+        update: (gl, {index}) =>
+          gl.uniformMatrix4fv(index, false, this.getViewProjectionMatrix().data),
+      },
+      {
+        name: "planeMatrix",
+        update: (gl, {index}) => gl.uniformMatrix4fv(index, true, plane),
+      },
+      {name: "coordScale", update: (gl, {index}) => gl.uniform1f(index, coordScale)},
+      {name: "coordOffset", update: (gl, {index}) => gl.uniform2fv(index, coordOffset)},
+      {name: "spacing", update: (gl, {index}) => gl.uniform1f(index, spacing)},
+      {name: "lineWidth", update: (gl, {index}) => gl.uniform1f(index, lineWidth)},
+      {name: "lineColor", update: (gl, {index}) => gl.uniform4fv(index, lineColor)},
+      {name: "filled", update: (gl, {index}) => gl.uniform1i(index, !!fillColor)},
+      {name: "fillColor", update: (gl, {index}) => gl.uniform3fv(index, fillColor || [0, 0, 0])},
+      ...this.getViewUniforms(),
+    ]);
+
+    // The grid is seen from both sides, like a sheet of paper.
+    gl.disable(gl.CULL_FACE);
+    this.shaderProgram.render(this.square);
+    gl.enable(gl.CULL_FACE);
   }
 
   dispose(gl) {
-    if (this.lines) {
-      this.lines.dispose();
-      this.lines = null;
-      this._linesFor = null;
+    if (this.square) {
+      this.square.dispose();
+      this.square = null;
     }
 
     super.dispose(gl);
   }
 }
 
-shaderRegistry.register(Grid, "shaders/flat-material");
+shaderRegistry.register(Grid, "shaders/grid");

@@ -259,8 +259,8 @@ bank and tip its nose as if it were holding position in the air:
 
 A `grid` node draws a flat grid of lines on the ground, to make it easier to
 see things move through space, especially from a third-person camera. It lies
-across its own X/Z plane, centered on its origin, and its transform places it.
-The dancing character's scene has one at the character's feet:
+across its own X/Z plane. The dancing character's scene has one at the
+character's feet:
 
 ```json
 {
@@ -272,12 +272,23 @@ The dancing character's scene has one at the character's feet:
 ```
 
 - `grid.size`: how far the grid reaches from one edge to the other, in scene
-  units.
+  units. Leave it out for an infinite grid.
 - `grid.spacing`: the distance between lines, in scene units.
+- `grid.lineWidth`: how thick lines are, in pixels. Optional, 1 by default.
+- `grid.fillColor`: the color between the lines, which makes the grid a solid
+  floor. Optional; without it only the lines are drawn.
 - `material.color`: the color of the lines.
 
-The grid is part of the editor (`apps/editor/grid.js`) rather than the engine
-packages, like the axis gizmo.
+The lines are drawn by a shader rather than as geometry (`apps/editor/grid.js`
+and `shaders/grid.frag`): the grid draws one square, and each pixel works out
+how close it is to a line. Lines stay crisp up close and fade out in the
+distance instead of shimmering. A finite grid is a square its transform
+places. An infinite grid's square follows the camera, as far as it can see, so
+the floor never ends; the flying rocket's scene uses one, filled green. Its
+settings can be tuned live from its Grid tab.
+
+The grid is part of the editor rather than the engine packages, like the axis
+gizmo.
 
 ### Specular highlights and fog
 
@@ -315,6 +326,28 @@ Both can be adjusted live in the editor: specular and shininess on a lit
 material's Material tab, and fog on a viewport's Fog tab. The viewport gives renderables the camera
 position and fog settings as view uniforms (`getViewUniforms`), next to their
 view-projection matrix.
+
+### Sky
+
+A `sky` node paints a cartoon sky behind everything in its viewport: a
+gradient from the horizon to the zenith, a sun, puffy two-tone clouds that
+drift, two hazy mountain ranges around the horizon, and the ground below it.
+The flying rocket's scene has one:
+
+```json
+{
+  "name": "sky",
+  "type": "sky",
+  "sky": {"horizonColor": [0.75, 0.88, 1], "cloudCover": 0.55, "mountainHeight": 7}
+}
+```
+
+The sky is a shader rather than images or a mesh (`apps/editor/sky.js` and
+`shaders/sky.frag`): one triangle covering the screen at the far plane, where
+each pixel is painted from the direction it looks in. So it is infinitely far
+away, the mountains never get closer, and fog does not touch it. Making the
+viewport's fog the horizon color fades the world into the sky. Its settings
+can be tuned live from its Sky tab; every setting is listed in `sky.js`.
 
 ### Renderable, Mesh and Geometry
 

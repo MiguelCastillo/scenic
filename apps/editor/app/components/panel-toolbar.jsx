@@ -3,7 +3,9 @@ import "./panel-toolbar.css";
 
 import {
   Axes,
+  Cloud,
   Code,
+  DashboardDots,
   VideoCamera,
   Fog,
   InfoEmpty,
@@ -37,6 +39,10 @@ function getTabDetails(tab) {
       return {icon: VideoCamera, label: "Third person"};
     case "script":
       return {icon: Code, label: "Script"};
+    case "grid":
+      return {icon: DashboardDots, label: "Grid"};
+    case "sky":
+      return {icon: Cloud, label: "Sky"};
     case "fog":
       return {icon: Fog, label: "Fog"};
   }
