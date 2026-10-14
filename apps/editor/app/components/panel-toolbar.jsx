@@ -13,6 +13,7 @@ import {
   PerspectiveView,
   SunLight,
   Svg3DSelectFace,
+  BounceRight,
 } from "iconoir-react";
 
 /**
@@ -39,6 +40,8 @@ function getTabDetails(tab) {
       return {icon: VideoCamera, label: "Third person"};
     case "script":
       return {icon: Code, label: "Script"};
+    case "collider":
+      return {icon: BounceRight, label: "Collider"};
     case "grid":
       return {icon: DashboardDots, label: "Grid"};
     case "sky":

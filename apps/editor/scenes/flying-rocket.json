@@ -203,6 +203,7 @@
           "items": [
             {
               "name": "rocket",
+              "collider": {"shape": "sphere", "radius": 75},
               "type": "transform",
               "transform": {
                 "position": [0, 200, 0],
@@ -355,6 +356,7 @@
               "items": [
                 {
                   "name": "tower 1 column",
+                  "collider": {"shape": "cylinder"},
                   "type": "static-mesh",
                   "resource": "/resources/obj/cylinder.obj",
                   "material": {
@@ -373,6 +375,7 @@
                 },
                 {
                   "name": "tower 1 roof",
+                  "collider": {"shape": "cone"},
                   "type": "static-mesh",
                   "resource": "/resources/obj/cone.obj",
                   "material": {
@@ -400,6 +403,7 @@
               "items": [
                 {
                   "name": "tower 2 column",
+                  "collider": {"shape": "cylinder"},
                   "type": "static-mesh",
                   "resource": "/resources/obj/cylinder.obj",
                   "material": {
@@ -418,6 +422,7 @@
                 },
                 {
                   "name": "tower 2 roof",
+                  "collider": {"shape": "cone"},
                   "type": "static-mesh",
                   "resource": "/resources/obj/cone.obj",
                   "material": {
@@ -445,6 +450,7 @@
               "items": [
                 {
                   "name": "tower 3 column",
+                  "collider": {"shape": "cylinder"},
                   "type": "static-mesh",
                   "resource": "/resources/obj/cylinder.obj",
                   "material": {
@@ -463,6 +469,7 @@
                 },
                 {
                   "name": "tower 3 roof",
+                  "collider": {"shape": "cone"},
                   "type": "static-mesh",
                   "resource": "/resources/obj/cone.obj",
                   "material": {
@@ -490,6 +497,7 @@
               "items": [
                 {
                   "name": "tower 4 column",
+                  "collider": {"shape": "cylinder"},
                   "type": "static-mesh",
                   "resource": "/resources/obj/cylinder.obj",
                   "material": {
@@ -508,6 +516,7 @@
                 },
                 {
                   "name": "tower 4 roof",
+                  "collider": {"shape": "cone"},
                   "type": "static-mesh",
                   "resource": "/resources/obj/cone.obj",
                   "material": {
@@ -535,6 +544,7 @@
               "items": [
                 {
                   "name": "tower 5 column",
+                  "collider": {"shape": "cylinder"},
                   "type": "static-mesh",
                   "resource": "/resources/obj/cylinder.obj",
                   "material": {
@@ -553,6 +563,7 @@
                 },
                 {
                   "name": "tower 5 roof",
+                  "collider": {"shape": "cone"},
                   "type": "static-mesh",
                   "resource": "/resources/obj/cone.obj",
                   "material": {
@@ -580,6 +591,7 @@
               "items": [
                 {
                   "name": "tower 6 column",
+                  "collider": {"shape": "cylinder"},
                   "type": "static-mesh",
                   "resource": "/resources/obj/cylinder.obj",
                   "material": {
@@ -598,6 +610,7 @@
                 },
                 {
                   "name": "tower 6 roof",
+                  "collider": {"shape": "cone"},
                   "type": "static-mesh",
                   "resource": "/resources/obj/cone.obj",
                   "material": {
@@ -625,6 +638,7 @@
               "items": [
                 {
                   "name": "tower 7 column",
+                  "collider": {"shape": "cylinder"},
                   "type": "static-mesh",
                   "resource": "/resources/obj/cylinder.obj",
                   "material": {
@@ -643,6 +657,7 @@
                 },
                 {
                   "name": "tower 7 roof",
+                  "collider": {"shape": "cone"},
                   "type": "static-mesh",
                   "resource": "/resources/obj/cone.obj",
                   "material": {
@@ -670,6 +685,7 @@
               "items": [
                 {
                   "name": "tower 8 column",
+                  "collider": {"shape": "cylinder"},
                   "type": "static-mesh",
                   "resource": "/resources/obj/cylinder.obj",
                   "material": {
@@ -688,6 +704,7 @@
                 },
                 {
                   "name": "tower 8 roof",
+                  "collider": {"shape": "cone"},
                   "type": "static-mesh",
                   "resource": "/resources/obj/cone.obj",
                   "material": {
@@ -715,6 +732,7 @@
               "items": [
                 {
                   "name": "tower 9 column",
+                  "collider": {"shape": "cylinder"},
                   "type": "static-mesh",
                   "resource": "/resources/obj/cylinder.obj",
                   "material": {
@@ -733,6 +751,7 @@
                 },
                 {
                   "name": "tower 9 roof",
+                  "collider": {"shape": "cone"},
                   "type": "static-mesh",
                   "resource": "/resources/obj/cone.obj",
                   "material": {
@@ -760,6 +779,7 @@
               "items": [
                 {
                   "name": "tower 10 column",
+                  "collider": {"shape": "cylinder"},
                   "type": "static-mesh",
                   "resource": "/resources/obj/cylinder.obj",
                   "material": {
@@ -778,6 +798,7 @@
                 },
                 {
                   "name": "tower 10 roof",
+                  "collider": {"shape": "cone"},
                   "type": "static-mesh",
                   "resource": "/resources/obj/cone.obj",
                   "material": {
@@ -805,6 +826,7 @@
               "items": [
                 {
                   "name": "tower 11 column",
+                  "collider": {"shape": "cylinder"},
                   "type": "static-mesh",
                   "resource": "/resources/obj/cylinder.obj",
                   "material": {
@@ -823,6 +845,7 @@
                 },
                 {
                   "name": "tower 11 roof",
+                  "collider": {"shape": "cone"},
                   "type": "static-mesh",
                   "resource": "/resources/obj/cone.obj",
                   "material": {
@@ -850,6 +873,7 @@
               "items": [
                 {
                   "name": "tower 12 column",
+                  "collider": {"shape": "cylinder"},
                   "type": "static-mesh",
                   "resource": "/resources/obj/cylinder.obj",
                   "material": {
@@ -868,6 +892,7 @@
                 },
                 {
                   "name": "tower 12 roof",
+                  "collider": {"shape": "cone"},
                   "type": "static-mesh",
                   "resource": "/resources/obj/cone.obj",
                   "material": {
@@ -895,6 +920,7 @@
               "items": [
                 {
                   "name": "tower 13 column",
+                  "collider": {"shape": "cylinder"},
                   "type": "static-mesh",
                   "resource": "/resources/obj/cylinder.obj",
                   "material": {
@@ -913,6 +939,7 @@
                 },
                 {
                   "name": "tower 13 roof",
+                  "collider": {"shape": "cone"},
                   "type": "static-mesh",
                   "resource": "/resources/obj/cone.obj",
                   "material": {
@@ -940,6 +967,7 @@
               "items": [
                 {
                   "name": "tower 14 column",
+                  "collider": {"shape": "cylinder"},
                   "type": "static-mesh",
                   "resource": "/resources/obj/cylinder.obj",
                   "material": {
@@ -958,6 +986,7 @@
                 },
                 {
                   "name": "tower 14 roof",
+                  "collider": {"shape": "cone"},
                   "type": "static-mesh",
                   "resource": "/resources/obj/cone.obj",
                   "material": {
@@ -985,6 +1014,7 @@
               "items": [
                 {
                   "name": "tower 15 column",
+                  "collider": {"shape": "cylinder"},
                   "type": "static-mesh",
                   "resource": "/resources/obj/cylinder.obj",
                   "material": {
@@ -1003,6 +1033,7 @@
                 },
                 {
                   "name": "tower 15 roof",
+                  "collider": {"shape": "cone"},
                   "type": "static-mesh",
                   "resource": "/resources/obj/cone.obj",
                   "material": {
@@ -1030,6 +1061,7 @@
               "items": [
                 {
                   "name": "tower 16 column",
+                  "collider": {"shape": "cylinder"},
                   "type": "static-mesh",
                   "resource": "/resources/obj/cylinder.obj",
                   "material": {
@@ -1048,6 +1080,7 @@
                 },
                 {
                   "name": "tower 16 roof",
+                  "collider": {"shape": "cone"},
                   "type": "static-mesh",
                   "resource": "/resources/obj/cone.obj",
                   "material": {
@@ -1075,6 +1108,7 @@
               "items": [
                 {
                   "name": "tower 17 column",
+                  "collider": {"shape": "cylinder"},
                   "type": "static-mesh",
                   "resource": "/resources/obj/cylinder.obj",
                   "material": {
@@ -1093,6 +1127,7 @@
                 },
                 {
                   "name": "tower 17 roof",
+                  "collider": {"shape": "cone"},
                   "type": "static-mesh",
                   "resource": "/resources/obj/cone.obj",
                   "material": {
@@ -1120,6 +1155,7 @@
               "items": [
                 {
                   "name": "tower 18 column",
+                  "collider": {"shape": "cylinder"},
                   "type": "static-mesh",
                   "resource": "/resources/obj/cylinder.obj",
                   "material": {
@@ -1138,6 +1174,7 @@
                 },
                 {
                   "name": "tower 18 roof",
+                  "collider": {"shape": "cone"},
                   "type": "static-mesh",
                   "resource": "/resources/obj/cone.obj",
                   "material": {

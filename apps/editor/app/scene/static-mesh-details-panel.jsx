@@ -3,6 +3,7 @@ import {TransformProperties} from "./transform-properties.jsx";
 import {MaterialProperties} from "./material-properties.jsx";
 import {InfoDetailsProperties} from "./info-details-properties.jsx";
 import {ScriptProperties, useScriptTab} from "./script-properties.jsx";
+import {ColliderProperties, useColliderTab} from "./collider-properties.jsx";
 import {PanelToolbar} from "../components/panel-toolbar.jsx";
 import {Panel, PanelHeader, PanelBody} from "../components/panel.jsx";
 
@@ -12,6 +13,7 @@ export const StaticMeshDetailsPanel = (props) => {
   const [selectedView, setSelectedView] = React.useState("info-details");
   const {node} = props;
   const scriptTab = useScriptTab(node);
+  const colliderTab = useColliderTab(node);
 
   let children = null;
   switch (selectedView) {
@@ -23,6 +25,9 @@ export const StaticMeshDetailsPanel = (props) => {
       break;
     case "material":
       children = <MaterialProperties node={node} />;
+      break;
+    case "collider":
+      children = <ColliderProperties node={node} />;
       break;
     case "script":
       children = <ScriptProperties node={node} />;
@@ -37,7 +42,7 @@ export const StaticMeshDetailsPanel = (props) => {
       </PanelHeader>
       <PanelBody>
         <PanelToolbar
-          tabs={["info-details", "transform", "material", scriptTab]}
+          tabs={["info-details", "transform", "material", colliderTab, scriptTab]}
           onTabSelected={setSelectedView}
           selectedTab={selectedView}
         />

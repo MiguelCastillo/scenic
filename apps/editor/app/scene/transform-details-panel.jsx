@@ -2,6 +2,7 @@ import * as React from "react";
 import {TransformProperties} from "./transform-properties.jsx";
 import {InfoDetailsProperties} from "./info-details-properties.jsx";
 import {ScriptProperties, useScriptTab} from "./script-properties.jsx";
+import {ColliderProperties, useColliderTab} from "./collider-properties.jsx";
 import {PanelToolbar} from "../components/panel-toolbar.jsx";
 import {Panel, PanelHeader, PanelBody} from "../components/panel.jsx";
 
@@ -11,6 +12,7 @@ export const TransformDetailsPanel = (props) => {
   const [selectedView, setSelectedView] = React.useState("info-details");
   const {node} = props;
   const scriptTab = useScriptTab(node);
+  const colliderTab = useColliderTab(node);
 
   let children = null;
   switch (selectedView) {
@@ -19,6 +21,9 @@ export const TransformDetailsPanel = (props) => {
       break;
     case "transform":
       children = <TransformProperties node={node} />;
+      break;
+    case "collider":
+      children = <ColliderProperties node={node} />;
       break;
     case "script":
       children = <ScriptProperties node={node} />;
@@ -33,7 +38,7 @@ export const TransformDetailsPanel = (props) => {
       </PanelHeader>
       <PanelBody className="scene-node-details-body">
         <PanelToolbar
-          tabs={["info-details", "transform", scriptTab]}
+          tabs={["info-details", "transform", colliderTab, scriptTab]}
           onTabSelected={setSelectedView}
           selectedTab={selectedView}
         />

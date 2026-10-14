@@ -255,6 +255,29 @@ bank and tip its nose as if it were holding position in the air:
 }
 ```
 
+### Collisions
+
+A node with a `collider` in its state takes part in collisions: a simple shape
+around it, in its own space, that its world matrix places in the world.
+`collision.findCollisions(sceneManager, node)` from `@scenic/scene` lists the
+nodes whose colliders touch a node's, with which way and how far to push it
+out of each.
+
+```json
+"collider": {"shape": "sphere", "radius": 75}
+```
+
+- `sphere`: a ball around the node's origin, for things that move.
+- `cylinder` and `cone`: upright shapes around the node's Y axis, with a
+  `radius` and a `height`. They default to the size of the unit cylinder and
+  cone meshes, so a column made from those meshes only needs its `shape`.
+
+Only spheres are tested against other shapes, so of any two shapes that should
+collide, at least one is a sphere. In the flying rocket scene, the rocket has a
+sphere and each tower's column and roof have a cylinder and a cone, and
+`fly.js` bounces the rocket off whatever it hits. A Collider tab in the editor
+edits a collider's size live.
+
 ### Reference floor
 
 A `grid` node draws a flat grid of lines on the ground, to make it easier to

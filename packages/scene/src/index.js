@@ -1,5 +1,6 @@
 import {Animation} from "./animation.js";
 import {Camera} from "./camera.js";
+import * as collision from "./collision.js";
 import {Geometry} from "./geometry.js";
 import {Light} from "./light.js";
 import {Material} from "./material.js";
@@ -18,6 +19,7 @@ import {Viewport} from "./viewport.js";
 export {
   Animation,
   Camera,
+  collision,
   Geometry,
   Light,
   Material,

@@ -37,7 +37,13 @@
 //
 // It flies from wherever the node's state puts it, so moving the node, such
 // as in the editor, moves the rocket.
+//
+// When the node has a collider (see collision in @scenic/scene), the rocket
+// bounces off anything else with one, such as towers: it is pushed back out
+// and its course turns away, like a ball off a wall. Pushing out assumes the
+// node's parent is not rotated or scaled.
 const {mat4} = require("@scenic/math");
+const {collision} = require("@scenic/scene");
 
 const defaults = {
   cruiseSpeed: 250,
@@ -67,6 +73,43 @@ function rotation(heading, climb, roll) {
     mat4.rotate(mat4.identity(), -climb, 0, 0)
   );
   return mat4.multiply(mat4.identity(), turned, mat4.rotate(mat4.identity(), 0, 0, roll));
+}
+
+// bounce pushes the rocket out of anything its collider runs into at
+// position, and turns its course away from what it hit: its nose is
+// reflected off the surface, the way a ball bounces off a wall. It returns
+// whether the rocket hit anything, after updating position and flight.
+function bounce(sceneManager, node, state, position, matrix, flight) {
+  // Collisions are found where the rocket is now, which its world matrix
+  // only shows after this script runs.
+  const worldMatrix = node.parent.worldMatrix.multiply(
+    mat4.Matrix4.trs(position, mat4.rotationAngles(matrix), state.transform.scale)
+  );
+  const hits = collision.findCollisions(sceneManager, node, worldMatrix);
+  if (!hits.length) {
+    return false;
+  }
+
+  let nose = [matrix[2], matrix[6], matrix[10]];
+  for (const {normal, depth} of hits) {
+    for (let i = 0; i < 3; i++) {
+      position[i] += normal[i] * depth;
+    }
+
+    const into = nose[0] * normal[0] + nose[1] * normal[1] + nose[2] * normal[2];
+    if (into < 0) {
+      nose = nose.map((v, i) => v - 2 * into * normal[i]);
+    }
+  }
+
+  // The nose is [sin(heading) cos(climb), sin(climb), cos(heading) cos(climb)]
+  // (see rotation). The heading turns the short way, so that it stays close
+  // to what it was.
+  const degrees = (radians) => (radians * 180) / Math.PI;
+  const heading = degrees(Math.atan2(nose[0], nose[2]));
+  flight.heading += ((((heading - flight.heading) % 360) + 540) % 360) - 180;
+  flight.climb = degrees(Math.asin(Math.max(-1, Math.min(1, nose[1]))));
+  return true;
 }
 
 module.exports = function createFlyScript(node) {
@@ -130,7 +173,7 @@ module.exports = function createFlyScript(node) {
 
       // The rocket's nose, its local +Z axis, is the third column of its
       // rotation, since Matrix4 data is row-major.
-      const matrix = rotation(flight.heading, flight.climb, flight.roll);
+      let matrix = rotation(flight.heading, flight.climb, flight.roll);
       const nose = [matrix[2], matrix[6], matrix[10]];
       const position = state.transform.position.map((v, i) => v + nose[i] * speed * seconds);
 
@@ -139,6 +182,10 @@ module.exports = function createFlyScript(node) {
       if (position[1] < settings.minHeight) {
         position[1] = settings.minHeight;
         flight.climb = Math.max(flight.climb, 0);
+      }
+
+      if (bounce(sceneManager, node, state, position, matrix, flight)) {
+        matrix = rotation(flight.heading, flight.climb, flight.roll);
       }
 
       sceneManager.updateNodeStateByID(node.id, {
