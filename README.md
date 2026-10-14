@@ -229,8 +229,16 @@ module.exports = function createScript(node) {
 
 Every hook is optional. `SceneManager` calls `preRender` before the node's own,
 so changes the script makes to the node's state show up in the same frame.
-`context` has the frame's time in `ms` and the `sceneManager`. Scripts are
-loaded with the scene, and `src` is relative to the editor page.
+`context` has the frame's time in `ms` and the `sceneManager`. In the editor
+it also has the player's input: `seconds` since the last frame, the `keys`
+being held, by `KeyboardEvent.code`, and how far the `mouse` moved since the
+last frame, as `{x, y}` in pixels. Input only reaches the scene while the
+pointer is locked to it, by clicking it. Pressing P pauses the scene: its
+clock stops, and scripts get no time and no input until P is pressed again,
+while the camera can still look around. A third-person camera orbits its
+target with the mouse while paused, even when its `mouseOrbit` setting is off,
+and goes back behind its target when the scene resumes. Scripts are loaded with the scene, and
+`src` is relative to the editor page.
 
 Scripts run like CommonJS modules: the editor fetches the script and runs it
 inside a function given `require`, `module` and `exports`
@@ -274,9 +282,11 @@ out of each.
 
 Only spheres are tested against other shapes, so of any two shapes that should
 collide, at least one is a sphere. In the flying rocket scene, the rocket has a
-sphere and each tower's column and roof have a cylinder and a cone, and
-`fly.js` bounces the rocket off whatever it hits. A Collider tab in the editor
-edits a collider's size live.
+sphere and each tree has a cylinder up its trunk and one around its crown, and
+`fly.js` bounces the rocket off whatever it hits. A collider doesn't need a
+mesh: the trees' are on transform nodes beside their meshes, placed where
+`bin/generate-tree.js` says they go. A Collider tab in the editor edits a
+collider's size live.
 
 ### Reference floor
 

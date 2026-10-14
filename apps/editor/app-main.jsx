@@ -22,6 +22,7 @@ const sceneFiles = [
   "scenes/jedi-star-fighter.json",
   "scenes/rockets.json",
   "scenes/skinning-mesh-animation-dancing-character.json",
+  "scenes/trees.json",
 ];
 
 domReady.onReady(() => {
@@ -58,7 +59,18 @@ domReady.onReady(() => {
   domEvents.Subscription.create(window).on("resize", resizeCanvas);
   domEvents.Subscription.create(splitPanelEl).on("panel:resize", resizeCanvas);
 
-  subscribeToSceneInput(document.getElementById("mousetrap"), () => currentScene, renderSceneGraph);
+  // The paused sign shows over the scene while it is paused.
+  const pausedEl = document.querySelector("#paused");
+  const showPaused = (paused) => {
+    pausedEl.hidden = !paused;
+  };
+
+  subscribeToSceneInput(
+    document.getElementById("mousetrap"),
+    () => currentScene,
+    renderSceneGraph,
+    showPaused
+  );
 
   // renderSceneGraph renders the scene graph panel for the current scene. It
   // is rendered again when the camera mode changes, so that the panels show
@@ -103,6 +115,7 @@ domReady.onReady(() => {
     // as the selected node, does not carry over to the new scene.
     sceneGraphRoot.render(null);
     fpsEl.innerHTML = "";
+    showPaused(false);
     loadingRoot.render(<Loading isLoading={true} />);
 
     fetch(sceneFile)
@@ -156,6 +169,9 @@ const cameraMovementKeys = {
 // first-person.
 const toggleCameraModeKey = "KeyV";
 
+// The key that pauses and resumes the scene.
+const pauseKey = "KeyP";
+
 // Keys that scroll the page, which scenes use instead while they have the
 // pointer, such as to fly a rocket.
 const pageScrollKeys = new Set(["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"]);
@@ -164,10 +180,12 @@ const pageScrollKeys = new Set(["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "A
 // camera controls. How the camera responds is up to its camera behavior (see
 // the @scenic/camera package and where scene-main.js creates it). Every key
 // held down is also given to the scene's scripts, such as a rocket's flight
-// controls. Clicking the mousetrap locks the pointer to it, and input only
-// reaches the scene while the pointer is locked, so typing in the editor's
-// panels is left alone. Pressing Escape releases the lock.
-function subscribeToSceneInput(mousetrapEl, getCurrentScene, onCameraModeChange) {
+// controls, and so is how far the mouse moves. Clicking the mousetrap locks the
+// pointer to it, and input only reaches the scene while the pointer is locked,
+// so typing in the editor's panels is left alone. Pressing Escape releases the
+// lock. Pressing P pauses the scene, and onPauseChange is told whether it is
+// now paused.
+function subscribeToSceneInput(mousetrapEl, getCurrentScene, onCameraModeChange, onPauseChange) {
   const isPointerLocked = () => document.pointerLockElement === mousetrapEl;
   const heldKeys = new Set();
   const scriptKeys = new Set();
@@ -202,6 +220,7 @@ function subscribeToSceneInput(mousetrapEl, getCurrentScene, onCameraModeChange)
           evt.movementX * cameraTurnDegreesPerPixel,
           -evt.movementY * cameraTurnDegreesPerPixel
         );
+        scene.addMouseMovement(evt.movementX, evt.movementY);
       }
     })
     .on("wheel", (evt) => {
@@ -230,6 +249,15 @@ function subscribeToSceneInput(mousetrapEl, getCurrentScene, onCameraModeChange)
       }
       if (pageScrollKeys.has(evt.code)) {
         evt.preventDefault();
+      }
+
+      if (evt.code === pauseKey && !evt.repeat) {
+        evt.preventDefault();
+        const scene = getCurrentScene();
+        if (scene) {
+          onPauseChange(scene.togglePause());
+        }
+        return;
       }
 
       if (evt.code === toggleCameraModeKey && !evt.repeat) {

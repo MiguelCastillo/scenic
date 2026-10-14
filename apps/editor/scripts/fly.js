@@ -6,11 +6,15 @@
 // - Up and down arrows: dive and climb, like pushing a flight stick forward
 //   and pulling it back. Letting go levels the rocket out. The upArrowDives
 //   setting swaps them.
+// - The mouse, when the mouseSteering setting is on: moving it left and right
+//   turns, and moving it up and down dives and climbs the same way as the up
+//   and down arrows. It steers on top of the keys.
 //
 // The throttle is written to this script's settings every frame, so flames
 // under the node that follow it (see flame.js) burn harder when boosting.
 //
-// Keys come from the frame's `keys` and time from its `seconds`, so it flies
+// Keys come from the frame's `keys`, the mouse from its `mouse`, and time
+// from its `seconds`, so it flies
 // at the same speed at any frame rate. Its settings come from
 // "script.settings" in the node's config, and all are optional:
 // - cruiseSpeed: how fast it flies at the cruising throttle, in scene units
@@ -34,12 +38,15 @@
 //   400 by default.
 // - upArrowDives: whether the up arrow dives, like a flight stick, rather
 //   than climbs. true by default.
+// - mouseSteering: whether the mouse steers. false by default.
+// - mouseSensitivity: how far the mouse turns and pitches the rocket, in
+//   degrees per pixel. 0.15 by default.
 //
 // It flies from wherever the node's state puts it, so moving the node, such
 // as in the editor, moves the rocket.
 //
 // When the node has a collider (see collision in @scenic/scene), the rocket
-// bounces off anything else with one, such as towers: it is pushed back out
+// bounces off anything else with one, such as trees: it is pushed back out
 // and its course turns away, like a ball off a wall. Pushing out assumes the
 // node's parent is not rotated or scaled.
 const {mat4} = require("@scenic/math");
@@ -58,6 +65,8 @@ const defaults = {
   minHeight: 80,
   pullUpHeight: 400,
   upArrowDives: true,
+  mouseSteering: false,
+  mouseSensitivity: 0.15,
 };
 
 // rotation is the rotation matrix for a rocket heading degrees around the
@@ -120,7 +129,7 @@ module.exports = function createFlyScript(node) {
   let flight = null;
 
   return {
-    preRender({seconds = 0, keys = new Set(), sceneManager}) {
+    preRender({seconds = 0, keys = new Set(), mouse = {x: 0, y: 0}, sceneManager}) {
       const state = sceneManager.getNodeStateByID(node.id);
       const settings = {...defaults, ...state.script.settings};
       if (!flight) {
@@ -147,11 +156,21 @@ module.exports = function createFlyScript(node) {
       // Turning left heads toward +X, the camera's left when it is behind the
       // rocket. A positive roll lowers the rocket's right side, so it banks
       // into the turn.
-      flight.heading += turn * settings.turnRate * seconds;
-      flight.roll += (-turn * settings.bank - flight.roll) * ease(settings.response);
+      // The mouse turns and pitches by how far it moved, in degrees. Moving
+      // it right turns right, and moving it up pushes the stick forward.
+      const mouseFactor = settings.mouseSteering ? settings.mouseSensitivity : 0;
+      const mouseTurn = -mouse.x * mouseFactor;
+      const mouseClimb = -mouse.y * mouseFactor * (settings.upArrowDives ? -1 : 1);
 
-      if (climb) {
-        flight.climb += climb * settings.climbRate * seconds;
+      // The rocket banks by how hard it is turning, as a part of turnRate, so
+      // that a quick flick of the mouse banks it as far as the keys do.
+      const turnSpeed = seconds > 0 ? mouseTurn / (settings.turnRate * seconds) : 0;
+      const steer = Math.max(-1, Math.min(1, turn + turnSpeed));
+      flight.heading += turn * settings.turnRate * seconds + mouseTurn;
+      flight.roll += (-steer * settings.bank - flight.roll) * ease(settings.response);
+
+      if (climb || mouseClimb) {
+        flight.climb += climb * settings.climbRate * seconds + mouseClimb;
       } else {
         flight.climb -= flight.climb * ease(settings.levelTime);
       }

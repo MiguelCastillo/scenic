@@ -180,6 +180,24 @@ body {
   width: 100%;
 }
 
+#paused {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 8px 20px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.55);
+  color: white;
+  font-size: 24px;
+  letter-spacing: 0.1em;
+  pointer-events: none;
+}
+
+#paused[hidden] {
+  display: none;
+}
+
 #glCanvas {
   height: 100%;
   width: 100%;

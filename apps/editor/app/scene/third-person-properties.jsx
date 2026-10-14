@@ -5,7 +5,8 @@ import {WithNodeState} from "./with-node-state.jsx";
 // ThirdPersonProperties edits the third-person settings of a camera that the
 // third-person camera reads every frame, so changes show up live while it
 // follows its target: how far it looks up past the target, how quickly it
-// catches up when the target turns, and where the pivot it orbits is. The
+// catches up when the target turns, where the pivot it orbits is, and whether
+// the mouse orbits it. The
 // other settings, such as its starting distance and orbit, only apply when the
 // camera switches to third person.
 export class ThirdPersonProperties extends WithNodeState {
@@ -49,10 +50,18 @@ export class ThirdPersonProperties extends WithNodeState {
       return null;
     }
 
-    const {lookUp = 0, followTime, offset} = settings;
+    const {lookUp = 0, followTime, offset, mouseOrbit = true} = settings;
 
     return (
       <div className="node-properties third-person">
+        <div className="mouse-orbit">
+          <label>Mouse orbits</label>
+          <input
+            type="checkbox"
+            onChange={(evt) => this.updateSettings({mouseOrbit: evt.target.checked})}
+            checked={mouseOrbit}
+          />
+        </div>
         <div className="look-up">
           <label>Look up</label>
           <input

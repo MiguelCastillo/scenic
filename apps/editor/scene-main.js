@@ -65,6 +65,20 @@ function createSceneUpdater(gl, sceneManager) {
     sceneManager.updateNodeStateByID(worldViewportID, {cameraMode: next});
   }
 
+  // turnCamera turns the camera as the mouse moves, unless the camera's
+  // settings for its mode leave the mouse to the scene with "mouseOrbit":
+  // false, such as so that a rocket can be steered with it. While paused the
+  // mouse always turns the camera, so a third-person camera can orbit what it
+  // follows.
+  function turnCamera(rightDegrees, upDegrees) {
+    const behavior = getCameraBehavior();
+    const settings = sceneManager.getNodeStateByID(getCamera().id).camera;
+    const modeSettings = settings[cameraModes[cameraMode].settingsKey];
+    if (paused || modeSettings.mouseOrbit !== false) {
+      behavior.turn(rightDegrees, upDegrees);
+    }
+  }
+
   // getCameraControls returns which camera the controls fly and the camera
   // mode they fly it in: the mode actually in use, after falling back to
   // free-fly, rather than what the viewport's state asks for.
@@ -76,9 +90,23 @@ function createSceneUpdater(gl, sceneManager) {
   let lastFrameMs = null;
   let frameSeconds = 0;
 
+  // While the scene is paused its clock stops: scripts get no time and no
+  // input, and animations hold still. The camera keeps responding, so the
+  // view can still be looked around (see turnCamera) and edits to the scene
+  // still show. Resuming puts a third-person camera back where it starts,
+  // behind what it follows.
+  // sceneMs is the scene's own clock, which only runs while it isn't paused.
+  let paused = false;
+  let sceneMs = null;
+
   // The keys being held down, by KeyboardEvent.code, which scripts get as
   // `keys` every frame. The app sets them with setHeldKeys.
   let heldKeys = new Set();
+
+  // How far the mouse has moved since the last frame, in pixels, which
+  // scripts get as `mouse`, {x, y}, every frame. Positive y is down. The app
+  // adds to it with addMouseMovement.
+  let mouseMovement = {x: 0, y: 0};
 
   // This is the logic for updating the scene state and the scene graph with the
   // new scene state. This is the logic for the game itself.
@@ -87,7 +115,8 @@ function createSceneUpdater(gl, sceneManager) {
     // after the page has been in the background and frames were paused.
     const seconds = lastFrameMs === null ? 0 : Math.min((ms - lastFrameMs) / 1000, 0.1);
     lastFrameMs = ms;
-    frameSeconds = seconds;
+    frameSeconds = paused ? 0 : seconds;
+    sceneMs = sceneMs === null ? ms : sceneMs + frameSeconds * 1000;
 
     getCameraBehavior().update(seconds);
 
@@ -112,10 +141,15 @@ function createSceneUpdater(gl, sceneManager) {
   };
 
   function renderFrame(ms) {
-    // Scripts get the frame's seconds and the held keys, so that a script such
-    // as a flight controller can move at the same speed at any frame rate and
-    // respond to the player.
-    sceneManager.render(ms, gl, {seconds: frameSeconds, keys: heldKeys});
+    // Scripts get the frame's seconds, the held keys and the mouse's
+    // movement, so that a script such as a flight controller can move at the
+    // same speed at any frame rate and respond to the player.
+    sceneManager.render(sceneMs ?? ms, gl, {
+      seconds: frameSeconds,
+      keys: paused ? new Set() : heldKeys,
+      mouse: paused ? {x: 0, y: 0} : mouseMovement,
+    });
+    mouseMovement = {x: 0, y: 0};
 
     // Let's write out the number of frames per second that we are able to
     // render.
@@ -130,13 +164,24 @@ function createSceneUpdater(gl, sceneManager) {
     updateScene,
     renderFrame,
     registerRefreshRateUpdater,
-    turnCamera: (...args) => getCameraBehavior().turn(...args),
+    turnCamera,
     moveCamera: (...args) => getCameraBehavior().move(...args),
     setCameraMovement: (...args) => getCameraBehavior().setMovement(...args),
     toggleCameraMode,
     getCameraControls,
     setHeldKeys: (keys) => {
       heldKeys = new Set(keys);
+    },
+    addMouseMovement: (x, y) => {
+      mouseMovement = {x: mouseMovement.x + x, y: mouseMovement.y + y};
+    },
+    togglePause: () => {
+      paused = !paused;
+      if (!paused && cameraMode === "third-person") {
+        // A new behavior starts from the camera's settings.
+        cameraMode = null;
+      }
+      return paused;
     },
   };
 }
@@ -180,6 +225,8 @@ export const renderScene = async (gl, config) => {
     toggleCameraMode,
     getCameraControls,
     setHeldKeys,
+    addMouseMovement,
+    togglePause,
   } = createSceneUpdater(gl, sceneManager);
 
   // This starts the render loop to render the scene!
@@ -225,6 +272,8 @@ export const renderScene = async (gl, config) => {
     toggleCameraMode,
     getCameraControls,
     setHeldKeys,
+    addMouseMovement,
+    togglePause,
     dispose,
   };
 };

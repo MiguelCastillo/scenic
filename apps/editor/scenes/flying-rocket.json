@@ -103,58 +103,41 @@
               "rotation": [-8, 0],
               "maxPitch": 70,
               "followTime": 0.25,
-              "lookUp": 15
+              "lookUp": 15,
+              "mouseOrbit": false
             }
           }
         },
         {
-          "name": "light-white",
+          "name": "sun",
           "type": "light",
           "resource": "/resources/obj/sphere.obj",
           "light": {
-            "intensity": 1,
-            "color": [1, 1, 1]
+            "intensity": 0.8,
+            "color": [1, 0.96, 0.88]
           },
           "material": {
-            "color": [1, 1, 1, 1],
+            "color": [1, 0.96, 0.88, 1],
             "reflectiveness": 1
           },
           "transform": {
-            "position": [0, 1500, 1290]
+            "position": [1229, 1721, 2128]
           }
         },
         {
-          "name": "light-cyan",
+          "name": "fill",
           "type": "light",
           "resource": "/resources/obj/sphere.obj",
           "light": {
-            "color": [0, 1, 1],
-            "intensity": 0.5
+            "intensity": 0.55,
+            "color": [0.7, 0.82, 1]
           },
           "material": {
-            "color": [0, 1, 1, 1],
+            "color": [0.7, 0.82, 1, 1],
             "reflectiveness": 1
           },
           "transform": {
-            "position": [-1200, 1500, 300]
-          }
-        },
-        {
-          "name": "light-magenta",
-          "type": "light",
-          "resource": "/resources/obj/sphere.obj",
-          "light": {
-            "intensity": 0.5,
-            "color": [1, 0, 1]
-          },
-          "material": {
-            "color": [1, 0, 1, 1],
-            "reflectiveness": 1
-          },
-          "transform": {
-            "scale": [1, 1, 1],
-            "position": [1200, 1500, 300],
-            "rotation": [0, 0, 0]
+            "position": [-1229, 1200, -2128]
           }
         },
         {
@@ -203,7 +186,10 @@
           "items": [
             {
               "name": "rocket",
-              "collider": {"shape": "sphere", "radius": 75},
+              "collider": {
+                "shape": "sphere",
+                "radius": 75
+              },
               "type": "transform",
               "transform": {
                 "position": [0, 200, 0],
@@ -225,6 +211,8 @@
                   "minHeight": 80,
                   "pullUpHeight": 400,
                   "upArrowDives": true,
+                  "mouseSteering": false,
+                  "mouseSensitivity": 0.15,
                   "throttle": 0.3
                 }
               },
@@ -344,851 +332,887 @@
           ]
         },
         {
-          "name": "towers",
+          "name": "trees",
           "type": "transform",
           "items": [
             {
-              "name": "tower 1",
+              "name": "tree 1",
               "type": "transform",
               "transform": {
-                "position": [-1762, 0, -3492]
+                "position": [-1762, 0, -3492],
+                "rotation": [0, 77, 0],
+                "scale": [1.96, 1.96, 1.96]
               },
               "items": [
                 {
-                  "name": "tower 1 column",
-                  "collider": {"shape": "cylinder"},
+                  "name": "tree 1 mesh",
                   "type": "static-mesh",
-                  "resource": "/resources/obj/cylinder.obj",
+                  "resource": "/resources/obj/tree-101.obj",
                   "material": {
-                    "color": [0.52, 0.802, 0.88, 1],
+                    "color": [0, 0, 0, 1],
                     "reflectiveness": 1,
-                    "specular": 0.4,
-                    "shininess": 32
+                    "specular": 0.1,
+                    "shininess": 16
                   },
                   "ambient": {
-                    "color": [0.3, 0.3, 0.35]
-                  },
-                  "transform": {
-                    "position": [0, 443, 0],
-                    "scale": [53, 443, 53]
+                    "color": [0.4, 0.4, 0.43]
                   }
                 },
                 {
-                  "name": "tower 1 roof",
-                  "collider": {"shape": "cone"},
-                  "type": "static-mesh",
-                  "resource": "/resources/obj/cone.obj",
-                  "material": {
-                    "color": [1, 1, 1, 1],
-                    "reflectiveness": 1,
-                    "specular": 0.6,
-                    "shininess": 64
-                  },
-                  "ambient": {
-                    "color": [0.3, 0.3, 0.35]
+                  "name": "tree 1 trunk",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 16.467,
+                    "height": 228.964
                   },
                   "transform": {
-                    "position": [0, 960, 0],
-                    "scale": [74, 74, 74]
+                    "position": [0, 114.482, 0]
+                  }
+                },
+                {
+                  "name": "tree 1 crown",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 217.369,
+                    "height": 294.206
+                  },
+                  "transform": {
+                    "position": [28.506, 339.291, -21.859]
                   }
                 }
               ]
             },
             {
-              "name": "tower 2",
+              "name": "tree 2",
               "type": "transform",
               "transform": {
-                "position": [-1343, 0, -4420]
+                "position": [-1343, 0, -4420],
+                "rotation": [0, 24, 0],
+                "scale": [2.02, 2.02, 2.02]
               },
               "items": [
                 {
-                  "name": "tower 2 column",
-                  "collider": {"shape": "cylinder"},
+                  "name": "tree 2 mesh",
                   "type": "static-mesh",
-                  "resource": "/resources/obj/cylinder.obj",
+                  "resource": "/resources/obj/tree-102.obj",
                   "material": {
-                    "color": [0.52, 0.88, 0.737, 1],
+                    "color": [0, 0, 0, 1],
                     "reflectiveness": 1,
-                    "specular": 0.4,
-                    "shininess": 32
+                    "specular": 0.1,
+                    "shininess": 16
                   },
                   "ambient": {
-                    "color": [0.3, 0.3, 0.35]
-                  },
-                  "transform": {
-                    "position": [0, 378, 0],
-                    "scale": [51, 378, 51]
+                    "color": [0.4, 0.4, 0.43]
                   }
                 },
                 {
-                  "name": "tower 2 roof",
-                  "collider": {"shape": "cone"},
-                  "type": "static-mesh",
-                  "resource": "/resources/obj/cone.obj",
-                  "material": {
-                    "color": [1, 1, 1, 1],
-                    "reflectiveness": 1,
-                    "specular": 0.6,
-                    "shininess": 64
-                  },
-                  "ambient": {
-                    "color": [0.3, 0.3, 0.35]
+                  "name": "tree 2 trunk",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 10.071,
+                    "height": 292.472
                   },
                   "transform": {
-                    "position": [0, 829, 0],
-                    "scale": [72, 72, 72]
+                    "position": [0, 146.236, 0]
+                  }
+                },
+                {
+                  "name": "tree 2 crown",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 147.686,
+                    "height": 234.607
+                  },
+                  "transform": {
+                    "position": [9.965, 265.085, -2.867]
                   }
                 }
               ]
             },
             {
-              "name": "tower 3",
+              "name": "tree 3",
               "type": "transform",
               "transform": {
-                "position": [-4301, 0, -4093]
+                "position": [-4301, 0, -4093],
+                "rotation": [0, 274, 0],
+                "scale": [1.76, 1.76, 1.76]
               },
               "items": [
                 {
-                  "name": "tower 3 column",
-                  "collider": {"shape": "cylinder"},
+                  "name": "tree 3 mesh",
                   "type": "static-mesh",
-                  "resource": "/resources/obj/cylinder.obj",
+                  "resource": "/resources/obj/tree-103.obj",
                   "material": {
-                    "color": [0.88, 0.787, 0.52, 1],
+                    "color": [0, 0, 0, 1],
                     "reflectiveness": 1,
-                    "specular": 0.4,
-                    "shininess": 32
+                    "specular": 0.1,
+                    "shininess": 16
                   },
                   "ambient": {
-                    "color": [0.3, 0.3, 0.35]
-                  },
-                  "transform": {
-                    "position": [0, 341, 0],
-                    "scale": [83, 341, 83]
+                    "color": [0.4, 0.4, 0.43]
                   }
                 },
                 {
-                  "name": "tower 3 roof",
-                  "collider": {"shape": "cone"},
-                  "type": "static-mesh",
-                  "resource": "/resources/obj/cone.obj",
-                  "material": {
-                    "color": [1, 1, 1, 1],
-                    "reflectiveness": 1,
-                    "specular": 0.6,
-                    "shininess": 64
-                  },
-                  "ambient": {
-                    "color": [0.3, 0.3, 0.35]
+                  "name": "tree 3 trunk",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 26.652,
+                    "height": 135.906
                   },
                   "transform": {
-                    "position": [0, 798, 0],
-                    "scale": [116, 116, 116]
+                    "position": [0, 67.953, 0]
+                  }
+                },
+                {
+                  "name": "tree 3 crown",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 118.796,
+                    "height": 575.887
+                  },
+                  "transform": {
+                    "position": [-2.962, 423.471, -7.192]
                   }
                 }
               ]
             },
             {
-              "name": "tower 4",
+              "name": "tree 4",
               "type": "transform",
               "transform": {
-                "position": [-2768, 0, 1274]
+                "position": [-2768, 0, 1274],
+                "rotation": [0, 298, 0],
+                "scale": [1.78, 1.78, 1.78]
               },
               "items": [
                 {
-                  "name": "tower 4 column",
-                  "collider": {"shape": "cylinder"},
+                  "name": "tree 4 mesh",
                   "type": "static-mesh",
-                  "resource": "/resources/obj/cylinder.obj",
+                  "resource": "/resources/obj/tree-104.obj",
                   "material": {
-                    "color": [0.52, 0.88, 0.657, 1],
+                    "color": [0, 0, 0, 1],
                     "reflectiveness": 1,
-                    "specular": 0.4,
-                    "shininess": 32
+                    "specular": 0.1,
+                    "shininess": 16
                   },
                   "ambient": {
-                    "color": [0.3, 0.3, 0.35]
-                  },
-                  "transform": {
-                    "position": [0, 576, 0],
-                    "scale": [73, 576, 73]
+                    "color": [0.4, 0.4, 0.43]
                   }
                 },
                 {
-                  "name": "tower 4 roof",
-                  "collider": {"shape": "cone"},
-                  "type": "static-mesh",
-                  "resource": "/resources/obj/cone.obj",
-                  "material": {
-                    "color": [1, 1, 1, 1],
-                    "reflectiveness": 1,
-                    "specular": 0.6,
-                    "shininess": 64
-                  },
-                  "ambient": {
-                    "color": [0.3, 0.3, 0.35]
+                  "name": "tree 4 trunk",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 23.633,
+                    "height": 166.412
                   },
                   "transform": {
-                    "position": [0, 1255, 0],
-                    "scale": [102, 102, 102]
+                    "position": [0, 83.206, 0]
+                  }
+                },
+                {
+                  "name": "tree 4 crown",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 193.491,
+                    "height": 181.523
+                  },
+                  "transform": {
+                    "position": [0.133, 217.305, 19.723]
                   }
                 }
               ]
             },
             {
-              "name": "tower 5",
+              "name": "tree 5",
               "type": "transform",
               "transform": {
-                "position": [4763, 0, -4534]
+                "position": [4763, 0, -4534],
+                "rotation": [0, 259, 0],
+                "scale": [1.75, 1.75, 1.75]
               },
               "items": [
                 {
-                  "name": "tower 5 column",
-                  "collider": {"shape": "cylinder"},
+                  "name": "tree 5 mesh",
                   "type": "static-mesh",
-                  "resource": "/resources/obj/cylinder.obj",
+                  "resource": "/resources/obj/tree-105.obj",
                   "material": {
-                    "color": [0.88, 0.832, 0.52, 1],
+                    "color": [0, 0, 0, 1],
                     "reflectiveness": 1,
-                    "specular": 0.4,
-                    "shininess": 32
+                    "specular": 0.1,
+                    "shininess": 16
                   },
                   "ambient": {
-                    "color": [0.3, 0.3, 0.35]
-                  },
-                  "transform": {
-                    "position": [0, 536, 0],
-                    "scale": [62, 536, 62]
+                    "color": [0.4, 0.4, 0.43]
                   }
                 },
                 {
-                  "name": "tower 5 roof",
-                  "collider": {"shape": "cone"},
-                  "type": "static-mesh",
-                  "resource": "/resources/obj/cone.obj",
-                  "material": {
-                    "color": [1, 1, 1, 1],
-                    "reflectiveness": 1,
-                    "specular": 0.6,
-                    "shininess": 64
-                  },
-                  "ambient": {
-                    "color": [0.3, 0.3, 0.35]
+                  "name": "tree 5 trunk",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 26.054,
+                    "height": 95.2
                   },
                   "transform": {
-                    "position": [0, 1159, 0],
-                    "scale": [86, 86, 86]
+                    "position": [0, 47.6, 0]
+                  }
+                },
+                {
+                  "name": "tree 5 crown",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 148.787,
+                    "height": 265.387
+                  },
+                  "transform": {
+                    "position": [-0.515, 191.866, -3.514]
                   }
                 }
               ]
             },
             {
-              "name": "tower 6",
+              "name": "tree 6",
               "type": "transform",
               "transform": {
-                "position": [-3822, 0, -1915]
+                "position": [-3822, 0, -1915],
+                "rotation": [0, 44, 0],
+                "scale": [1.87, 1.87, 1.87]
               },
               "items": [
                 {
-                  "name": "tower 6 column",
-                  "collider": {"shape": "cylinder"},
+                  "name": "tree 6 mesh",
                   "type": "static-mesh",
-                  "resource": "/resources/obj/cylinder.obj",
+                  "resource": "/resources/obj/tree-106.obj",
                   "material": {
-                    "color": [0.52, 0.704, 0.88, 1],
+                    "color": [0, 0, 0, 1],
                     "reflectiveness": 1,
-                    "specular": 0.4,
-                    "shininess": 32
+                    "specular": 0.1,
+                    "shininess": 16
                   },
                   "ambient": {
-                    "color": [0.3, 0.3, 0.35]
-                  },
-                  "transform": {
-                    "position": [0, 517, 0],
-                    "scale": [57, 517, 57]
+                    "color": [0.4, 0.4, 0.43]
                   }
                 },
                 {
-                  "name": "tower 6 roof",
-                  "collider": {"shape": "cone"},
-                  "type": "static-mesh",
-                  "resource": "/resources/obj/cone.obj",
-                  "material": {
-                    "color": [1, 1, 1, 1],
-                    "reflectiveness": 1,
-                    "specular": 0.6,
-                    "shininess": 64
-                  },
-                  "ambient": {
-                    "color": [0.3, 0.3, 0.35]
+                  "name": "tree 6 trunk",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 17.907,
+                    "height": 245.52
                   },
                   "transform": {
-                    "position": [0, 1115, 0],
-                    "scale": [80, 80, 80]
+                    "position": [0, 122.76, 0]
+                  }
+                },
+                {
+                  "name": "tree 6 crown",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 191.271,
+                    "height": 281.856
+                  },
+                  "transform": {
+                    "position": [28.751, 351.216, -10.792]
                   }
                 }
               ]
             },
             {
-              "name": "tower 7",
+              "name": "tree 7",
               "type": "transform",
               "transform": {
-                "position": [1389, 0, -1276]
+                "position": [1389, 0, -1276],
+                "rotation": [0, 35, 0],
+                "scale": [2.05, 2.05, 2.05]
               },
               "items": [
                 {
-                  "name": "tower 7 column",
-                  "collider": {"shape": "cylinder"},
+                  "name": "tree 7 mesh",
                   "type": "static-mesh",
-                  "resource": "/resources/obj/cylinder.obj",
+                  "resource": "/resources/obj/tree-107.obj",
                   "material": {
-                    "color": [0.88, 0.649, 0.52, 1],
+                    "color": [0, 0, 0, 1],
                     "reflectiveness": 1,
-                    "specular": 0.4,
-                    "shininess": 32
+                    "specular": 0.1,
+                    "shininess": 16
                   },
                   "ambient": {
-                    "color": [0.3, 0.3, 0.35]
-                  },
-                  "transform": {
-                    "position": [0, 396, 0],
-                    "scale": [53, 396, 53]
+                    "color": [0.4, 0.4, 0.43]
                   }
                 },
                 {
-                  "name": "tower 7 roof",
-                  "collider": {"shape": "cone"},
-                  "type": "static-mesh",
-                  "resource": "/resources/obj/cone.obj",
-                  "material": {
-                    "color": [1, 1, 1, 1],
-                    "reflectiveness": 1,
-                    "specular": 0.6,
-                    "shininess": 64
-                  },
-                  "ambient": {
-                    "color": [0.3, 0.3, 0.35]
+                  "name": "tree 7 trunk",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 9.414,
+                    "height": 316.997
                   },
                   "transform": {
-                    "position": [0, 866, 0],
-                    "scale": [74, 74, 74]
+                    "position": [0, 158.498, 0]
+                  }
+                },
+                {
+                  "name": "tree 7 crown",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 143.268,
+                    "height": 231.224
+                  },
+                  "transform": {
+                    "position": [4.764, 378.824, 3.589]
                   }
                 }
               ]
             },
             {
-              "name": "tower 8",
+              "name": "tree 8",
               "type": "transform",
               "transform": {
-                "position": [-2940, 0, 1804]
+                "position": [-2940, 0, 1804],
+                "rotation": [0, 282, 0],
+                "scale": [1.89, 1.89, 1.89]
               },
               "items": [
                 {
-                  "name": "tower 8 column",
-                  "collider": {"shape": "cylinder"},
+                  "name": "tree 8 mesh",
                   "type": "static-mesh",
-                  "resource": "/resources/obj/cylinder.obj",
+                  "resource": "/resources/obj/tree-108.obj",
                   "material": {
-                    "color": [0.52, 0.695, 0.88, 1],
+                    "color": [0, 0, 0, 1],
                     "reflectiveness": 1,
-                    "specular": 0.4,
-                    "shininess": 32
+                    "specular": 0.1,
+                    "shininess": 16
                   },
                   "ambient": {
-                    "color": [0.3, 0.3, 0.35]
-                  },
-                  "transform": {
-                    "position": [0, 342, 0],
-                    "scale": [63, 342, 63]
+                    "color": [0.4, 0.4, 0.43]
                   }
                 },
                 {
-                  "name": "tower 8 roof",
-                  "collider": {"shape": "cone"},
-                  "type": "static-mesh",
-                  "resource": "/resources/obj/cone.obj",
-                  "material": {
-                    "color": [1, 1, 1, 1],
-                    "reflectiveness": 1,
-                    "specular": 0.6,
-                    "shininess": 64
-                  },
-                  "ambient": {
-                    "color": [0.3, 0.3, 0.35]
+                  "name": "tree 8 trunk",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 22.178,
+                    "height": 186.902
                   },
                   "transform": {
-                    "position": [0, 772, 0],
-                    "scale": [88, 88, 88]
+                    "position": [0, 93.451, 0]
+                  }
+                },
+                {
+                  "name": "tree 8 crown",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 189.392,
+                    "height": 201.8
+                  },
+                  "transform": {
+                    "position": [-8.146, 249.112, -28.581]
                   }
                 }
               ]
             },
             {
-              "name": "tower 9",
+              "name": "tree 9",
               "type": "transform",
               "transform": {
-                "position": [-468, 0, -2002]
+                "position": [-468, 0, -2002],
+                "rotation": [0, 289, 0],
+                "scale": [2.04, 2.04, 2.04]
               },
               "items": [
                 {
-                  "name": "tower 9 column",
-                  "collider": {"shape": "cylinder"},
+                  "name": "tree 9 mesh",
                   "type": "static-mesh",
-                  "resource": "/resources/obj/cylinder.obj",
+                  "resource": "/resources/obj/tree-109.obj",
                   "material": {
-                    "color": [0.713, 0.88, 0.52, 1],
+                    "color": [0, 0, 0, 1],
                     "reflectiveness": 1,
-                    "specular": 0.4,
-                    "shininess": 32
+                    "specular": 0.1,
+                    "shininess": 16
                   },
                   "ambient": {
-                    "color": [0.3, 0.3, 0.35]
-                  },
-                  "transform": {
-                    "position": [0, 507, 0],
-                    "scale": [78, 507, 78]
+                    "color": [0.4, 0.4, 0.43]
                   }
                 },
                 {
-                  "name": "tower 9 roof",
-                  "collider": {"shape": "cone"},
-                  "type": "static-mesh",
-                  "resource": "/resources/obj/cone.obj",
-                  "material": {
-                    "color": [1, 1, 1, 1],
-                    "reflectiveness": 1,
-                    "specular": 0.6,
-                    "shininess": 64
-                  },
-                  "ambient": {
-                    "color": [0.3, 0.3, 0.35]
+                  "name": "tree 9 trunk",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 23.963,
+                    "height": 163.15
                   },
                   "transform": {
-                    "position": [0, 1124, 0],
-                    "scale": [109, 109, 109]
+                    "position": [0, 81.575, 0]
+                  }
+                },
+                {
+                  "name": "tree 9 crown",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 173.594,
+                    "height": 177.548
+                  },
+                  "transform": {
+                    "position": [16.821, 234.293, -24.873]
                   }
                 }
               ]
             },
             {
-              "name": "tower 10",
+              "name": "tree 10",
               "type": "transform",
               "transform": {
-                "position": [744, 0, 252]
+                "position": [744, 0, 252],
+                "rotation": [0, 114, 0],
+                "scale": [1.8, 1.8, 1.8]
               },
               "items": [
                 {
-                  "name": "tower 10 column",
-                  "collider": {"shape": "cylinder"},
+                  "name": "tree 10 mesh",
                   "type": "static-mesh",
-                  "resource": "/resources/obj/cylinder.obj",
+                  "resource": "/resources/obj/tree-110.obj",
                   "material": {
-                    "color": [0.618, 0.88, 0.52, 1],
+                    "color": [0, 0, 0, 1],
                     "reflectiveness": 1,
-                    "specular": 0.4,
-                    "shininess": 32
+                    "specular": 0.1,
+                    "shininess": 16
                   },
                   "ambient": {
-                    "color": [0.3, 0.3, 0.35]
-                  },
-                  "transform": {
-                    "position": [0, 544, 0],
-                    "scale": [79, 544, 79]
+                    "color": [0.4, 0.4, 0.43]
                   }
                 },
                 {
-                  "name": "tower 10 roof",
-                  "collider": {"shape": "cone"},
-                  "type": "static-mesh",
-                  "resource": "/resources/obj/cone.obj",
-                  "material": {
-                    "color": [1, 1, 1, 1],
-                    "reflectiveness": 1,
-                    "specular": 0.6,
-                    "shininess": 64
-                  },
-                  "ambient": {
-                    "color": [0.3, 0.3, 0.35]
+                  "name": "tree 10 trunk",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 31.818,
+                    "height": 217.233
                   },
                   "transform": {
-                    "position": [0, 1198, 0],
-                    "scale": [111, 111, 111]
+                    "position": [0, 108.616, 0]
+                  }
+                },
+                {
+                  "name": "tree 10 crown",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 253.481,
+                    "height": 276.18
+                  },
+                  "transform": {
+                    "position": [9.635, 311.651, -4.555]
                   }
                 }
               ]
             },
             {
-              "name": "tower 11",
+              "name": "tree 11",
               "type": "transform",
               "transform": {
-                "position": [4802, 0, -3819]
+                "position": [4802, 0, -3819],
+                "rotation": [0, 298, 0],
+                "scale": [2.2, 2.2, 2.2]
               },
               "items": [
                 {
-                  "name": "tower 11 column",
-                  "collider": {"shape": "cylinder"},
+                  "name": "tree 11 mesh",
                   "type": "static-mesh",
-                  "resource": "/resources/obj/cylinder.obj",
+                  "resource": "/resources/obj/tree-111.obj",
                   "material": {
-                    "color": [0.88, 0.848, 0.52, 1],
+                    "color": [0, 0, 0, 1],
                     "reflectiveness": 1,
-                    "specular": 0.4,
-                    "shininess": 32
+                    "specular": 0.1,
+                    "shininess": 16
                   },
                   "ambient": {
-                    "color": [0.3, 0.3, 0.35]
-                  },
-                  "transform": {
-                    "position": [0, 338, 0],
-                    "scale": [80, 338, 80]
+                    "color": [0.4, 0.4, 0.43]
                   }
                 },
                 {
-                  "name": "tower 11 roof",
-                  "collider": {"shape": "cone"},
-                  "type": "static-mesh",
-                  "resource": "/resources/obj/cone.obj",
-                  "material": {
-                    "color": [1, 1, 1, 1],
-                    "reflectiveness": 1,
-                    "specular": 0.6,
-                    "shininess": 64
-                  },
-                  "ambient": {
-                    "color": [0.3, 0.3, 0.35]
+                  "name": "tree 11 trunk",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 27.951,
+                    "height": 240.329
                   },
                   "transform": {
-                    "position": [0, 789, 0],
-                    "scale": [112, 112, 112]
+                    "position": [0, 120.165, 0]
+                  }
+                },
+                {
+                  "name": "tree 11 crown",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 225.065,
+                    "height": 286.602
+                  },
+                  "transform": {
+                    "position": [-2.369, 298.808, 0.861]
                   }
                 }
               ]
             },
             {
-              "name": "tower 12",
+              "name": "tree 12",
               "type": "transform",
               "transform": {
-                "position": [-110, 0, -4608]
+                "position": [-110, 0, -4608],
+                "rotation": [0, 295, 0],
+                "scale": [2.46, 2.46, 2.46]
               },
               "items": [
                 {
-                  "name": "tower 12 column",
-                  "collider": {"shape": "cylinder"},
+                  "name": "tree 12 mesh",
                   "type": "static-mesh",
-                  "resource": "/resources/obj/cylinder.obj",
+                  "resource": "/resources/obj/tree-112.obj",
                   "material": {
-                    "color": [0.52, 0.722, 0.88, 1],
+                    "color": [0, 0, 0, 1],
                     "reflectiveness": 1,
-                    "specular": 0.4,
-                    "shininess": 32
+                    "specular": 0.1,
+                    "shininess": 16
                   },
                   "ambient": {
-                    "color": [0.3, 0.3, 0.35]
-                  },
-                  "transform": {
-                    "position": [0, 451, 0],
-                    "scale": [81, 451, 81]
+                    "color": [0.4, 0.4, 0.43]
                   }
                 },
                 {
-                  "name": "tower 12 roof",
-                  "collider": {"shape": "cone"},
-                  "type": "static-mesh",
-                  "resource": "/resources/obj/cone.obj",
-                  "material": {
-                    "color": [1, 1, 1, 1],
-                    "reflectiveness": 1,
-                    "specular": 0.6,
-                    "shininess": 64
-                  },
-                  "ambient": {
-                    "color": [0.3, 0.3, 0.35]
+                  "name": "tree 12 trunk",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 27.149,
+                    "height": 108.505
                   },
                   "transform": {
-                    "position": [0, 1014, 0],
-                    "scale": [113, 113, 113]
+                    "position": [0, 54.253, 0]
+                  }
+                },
+                {
+                  "name": "tree 12 crown",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 143.368,
+                    "height": 250.664
+                  },
+                  "transform": {
+                    "position": [-7.258, 199.334, 4.932]
                   }
                 }
               ]
             },
             {
-              "name": "tower 13",
+              "name": "tree 13",
               "type": "transform",
               "transform": {
-                "position": [3755, 0, -1863]
+                "position": [3755, 0, -1863],
+                "rotation": [0, 25, 0],
+                "scale": [2.17, 2.17, 2.17]
               },
               "items": [
                 {
-                  "name": "tower 13 column",
-                  "collider": {"shape": "cylinder"},
+                  "name": "tree 13 mesh",
                   "type": "static-mesh",
-                  "resource": "/resources/obj/cylinder.obj",
+                  "resource": "/resources/obj/tree-113.obj",
                   "material": {
-                    "color": [0.52, 0.707, 0.88, 1],
+                    "color": [0, 0, 0, 1],
                     "reflectiveness": 1,
-                    "specular": 0.4,
-                    "shininess": 32
+                    "specular": 0.1,
+                    "shininess": 16
                   },
                   "ambient": {
-                    "color": [0.3, 0.3, 0.35]
-                  },
-                  "transform": {
-                    "position": [0, 463, 0],
-                    "scale": [74, 463, 74]
+                    "color": [0.4, 0.4, 0.43]
                   }
                 },
                 {
-                  "name": "tower 13 roof",
-                  "collider": {"shape": "cone"},
-                  "type": "static-mesh",
-                  "resource": "/resources/obj/cone.obj",
-                  "material": {
-                    "color": [1, 1, 1, 1],
-                    "reflectiveness": 1,
-                    "specular": 0.6,
-                    "shininess": 64
-                  },
-                  "ambient": {
-                    "color": [0.3, 0.3, 0.35]
+                  "name": "tree 13 trunk",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 26.885,
+                    "height": 242.324
                   },
                   "transform": {
-                    "position": [0, 1029, 0],
-                    "scale": [103, 103, 103]
+                    "position": [0, 121.162, 0]
+                  }
+                },
+                {
+                  "name": "tree 13 crown",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 200.632,
+                    "height": 238.555
+                  },
+                  "transform": {
+                    "position": [-13.668, 309.456, 3.861]
                   }
                 }
               ]
             },
             {
-              "name": "tower 14",
+              "name": "tree 14",
               "type": "transform",
               "transform": {
-                "position": [-438, 0, 3400]
+                "position": [-438, 0, 3400],
+                "rotation": [0, 23, 0],
+                "scale": [2.48, 2.48, 2.48]
               },
               "items": [
                 {
-                  "name": "tower 14 column",
-                  "collider": {"shape": "cylinder"},
+                  "name": "tree 14 mesh",
                   "type": "static-mesh",
-                  "resource": "/resources/obj/cylinder.obj",
+                  "resource": "/resources/obj/tree-114.obj",
                   "material": {
-                    "color": [0.52, 0.525, 0.88, 1],
+                    "color": [0, 0, 0, 1],
                     "reflectiveness": 1,
-                    "specular": 0.4,
-                    "shininess": 32
+                    "specular": 0.1,
+                    "shininess": 16
                   },
                   "ambient": {
-                    "color": [0.3, 0.3, 0.35]
-                  },
-                  "transform": {
-                    "position": [0, 575, 0],
-                    "scale": [69, 575, 69]
+                    "color": [0.4, 0.4, 0.43]
                   }
                 },
                 {
-                  "name": "tower 14 roof",
-                  "collider": {"shape": "cone"},
-                  "type": "static-mesh",
-                  "resource": "/resources/obj/cone.obj",
-                  "material": {
-                    "color": [1, 1, 1, 1],
-                    "reflectiveness": 1,
-                    "specular": 0.6,
-                    "shininess": 64
-                  },
-                  "ambient": {
-                    "color": [0.3, 0.3, 0.35]
+                  "name": "tree 14 trunk",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 9.853,
+                    "height": 295.644
                   },
                   "transform": {
-                    "position": [0, 1247, 0],
-                    "scale": [97, 97, 97]
+                    "position": [0, 147.822, 0]
+                  }
+                },
+                {
+                  "name": "tree 14 crown",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 109.494,
+                    "height": 194.404
+                  },
+                  "transform": {
+                    "position": [12.317, 315.251, -1.944]
                   }
                 }
               ]
             },
             {
-              "name": "tower 15",
+              "name": "tree 15",
               "type": "transform",
               "transform": {
-                "position": [-4393, 0, 2015]
+                "position": [-4393, 0, 2015],
+                "rotation": [0, 68, 0],
+                "scale": [2.15, 2.15, 2.15]
               },
               "items": [
                 {
-                  "name": "tower 15 column",
-                  "collider": {"shape": "cylinder"},
+                  "name": "tree 15 mesh",
                   "type": "static-mesh",
-                  "resource": "/resources/obj/cylinder.obj",
+                  "resource": "/resources/obj/tree-115.obj",
                   "material": {
-                    "color": [0.855, 0.52, 0.88, 1],
+                    "color": [0, 0, 0, 1],
                     "reflectiveness": 1,
-                    "specular": 0.4,
-                    "shininess": 32
+                    "specular": 0.1,
+                    "shininess": 16
                   },
                   "ambient": {
-                    "color": [0.3, 0.3, 0.35]
-                  },
-                  "transform": {
-                    "position": [0, 441, 0],
-                    "scale": [90, 441, 90]
+                    "color": [0.4, 0.4, 0.43]
                   }
                 },
                 {
-                  "name": "tower 15 roof",
-                  "collider": {"shape": "cone"},
-                  "type": "static-mesh",
-                  "resource": "/resources/obj/cone.obj",
-                  "material": {
-                    "color": [1, 1, 1, 1],
-                    "reflectiveness": 1,
-                    "specular": 0.6,
-                    "shininess": 64
-                  },
-                  "ambient": {
-                    "color": [0.3, 0.3, 0.35]
+                  "name": "tree 15 trunk",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 20.911,
+                    "height": 84.488
                   },
                   "transform": {
-                    "position": [0, 1008, 0],
-                    "scale": [126, 126, 126]
+                    "position": [0, 42.244, 0]
+                  }
+                },
+                {
+                  "name": "tree 15 crown",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 129.368,
+                    "height": 220.01
+                  },
+                  "transform": {
+                    "position": [-5.907, 165.913, 3.199]
                   }
                 }
               ]
             },
             {
-              "name": "tower 16",
+              "name": "tree 16",
               "type": "transform",
               "transform": {
-                "position": [-2154, 0, -1142]
+                "position": [-2154, 0, -1142],
+                "rotation": [0, 73, 0],
+                "scale": [1.93, 1.93, 1.93]
               },
               "items": [
                 {
-                  "name": "tower 16 column",
-                  "collider": {"shape": "cylinder"},
+                  "name": "tree 16 mesh",
                   "type": "static-mesh",
-                  "resource": "/resources/obj/cylinder.obj",
+                  "resource": "/resources/obj/tree-116.obj",
                   "material": {
-                    "color": [0.52, 0.88, 0.797, 1],
+                    "color": [0, 0, 0, 1],
                     "reflectiveness": 1,
-                    "specular": 0.4,
-                    "shininess": 32
+                    "specular": 0.1,
+                    "shininess": 16
                   },
                   "ambient": {
-                    "color": [0.3, 0.3, 0.35]
-                  },
-                  "transform": {
-                    "position": [0, 451, 0],
-                    "scale": [51, 451, 51]
+                    "color": [0.4, 0.4, 0.43]
                   }
                 },
                 {
-                  "name": "tower 16 roof",
-                  "collider": {"shape": "cone"},
-                  "type": "static-mesh",
-                  "resource": "/resources/obj/cone.obj",
-                  "material": {
-                    "color": [1, 1, 1, 1],
-                    "reflectiveness": 1,
-                    "specular": 0.6,
-                    "shininess": 64
-                  },
-                  "ambient": {
-                    "color": [0.3, 0.3, 0.35]
+                  "name": "tree 16 trunk",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 19.678,
+                    "height": 77.507
                   },
                   "transform": {
-                    "position": [0, 973, 0],
-                    "scale": [71, 71, 71]
+                    "position": [0, 38.753, 0]
+                  }
+                },
+                {
+                  "name": "tree 16 crown",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 118.607,
+                    "height": 177.376
+                  },
+                  "transform": {
+                    "position": [0.108, 139.01, 2.647]
                   }
                 }
               ]
             },
             {
-              "name": "tower 17",
+              "name": "tree 17",
               "type": "transform",
               "transform": {
-                "position": [-3320, 0, -3829]
+                "position": [-3320, 0, -3829],
+                "rotation": [0, 292, 0],
+                "scale": [2.13, 2.13, 2.13]
               },
               "items": [
                 {
-                  "name": "tower 17 column",
-                  "collider": {"shape": "cylinder"},
+                  "name": "tree 17 mesh",
                   "type": "static-mesh",
-                  "resource": "/resources/obj/cylinder.obj",
+                  "resource": "/resources/obj/tree-117.obj",
                   "material": {
-                    "color": [0.88, 0.799, 0.52, 1],
+                    "color": [0, 0, 0, 1],
                     "reflectiveness": 1,
-                    "specular": 0.4,
-                    "shininess": 32
+                    "specular": 0.1,
+                    "shininess": 16
                   },
                   "ambient": {
-                    "color": [0.3, 0.3, 0.35]
-                  },
-                  "transform": {
-                    "position": [0, 177, 0],
-                    "scale": [81, 177, 81]
+                    "color": [0.4, 0.4, 0.43]
                   }
                 },
                 {
-                  "name": "tower 17 roof",
-                  "collider": {"shape": "cone"},
-                  "type": "static-mesh",
-                  "resource": "/resources/obj/cone.obj",
-                  "material": {
-                    "color": [1, 1, 1, 1],
-                    "reflectiveness": 1,
-                    "specular": 0.6,
-                    "shininess": 64
-                  },
-                  "ambient": {
-                    "color": [0.3, 0.3, 0.35]
+                  "name": "tree 17 trunk",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 20.776,
+                    "height": 130.897
                   },
                   "transform": {
-                    "position": [0, 466, 0],
-                    "scale": [113, 113, 113]
+                    "position": [0, 65.449, 0]
+                  }
+                },
+                {
+                  "name": "tree 17 crown",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 120.437,
+                    "height": 568.716
+                  },
+                  "transform": {
+                    "position": [-0.246, 405.935, 8.829]
                   }
                 }
               ]
             },
             {
-              "name": "tower 18",
+              "name": "tree 18",
               "type": "transform",
               "transform": {
-                "position": [-2524, 0, -1091]
+                "position": [-2524, 0, -1091],
+                "rotation": [0, 349, 0],
+                "scale": [1.95, 1.95, 1.95]
               },
               "items": [
                 {
-                  "name": "tower 18 column",
-                  "collider": {"shape": "cylinder"},
+                  "name": "tree 18 mesh",
                   "type": "static-mesh",
-                  "resource": "/resources/obj/cylinder.obj",
+                  "resource": "/resources/obj/tree-118.obj",
                   "material": {
-                    "color": [0.52, 0.88, 0.77, 1],
+                    "color": [0, 0, 0, 1],
                     "reflectiveness": 1,
-                    "specular": 0.4,
-                    "shininess": 32
+                    "specular": 0.1,
+                    "shininess": 16
                   },
                   "ambient": {
-                    "color": [0.3, 0.3, 0.35]
-                  },
-                  "transform": {
-                    "position": [0, 542, 0],
-                    "scale": [53, 542, 53]
+                    "color": [0.4, 0.4, 0.43]
                   }
                 },
                 {
-                  "name": "tower 18 roof",
-                  "collider": {"shape": "cone"},
-                  "type": "static-mesh",
-                  "resource": "/resources/obj/cone.obj",
-                  "material": {
-                    "color": [1, 1, 1, 1],
-                    "reflectiveness": 1,
-                    "specular": 0.6,
-                    "shininess": 64
-                  },
-                  "ambient": {
-                    "color": [0.3, 0.3, 0.35]
+                  "name": "tree 18 trunk",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 28.929,
+                    "height": 99.249
                   },
                   "transform": {
-                    "position": [0, 1159, 0],
-                    "scale": [75, 75, 75]
+                    "position": [0, 49.625, 0]
+                  }
+                },
+                {
+                  "name": "tree 18 crown",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 132.594,
+                    "height": 212.295
+                  },
+                  "transform": {
+                    "position": [-0.407, 176.73, 0.733]
                   }
                 }
               ]
