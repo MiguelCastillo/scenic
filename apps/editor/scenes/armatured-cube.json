@@ -69,6 +69,11 @@
     {
       "name": "world",
       "type": "viewport",
+      "fog": {
+        "color": [0, 0, 0],
+        "near": 1000,
+        "far": 3000
+      },
       "items": [
         {
           "name": "camera",

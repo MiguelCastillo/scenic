@@ -3,7 +3,21 @@ import {vec3} from "@scenic/math";
 import {Renderable} from "./renderable.js";
 import {findParentItemsWithItemTypeName} from "./traversal.js";
 
+// specularDefaults are the specular settings of a material that does not set
+// its own: a moderate shine.
+export const specularDefaults = {specular: 0.5, shininess: 32};
+
 export class Mesh extends Renderable {
+  // Specular defaults are set once, when the mesh gets its program, and a
+  // program keeps uniform values between frames. A Material node under the
+  // mesh can then override them as it renders, and the mesh's own material
+  // state overrides both when the mesh renders.
+  withShaderProgram(shaderProgram) {
+    super.withShaderProgram(shaderProgram);
+    this.shaderProgram.addUniforms(Mesh.specularUniforms(specularDefaults));
+    return this;
+  }
+
   render(context) {
     if (this.vertexBuffers.length && this.shaderProgram) {
       const lightsState = this.getLightsState(context);
@@ -120,6 +134,10 @@ export class Mesh extends Renderable {
       }
     }
 
+    if (material) {
+      uniforms.push(...Mesh.specularUniforms(material));
+    }
+
     if (ambient) {
       if (ambient.color != null) {
         uniforms.push({
@@ -135,6 +153,31 @@ export class Mesh extends Renderable {
     if (uniforms.length) {
       shaderProgram.addUniforms(uniforms);
     }
+  }
+
+  // specularUniforms configures specular highlights from a material's
+  // `specular` and `shininess`, for the ones it sets. Highlights are scaled
+  // by reflectiveness like diffuse light, so a material that does not reflect
+  // light has none.
+  static specularUniforms({specular, shininess}) {
+    const uniforms = [];
+    if (specular != null) {
+      uniforms.push({
+        name: "materialSpecular",
+        update: (gl, {index}) => {
+          gl.uniform1f(index, specular);
+        },
+      });
+    }
+    if (shininess != null) {
+      uniforms.push({
+        name: "materialShininess",
+        update: (gl, {index}) => {
+          gl.uniform1f(index, shininess);
+        },
+      });
+    }
+    return uniforms;
   }
 
   static render(node) {
@@ -154,6 +197,7 @@ export class Mesh extends Renderable {
           gl.uniformMatrix4fv(index, true, worldMatrix.data);
         },
       },
+      ...node.getViewUniforms(),
     ];
 
     // Configure shader program with its current state.

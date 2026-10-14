@@ -16,6 +16,7 @@ uniform sampler2D boneMatrixTexture;
 
 out vec4 fragmentColor;
 out vec4 fragmentNormal;
+out vec3 fragmentWorldPosition;
 
 mat4 getBoneMatrix(int boneIndex) {
   return mat4(
@@ -38,7 +39,9 @@ void main() {
     matrix = weightedMatrix;
   }
 
-  gl_Position = projectionMatrix * matrix * vec4(position, 1.0);
+  vec4 worldPosition = matrix * vec4(position, 1.0);
+  gl_Position = projectionMatrix * worldPosition;
+  fragmentWorldPosition = worldPosition.xyz;
   fragmentNormal = matrix * vec4(normal, 0.0);
   fragmentColor = vec4(color, 1.0);
 }

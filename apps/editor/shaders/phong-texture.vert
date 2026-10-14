@@ -38,11 +38,17 @@ uniform mat4 projectionMatrix;
 uniform mat4 worldMatrix;
 uniform Light lights[MAX_LIGHTS];
 uniform Texture normalmap;
+uniform vec3 cameraPosition;
 
 out vec4 fragmentPosition;
 out vec4 fragmentColor;
 out vec4 fragmentNormal;
 out vec2 fragmentTextureCoord;
+out vec3 fragmentWorldPosition;
+
+// The direction from the vertex to the camera, in tangent space like the
+// lights when bump lighting is enabled.
+out vec3 viewDirection;
 
 // Light positions information. These are multiplied by the TBN matrix
 // to change their space from world to tangent space for bump lighting.
@@ -54,7 +60,10 @@ out vec3 lightPosition4;
 out vec3 lightPosition5;
 
 void main() {
-  fragmentPosition = projectionMatrix * worldMatrix * vec4(position, 1.0);
+  vec4 worldPosition = worldMatrix * vec4(position, 1.0);
+  fragmentPosition = projectionMatrix * worldPosition;
+  fragmentWorldPosition = worldPosition.xyz;
+  viewDirection = cameraPosition - worldPosition.xyz;
   fragmentNormal = worldMatrix * vec4(normal, 0.0);
   fragmentTextureCoord = textureCoord;
   fragmentColor = vec4(color, 1.0);
@@ -75,6 +84,8 @@ void main() {
     // Convert light position to tangent space so that the fragment shader
     // can calculate lighting in that space.
     TBN = transpose(TBN);
+
+    viewDirection = TBN * viewDirection;
 
     if (lights[0].enabled) {
       lightPosition0 = TBN * lightPosition0;

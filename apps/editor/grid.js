@@ -78,6 +78,7 @@ export class Grid extends Renderable {
             gl.uniform4fv(index, color);
           },
         },
+        ...this.getViewUniforms(),
       ])
       .render(this.lines, context.gl.LINES);
   }

@@ -1,3 +1,4 @@
+import {Mesh} from "./mesh.js";
 import {Node} from "./node.js";
 import {Renderable} from "./renderable.js";
 
@@ -48,6 +49,11 @@ export class Material extends Node {
       if (state.ambient?.color) {
         this.withAmbientColor(state.ambient.color);
       }
+
+      // Specular settings are left to the mesh's defaults unless the state
+      // sets them.
+      this.specular = state.material?.specular;
+      this.shininess = state.material?.shininess;
     }
   }
 
@@ -76,6 +82,7 @@ export class Material extends Node {
             gl.uniform4fv(index, this.materialColor);
           },
         },
+        ...Mesh.specularUniforms(this),
       ]);
     }
   }

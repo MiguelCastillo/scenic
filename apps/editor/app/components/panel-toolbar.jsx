@@ -3,6 +3,7 @@ import "./panel-toolbar.css";
 
 import {
   Axes,
+  Fog,
   InfoEmpty,
   Keyframes,
   PerspectiveView,
@@ -30,6 +31,8 @@ function getTabDetails(tab) {
       return {icon: PerspectiveView, label: "Projection"};
     case "light":
       return {icon: SunLight, label: "Light"};
+    case "fog":
+      return {icon: Fog, label: "Fog"};
   }
 }
 

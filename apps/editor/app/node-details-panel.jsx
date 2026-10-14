@@ -6,6 +6,7 @@ import {LightDetailsPanel} from "./scene/light-details-panel.jsx";
 import {TransformDetailsPanel} from "./scene/transform-details-panel.jsx";
 import {CameraDetailsPanel} from "./scene/camera-details-panel.jsx";
 import {MaterialDetailsPanel} from "./scene/material-details-panel.jsx";
+import {ViewportDetailsPanel} from "./scene/viewport-details-panel.jsx";
 
 export class NodeDetailsPanel extends React.Component {
   render() {
@@ -35,6 +36,9 @@ export class NodeDetailsPanel extends React.Component {
         break;
       case "animation":
         children = <AnimationPanel node={node} />;
+        break;
+      case "viewport":
+        children = <ViewportDetailsPanel node={node} />;
         break;
       case "material":
         children = <MaterialDetailsPanel node={node}/>;

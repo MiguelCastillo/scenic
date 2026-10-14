@@ -37,6 +37,7 @@ export class Light extends Renderable {
           gl.uniform4fv(index, renderableState.material.color);
         },
       },
+      ...this.getViewUniforms(),
     ]);
 
     vertexBuffers.forEach((vb) => sp.render(vb));

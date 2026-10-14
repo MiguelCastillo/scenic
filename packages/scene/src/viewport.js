@@ -76,6 +76,9 @@ export class Viewport extends Node {
     // preRender before any render, so the camera's matrices are current by
     // then.
     this._viewProjectionMatrix = null;
+    this._viewUniforms = null;
+    const fog = context.sceneManager.getNodeStateByID(this.id)?.fog;
+    this._fog = fog && fog.enabled !== false ? fog : null;
   }
 
   // viewProjectionMatrix takes renderables in this viewport from world space
@@ -93,5 +96,60 @@ export class Viewport extends Node {
     }
 
     return this._viewProjectionMatrix;
+  }
+
+  // viewUniforms are the shader uniforms that describe how this viewport is
+  // seen: where the active camera is, which lighting uses for specular
+  // highlights, and the fog that fades what is far from the camera. Fog is
+  // the viewport's `fog` state, `{color, near, far}`, and is off when the
+  // state has none or its `enabled` is false.
+  get viewUniforms() {
+    if (!this._viewUniforms) {
+      // Matrix4 data is row-major, so the camera's position is the last
+      // column of its world matrix.
+      const m = this.activeCamera.worldMatrix.data;
+      const cameraPosition = [m[3], m[7], m[11]];
+      const fog = this._fog;
+
+      this._viewUniforms = [
+        {
+          name: "cameraPosition",
+          update: (gl, {index}) => {
+            gl.uniform3fv(index, cameraPosition);
+          },
+        },
+        {
+          name: "fogEnabled",
+          update: (gl, {index}) => {
+            gl.uniform1i(index, !!fog);
+          },
+        },
+      ];
+
+      if (fog) {
+        this._viewUniforms.push(
+          {
+            name: "fogColor",
+            update: (gl, {index}) => {
+              gl.uniform3fv(index, fog.color || [0, 0, 0]);
+            },
+          },
+          {
+            name: "fogNear",
+            update: (gl, {index}) => {
+              gl.uniform1f(index, fog.near);
+            },
+          },
+          {
+            name: "fogFar",
+            update: (gl, {index}) => {
+              gl.uniform1f(index, fog.far);
+            },
+          }
+        );
+      }
+    }
+
+    return this._viewUniforms;
   }
 }

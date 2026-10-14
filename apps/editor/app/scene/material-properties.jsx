@@ -3,6 +3,7 @@ import {ColorChannels} from "./color-channels.jsx";
 import {WithNodeState} from "./with-node-state.jsx";
 
 import {float} from "@scenic/math";
+import {specularDefaults} from "@scenic/scene";
 
 export class MaterialProperties extends WithNodeState {
   handleChangeColor = (value) => {
@@ -44,6 +45,17 @@ export class MaterialProperties extends WithNodeState {
     });
   };
 
+  handleChangeSpecular = (which, evt) => {
+    const nodeState = this.getNodeState();
+    this.updateNodeState({
+      ...nodeState,
+      material: {
+        ...nodeState.material,
+        [which]: float.fixed3f(evt.target.value),
+      },
+    });
+  };
+
   render() {
     const {material, ambient} = this.getNodeState();
     if (!material && !ambient) {
@@ -67,6 +79,31 @@ export class MaterialProperties extends WithNodeState {
               max="1"
               onChange={this.handleChangeReflectiveness}
               value={material.reflectiveness}
+            />
+          </div> : null}
+        {/* Specular settings are only shown for lit materials, the ones with
+            reflectiveness, since highlights are scaled by it. A material
+            without its own settings shows the defaults the mesh draws with. */}
+        {material?.reflectiveness != null ?
+          <div className="specular">
+            <label>Specular</label>
+            <input
+              type="number"
+              step=".1"
+              min="0"
+              onChange={(evt) => this.handleChangeSpecular("specular", evt)}
+              value={material.specular ?? specularDefaults.specular}
+            />
+          </div> : null}
+        {material?.reflectiveness != null ?
+          <div className="shininess">
+            <label>Shininess</label>
+            <input
+              type="number"
+              step="4"
+              min="1"
+              onChange={(evt) => this.handleChangeSpecular("shininess", evt)}
+              value={material.shininess ?? specularDefaults.shininess}
             />
           </div> : null}
         {ambient?.color != null ?

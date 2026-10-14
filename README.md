@@ -279,6 +279,43 @@ The dancing character's scene has one at the character's feet:
 The grid is part of the editor (`apps/editor/grid.js`) rather than the engine
 packages, like the axis gizmo.
 
+### Specular highlights and fog
+
+Lit meshes get Blinn-Phong specular highlights from every light, on top of
+diffuse lighting. A mesh's material can tune them:
+
+```json
+"material": {"color": [1, 1, 1, 1], "reflectiveness": 1, "specular": 0.5, "shininess": 32}
+```
+
+- `material.specular`: how bright highlights are, 0.5 by default. 0 turns
+  them off.
+- `material.shininess`: how tight highlights are, 32 by default. Higher is a
+  smaller, sharper highlight.
+
+Highlights are scaled by `reflectiveness` like diffuse light, so a material
+that does not reflect light, like the axis gizmo's, has none.
+
+A viewport's `fog` fades what it draws toward a color the farther it is from
+the active camera, starting at `near` and fully fogged at `far`. Every scene's
+`world` viewport has black fog, which matches the background:
+
+```json
+{
+  "name": "world",
+  "type": "viewport",
+  "fog": {"color": [0, 0, 0], "near": 1000, "far": 3000},
+  "items": []
+}
+```
+
+Without `fog`, or with `"enabled": false`, a viewport has none.
+
+Both can be adjusted live in the editor: specular and shininess on a lit
+material's Material tab, and fog on a viewport's Fog tab. The viewport gives renderables the camera
+position and fog settings as view uniforms (`getViewUniforms`), next to their
+view-projection matrix.
+
 ### Renderable, Mesh and Geometry
 
 Drawing is split across three kinds of nodes:

@@ -52,12 +52,24 @@ export const RenderableInterface = (superclass) =>
     // getViewProjectionMatrix is the view-projection of the closest parent
     // Viewport, which takes this renderable from world space to clip space.
     getViewProjectionMatrix() {
+      const viewport = this.getViewport();
+      return viewport ? viewport.viewProjectionMatrix : _identity;
+    }
+
+    // getViewUniforms are the view uniforms of the closest parent Viewport,
+    // such as the camera position and fog. See Viewport.viewUniforms.
+    getViewUniforms() {
+      const viewport = this.getViewport();
+      return viewport ? viewport.viewUniforms : [];
+    }
+
+    getViewport() {
       let viewport = this;
       while (viewport && !(viewport instanceof Viewport)) {
         viewport = viewport.parent;
       }
 
-      return viewport ? viewport.viewProjectionMatrix : _identity;
+      return viewport;
     }
   };
 

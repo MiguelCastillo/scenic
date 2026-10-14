@@ -3,7 +3,7 @@ import {Camera} from "./camera.js";
 import {Geometry} from "./geometry.js";
 import {Light} from "./light.js";
 import {Material} from "./material.js";
-import {Mesh} from "./mesh.js";
+import {Mesh, specularDefaults} from "./mesh.js";
 import {Node} from "./node.js";
 import {Renderable} from "./renderable.js";
 import {Scene} from "./scene.js";
@@ -27,6 +27,7 @@ export {
   Scene,
   SceneManager,
   SkinnedMesh,
+  specularDefaults,
   StateManager,
   StaticMesh,
   Texture,
