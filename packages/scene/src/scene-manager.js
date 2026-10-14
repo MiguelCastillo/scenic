@@ -67,8 +67,13 @@ export class SceneManager {
     this.scene.dispose(gl);
   }
 
-  render(ms, gl) {
+  // render draws a frame of the scene at ms, the frame's time. frame holds
+  // anything else the app wants every node and script to see this frame, such
+  // as the seconds since the last frame or the keys being held, and it is
+  // added to the context that preRender and render get.
+  render(ms, gl, frame = {}) {
     const context = {
+      ...frame,
       gl,
       ms,
       sceneManager: this,

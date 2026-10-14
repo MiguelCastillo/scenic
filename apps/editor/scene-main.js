@@ -74,6 +74,11 @@ function createSceneUpdater(gl, sceneManager) {
   }
 
   let lastFrameMs = null;
+  let frameSeconds = 0;
+
+  // The keys being held down, by KeyboardEvent.code, which scripts get as
+  // `keys` every frame. The app sets them with setHeldKeys.
+  let heldKeys = new Set();
 
   // This is the logic for updating the scene state and the scene graph with the
   // new scene state. This is the logic for the game itself.
@@ -82,6 +87,7 @@ function createSceneUpdater(gl, sceneManager) {
     // after the page has been in the background and frames were paused.
     const seconds = lastFrameMs === null ? 0 : Math.min((ms - lastFrameMs) / 1000, 0.1);
     lastFrameMs = ms;
+    frameSeconds = seconds;
 
     getCameraBehavior().update(seconds);
 
@@ -106,7 +112,10 @@ function createSceneUpdater(gl, sceneManager) {
   };
 
   function renderFrame(ms) {
-    sceneManager.render(ms, gl);
+    // Scripts get the frame's seconds and the held keys, so that a script such
+    // as a flight controller can move at the same speed at any frame rate and
+    // respond to the player.
+    sceneManager.render(ms, gl, {seconds: frameSeconds, keys: heldKeys});
 
     // Let's write out the number of frames per second that we are able to
     // render.
@@ -126,6 +135,9 @@ function createSceneUpdater(gl, sceneManager) {
     setCameraMovement: (...args) => getCameraBehavior().setMovement(...args),
     toggleCameraMode,
     getCameraControls,
+    setHeldKeys: (keys) => {
+      heldKeys = new Set(keys);
+    },
   };
 }
 
@@ -167,6 +179,7 @@ export const renderScene = async (gl, config) => {
     setCameraMovement,
     toggleCameraMode,
     getCameraControls,
+    setHeldKeys,
   } = createSceneUpdater(gl, sceneManager);
 
   // This starts the render loop to render the scene!
@@ -211,6 +224,7 @@ export const renderScene = async (gl, config) => {
     setCameraMovement,
     toggleCameraMode,
     getCameraControls,
+    setHeldKeys,
     dispose,
   };
 };

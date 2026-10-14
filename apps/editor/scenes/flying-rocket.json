@@ -1,0 +1,1142 @@
+{
+  "items": [
+    {
+      "name": "axis",
+      "type": "viewport",
+      "items": [
+        {
+          "name": "axis camera",
+          "type": "camera",
+          "projection": {
+            "type": "orthographic",
+            "far": 10000
+          }
+        },
+        {
+          "name": "axis gizmo",
+          "type": "transform",
+          "transform": {
+            "scale": [30, 30, 30],
+            "position": [100, 100, 0]
+          },
+          "items": [
+            {
+              "name": "axis-x",
+              "type": "static-mesh",
+              "resource": "/resources/obj/axis.obj",
+              "material": {
+                "color": [1, 0, 0, 1],
+                "reflectiveness": 0
+              },
+              "ambient": {
+                "color": [1, 0, 0]
+              }
+            },
+            {
+              "name": "axis-y",
+              "type": "static-mesh",
+              "resource": "/resources/obj/axis.obj",
+              "material": {
+                "color": [0, 1, 0, 1],
+                "reflectiveness": 0
+              },
+              "ambient": {
+                "color": [0, 1, 0]
+              },
+              "transform": {
+                "rotation": [0, 0, 90]
+              }
+            },
+            {
+              "name": "axis-z",
+              "type": "static-mesh",
+              "resource": "/resources/obj/axis.obj",
+              "material": {
+                "color": [0, 0, 1, 1],
+                "reflectiveness": 0
+              },
+              "ambient": {
+                "color": [0, 0, 1]
+              },
+              "transform": {
+                "rotation": [0, -90, 0]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "world",
+      "type": "viewport",
+      "fog": {
+        "color": [0, 0, 0],
+        "near": 2500,
+        "far": 8000
+      },
+      "items": [
+        {
+          "name": "camera",
+          "type": "camera",
+          "projection": {
+            "type": "perspective",
+            "near": 1,
+            "far": 12000,
+            "fov": 30
+          },
+          "transform": {
+            "position": [0, 300, -450]
+          },
+          "camera": {
+            "freeFly": {
+              "speed": 200,
+              "maxPitch": 89
+            },
+            "thirdPerson": {
+              "target": {
+                "nodeID": "rocket"
+              },
+              "offset": [0, 60, 0],
+              "distance": 600,
+              "minDistance": 200,
+              "maxDistance": 1500,
+              "rotation": [-20, 0],
+              "maxPitch": 70,
+              "followTime": 0.25
+            }
+          }
+        },
+        {
+          "name": "light-white",
+          "type": "light",
+          "resource": "/resources/obj/sphere.obj",
+          "light": {
+            "intensity": 1,
+            "color": [1, 1, 1]
+          },
+          "material": {
+            "color": [1, 1, 1, 1],
+            "reflectiveness": 1
+          },
+          "transform": {
+            "position": [0, 1500, 1290]
+          }
+        },
+        {
+          "name": "light-cyan",
+          "type": "light",
+          "resource": "/resources/obj/sphere.obj",
+          "light": {
+            "color": [0, 1, 1],
+            "intensity": 0.5
+          },
+          "material": {
+            "color": [0, 1, 1, 1],
+            "reflectiveness": 1
+          },
+          "transform": {
+            "position": [-1200, 1500, 300]
+          }
+        },
+        {
+          "name": "light-magenta",
+          "type": "light",
+          "resource": "/resources/obj/sphere.obj",
+          "light": {
+            "intensity": 0.5,
+            "color": [1, 0, 1]
+          },
+          "material": {
+            "color": [1, 0, 1, 1],
+            "reflectiveness": 1
+          },
+          "transform": {
+            "scale": [1, 1, 1],
+            "position": [1200, 1500, 300],
+            "rotation": [0, 0, 0]
+          }
+        },
+        {
+          "name": "floor",
+          "type": "grid",
+          "transform": {
+            "position": [0, 0, 0]
+          },
+          "grid": {
+            "size": 20000,
+            "spacing": 200
+          },
+          "material": {
+            "color": [0.35, 0.35, 0.35, 1]
+          }
+        },
+        {
+          "name": "scene objects",
+          "type": "transform",
+          "transform": {
+            "scale": [1, 1, 1],
+            "position": [0, 0, 0],
+            "rotation": [0, 0, 0]
+          },
+          "items": [
+            {
+              "name": "rocket",
+              "type": "transform",
+              "transform": {
+                "position": [0, 200, 0],
+                "rotation": [0, 0, 0],
+                "scale": [1, 1, 1]
+              },
+              "script": {
+                "src": "scripts/fly.js",
+                "settings": {
+                  "cruiseSpeed": 250,
+                  "boostSpeed": 1200,
+                  "cruiseThrottle": 0.3,
+                  "turnRate": 75,
+                  "climbRate": 45,
+                  "maxClimb": 60,
+                  "bank": 40,
+                  "response": 0.3,
+                  "levelTime": 1.5,
+                  "minHeight": 80,
+                  "upArrowDives": true,
+                  "throttle": 0.3
+                }
+              },
+              "items": [
+                {
+                  "name": "rocket body",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/rocket-slender.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.6,
+                    "shininess": 64
+                  },
+                  "ambient": {
+                    "color": [0.3, 0.3, 0.35]
+                  }
+                },
+                {
+                  "name": "rocket flame",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/flame.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 0
+                  },
+                  "ambient": {
+                    "color": [1, 1, 1]
+                  },
+                  "transform": {
+                    "position": [0, 0, -78.563],
+                    "rotation": [0, 0, 0],
+                    "scale": [6.5, 6.5, 6.5]
+                  },
+                  "script": {
+                    "src": "scripts/flame.js",
+                    "settings": {
+                      "flicker": 0.15,
+                      "speed": 1
+                    }
+                  }
+                },
+                {
+                  "name": "rocket booster flame 1",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/flame.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 0
+                  },
+                  "ambient": {
+                    "color": [1, 1, 1]
+                  },
+                  "transform": {
+                    "position": [0, 70, -77.606],
+                    "rotation": [0, 0, 0],
+                    "scale": [3.85, 3.85, 3.85]
+                  },
+                  "script": {
+                    "src": "scripts/flame.js",
+                    "settings": {
+                      "flicker": 0.15,
+                      "speed": 1
+                    }
+                  }
+                },
+                {
+                  "name": "rocket booster flame 2",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/flame.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 0
+                  },
+                  "ambient": {
+                    "color": [1, 1, 1]
+                  },
+                  "transform": {
+                    "position": [-60.622, -35, -77.606],
+                    "rotation": [0, 0, 0],
+                    "scale": [3.85, 3.85, 3.85]
+                  },
+                  "script": {
+                    "src": "scripts/flame.js",
+                    "settings": {
+                      "flicker": 0.15,
+                      "speed": 1
+                    }
+                  }
+                },
+                {
+                  "name": "rocket booster flame 3",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/flame.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 0
+                  },
+                  "ambient": {
+                    "color": [1, 1, 1]
+                  },
+                  "transform": {
+                    "position": [60.622, -35, -77.606],
+                    "rotation": [0, 0, 0],
+                    "scale": [3.85, 3.85, 3.85]
+                  },
+                  "script": {
+                    "src": "scripts/flame.js",
+                    "settings": {
+                      "flicker": 0.15,
+                      "speed": 1
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "towers",
+          "type": "transform",
+          "items": [
+            {
+              "name": "tower 1",
+              "type": "transform",
+              "transform": {
+                "position": [-1762, 0, -3492]
+              },
+              "items": [
+                {
+                  "name": "tower 1 column",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/cylinder.obj",
+                  "material": {
+                    "color": [0.52, 0.802, 0.88, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.4,
+                    "shininess": 32
+                  },
+                  "ambient": {
+                    "color": [0.3, 0.3, 0.35]
+                  },
+                  "transform": {
+                    "position": [0, 443, 0],
+                    "scale": [53, 443, 53]
+                  }
+                },
+                {
+                  "name": "tower 1 roof",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/cone.obj",
+                  "material": {
+                    "color": [1, 1, 1, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.6,
+                    "shininess": 64
+                  },
+                  "ambient": {
+                    "color": [0.3, 0.3, 0.35]
+                  },
+                  "transform": {
+                    "position": [0, 960, 0],
+                    "scale": [74, 74, 74]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tower 2",
+              "type": "transform",
+              "transform": {
+                "position": [-1343, 0, -4420]
+              },
+              "items": [
+                {
+                  "name": "tower 2 column",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/cylinder.obj",
+                  "material": {
+                    "color": [0.52, 0.88, 0.737, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.4,
+                    "shininess": 32
+                  },
+                  "ambient": {
+                    "color": [0.3, 0.3, 0.35]
+                  },
+                  "transform": {
+                    "position": [0, 378, 0],
+                    "scale": [51, 378, 51]
+                  }
+                },
+                {
+                  "name": "tower 2 roof",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/cone.obj",
+                  "material": {
+                    "color": [1, 1, 1, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.6,
+                    "shininess": 64
+                  },
+                  "ambient": {
+                    "color": [0.3, 0.3, 0.35]
+                  },
+                  "transform": {
+                    "position": [0, 829, 0],
+                    "scale": [72, 72, 72]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tower 3",
+              "type": "transform",
+              "transform": {
+                "position": [-4301, 0, -4093]
+              },
+              "items": [
+                {
+                  "name": "tower 3 column",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/cylinder.obj",
+                  "material": {
+                    "color": [0.88, 0.787, 0.52, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.4,
+                    "shininess": 32
+                  },
+                  "ambient": {
+                    "color": [0.3, 0.3, 0.35]
+                  },
+                  "transform": {
+                    "position": [0, 341, 0],
+                    "scale": [83, 341, 83]
+                  }
+                },
+                {
+                  "name": "tower 3 roof",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/cone.obj",
+                  "material": {
+                    "color": [1, 1, 1, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.6,
+                    "shininess": 64
+                  },
+                  "ambient": {
+                    "color": [0.3, 0.3, 0.35]
+                  },
+                  "transform": {
+                    "position": [0, 798, 0],
+                    "scale": [116, 116, 116]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tower 4",
+              "type": "transform",
+              "transform": {
+                "position": [-2768, 0, 1274]
+              },
+              "items": [
+                {
+                  "name": "tower 4 column",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/cylinder.obj",
+                  "material": {
+                    "color": [0.52, 0.88, 0.657, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.4,
+                    "shininess": 32
+                  },
+                  "ambient": {
+                    "color": [0.3, 0.3, 0.35]
+                  },
+                  "transform": {
+                    "position": [0, 576, 0],
+                    "scale": [73, 576, 73]
+                  }
+                },
+                {
+                  "name": "tower 4 roof",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/cone.obj",
+                  "material": {
+                    "color": [1, 1, 1, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.6,
+                    "shininess": 64
+                  },
+                  "ambient": {
+                    "color": [0.3, 0.3, 0.35]
+                  },
+                  "transform": {
+                    "position": [0, 1255, 0],
+                    "scale": [102, 102, 102]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tower 5",
+              "type": "transform",
+              "transform": {
+                "position": [4763, 0, -4534]
+              },
+              "items": [
+                {
+                  "name": "tower 5 column",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/cylinder.obj",
+                  "material": {
+                    "color": [0.88, 0.832, 0.52, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.4,
+                    "shininess": 32
+                  },
+                  "ambient": {
+                    "color": [0.3, 0.3, 0.35]
+                  },
+                  "transform": {
+                    "position": [0, 536, 0],
+                    "scale": [62, 536, 62]
+                  }
+                },
+                {
+                  "name": "tower 5 roof",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/cone.obj",
+                  "material": {
+                    "color": [1, 1, 1, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.6,
+                    "shininess": 64
+                  },
+                  "ambient": {
+                    "color": [0.3, 0.3, 0.35]
+                  },
+                  "transform": {
+                    "position": [0, 1159, 0],
+                    "scale": [86, 86, 86]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tower 6",
+              "type": "transform",
+              "transform": {
+                "position": [-3822, 0, -1915]
+              },
+              "items": [
+                {
+                  "name": "tower 6 column",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/cylinder.obj",
+                  "material": {
+                    "color": [0.52, 0.704, 0.88, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.4,
+                    "shininess": 32
+                  },
+                  "ambient": {
+                    "color": [0.3, 0.3, 0.35]
+                  },
+                  "transform": {
+                    "position": [0, 517, 0],
+                    "scale": [57, 517, 57]
+                  }
+                },
+                {
+                  "name": "tower 6 roof",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/cone.obj",
+                  "material": {
+                    "color": [1, 1, 1, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.6,
+                    "shininess": 64
+                  },
+                  "ambient": {
+                    "color": [0.3, 0.3, 0.35]
+                  },
+                  "transform": {
+                    "position": [0, 1115, 0],
+                    "scale": [80, 80, 80]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tower 7",
+              "type": "transform",
+              "transform": {
+                "position": [1389, 0, -1276]
+              },
+              "items": [
+                {
+                  "name": "tower 7 column",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/cylinder.obj",
+                  "material": {
+                    "color": [0.88, 0.649, 0.52, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.4,
+                    "shininess": 32
+                  },
+                  "ambient": {
+                    "color": [0.3, 0.3, 0.35]
+                  },
+                  "transform": {
+                    "position": [0, 396, 0],
+                    "scale": [53, 396, 53]
+                  }
+                },
+                {
+                  "name": "tower 7 roof",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/cone.obj",
+                  "material": {
+                    "color": [1, 1, 1, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.6,
+                    "shininess": 64
+                  },
+                  "ambient": {
+                    "color": [0.3, 0.3, 0.35]
+                  },
+                  "transform": {
+                    "position": [0, 866, 0],
+                    "scale": [74, 74, 74]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tower 8",
+              "type": "transform",
+              "transform": {
+                "position": [-2940, 0, 1804]
+              },
+              "items": [
+                {
+                  "name": "tower 8 column",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/cylinder.obj",
+                  "material": {
+                    "color": [0.52, 0.695, 0.88, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.4,
+                    "shininess": 32
+                  },
+                  "ambient": {
+                    "color": [0.3, 0.3, 0.35]
+                  },
+                  "transform": {
+                    "position": [0, 342, 0],
+                    "scale": [63, 342, 63]
+                  }
+                },
+                {
+                  "name": "tower 8 roof",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/cone.obj",
+                  "material": {
+                    "color": [1, 1, 1, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.6,
+                    "shininess": 64
+                  },
+                  "ambient": {
+                    "color": [0.3, 0.3, 0.35]
+                  },
+                  "transform": {
+                    "position": [0, 772, 0],
+                    "scale": [88, 88, 88]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tower 9",
+              "type": "transform",
+              "transform": {
+                "position": [-468, 0, -2002]
+              },
+              "items": [
+                {
+                  "name": "tower 9 column",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/cylinder.obj",
+                  "material": {
+                    "color": [0.713, 0.88, 0.52, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.4,
+                    "shininess": 32
+                  },
+                  "ambient": {
+                    "color": [0.3, 0.3, 0.35]
+                  },
+                  "transform": {
+                    "position": [0, 507, 0],
+                    "scale": [78, 507, 78]
+                  }
+                },
+                {
+                  "name": "tower 9 roof",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/cone.obj",
+                  "material": {
+                    "color": [1, 1, 1, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.6,
+                    "shininess": 64
+                  },
+                  "ambient": {
+                    "color": [0.3, 0.3, 0.35]
+                  },
+                  "transform": {
+                    "position": [0, 1124, 0],
+                    "scale": [109, 109, 109]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tower 10",
+              "type": "transform",
+              "transform": {
+                "position": [744, 0, 252]
+              },
+              "items": [
+                {
+                  "name": "tower 10 column",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/cylinder.obj",
+                  "material": {
+                    "color": [0.618, 0.88, 0.52, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.4,
+                    "shininess": 32
+                  },
+                  "ambient": {
+                    "color": [0.3, 0.3, 0.35]
+                  },
+                  "transform": {
+                    "position": [0, 544, 0],
+                    "scale": [79, 544, 79]
+                  }
+                },
+                {
+                  "name": "tower 10 roof",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/cone.obj",
+                  "material": {
+                    "color": [1, 1, 1, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.6,
+                    "shininess": 64
+                  },
+                  "ambient": {
+                    "color": [0.3, 0.3, 0.35]
+                  },
+                  "transform": {
+                    "position": [0, 1198, 0],
+                    "scale": [111, 111, 111]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tower 11",
+              "type": "transform",
+              "transform": {
+                "position": [4802, 0, -3819]
+              },
+              "items": [
+                {
+                  "name": "tower 11 column",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/cylinder.obj",
+                  "material": {
+                    "color": [0.88, 0.848, 0.52, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.4,
+                    "shininess": 32
+                  },
+                  "ambient": {
+                    "color": [0.3, 0.3, 0.35]
+                  },
+                  "transform": {
+                    "position": [0, 338, 0],
+                    "scale": [80, 338, 80]
+                  }
+                },
+                {
+                  "name": "tower 11 roof",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/cone.obj",
+                  "material": {
+                    "color": [1, 1, 1, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.6,
+                    "shininess": 64
+                  },
+                  "ambient": {
+                    "color": [0.3, 0.3, 0.35]
+                  },
+                  "transform": {
+                    "position": [0, 789, 0],
+                    "scale": [112, 112, 112]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tower 12",
+              "type": "transform",
+              "transform": {
+                "position": [-110, 0, -4608]
+              },
+              "items": [
+                {
+                  "name": "tower 12 column",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/cylinder.obj",
+                  "material": {
+                    "color": [0.52, 0.722, 0.88, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.4,
+                    "shininess": 32
+                  },
+                  "ambient": {
+                    "color": [0.3, 0.3, 0.35]
+                  },
+                  "transform": {
+                    "position": [0, 451, 0],
+                    "scale": [81, 451, 81]
+                  }
+                },
+                {
+                  "name": "tower 12 roof",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/cone.obj",
+                  "material": {
+                    "color": [1, 1, 1, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.6,
+                    "shininess": 64
+                  },
+                  "ambient": {
+                    "color": [0.3, 0.3, 0.35]
+                  },
+                  "transform": {
+                    "position": [0, 1014, 0],
+                    "scale": [113, 113, 113]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tower 13",
+              "type": "transform",
+              "transform": {
+                "position": [3755, 0, -1863]
+              },
+              "items": [
+                {
+                  "name": "tower 13 column",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/cylinder.obj",
+                  "material": {
+                    "color": [0.52, 0.707, 0.88, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.4,
+                    "shininess": 32
+                  },
+                  "ambient": {
+                    "color": [0.3, 0.3, 0.35]
+                  },
+                  "transform": {
+                    "position": [0, 463, 0],
+                    "scale": [74, 463, 74]
+                  }
+                },
+                {
+                  "name": "tower 13 roof",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/cone.obj",
+                  "material": {
+                    "color": [1, 1, 1, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.6,
+                    "shininess": 64
+                  },
+                  "ambient": {
+                    "color": [0.3, 0.3, 0.35]
+                  },
+                  "transform": {
+                    "position": [0, 1029, 0],
+                    "scale": [103, 103, 103]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tower 14",
+              "type": "transform",
+              "transform": {
+                "position": [-438, 0, 3400]
+              },
+              "items": [
+                {
+                  "name": "tower 14 column",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/cylinder.obj",
+                  "material": {
+                    "color": [0.52, 0.525, 0.88, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.4,
+                    "shininess": 32
+                  },
+                  "ambient": {
+                    "color": [0.3, 0.3, 0.35]
+                  },
+                  "transform": {
+                    "position": [0, 575, 0],
+                    "scale": [69, 575, 69]
+                  }
+                },
+                {
+                  "name": "tower 14 roof",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/cone.obj",
+                  "material": {
+                    "color": [1, 1, 1, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.6,
+                    "shininess": 64
+                  },
+                  "ambient": {
+                    "color": [0.3, 0.3, 0.35]
+                  },
+                  "transform": {
+                    "position": [0, 1247, 0],
+                    "scale": [97, 97, 97]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tower 15",
+              "type": "transform",
+              "transform": {
+                "position": [-4393, 0, 2015]
+              },
+              "items": [
+                {
+                  "name": "tower 15 column",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/cylinder.obj",
+                  "material": {
+                    "color": [0.855, 0.52, 0.88, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.4,
+                    "shininess": 32
+                  },
+                  "ambient": {
+                    "color": [0.3, 0.3, 0.35]
+                  },
+                  "transform": {
+                    "position": [0, 441, 0],
+                    "scale": [90, 441, 90]
+                  }
+                },
+                {
+                  "name": "tower 15 roof",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/cone.obj",
+                  "material": {
+                    "color": [1, 1, 1, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.6,
+                    "shininess": 64
+                  },
+                  "ambient": {
+                    "color": [0.3, 0.3, 0.35]
+                  },
+                  "transform": {
+                    "position": [0, 1008, 0],
+                    "scale": [126, 126, 126]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tower 16",
+              "type": "transform",
+              "transform": {
+                "position": [-2154, 0, -1142]
+              },
+              "items": [
+                {
+                  "name": "tower 16 column",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/cylinder.obj",
+                  "material": {
+                    "color": [0.52, 0.88, 0.797, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.4,
+                    "shininess": 32
+                  },
+                  "ambient": {
+                    "color": [0.3, 0.3, 0.35]
+                  },
+                  "transform": {
+                    "position": [0, 451, 0],
+                    "scale": [51, 451, 51]
+                  }
+                },
+                {
+                  "name": "tower 16 roof",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/cone.obj",
+                  "material": {
+                    "color": [1, 1, 1, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.6,
+                    "shininess": 64
+                  },
+                  "ambient": {
+                    "color": [0.3, 0.3, 0.35]
+                  },
+                  "transform": {
+                    "position": [0, 973, 0],
+                    "scale": [71, 71, 71]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tower 17",
+              "type": "transform",
+              "transform": {
+                "position": [-3320, 0, -3829]
+              },
+              "items": [
+                {
+                  "name": "tower 17 column",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/cylinder.obj",
+                  "material": {
+                    "color": [0.88, 0.799, 0.52, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.4,
+                    "shininess": 32
+                  },
+                  "ambient": {
+                    "color": [0.3, 0.3, 0.35]
+                  },
+                  "transform": {
+                    "position": [0, 177, 0],
+                    "scale": [81, 177, 81]
+                  }
+                },
+                {
+                  "name": "tower 17 roof",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/cone.obj",
+                  "material": {
+                    "color": [1, 1, 1, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.6,
+                    "shininess": 64
+                  },
+                  "ambient": {
+                    "color": [0.3, 0.3, 0.35]
+                  },
+                  "transform": {
+                    "position": [0, 466, 0],
+                    "scale": [113, 113, 113]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tower 18",
+              "type": "transform",
+              "transform": {
+                "position": [-2524, 0, -1091]
+              },
+              "items": [
+                {
+                  "name": "tower 18 column",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/cylinder.obj",
+                  "material": {
+                    "color": [0.52, 0.88, 0.77, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.4,
+                    "shininess": 32
+                  },
+                  "ambient": {
+                    "color": [0.3, 0.3, 0.35]
+                  },
+                  "transform": {
+                    "position": [0, 542, 0],
+                    "scale": [53, 542, 53]
+                  }
+                },
+                {
+                  "name": "tower 18 roof",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/cone.obj",
+                  "material": {
+                    "color": [1, 1, 1, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.6,
+                    "shininess": 64
+                  },
+                  "ambient": {
+                    "color": [0.3, 0.3, 0.35]
+                  },
+                  "transform": {
+                    "position": [0, 1159, 0],
+                    "scale": [75, 75, 75]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "cameraMode": "third-person"
+    }
+  ]
+}

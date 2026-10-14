@@ -18,6 +18,7 @@ const sceneFiles = [
   "scenes/armatured-cube-simple.json",
   "scenes/armatured-cube.json",
   "scenes/bump-lighting-sphere.json",
+  "scenes/flying-rocket.json",
   "scenes/jedi-star-fighter.json",
   "scenes/rockets.json",
   "scenes/skinning-mesh-animation-dancing-character.json",
@@ -155,15 +156,25 @@ const cameraMovementKeys = {
 // first-person.
 const toggleCameraModeKey = "KeyV";
 
+// Keys that scroll the page, which scenes use instead while they have the
+// pointer, such as to fly a rocket.
+const pageScrollKeys = new Set(["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"]);
+
 // subscribeToSceneInput maps the mouse and keyboard onto the current scene's
 // camera controls. How the camera responds is up to its camera behavior (see
-// the @scenic/camera package and where scene-main.js creates it). Clicking the
-// mousetrap locks the pointer to it, and input only moves the camera while
-// the pointer is locked, so typing in the editor's panels is left alone.
-// Pressing Escape releases the lock.
+// the @scenic/camera package and where scene-main.js creates it). Every key
+// held down is also given to the scene's scripts, such as a rocket's flight
+// controls. Clicking the mousetrap locks the pointer to it, and input only
+// reaches the scene while the pointer is locked, so typing in the editor's
+// panels is left alone. Pressing Escape releases the lock.
 function subscribeToSceneInput(mousetrapEl, getCurrentScene, onCameraModeChange) {
   const isPointerLocked = () => document.pointerLockElement === mousetrapEl;
   const heldKeys = new Set();
+  const scriptKeys = new Set();
+
+  function updateScriptKeys() {
+    getCurrentScene()?.setHeldKeys(scriptKeys);
+  }
 
   function updateCameraMovement() {
     const scene = getCurrentScene();
@@ -213,6 +224,14 @@ function subscribeToSceneInput(mousetrapEl, getCurrentScene, onCameraModeChange)
         return;
       }
 
+      if (!scriptKeys.has(evt.code)) {
+        scriptKeys.add(evt.code);
+        updateScriptKeys();
+      }
+      if (pageScrollKeys.has(evt.code)) {
+        evt.preventDefault();
+      }
+
       if (evt.code === toggleCameraModeKey && !evt.repeat) {
         evt.preventDefault();
         const scene = getCurrentScene();
@@ -235,6 +254,10 @@ function subscribeToSceneInput(mousetrapEl, getCurrentScene, onCameraModeChange)
       updateCameraMovement();
     })
     .on("keyup", (evt) => {
+      if (scriptKeys.delete(evt.code)) {
+        updateScriptKeys();
+      }
+
       if (!cameraMovementKeys[evt.code]) {
         return;
       }
@@ -248,6 +271,8 @@ function subscribeToSceneInput(mousetrapEl, getCurrentScene, onCameraModeChange)
       if (!isPointerLocked()) {
         heldKeys.clear();
         updateCameraMovement();
+        scriptKeys.clear();
+        updateScriptKeys();
       }
     });
 }
