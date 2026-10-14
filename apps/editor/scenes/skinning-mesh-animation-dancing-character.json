@@ -167,6 +167,17 @@
           }
         },
         {
+          "name": "floor",
+          "type": "grid",
+          "grid": {
+            "size": 3000,
+            "spacing": 50
+          },
+          "material": {
+            "color": [0.35, 0.35, 0.35, 1]
+          }
+        },
+        {
           "name": "scene objects",
           "type": "transform",
           "transform": {

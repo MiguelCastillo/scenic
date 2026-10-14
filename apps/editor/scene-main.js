@@ -9,11 +9,13 @@ import "./logging.js";
 
 import {mat4} from "@scenic/math";
 import {webgl} from "@scenic/renderer";
+import {Node} from "@scenic/scene";
 import {cameraModes} from "@scenic/camera";
 
 import {createScene, buildDefaultState} from "./scene-factory.js";
 import {createResourceLoader, getResourcesFromConfig} from "./loaders/resource-loader.js";
-import {loadShaders} from "./shader-factory.js";
+import {loadShaders, createShaderProgram} from "./shader-factory.js";
+import {Grid} from "./grid.js";
 import {startRenderLoop} from "./render-loop.js";
 
 import {createFrameRateCounter} from "./fps-counter.js";
@@ -184,6 +186,13 @@ export const renderScene = async (gl, config) => {
     // First thing is to load the shaders so that loading renderable
     // resources have them when they are getting built.
     await loadShaders(sceneConfig.preload.shaders);
+
+    // Grids draw with the flat-material shader, which needs the shaders to be
+    // loaded first.
+    for (const grid of Node.findChildrenByType(sceneManager.scene, Grid)) {
+      grid.withShaderProgram(createShaderProgram(gl, "shaders/flat-material"));
+    }
+
     await resourceLoader.loadMany(getResourcesFromConfig(sceneConfig));
   } catch (ex) {
     // The caller never receives dispose when loading fails, so tear down

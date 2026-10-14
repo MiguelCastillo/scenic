@@ -195,6 +195,30 @@ to face the same way as the head: the camera looks down its own -Z axis, and
 the head's front is its +Z. The third-person offset moves the orbit's pivot up
 from the hips to the chest.
 
+### Reference floor
+
+A `grid` node draws a flat grid of lines on the ground, to make it easier to
+see things move through space, especially from a third-person camera. It lies
+across its own X/Z plane, centered on its origin, and its transform places it.
+The dancing character's scene has one at the character's feet:
+
+```json
+{
+  "name": "floor",
+  "type": "grid",
+  "grid": {"size": 3000, "spacing": 50},
+  "material": {"color": [0.35, 0.35, 0.35, 1]}
+}
+```
+
+- `grid.size`: how far the grid reaches from one edge to the other, in scene
+  units.
+- `grid.spacing`: the distance between lines, in scene units.
+- `material.color`: the color of the lines.
+
+The grid is part of the editor (`apps/editor/grid.js`) rather than the engine
+packages, like the axis gizmo.
+
 ### Renderable, Mesh and Geometry
 
 Drawing is split across three kinds of nodes:

@@ -10,6 +10,8 @@ import {
   Viewport,
 } from "@scenic/scene";
 
+import {Grid} from "./grid.js";
+
 export function createScene(config) {
   // The state manager is the first thing we create. This is built from all
   // the scene configuation information, and it is used for creating the
@@ -44,6 +46,8 @@ export function createScene(config) {
       return new Viewport(nodeConfig);
     } else if (isCamera(nodeConfig)) {
       return new Camera(nodeConfig);
+    } else if (isGrid(nodeConfig)) {
+      return new Grid(nodeConfig);
     }
 
     return new SceneNode(nodeConfig);
@@ -56,6 +60,10 @@ export function createScene(config) {
 
 export function isViewport(nodeConfig) {
   return nodeConfig.type === "viewport";
+}
+
+export function isGrid(nodeConfig) {
+  return nodeConfig.type === "grid";
 }
 
 export function isCamera(nodeConfig) {

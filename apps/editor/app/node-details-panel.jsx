@@ -30,6 +30,7 @@ export class NodeDetailsPanel extends React.Component {
         children = <LightDetailsPanel node={node} />;
         break;
       case "transform":
+      case "grid":
         children = <TransformDetailsPanel node={node} />;
         break;
       case "animation":
