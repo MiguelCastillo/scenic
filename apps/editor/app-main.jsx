@@ -19,6 +19,7 @@ const sceneFiles = [
   "scenes/armatured-cube.json",
   "scenes/bump-lighting-sphere.json",
   "scenes/jedi-star-fighter.json",
+  "scenes/rockets.json",
   "scenes/skinning-mesh-animation-dancing-character.json",
 ];
 
