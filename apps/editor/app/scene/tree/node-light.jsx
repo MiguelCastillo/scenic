@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import {SceneNodeCollection} from "./node.jsx";
+import {SceneNodeCollection, getVisibleChildren} from "./node.jsx";
 import {SceneNodeContent} from "./node-content.jsx";
 import {NodeSelectionContext} from "./selection-context.js";
 
@@ -24,9 +24,9 @@ export class SceneNodeLight extends React.Component {
   };
 
   render() {
-    const {
-      node: {name, items = []},
-    } = this.props;
+    const {node} = this.props;
+    const {name} = node;
+    const items = getVisibleChildren(node);
     const {collapsed} = this.state;
     const className = ["scene-node", "scene-node-light"];
 

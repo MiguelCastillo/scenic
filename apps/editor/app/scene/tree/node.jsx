@@ -6,6 +6,15 @@ import {SceneNodeSkinnedMesh} from "./node-skinned-mesh.jsx";
 import {SceneNodeLight} from "./node-light.jsx";
 import {NodeSelectionContext} from "./selection-context.js";
 
+// Node types the scene graph does not show. A geometry node only holds its
+// mesh's vertex buffer, so it adds little to the tree.
+const hiddenNodeTypes = new Set(["geometry"]);
+
+// getVisibleChildren returns the children of node that the scene graph shows.
+export function getVisibleChildren(node) {
+  return (node.items || []).filter((child) => !hiddenNodeTypes.has(child.type));
+}
+
 export class SceneNodeCollection extends React.Component {
   render() {
     const {nodes} = this.props;
@@ -41,7 +50,8 @@ export class SceneNode extends React.Component {
 
   render() {
     const {node} = this.props;
-    const {name, type, items = []} = node;
+    const {name, type} = node;
+    const items = getVisibleChildren(node);
 
     const {collapsed} = this.state;
     const className = ["scene-node", type];
