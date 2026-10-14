@@ -67,11 +67,22 @@ export class Node {
 
   render() {}
 
-  // dispose releases the GPU resources held by this node and its descendants.
-  // Nodes that own GPU resources override this to delete them and then call
-  // super.dispose(gl). The node stays in the tree; call clear or remove to
-  // detach it.
+  // withScript attaches a script to the node: an object with any of the hooks
+  // preRender(context), render(context) and dispose(), which SceneManager and
+  // dispose call along with the node's own. Scripts let code decide what a
+  // node does each frame, such as moving it, without a new node type.
+  withScript(script) {
+    this.script = script;
+    return this;
+  }
+
+  // dispose releases the GPU resources held by this node and its descendants,
+  // and lets the node's script clean up. Nodes that own GPU resources override
+  // this to delete them and then call super.dispose(gl). The node stays in the
+  // tree; call clear or remove to detach it.
   dispose(gl) {
+    this.script?.dispose?.();
+
     for (const node of this.items) {
       node.dispose(gl);
     }

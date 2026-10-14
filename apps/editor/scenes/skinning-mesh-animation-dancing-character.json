@@ -127,6 +127,15 @@
           },
           "transform": {
             "position": [0, 0, 330]
+          },
+          "script": {
+            "src": "scripts/orbit.js",
+            "settings": {
+              "center": [0, 150, 0],
+              "radius": 300,
+              "speed": 60,
+              "phase": 0
+            }
           }
         },
         {
@@ -143,6 +152,15 @@
           },
           "transform": {
             "position": [-200, 0, 0]
+          },
+          "script": {
+            "src": "scripts/orbit.js",
+            "settings": {
+              "center": [0, 150, 0],
+              "radius": 300,
+              "speed": 60,
+              "phase": 120
+            }
           }
         },
         {
@@ -161,6 +179,15 @@
             "scale": [1, 1, 1],
             "position": [200, 0, 0],
             "rotation": [0, 0, 0]
+          },
+          "script": {
+            "src": "scripts/orbit.js",
+            "settings": {
+              "center": [0, 150, 0],
+              "radius": 300,
+              "speed": 60,
+              "phase": 240
+            }
           }
         },
         {

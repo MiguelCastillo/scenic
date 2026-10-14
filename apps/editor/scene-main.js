@@ -14,6 +14,7 @@ import {cameraModes} from "@scenic/camera";
 import {createScene, buildDefaultState} from "./scene-factory.js";
 import {createResourceLoader, getResourcesFromConfig} from "./loaders/resource-loader.js";
 import {applyShaders} from "./shader-registry.js";
+import {loadScripts} from "./script-loader.js";
 import {startRenderLoop} from "./render-loop.js";
 
 import {createFrameRateCounter} from "./fps-counter.js";
@@ -189,6 +190,7 @@ export const renderScene = async (gl, config) => {
     await Promise.all([
       resourceLoader.loadMany(getResourcesFromConfig(sceneConfig)),
       applyShaders(gl, sceneManager.scene, () => disposed),
+      loadScripts(sceneManager),
     ]);
   } catch (ex) {
     // The caller never receives dispose when loading fails, so tear down

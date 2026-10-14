@@ -195,6 +195,56 @@ to face the same way as the head: the camera looks down its own -Z axis, and
 the head's front is its +Z. The third-person offset moves the orbit's pivot up
 from the hips to the chest.
 
+### Scripts
+
+A script lets code decide what a node does each frame, such as moving it,
+without writing a new node type. A node's config attaches one with `script`,
+and the script's `settings` are part of the node's state:
+
+```json
+{
+  "name": "light-cyan",
+  "type": "light",
+  "script": {
+    "src": "scripts/orbit.js",
+    "settings": {"center": [0, 150, 0], "radius": 300, "speed": 60, "phase": 120}
+  }
+}
+```
+
+A script exports a factory that takes the node and returns the script's hooks,
+so every node using it gets its own instance:
+
+```js
+const {angles} = require("@scenic/math");
+
+module.exports = function createScript(node) {
+  return {
+    preRender(context) {}, // just before the node's own preRender
+    render(context) {}, // just after the node's own render
+    dispose() {}, // when the scene is disposed
+  };
+};
+```
+
+Every hook is optional. `SceneManager` calls `preRender` before the node's own,
+so changes the script makes to the node's state show up in the same frame.
+`context` has the frame's time in `ms` and the `sceneManager`. Scripts are
+loaded with the scene, and `src` is relative to the editor page.
+
+Scripts run like CommonJS modules: the editor fetches the script and runs it
+inside a function given `require`, `module` and `exports`
+(`apps/editor/script-loader.js`). `require` returns the app's own copies of
+`@scenic/math`, `@scenic/scene`, `@scenic/animation` and `@scenic/renderer`, so
+scripts share the app's classes, and requiring anything else is an error.
+Scripts that need other libraries can bundle them with their own build: write
+ES modules, mark the `@scenic` packages as external, and output CommonJS. A
+bundled `export default` works too. Errors in a script show the script's name,
+because the editor names its code with `//# sourceURL`.
+
+The dancing character's three lights each run `apps/editor/scripts/orbit.js`,
+with phases of 0, 120 and 240 degrees, so they circle the dancer evenly spaced.
+
 ### Reference floor
 
 A `grid` node draws a flat grid of lines on the ground, to make it easier to

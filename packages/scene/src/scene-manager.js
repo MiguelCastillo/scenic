@@ -99,8 +99,15 @@ export class SceneManager {
     // renders can rely on the world matrix of any other node in the scene,
     // such as the camera or the bones of a skeleton, no matter where in the
     // tree that node is.
+    //
+    // A node's script, if it has one, gets the same hooks: its preRender runs
+    // just before the node's, so that changes it makes to the node's state show
+    // up in this frame, and its render runs just after the node's. The hooks
+    // are called here rather than from Node so that every node type gets them,
+    // including types whose preRender does not call super.preRender.
     const preRenderPass = bubbleTraversal(
       (node) => {
+        node.script?.preRender?.(context);
         node.preRender(context);
         return node;
       },
@@ -111,6 +118,7 @@ export class SceneManager {
       (node) => node,
       (node) => {
         node.render(context);
+        node.script?.render?.(context);
       }
     );
 
