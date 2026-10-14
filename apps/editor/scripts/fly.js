@@ -28,6 +28,10 @@
 //   seconds. 1.5 by default.
 // - minHeight: the lowest it flies, so it skims the ground rather than going
 //   through it. 80 by default.
+// - pullUpHeight: how far above minHeight it starts pulling out of a dive.
+//   The closer it gets to minHeight, the less steeply it can dive, so it
+//   eases down onto minHeight and levels out there, however steep the dive.
+//   400 by default.
 // - upArrowDives: whether the up arrow dives, like a flight stick, rather
 //   than climbs. true by default.
 //
@@ -46,6 +50,7 @@ const defaults = {
   response: 0.3,
   levelTime: 1.5,
   minHeight: 80,
+  pullUpHeight: 400,
   upArrowDives: true,
 };
 
@@ -109,6 +114,14 @@ module.exports = function createFlyScript(node) {
       }
       flight.climb = Math.max(-settings.maxClimb, Math.min(settings.maxClimb, flight.climb));
 
+      // Near the ground, the steepest dive allowed shrinks to level at
+      // minHeight. It shrinks gently at first, so a full dive bends into the
+      // pull-up rather than snapping, and in proportion to height at the end,
+      // so the rocket eases onto minHeight rather than landing on it.
+      const above = state.transform.position[1] - settings.minHeight;
+      const t = Math.max(0, Math.min(1, above / (settings.pullUpHeight || 1)));
+      flight.climb = Math.max(flight.climb, -settings.maxClimb * t * (2 - t));
+
       // Speed follows throttle: cruising speed at the cruising throttle, up to
       // boost speed at full throttle.
       const {cruiseSpeed, boostSpeed, cruiseThrottle} = settings;
@@ -121,7 +134,8 @@ module.exports = function createFlyScript(node) {
       const nose = [matrix[2], matrix[6], matrix[10]];
       const position = state.transform.position.map((v, i) => v + nose[i] * speed * seconds);
 
-      // Skim the ground instead of going through it, and stop diving.
+      // Never go below minHeight, such as when the rocket is moved below it
+      // in the editor.
       if (position[1] < settings.minHeight) {
         position[1] = settings.minHeight;
         flight.climb = Math.max(flight.climb, 0);

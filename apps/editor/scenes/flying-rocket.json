@@ -222,6 +222,7 @@
                   "response": 0.3,
                   "levelTime": 1.5,
                   "minHeight": 80,
+                  "pullUpHeight": 400,
                   "upArrowDives": true,
                   "throttle": 0.3
                 }
