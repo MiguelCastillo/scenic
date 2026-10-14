@@ -36,6 +36,11 @@ import {createTargetFinder} from "./target.js";
 // - followTime: how quickly the camera catches up when the target turns, in
 //   seconds. After followTime it has closed about two thirds of the gap, and
 //   it keeps closing the rest the same way. 0 keeps it exactly behind.
+// - lookUp: how far the camera tilts its view up from looking at the pivot,
+//   in degrees, without moving. It puts the target lower in the view and
+//   shows more of what is ahead of it, like looking out of the target's
+//   cockpit from behind it. Optional, 0 by default, which looks right at the
+//   pivot.
 export function createThirdPersonBehavior(sceneManager, getCamera) {
   const getSettings = () => sceneManager.getNodeStateByID(getCamera().id).camera.thirdPerson;
 
@@ -107,11 +112,11 @@ export function createThirdPersonBehavior(sceneManager, getCamera) {
       return;
     }
 
-    // The direction the camera looks in: the camera's local forward [0, 0, -1]
-    // turned by the orbit's pitch and by its yaw on top of the heading. The
-    // camera sits that far behind the pivot, looking at it.
-    const rotation = [orbit[0], heading + orbit[1], 0];
-    const [pitch, yaw] = rotation.map(angles.degToRad);
+    // The direction from the camera to the pivot: the camera's local forward
+    // [0, 0, -1] turned by the orbit's pitch and by its yaw on top of the
+    // heading. The camera sits that far behind the pivot. It looks at the
+    // pivot, tilted up by lookUp.
+    const [pitch, yaw] = [orbit[0], heading + orbit[1]].map(angles.degToRad);
     const forward = [
       -Math.sin(yaw) * Math.cos(pitch),
       Math.sin(pitch),
@@ -121,6 +126,8 @@ export function createThirdPersonBehavior(sceneManager, getCamera) {
       pivot,
       forward.map((v) => -v * distance)
     );
+
+    const rotation = [orbit[0] + (getSettings().lookUp || 0), heading + orbit[1], 0];
 
     const {transform} = sceneManager.getNodeStateByID(getCamera().id);
     sceneManager.updateNodeStateByID(getCamera().id, {

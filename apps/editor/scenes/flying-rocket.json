@@ -82,7 +82,7 @@
             "type": "perspective",
             "near": 1,
             "far": 12000,
-            "fov": 30
+            "fov": 60
           },
           "transform": {
             "position": [0, 300, -450]
@@ -96,13 +96,14 @@
               "target": {
                 "nodeID": "rocket"
               },
-              "offset": [0, 60, 0],
+              "offset": [0, 0, 0],
               "distance": 600,
               "minDistance": 200,
               "maxDistance": 1500,
-              "rotation": [-20, 0],
+              "rotation": [-8, 0],
               "maxPitch": 70,
-              "followTime": 0.25
+              "followTime": 0.25,
+              "lookUp": 15
             }
           }
         },

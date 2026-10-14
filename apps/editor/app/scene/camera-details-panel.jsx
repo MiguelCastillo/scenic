@@ -1,6 +1,7 @@
 import * as React from "react";
 import {InfoDetailsProperties} from "./info-details-properties.jsx";
 import {ScriptProperties, useScriptTab} from "./script-properties.jsx";
+import {ThirdPersonProperties} from "./third-person-properties.jsx";
 import {TransformProperties} from "./transform-properties.jsx";
 import {OrthographicProjectionProperties} from "./othographic-projection-properties.jsx";
 import {PerspectiveProjectionProperties} from "./perspective-projection-properties.jsx";
@@ -16,7 +17,9 @@ export const CameraDetailsPanel = (props) => {
   const {sceneManager} = React.useContext(SceneContext);
   const {node} = props;
   const scriptTab = useScriptTab(node);
-  const projectionType = sceneManager.getNodeStateByID(node.id).projection.type;
+  const {projection, camera} = sceneManager.getNodeStateByID(node.id);
+  const projectionType = projection.type;
+  const thirdPersonTab = camera?.thirdPerson ? "third-person" : null;
 
   let children = null;
   switch (selectedView) {
@@ -35,6 +38,9 @@ export const CameraDetailsPanel = (props) => {
     case "transform":
       children = <TransformProperties node={node} />;
       break;
+    case "third-person":
+      children = <ThirdPersonProperties node={node} />;
+      break;
     case "script":
       children = <ScriptProperties node={node} />;
       break;
@@ -48,7 +54,7 @@ export const CameraDetailsPanel = (props) => {
       </PanelHeader>
       <PanelBody>
         <PanelToolbar
-          tabs={["info-details", "projection", "transform", scriptTab]}
+          tabs={["info-details", "projection", "transform", thirdPersonTab, scriptTab]}
           onTabSelected={setSelectedView}
           selectedTab={selectedView}
         />
