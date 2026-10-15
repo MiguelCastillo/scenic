@@ -102,9 +102,16 @@ export class Grid extends Renderable {
       ...this.getViewUniforms(),
     ]);
 
-    // The grid is seen from both sides, like a sheet of paper.
+    // The grid is seen from both sides, like a sheet of paper. Without a fill,
+    // its shader gives each line pixel how much of it the line covers as its
+    // alpha, to blend the line over what is behind it.
     gl.disable(gl.CULL_FACE);
+    if (!fillColor) {
+      gl.enable(gl.BLEND);
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    }
     this.shaderProgram.render(this.square);
+    gl.disable(gl.BLEND);
     gl.enable(gl.CULL_FACE);
   }
 

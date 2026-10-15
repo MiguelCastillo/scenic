@@ -57,17 +57,18 @@ float line(vec2 coord, float cellSize, float width) {
 void main() {
   float coverage = line(gridCoord, spacing, lineWidth);
 
-  vec3 color;
   if (filled) {
-    color = mix(fillColor, lineColor.rgb, coverage);
-  } else {
-    // Without a fill there is nothing to blend a line's soft edge with, so
-    // only the middle of each line is drawn.
-    if (coverage < 0.5) {
-      discard;
-    }
-    color = lineColor.rgb;
+    vec3 color = mix(fillColor, lineColor.rgb, coverage);
+    pixelColor = vec4(applyFog(color, fragmentWorldPosition), 1.0);
+    return;
   }
 
-  pixelColor = vec4(applyFog(color, fragmentWorldPosition), 1.0);
+  // Without a fill, a line is blended over whatever is behind it by how much
+  // of the pixel it covers (see grid.js), so soft edges and faint distant
+  // lines fade rather than breaking up. Pixels with no line at all are left
+  // alone, so that they do not hide what is drawn behind them later.
+  if (coverage <= 0.0) {
+    discard;
+  }
+  pixelColor = vec4(applyFog(lineColor.rgb, fragmentWorldPosition), coverage);
 }

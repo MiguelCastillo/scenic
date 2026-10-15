@@ -10,13 +10,10 @@
 //   turns, and moving it up and down dives and climbs the same way as the up
 //   and down arrows. It steers on top of the keys.
 //
-// The throttle is written to this script's settings every frame, so flames
-// under the node that follow it (see flame.js) burn harder when boosting.
-//
 // Keys come from the frame's `keys`, the mouse from its `mouse`, and time
-// from its `seconds`, so it flies
-// at the same speed at any frame rate. Its settings come from
-// "script.settings" in the node's config, and all are optional:
+// from its `seconds`, so it flies at the same speed at any frame rate. Its
+// settings come from "script.settings" in the node's config, and all are
+// optional:
 // - cruiseSpeed: how fast it flies at the cruising throttle, in scene units
 //   per second. 250 by default.
 // - boostSpeed: how fast it flies at full throttle. 1200 by default.
@@ -41,6 +38,18 @@
 // - mouseSteering: whether the mouse steers. false by default.
 // - mouseSensitivity: how far the mouse turns and pitches the rocket, in
 //   degrees per pixel. 0.15 by default.
+//
+// How it is flying is written to this script's settings every frame, so a
+// saved state flies on from where it was, and flames under the node that
+// follow the throttle (see flame.js) burn harder when boosting:
+// - heading: which way it heads, in degrees around the world's up axis. The
+//   node's Y rotation by default.
+// - climb: how steeply it climbs, in degrees, negative when diving. 0 by
+//   default.
+// - roll: how far it is banked, in degrees. 0 by default.
+// - throttle: how hard the engine burns, 0 to 1. cruiseThrottle by default.
+// They are kept rather than read back from the node's rotation, since the
+// same rotation can come from different angles.
 //
 // It flies from wherever the node's state puts it, so moving the node, such
 // as in the editor, moves the rocket.
@@ -122,24 +131,16 @@ function bounce(sceneManager, node, state, position, matrix, flight) {
 }
 
 module.exports = function createFlyScript(node) {
-  // How the rocket is flying: which way it heads, how steeply it climbs, how
-  // far it is banked, and its throttle. They are kept here rather than read
-  // back from the node's rotation, since the same rotation can come from
-  // different angles. They start from the node's state on the first frame.
-  let flight = null;
-
   return {
     preRender({seconds = 0, keys = new Set(), mouse = {x: 0, y: 0}, sceneManager}) {
       const state = sceneManager.getNodeStateByID(node.id);
       const settings = {...defaults, ...state.script.settings};
-      if (!flight) {
-        flight = {
-          heading: state.transform.rotation[1],
-          climb: 0,
-          roll: 0,
-          throttle: settings.cruiseThrottle,
-        };
-      }
+      const flight = {
+        heading: settings.heading ?? state.transform.rotation[1],
+        climb: settings.climb ?? 0,
+        roll: settings.roll ?? 0,
+        throttle: settings.throttle ?? settings.cruiseThrottle,
+      };
 
       const held = (code) => (keys.has(code) ? 1 : 0);
       const turn = held("ArrowLeft") - held("ArrowRight");
@@ -209,7 +210,7 @@ module.exports = function createFlyScript(node) {
 
       sceneManager.updateNodeStateByID(node.id, {
         transform: {...state.transform, position, rotation: mat4.rotationAngles(matrix)},
-        script: {...state.script, settings: {...state.script.settings, throttle: flight.throttle}},
+        script: {...state.script, settings: {...state.script.settings, ...flight}},
       });
     },
   };
