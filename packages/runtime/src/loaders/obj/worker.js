@@ -1,4 +1,4 @@
-importScripts("/apps/editor/dist/file-formats.js");
+importScripts("/packages/runtime/dist/file-formats.js");
 
 // Worker
 onmessage = (evt) => {

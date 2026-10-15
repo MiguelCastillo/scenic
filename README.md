@@ -285,7 +285,7 @@ file's values, putting it back behind its target. Scripts are loaded with the sc
 
 Scripts run like CommonJS modules: the editor fetches the script and runs it
 inside a function given `require`, `module` and `exports`
-(`apps/editor/script-loader.js`). `require` returns the app's own copies of
+(`packages/runtime/src/script-loader.js`). `require` returns the app's own copies of
 `@scenic/math`, `@scenic/scene`, `@scenic/animation` and `@scenic/renderer`, so
 scripts share the app's classes, and requiring anything else is an error.
 Scripts that need other libraries can bundle them with their own build: write
@@ -383,8 +383,8 @@ character's feet:
   floor. Optional; without it only the lines are drawn.
 - `material.color`: the color of the lines.
 
-The lines are drawn by a shader rather than as geometry (`apps/editor/grid.js`
-and `shaders/grid.frag`): the grid draws one square, and each pixel works out
+The lines are drawn by a shader rather than as geometry (`grid.js` and
+`shaders/grid.frag` in `packages/runtime`): the grid draws one square, and each pixel works out
 how close it is to a line. Lines stay crisp up close and fade out in the
 distance instead of shimmering. A finite grid is a square its transform
 places. An infinite grid's square follows the camera, as far as it can see, so
@@ -477,8 +477,8 @@ the lights of their nearest ancestor that has any, counting the lights inside
 its sky, so a building with lamps of its own keeps the sky's lights out.
 Without a sun, the sky places its sun with `sunElevation` and `sunAzimuth`.
 
-The sky is a shader rather than images or a mesh (`apps/editor/sky.js` and
-`shaders/sky.frag`): one triangle covering the screen at the far plane, where
+The sky is a shader rather than images or a mesh (`sky.js` and
+`shaders/sky.frag` in `packages/runtime`): one triangle covering the screen at the far plane, where
 each pixel is painted from the direction it looks in. So it is infinitely far
 away, the mountains never get closer, and fog does not touch the sky itself.
 Its ground below the horizon is the exception: in fog, it is a flat ground at
@@ -565,9 +565,9 @@ skinning on top of the scene `Geometry`.
 
 Which shader a renderable draws with is decided by a `ShaderRegistry` from
 `@scenic/renderer`, and it is the only place shader programs are created. The
-editor creates one (`apps/editor/shader-registry.js`), and code that defines a
-renderable registers its shader on it next to the renderable, as a name or as
-a function that picks one for a particular node:
+runtime creates one (`packages/runtime/src/shader-registry.js`), and code that
+defines a renderable registers its shader on it next to the renderable, as a
+name or as a function that picks one for a particular node:
 
 ```js
 shaderRegistry.register(Grid, "shaders/flat-material");
@@ -578,6 +578,11 @@ A node uses the registration of its most specific class, so the FBX `Mesh`
 registers its own choice over the scene `Mesh`'s: the textured shader when it
 has textures. A function returns null for a node that draws nothing, such as
 the config node an FBX model is loaded into, so it gets no program.
+
+A shader's name is its path in the runtime package without the extension:
+`shaders/grid` is `packages/runtime/shaders/grid.vert` and `grid.frag`. They
+are served from there, so every app built on the runtime draws with the same
+shaders.
 
 The editor's `applyShaders` gives every renderable in a subtree that has no
 program the one the registry picks, loading each shader file the first time it
@@ -647,8 +652,10 @@ editor you can navigate to http://localhost:3000/apps/editor/index.html.
 To stop the dev server you can use `npm run stop-dev`.
 To see the build processes you can use `npm run monit`. Or if you want an aggregated logs for the build and dev server you can use `npm run logs`.
 
-The dev watchers only rebuild the editor bundles. If you change anything under
-`packages/`, run `npm run build` to rebuild the packages too.
+The dev watchers rebuild `@scenic/runtime` and the editor bundles, and the
+editor's scene bundle is rebuilt whenever the runtime is. If you change any
+other package under `packages/`, run `npm run build` to rebuild the packages
+too.
 
 The usual `npm run test` will run all the tests.
 
@@ -656,17 +663,23 @@ The usual `npm run test` will run all the tests.
 which keeps things faster and easier to debug in the browser. Use
 `npm run build:prod` for minified bundles.
 
-The editor generates three bundles:
+Scenes are run by `@scenic/runtime` (`packages/runtime`), which apps are built
+on: it builds a scene from its config and renders it with `renderScene`,
+loading its models, shaders and scripts, and it is where most of the logic for
+FBX animation lives while support for it is implemented. It generates two
+bundles:
 
-1. The editor app (`dist/editor.js`). This is the UI: the scene selector,
-   the scene graph panel, and the canvas and input handling. Eventually this
-   will get renamed to playground.
-2. The scene bundle (`dist/scene.js`), exported as `window.scene`. This is
-   where scenes are built and rendered with `renderScene`, and where most of
-   the logic for FBX animation lives while support for it is implemented.
-3. File formats (`dist/file-formats.js`). This is meant to be loaded in a web
+1. The runtime (`dist/index.js`).
+2. File formats (`dist/file-formats.js`). This is meant to be loaded in a web
    worker for parsing OBJ files. This can be easily extended to support
    parsing other file formats if needed.
+
+The editor generates two more:
+
+1. The editor app (`dist/editor.js`). This is the UI: the scene selector,
+   the scene graph panel, and the canvas and input handling.
+2. The scene bundle (`dist/scene.js`), exported as `window.scene`, which is
+   the runtime's `renderScene` for the editor app to call.
 
 The engine itself lives in the `@scenic/*` packages under `packages/`. See
 [`packages/README.md`](packages/README.md).

@@ -1,0 +1,35 @@
+{
+  "name": "@scenic/runtime",
+  "version": "0.0.0",
+  "description": "scenic runtime: loads and runs scenes, for apps such as the editor",
+  "main": "dist/index.js",
+  "dependencies": {
+    "@scenic/animation": "*",
+    "@scenic/camera": "*",
+    "@scenic/fbx": "*",
+    "@scenic/math": "*",
+    "@scenic/obj": "*",
+    "@scenic/renderer": "*",
+    "@scenic/scene": "*",
+    "@scenic/utils": "*"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "jest",
+    "lint": "eslint ./src",
+    "build": "npm run build:runtime -- --minify false && npm run build:fileformats -- --minify false",
+    "build:prod": "npm run build:runtime -- --minify true && npm run build:fileformats -- --minify true",
+    "build:runtime": "pakit src/index.js --out dist/index.js --eslint false --umd @scenic/runtime",
+    "build:fileformats": "pakit src/loaders/file-formats.js --out dist/file-formats.js --eslint false --umd fileformats"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MiguelCastillo/scenic.git"
+  },
+  "author": "Miguel Castillo <manchagnu@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/MiguelCastillo/scenic/issues"
+  },
+  "homepage": "https://github.com/MiguelCastillo/scenic#readme"
+}

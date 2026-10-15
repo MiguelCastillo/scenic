@@ -3,7 +3,7 @@ module.exports = {
   watch: [
     "editor/*.html",
     "editor/*.css",
-    "editor/shaders/*",
+    "packages/runtime/shaders/*",
     "editor/scenes/*",
     "editor/dist/*.js",
     "resources/**/?(*.fbx|*.obj)",

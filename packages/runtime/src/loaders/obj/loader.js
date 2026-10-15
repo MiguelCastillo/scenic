@@ -10,7 +10,7 @@ import {isLight, isStaticMesh, isSkinnedMesh} from "../../scene-factory.js";
  */
 export class Loader extends WorkerLoader {
   constructor() {
-    super(new Worker("/apps/editor/loaders/obj/worker.js"));
+    super(new Worker("/packages/runtime/src/loaders/obj/worker.js"));
   }
 }
 

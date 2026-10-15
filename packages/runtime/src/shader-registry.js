@@ -3,10 +3,11 @@ import {Node, Renderable, Mesh, Light, Geometry} from "@scenic/scene";
 
 import {createShaderProgramAsync} from "./shader-factory.js";
 
-// shaderRegistry is the editor's ShaderRegistry (see @scenic/renderer). It is
+// shaderRegistry is the runtime's ShaderRegistry (see @scenic/renderer). It is
 // the only place shader programs are created. Code that defines a renderable
 // registers its shader on it next to the renderable, and shader files are
-// loaded from the editor's shaders directory the first time they are needed.
+// loaded from the runtime's shaders directory the first time they are needed
+// (see shader-factory.js).
 export const shaderRegistry = new ShaderRegistry(createShaderProgramAsync);
 
 // applyShaders gives every renderable in root's subtree, root included, that
@@ -16,9 +17,9 @@ export const shaderRegistry = new ShaderRegistry(createShaderProgramAsync);
 // shaders loaded.
 //
 // Finding renderables uses @scenic/scene's classes, which is why this lives in
-// the editor rather than in @scenic/renderer: a package bundles its own copy
+// the runtime rather than in @scenic/renderer: a package bundles its own copy
 // of its dependencies, so a copy of Renderable inside @scenic/renderer would
-// not match the editor's nodes.
+// not match the runtime's nodes.
 export function applyShaders(gl, root, isDisposed) {
   const renderables = Node.findChildrenByType(root, Renderable);
   if (root instanceof Renderable) {

@@ -21,7 +21,7 @@ const float1 = float.fixedFloat(1);
 
 function mockShaders(shaders) {
   shaders.forEach((s) => {
-    const shaderDir = path.join(__dirname, "../../");
+    const shaderDir = path.join(__dirname, "../../../");
     addShaderCacheEntry(
       s,
       fs.readFileSync(shaderDir + s + ".vert") + "",

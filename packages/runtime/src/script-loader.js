@@ -54,8 +54,8 @@ async function loadScript(src) {
 // loadScripts attaches scripts to the nodes whose config has a "script":
 // {"src": "scripts/orbit.js", "settings": {...}}. A script's factory takes the
 // node and returns the script's hooks (see Node.withScript), so every node
-// gets its own instance. src is relative to the editor page, like the shader
-// paths, and each script is loaded once however many nodes use it.
+// gets its own instance. src is relative to the app's page, and each script
+// is loaded once however many nodes use it.
 export function loadScripts(sceneManager) {
   const factories = {};
   const loads = [];

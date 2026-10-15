@@ -2,6 +2,11 @@ import {ShaderProgram, compileShaderSource, parseVertexShaderAttributes} from "@
 
 const shaderCache = {};
 
+// Shader names, such as "shaders/grid", are paths in the runtime package,
+// which is where shader files are served from, so every app built on the
+// runtime draws with the same ones.
+const shadersURL = "/packages/runtime/";
+
 // Shaders that are being downloaded, by name, so that asking for a shader
 // again while it downloads waits for the same download instead of starting
 // another.
@@ -22,8 +27,8 @@ export function loadShaders(names) {
           // File extensions for shaders aren't quite standard, however I have
           // chosen what is used here:
           // https://www.khronos.org/opengles/sdk/tools/Reference-Compiler/
-          const vertexShaderPath = shaderName + ".vert";
-          const fragmentShaderPath = shaderName + ".frag";
+          const vertexShaderPath = shadersURL + shaderName + ".vert";
+          const fragmentShaderPath = shadersURL + shaderName + ".frag";
 
           pendingLoads[shaderName] = Promise.all([
             fetch(vertexShaderPath).then((resp) => resp.text()),
