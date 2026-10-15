@@ -146,14 +146,15 @@ function createSceneUpdater(gl, sceneManager) {
   };
 }
 
-// renderScene loads a scene from its config and renders it every frame: its
-// models, shaders and scripts, its cameras, and the player's input. It is
-// what an app built on the runtime calls to run a scene, and it returns what
-// the app needs to drive it, such as forwarding input or pausing it.
+// loadScene builds a scene from its config, loads its models, shaders and
+// scripts, and starts rendering it every frame, with its cameras and the
+// player's input. It is what an app built on the runtime calls to run a
+// scene, and it returns what the app needs to drive it, such as forwarding
+// input or pausing it.
 // sceneURL is where config came from, such as "/games/bubble-squadron/
 // race.json", which the scene's script paths are relative to. It is the
 // app's page by default.
-export const renderScene = async (gl, config, sceneURL = self.location.href) => {
+export const loadScene = async (gl, config, sceneURL = self.location.href) => {
   const {vendor, renderer, limits, contextAttributes} = webgl.getDebugData(gl);
 
   // eslint-disable-next-line no-console
@@ -172,6 +173,12 @@ export const renderScene = async (gl, config, sceneURL = self.location.href) => 
   // Let's create the scene, which is made up of a scene manager and a
   // state manager.
   const sceneManager = createScene(sceneConfig);
+
+  // Initialize every node's world matrix, so scripts see where everything is
+  // on their first frame.
+  Node.findChildrenByType(sceneManager.scene, Node).forEach((node) =>
+    Node.prototype.preRender.call(node, {sceneManager})
+  );
 
   // API for loading resources for scene nodes.
   const resourceLoader = createResourceLoader(gl, sceneManager);

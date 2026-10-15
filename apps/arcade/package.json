@@ -1,0 +1,27 @@
+{
+    "name": "@scenic/arcade",
+    "version": "0.0.0",
+    "description": "Arcade for scenic: plays the games in games/",
+    "dependencies": {
+        "@scenic/dom": "*",
+        "@scenic/renderer": "*",
+        "@scenic/runtime": "*"
+    },
+    "devDependencies": {},
+    "scripts": {
+        "test": "echo no tests",
+        "lint": "eslint ./",
+        "build": "pakit --config .pakit-arcade.js --minify false",
+        "build:prod": "pakit --config .pakit-arcade.js --minify"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/MiguelCastillo/scenic.git"
+    },
+    "author": "Miguel Castillo <manchagnu@gmail.com>",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/MiguelCastillo/scenic/issues"
+    },
+    "homepage": "https://github.com/MiguelCastillo/scenic#readme"
+}

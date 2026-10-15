@@ -2,6 +2,7 @@ import React from "react";
 import {createRoot} from "react-dom/client";
 import {ready as domReady, events as domEvents} from "@scenic/dom";
 import {webgl} from "@scenic/renderer";
+import {loadScene} from "@scenic/runtime";
 
 import {SceneGraph} from "./app/app.jsx";
 import {Error} from "./app/error.jsx";
@@ -40,7 +41,7 @@ domReady.onReady(() => {
   const fpsEl = document.querySelector("#fps");
   const hudEl = document.querySelector("#hud");
 
-  // The scene currently rendering, as returned by renderScene. It is disposed
+  // The scene currently rendering, as returned by loadScene. It is disposed
   // before another scene is rendered in its place.
   let currentScene = null;
 
@@ -96,7 +97,7 @@ domReady.onReady(() => {
     sceneSelectorRoot.render(
       <SceneSelector
         sceneFiles={sceneFiles}
-        onSelect={loadScene}
+        onSelect={openScene}
         onCancel={currentScene ? hideSceneSelector : null}
       />
     );
@@ -106,7 +107,7 @@ domReady.onReady(() => {
     sceneSelectorRoot.render(null);
   }
 
-  function loadScene(sceneFile) {
+  function openScene(sceneFile) {
     hideSceneSelector();
 
     if (currentScene) {
@@ -124,9 +125,7 @@ domReady.onReady(() => {
 
     fetch(sceneFile)
       .then((response) => response.json())
-      // window.scene is exported from scene-main.js via the UMD export.
-      // See .pakit-scene.js for more details.
-      .then((config) => window.scene.renderScene(gl, config, sceneFile))
+      .then((config) => loadScene(gl, config, sceneFile))
       .then((scene) => {
         currentScene = scene;
         const {registerRefreshRateUpdater, registerHudUpdater} = scene;

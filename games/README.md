@@ -27,7 +27,7 @@ on any app, so every app can run it. What games and apps both use goes in
 game, such as `hover.js`, `flame.js` and `spin.js`, in `resources/scripts`.
 
 A scene's script paths, such as `"src": "scripts/fly.js"`, are relative to
-the scene file (see `renderScene` in `@scenic/runtime`), so a game's scenes
+the scene file (see `loadScene` in `@scenic/runtime`), so a game's scenes
 find their scripts in any app that runs them. Shared models and scripts are
 loaded by absolute path, such as `/resources/scripts/hover.js`.
 

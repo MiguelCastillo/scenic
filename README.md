@@ -633,7 +633,7 @@ texture uniforms to the parent's shader program when it renders.
 
 ### Disposing a scene
 
-`renderScene` returns a `dispose` function, and the editor calls it before
+`loadScene` returns a `dispose` function, and the editor calls it before
 rendering another scene. It stops the render loop, stops loading resources,
 and calls `SceneManager.dispose(gl)`, which walks the tree so that every node
 deletes the GPU resources it owns.
@@ -654,14 +654,16 @@ On a fresh clone, please run `npm install` to get all your dependencies ready.
 
 To start up the dev server you can `npm run start-dev`. That will startup
 the build system, file watching, and your local dev server. To load up the
-editor you can navigate to http://localhost:3000/apps/editor/index.html.
+editor you can navigate to http://localhost:3000/apps/editor/index.html,
+and to play a game in the arcade, to
+http://localhost:3000/apps/arcade/index.html?game=bubble-squadron.
 To stop the dev server you can use `npm run stop-dev`.
 To see the build processes you can use `npm run monit`. Or if you want an aggregated logs for the build and dev server you can use `npm run logs`.
 
-The dev watchers rebuild `@scenic/runtime` and the editor bundles, and the
-editor's scene bundle is rebuilt whenever the runtime is. If you change any
-other package under `packages/`, run `npm run build` to rebuild the packages
-too.
+The dev watchers rebuild `@scenic/runtime`, the editor and the arcade, and
+the editor and the arcade are rebuilt whenever the runtime is. If you change
+any other package under `packages/`, run `npm run build` to rebuild the
+packages too.
 
 The usual `npm run test` will run all the tests.
 
@@ -670,7 +672,7 @@ which keeps things faster and easier to debug in the browser. Use
 `npm run build:prod` for minified bundles.
 
 Scenes are run by `@scenic/runtime` (`packages/runtime`), which apps are built
-on: it builds a scene from its config and renders it with `renderScene`,
+on: `loadScene` builds a scene from its config and starts rendering it,
 loading its models, shaders and scripts, and it is where most of the logic for
 FBX animation lives while support for it is implemented. It generates two
 bundles:
@@ -680,12 +682,17 @@ bundles:
    worker for parsing OBJ files. This can be easily extended to support
    parsing other file formats if needed.
 
-The editor generates two more:
+The editor (`apps/editor`) generates one, `dist/editor.js`, with the runtime
+in it. This is the UI: the scene selector, the scene graph panel, and the
+canvas and input handling.
 
-1. The editor app (`dist/editor.js`). This is the UI: the scene selector,
-   the scene graph panel, and the canvas and input handling.
-2. The scene bundle (`dist/scene.js`), exported as `window.scene`, which is
-   the runtime's `renderScene` for the editor app to call.
+The arcade (`apps/arcade`) generates one too, `dist/arcade.js`, with the
+runtime in it. The arcade plays one game from `games/` full screen, the one its URL
+names with `?game=`, with nothing but the game's HUD over it. It reads the
+game's `game.json` and runs the scene the game starts in. The game starts
+paused: clicking it locks the pointer and plays, Escape lets go of the
+pointer and pauses it, P pauses and resumes while playing, and C switches
+cameras.
 
 The engine itself lives in the `@scenic/*` packages under `packages/`. See
 [`packages/README.md`](packages/README.md).

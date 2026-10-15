@@ -8,7 +8,7 @@
     "lint": "npm run lint --workspaces",
     "start": "3dub --config .3dub-prod.js",
     "start-dev": "pm2 start dev.config.js",
-    "stop-dev": "pm2 delete server build-runtime build-runtime-fileformats build-editor-scene build-editor-app",
+    "stop-dev": "pm2 delete server build-runtime build-runtime-fileformats build-editor-app build-arcade",
     "monit": "pm2 monit",
     "logs": "pm2 logs",
     "build": "npm run build --workspace=packages/math --workspace=packages/encoding --workspace=packages/scene --workspace=packages/camera --workspace=packages/utils --workspace=packages --workspace=apps",

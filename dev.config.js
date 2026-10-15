@@ -32,12 +32,12 @@ module.exports = {
       },
     },
     {
-      name: "build-editor-scene",
+      name: "build-editor-app",
       script: "npm",
-      args: "run build:scene --workspace=apps/editor -- --watch",
-      // The scene bundle is built from @scenic/runtime's bundle, so it is
-      // rebuilt whenever build-runtime rebuilds that.
-      watch: ["apps/editor/.pakit-scene.js", "packages/runtime/dist/index.js"],
+      args: "run build:editor --workspace=apps/editor -- --watch",
+      // The editor's bundle includes @scenic/runtime's, so it is rebuilt
+      // whenever build-runtime rebuilds that.
+      watch: ["apps/editor/.pakit-editor.js", "packages/runtime/dist/index.js"],
       ignore_watch: ["node_modules"],
       env: {
         NODE_ENV: "development",
@@ -47,10 +47,12 @@ module.exports = {
       },
     },
     {
-      name: "build-editor-app",
+      name: "build-arcade",
       script: "npm",
-      args: "run build:editor --workspace=apps/editor -- --watch",
-      watch: ["apps/editor/.pakit-editor.js"],
+      args: "run build --workspace=apps/arcade -- --watch",
+      // The arcade's bundle includes @scenic/runtime's, so it is rebuilt
+      // whenever build-runtime rebuilds that.
+      watch: ["apps/arcade/.pakit-arcade.js", "packages/runtime/dist/index.js"],
       ignore_watch: ["node_modules"],
       env: {
         NODE_ENV: "development",

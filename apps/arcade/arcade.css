@@ -1,0 +1,57 @@
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #000;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+#canvas {
+  display: block;
+  height: 100vh;
+  width: 100vw;
+}
+
+/* Text the game shows over itself, such as a race's lap and time. */
+#hud {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 10px 24px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.45);
+  color: white;
+  font-size: 20px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  white-space: pre-line;
+  pointer-events: none;
+}
+
+#hud:empty {
+  display: none;
+}
+
+/* What the player needs to know to play, such as "Click to play" or that
+   the game is paused, in the middle of the screen. Clicks go through it to
+   the canvas. */
+#message {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 14px 32px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.55);
+  color: white;
+  font-size: 26px;
+  text-align: center;
+  white-space: pre-line;
+  pointer-events: none;
+}
+
+#message:empty {
+  display: none;
+}
