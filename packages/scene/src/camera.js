@@ -10,9 +10,14 @@ import {Node} from "./node.js";
 //   further away look smaller. fov is the vertical field of view in degrees.
 // - {"type": "orthographic", "far": 10000} keeps things the same size however
 //   far away they are, measured in pixels from the bottom left.
+//
+// A camera's type is "camera" unless it is given another. Other types say how
+// the camera moves, such as "third-person-camera", which an app gives a
+// behavior to move it by (see CameraSystem in @scenic/camera). A plain camera
+// stays where its transform puts it.
 export class Camera extends Node {
   constructor(options) {
-    super({...options, type: "camera"});
+    super({type: "camera", ...options});
     this.projectionMatrix = mat4.Matrix4.identity();
   }
 

@@ -9,7 +9,7 @@ import "./logging.js";
 
 import {mat4} from "@scenic/math";
 import {webgl} from "@scenic/renderer";
-import {cameraModes} from "@scenic/camera";
+import {CameraSystem} from "@scenic/camera";
 
 import {createScene, buildDefaultState} from "./scene-factory.js";
 import {createResourceLoader, getResourcesFromConfig} from "./loaders/resource-loader.js";
@@ -22,79 +22,25 @@ import {createFrameRateCounter} from "./fps-counter.js";
 const worldViewportID = "world";
 const axisGizmoID = "axis gizmo";
 
-// The camera mode a camera uses when it has no other.
-const defaultCameraMode = "free-fly";
-
 // Helper function for providing the ability to update a scene and to also
 // render it. Nothing in here touches the DOM; the app owns the canvas size and
 // input events and drives the scene through the functions returned here.
 function createSceneUpdater(gl, sceneManager) {
   const getFrameRate = createFrameRateCounter();
 
-  const getCamera = () => sceneManager.getNodeByID(worldViewportID).activeCamera;
-
-  // A camera behavior from @scenic/camera decides how the world viewport's
-  // active camera responds to the player's input (see that package's index.js
-  // for the calls every behavior provides). Which behavior is in use is the camera mode, set by `cameraMode` in the
-  // world viewport's state. When the mode is missing, unknown, or one the
-  // active camera has no settings for, the camera uses free-fly. A new
-  // behavior is created whenever the mode changes, so each mode starts fresh.
-  const getCameraModes = () => {
-    const settings = sceneManager.getNodeStateByID(getCamera().id).camera;
-    return Object.keys(cameraModes).filter((mode) => settings[cameraModes[mode].settingsKey]);
-  };
-
-  let cameraMode = null;
-  let cameraBehavior = null;
-  function getCameraBehavior() {
-    const mode = sceneManager.getNodeStateByID(worldViewportID).cameraMode;
-    const nextMode = getCameraModes().includes(mode) ? mode : defaultCameraMode;
-    if (nextMode !== cameraMode) {
-      cameraMode = nextMode;
-      cameraBehavior = cameraModes[nextMode].createBehavior(sceneManager, getCamera);
-    }
-    return cameraBehavior;
-  }
-
-  // toggleCameraMode switches the world viewport to the next camera mode the
-  // active camera has settings for, going back to the first after the last.
-  function toggleCameraMode() {
-    getCameraBehavior();
-    const modes = getCameraModes();
-    const next = modes[(modes.indexOf(cameraMode) + 1) % modes.length];
-    sceneManager.updateNodeStateByID(worldViewportID, {cameraMode: next});
-  }
-
-  // turnCamera turns the camera as the mouse moves, unless the camera's
-  // settings for its mode leave the mouse to the scene with "mouseOrbit":
-  // false, such as so that a rocket can be steered with it. While paused the
-  // mouse always turns the camera, so a third-person camera can orbit what it
-  // follows.
-  function turnCamera(rightDegrees, upDegrees) {
-    const behavior = getCameraBehavior();
-    const settings = sceneManager.getNodeStateByID(getCamera().id).camera;
-    const modeSettings = settings[cameraModes[cameraMode].settingsKey];
-    if (paused || modeSettings.mouseOrbit !== false) {
-      behavior.turn(rightDegrees, upDegrees);
-    }
-  }
-
-  // getCameraControls returns which camera the controls fly and the camera
-  // mode they fly it in: the mode actually in use, after falling back to
-  // free-fly, rather than what the viewport's state asks for.
-  function getCameraControls() {
-    getCameraBehavior();
-    return {cameraID: getCamera().id, mode: cameraMode};
-  }
+  // The world viewport's cameras, which the app forwards the player's input to
+  // (see CameraSystem in @scenic/camera).
+  const cameras = new CameraSystem(sceneManager, worldViewportID);
 
   let lastFrameMs = null;
   let frameSeconds = 0;
 
   // While the scene is paused its clock stops: scripts get no time and no
-  // input, and animations hold still. The camera keeps responding, so the
-  // view can still be looked around (see turnCamera) and edits to the scene
-  // still show. Resuming puts a third-person camera back where it starts,
-  // behind what it follows.
+  // input, and animations hold still. The cameras keep responding, and the
+  // app lets the mouse look around even where it is left to the scene, such
+  // as to orbit a rocket. Edits to the scene still show. Resuming puts the
+  // camera back where the scene config starts it, such as behind what it
+  // follows.
   // sceneMs is the scene's own clock, which only runs while it isn't paused.
   let paused = false;
   let sceneMs = null;
@@ -118,12 +64,12 @@ function createSceneUpdater(gl, sceneManager) {
     frameSeconds = paused ? 0 : seconds;
     sceneMs = sceneMs === null ? ms : sceneMs + frameSeconds * 1000;
 
-    getCameraBehavior().update(seconds);
+    cameras.update(seconds);
 
     // The axis gizmo shows the world's axes as the camera sees them, so it is
     // rotated by the inverse of the camera's rotation. The inverse of a
     // rotation matrix is its transpose.
-    const {rotation} = sceneManager.getNodeStateByID(getCamera().id).transform;
+    const {rotation} = sceneManager.getNodeStateByID(cameras.activeCamera.id).transform;
     const cameraRotation = mat4.rotate(mat4.identity(), ...rotation);
     const axisGizmoState = sceneManager.getNodeStateByID(axisGizmoID);
     sceneManager.updateNodeStateByID(axisGizmoID, {
@@ -164,11 +110,7 @@ function createSceneUpdater(gl, sceneManager) {
     updateScene,
     renderFrame,
     registerRefreshRateUpdater,
-    turnCamera,
-    moveCamera: (...args) => getCameraBehavior().move(...args),
-    setCameraMovement: (...args) => getCameraBehavior().setMovement(...args),
-    toggleCameraMode,
-    getCameraControls,
+    cameras,
     setHeldKeys: (keys) => {
       heldKeys = new Set(keys);
     },
@@ -177,12 +119,12 @@ function createSceneUpdater(gl, sceneManager) {
     },
     togglePause: () => {
       paused = !paused;
-      if (!paused && cameraMode === "third-person") {
-        // A new behavior starts from the camera's settings.
-        cameraMode = null;
+      if (!paused) {
+        cameras.reset();
       }
       return paused;
     },
+    isPaused: () => paused,
   };
 }
 
@@ -219,14 +161,11 @@ export const renderScene = async (gl, config) => {
     updateScene,
     renderFrame,
     registerRefreshRateUpdater,
-    turnCamera,
-    moveCamera,
-    setCameraMovement,
-    toggleCameraMode,
-    getCameraControls,
+    cameras,
     setHeldKeys,
     addMouseMovement,
     togglePause,
+    isPaused,
   } = createSceneUpdater(gl, sceneManager);
 
   // This starts the render loop to render the scene!
@@ -266,14 +205,11 @@ export const renderScene = async (gl, config) => {
     resourceLoader,
     sceneManager,
     registerRefreshRateUpdater,
-    turnCamera,
-    moveCamera,
-    setCameraMovement,
-    toggleCameraMode,
-    getCameraControls,
+    cameras,
     setHeldKeys,
     addMouseMovement,
     togglePause,
+    isPaused,
     dispose,
   };
 };

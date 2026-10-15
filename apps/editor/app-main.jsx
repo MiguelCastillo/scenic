@@ -73,16 +73,16 @@ domReady.onReady(() => {
   );
 
   // renderSceneGraph renders the scene graph panel for the current scene. It
-  // is rendered again when the camera mode changes, so that the panels show
-  // the mode in use. Rendering the same SceneGraph again keeps its state, such
-  // as the selected node.
+  // is rendered again when the active camera changes, so that the panels show
+  // it. Rendering the same SceneGraph again keeps its state,
+  // such as the selected node.
   function renderSceneGraph() {
-    const {resourceLoader, sceneManager, getCameraControls} = currentScene;
+    const {resourceLoader, sceneManager, cameras} = currentScene;
     sceneGraphRoot.render(
       <SceneGraph
         sceneManager={sceneManager}
         resourceLoader={resourceLoader}
-        cameraControls={getCameraControls()}
+        cameras={cameras}
         onChangeScene={showSceneSelector}
       />
     );
@@ -165,9 +165,9 @@ const cameraMovementKeys = {
   KeyQ: {up: -1},
 };
 
-// The key that switches the camera between its modes, such as free-fly and
-// first-person.
-const toggleCameraModeKey = "KeyV";
+// The key that switches to the next camera, such as from following a rocket
+// to its cockpit.
+const nextCameraKey = "KeyC";
 
 // The key that pauses and resumes the scene.
 const pauseKey = "KeyP";
@@ -177,15 +177,15 @@ const pauseKey = "KeyP";
 const pageScrollKeys = new Set(["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"]);
 
 // subscribeToSceneInput maps the mouse and keyboard onto the current scene's
-// camera controls. How the camera responds is up to its camera behavior (see
-// the @scenic/camera package and where scene-main.js creates it). Every key
+// cameras. How the active camera responds is up to its type (see CameraSystem
+// in the @scenic/camera package). Every key
 // held down is also given to the scene's scripts, such as a rocket's flight
 // controls, and so is how far the mouse moves. Clicking the mousetrap locks the
 // pointer to it, and input only reaches the scene while the pointer is locked,
 // so typing in the editor's panels is left alone. Pressing Escape releases the
 // lock. Pressing P pauses the scene, and onPauseChange is told whether it is
-// now paused.
-function subscribeToSceneInput(mousetrapEl, getCurrentScene, onCameraModeChange, onPauseChange) {
+// now paused. onCameraChange is called when the active camera changes.
+function subscribeToSceneInput(mousetrapEl, getCurrentScene, onCameraChange, onPauseChange) {
   const isPointerLocked = () => document.pointerLockElement === mousetrapEl;
   const heldKeys = new Set();
   const scriptKeys = new Set();
@@ -206,7 +206,7 @@ function subscribeToSceneInput(mousetrapEl, getCurrentScene, onCameraModeChange,
         movement[direction] += amount;
       }
     }
-    scene.setCameraMovement(movement);
+    scene.cameras.setMovement(movement);
   }
 
   domEvents.Subscription.create(mousetrapEl)
@@ -216,10 +216,15 @@ function subscribeToSceneInput(mousetrapEl, getCurrentScene, onCameraModeChange,
     .on("mousemove", (evt) => {
       const scene = getCurrentScene();
       if (scene && isPointerLocked()) {
-        scene.turnCamera(
-          evt.movementX * cameraTurnDegreesPerPixel,
-          -evt.movementY * cameraTurnDegreesPerPixel
-        );
+        // While paused the mouse looks around, even with cameras that leave
+        // it to the scene.
+        const right = evt.movementX * cameraTurnDegreesPerPixel;
+        const up = -evt.movementY * cameraTurnDegreesPerPixel;
+        if (scene.isPaused()) {
+          scene.cameras.lookAround(right, up);
+        } else {
+          scene.cameras.turn(right, up);
+        }
         scene.addMouseMovement(evt.movementX, evt.movementY);
       }
     })
@@ -229,7 +234,7 @@ function subscribeToSceneInput(mousetrapEl, getCurrentScene, onCameraModeChange,
 
       const scene = getCurrentScene();
       if (scene && isPointerLocked()) {
-        scene.moveCamera(
+        scene.cameras.move(
           -evt.deltaY * cameraScrollDistancePerPixel,
           evt.deltaX * cameraScrollDistancePerPixel,
           0
@@ -260,14 +265,14 @@ function subscribeToSceneInput(mousetrapEl, getCurrentScene, onCameraModeChange,
         return;
       }
 
-      if (evt.code === toggleCameraModeKey && !evt.repeat) {
+      if (evt.code === nextCameraKey && !evt.repeat) {
         evt.preventDefault();
         const scene = getCurrentScene();
         if (scene) {
-          scene.toggleCameraMode();
-          onCameraModeChange();
-          // The new mode starts with no movement, so tell it about any keys
-          // that are still held.
+          scene.cameras.nextCamera();
+          onCameraChange();
+          // Held movement belongs to each camera, so tell the new one about
+          // keys that are still down.
           updateCameraMovement();
         }
         return;

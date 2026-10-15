@@ -14,10 +14,7 @@ export class ThirdPersonProperties extends WithNodeState {
     const nodeState = this.getNodeState();
     this.updateNodeState({
       ...nodeState,
-      camera: {
-        ...nodeState.camera,
-        thirdPerson: {...nodeState.camera.thirdPerson, ...changes},
-      },
+      thirdPerson: {...nodeState.thirdPerson, ...changes},
     });
   };
 
@@ -38,14 +35,14 @@ export class ThirdPersonProperties extends WithNodeState {
   handleChangeOffset = (axis, evt) => {
     const value = this.number(evt);
     if (value != null) {
-      const offset = [...this.getNodeState().camera.thirdPerson.offset];
+      const offset = [...this.getNodeState().thirdPerson.offset];
       offset[axis] = value;
       this.updateSettings({offset});
     }
   };
 
   render() {
-    const settings = this.getNodeState().camera?.thirdPerson;
+    const settings = this.getNodeState().thirdPerson;
     if (!settings) {
       return null;
     }

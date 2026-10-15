@@ -82,7 +82,7 @@ export class Sky extends Renderable {
     }
 
     const {gl, ms, sceneManager} = context;
-    const settings = {...Sky.defaults, ...sceneManager.getNodeStateByID(this.id).sky};
+    const state = {...Sky.defaults, ...sceneManager.getNodeStateByID(this.id).sky};
 
     // The shader turns each pixel back into the direction it looks in, with
     // the inverse of the view-projection. Inverting the uploaded data as it
@@ -90,7 +90,7 @@ export class Sky extends Renderable {
     // is the transpose of the inverse.
     const inverseViewProjection = mat4.invert(mat4.identity(), this.getViewProjectionMatrix().data);
 
-    const sunDirection = this.getSunDirection(sceneManager, settings);
+    const sunDirection = this.getSunDirection(sceneManager, state);
 
     const vec3Uniform = (name, value) => ({
       name,
@@ -107,19 +107,19 @@ export class Sky extends Renderable {
         update: (gl, {index}) => gl.uniformMatrix4fv(index, false, inverseViewProjection),
       },
       floatUniform("time", ms / 1000),
-      vec3Uniform("zenithColor", settings.zenithColor),
-      vec3Uniform("horizonColor", settings.horizonColor),
-      vec3Uniform("groundColor", settings.groundColor),
-      vec3Uniform("sunColor", settings.sunColor),
+      vec3Uniform("zenithColor", state.zenithColor),
+      vec3Uniform("horizonColor", state.horizonColor),
+      vec3Uniform("groundColor", state.groundColor),
+      vec3Uniform("sunColor", state.sunColor),
       vec3Uniform("sunDirection", sunDirection),
-      floatUniform("cloudCover", settings.cloudCover),
-      floatUniform("cloudScale", settings.cloudScale),
-      floatUniform("cloudSpeed", settings.cloudSpeed),
-      vec3Uniform("cloudColor", settings.cloudColor),
-      vec3Uniform("cloudShadeColor", settings.cloudShadeColor),
-      floatUniform("mountainHeight", Math.sin((settings.mountainHeight * Math.PI) / 180)),
-      vec3Uniform("farMountainColor", settings.farMountainColor),
-      vec3Uniform("nearMountainColor", settings.nearMountainColor),
+      floatUniform("cloudCover", state.cloudCover),
+      floatUniform("cloudScale", state.cloudScale),
+      floatUniform("cloudSpeed", state.cloudSpeed),
+      vec3Uniform("cloudColor", state.cloudColor),
+      vec3Uniform("cloudShadeColor", state.cloudShadeColor),
+      floatUniform("mountainHeight", Math.sin((state.mountainHeight * Math.PI) / 180)),
+      vec3Uniform("farMountainColor", state.farMountainColor),
+      vec3Uniform("nearMountainColor", state.nearMountainColor),
       ...this.getViewUniforms(),
     ]);
 
@@ -138,16 +138,16 @@ export class Sky extends Renderable {
   // the sky's light marked as the sun, the same way lights shine (see
   // Mesh.configureLighting), or from the sky's elevation and azimuth without
   // one.
-  getSunDirection(sceneManager, settings) {
+  getSunDirection(sceneManager, state) {
     const sun = (this.childrenByTypeName.light || [])
       .map(({id}) => sceneManager.getNodeStateByID(id))
-      .find((state) => state?.light?.sun);
+      .find((lightState) => lightState?.light?.sun);
     const position = sun?.transform?.position;
     if (position) {
       return position;
     }
 
-    const [elevation, azimuth] = [settings.sunElevation, settings.sunAzimuth].map(
+    const [elevation, azimuth] = [state.sunElevation, state.sunAzimuth].map(
       (degrees) => (degrees * Math.PI) / 180
     );
     return [

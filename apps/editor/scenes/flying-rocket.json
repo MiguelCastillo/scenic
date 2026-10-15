@@ -76,8 +76,8 @@
       },
       "items": [
         {
-          "name": "camera",
-          "type": "camera",
+          "name": "chase camera",
+          "type": "third-person-camera",
           "projection": {
             "type": "perspective",
             "near": 1,
@@ -87,25 +87,61 @@
           "transform": {
             "position": [0, 300, -450]
           },
-          "camera": {
-            "freeFly": {
-              "speed": 200,
-              "maxPitch": 89
+          "thirdPerson": {
+            "target": {
+              "nodeID": "rocket"
             },
-            "thirdPerson": {
-              "target": {
-                "nodeID": "rocket"
-              },
-              "offset": [0, 0, 0],
-              "distance": 600,
-              "minDistance": 200,
-              "maxDistance": 1500,
-              "rotation": [-8, 0],
-              "maxPitch": 70,
-              "followTime": 0.25,
-              "lookUp": 15,
-              "mouseOrbit": false
-            }
+            "offset": [0, 0, 0],
+            "distance": 600,
+            "minDistance": 200,
+            "maxDistance": 1500,
+            "rotation": [-8, 0],
+            "maxPitch": 70,
+            "followTime": 0.25,
+            "lookUp": 15,
+            "mouseOrbit": false
+          }
+        },
+        {
+          "name": "cockpit camera",
+          "type": "first-person-camera",
+          "projection": {
+            "type": "perspective",
+            "near": 1,
+            "far": 12000,
+            "fov": 75
+          },
+          "transform": {
+            "position": [0, 0, 0],
+            "rotation": [0, 0, 0]
+          },
+          "firstPerson": {
+            "target": {
+              "nodeID": "rocket"
+            },
+            "offset": {
+              "position": [0, 32, 45],
+              "rotation": [0, 180, 0]
+            },
+            "maxPitch": 80,
+            "mouseOrbit": false
+          }
+        },
+        {
+          "projection": {
+            "type": "perspective",
+            "near": 1,
+            "far": 12000,
+            "fov": 60
+          },
+          "transform": {
+            "position": [0, 300, -450]
+          },
+          "name": "free camera",
+          "type": "free-fly-camera",
+          "freeFly": {
+            "speed": 200,
+            "maxPitch": 89
           }
         },
         {
@@ -1220,8 +1256,7 @@
             }
           ]
         }
-      ],
-      "cameraMode": "third-person"
+      ]
     }
   ]
 }

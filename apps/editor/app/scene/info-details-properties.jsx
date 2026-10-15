@@ -50,16 +50,24 @@ export class InfoDetailsProperties extends WithNodeState {
     this.context.updateScene();
   };
 
+  // handleLookThrough makes the viewport look through camera.
+  handleLookThrough = (camera) => {
+    const {cameras, updateScene} = this.context;
+    cameras.setActiveCamera(camera.name);
+    updateScene();
+  };
+
   render() {
     const nodeState = this.getNodeState();
     const {node} = this.props;
     const canSelectFile =
       node.type === "static-mesh" || node.type === "skinned-mesh" || node.type === "light";
 
-    // The camera mode belongs to the camera the controls fly, so it is only
-    // shown for that camera.
-    const {cameraControls} = this.context;
-    const cameraMode = cameraControls?.cameraID === node.id ? cameraControls.mode : null;
+    // Cameras the editor runs show whether they are the one being looked
+    // through.
+    const {cameras} = this.context;
+    const isRunCamera = cameras?.viewport.cameras.includes(node);
+    const isActiveCamera = isRunCamera && cameras.activeCamera === node;
 
     return (
       <div className="node-properties info-details">
@@ -80,10 +88,14 @@ export class InfoDetailsProperties extends WithNodeState {
             value={node.type}
           />
         </div>
-        {cameraMode ? (
-          <div className="camera-mode">
-            <label>Camera mode</label>
-            <input readOnly type="text" value={cameraMode} />
+        {isRunCamera ? (
+          <div className="active-camera">
+            <label>Active</label>
+            {isActiveCamera ? (
+              <input readOnly type="text" value="yes" />
+            ) : (
+              <button onClick={() => this.handleLookThrough(node)}>Look through this camera</button>
+            )}
           </div>
         ) : null}
         {canSelectFile ? (

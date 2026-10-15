@@ -21,6 +21,9 @@ export class NodeDetailsPanel extends React.Component {
     let children = null;
     switch (node.type) {
       case "camera":
+      case "free-fly-camera":
+      case "first-person-camera":
+      case "third-person-camera":
         children = <CameraDetailsPanel node={node} />;
         break;
       case "static-mesh":

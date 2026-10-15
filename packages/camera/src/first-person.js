@@ -1,19 +1,18 @@
 import {mat4} from "@scenic/math";
-import {createTargetFinder} from "./target.js";
+import {findTarget} from "./target.js";
 
-// createFirstPersonBehavior looks out from a node in the scene, such as a
-// character's head bone, so the view moves exactly as that node does,
-// animation included. The mouse looks around from there, and the camera
-// cannot move on its own: move and setMovement do nothing. getCamera returns
-// the camera to place, so the behavior always follows the viewport's active
-// camera.
+// firstPerson looks out from a node in the scene through a
+// "first-person-camera", such as from a character's head bone, so the view
+// moves exactly as that node does, animation included. The mouse looks around
+// from there, and the camera cannot move on its own: move and setMovement do
+// nothing. It keeps nothing itself: it reads the camera's state and writes
+// back to it.
 //
 // Every frame, the camera's world transform is the target node's world
 // transform, then the offset, then the look angles. The result is written to
 // the camera's transform in the state manager.
 //
-// Its settings come from "firstPerson" in the "camera" block of the camera's
-// node in the scene config:
+// Its settings are the camera's "firstPerson" block:
 // - target: the node to look out from, such as a character's head bone, as
 //   {"nodeID": ..., "boneName": ...} (see target.js).
 // - offset: where the camera sits relative to the target, in the target's own
@@ -22,34 +21,31 @@ import {createTargetFinder} from "./target.js";
 //   rotation of [0, 180, 0] to look the same way.
 // - maxPitch: how far up or down it can look, in degrees, from where the
 //   target is facing.
-export function createFirstPersonBehavior(sceneManager, getCamera) {
-  const getSettings = () => sceneManager.getNodeStateByID(getCamera().id).camera.firstPerson;
-
-  const findTarget = createTargetFinder(sceneManager);
-
-  // The look angles are [pitch, yaw] in degrees, relative to where the target
-  // is facing. They start at 0, so a newly created behavior looks straight
-  // ahead.
-  let look = [0, 0];
+// - look: where it is looking, as [pitch, yaw] in degrees, from where the
+//   target is facing. Optional, [0, 0] by default, which looks straight ahead.
+export const firstPerson = {
+  stateKey: "firstPerson",
 
   // turn looks around from the target, with the same signs as free-fly: a
   // positive rightDegrees looks right and a positive upDegrees looks up.
-  function turn(rightDegrees, upDegrees) {
-    const {maxPitch} = getSettings();
-    const [pitch, yaw] = look;
-    look = [Math.max(-maxPitch, Math.min(maxPitch, pitch + upDegrees)), yaw - rightDegrees];
-  }
+  turn(sceneManager, camera, rightDegrees, upDegrees) {
+    const {firstPerson} = sceneManager.getNodeStateByID(camera.id);
+    const {maxPitch, look: [pitch, yaw] = [0, 0]} = firstPerson;
+    const look = [Math.max(-maxPitch, Math.min(maxPitch, pitch + upDegrees)), yaw - rightDegrees];
+    sceneManager.updateNodeStateByID(camera.id, {firstPerson: {...firstPerson, look}});
+  },
 
-  function move() {}
-  function setMovement() {}
+  move() {},
+  setMovement() {},
 
-  function update() {
-    const node = findTarget(getSettings().target);
+  update(sceneManager, camera) {
+    const {transform, firstPerson} = sceneManager.getNodeStateByID(camera.id);
+    const node = findTarget(sceneManager, firstPerson.target);
     if (!node) {
       return;
     }
 
-    const {offset} = getSettings();
+    const {offset, look = [0, 0]} = firstPerson;
     const matrix = node.worldMatrix
       .multiply(mat4.Matrix4.trs(offset.position, offset.rotation, [1, 1, 1]))
       .multiply(mat4.Matrix4.rotate(look[0], look[1], 0));
@@ -67,11 +63,14 @@ export function createFirstPersonBehavior(sceneManager, getCamera) {
       }
     }
 
-    const {transform} = sceneManager.getNodeStateByID(getCamera().id);
-    sceneManager.updateNodeStateByID(getCamera().id, {
+    sceneManager.updateNodeStateByID(camera.id, {
       transform: {...transform, position, rotation: mat4.rotationAngles(rotation)},
     });
-  }
+  },
 
-  return {turn, move, setMovement, update};
-}
+  // reset is state, the camera's "firstPerson" block, with the look angles
+  // put back to originalState's, the block in the scene config.
+  reset(state, originalState) {
+    return {...state, look: originalState.look};
+  },
+};

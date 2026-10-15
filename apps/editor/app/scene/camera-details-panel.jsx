@@ -17,9 +17,9 @@ export const CameraDetailsPanel = (props) => {
   const {sceneManager} = React.useContext(SceneContext);
   const {node} = props;
   const scriptTab = useScriptTab(node);
-  const {projection, camera} = sceneManager.getNodeStateByID(node.id);
+  const {projection} = sceneManager.getNodeStateByID(node.id);
   const projectionType = projection.type;
-  const thirdPersonTab = camera?.thirdPerson ? "third-person" : null;
+  const thirdPersonTab = node.type === "third-person-camera" ? "third-person" : null;
 
   let children = null;
   switch (selectedView) {

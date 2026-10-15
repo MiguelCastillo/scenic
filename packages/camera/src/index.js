@@ -1,12 +1,14 @@
-import {createFreeFlyBehavior} from "./free-fly.js";
-import {createFirstPersonBehavior} from "./first-person.js";
-import {createThirdPersonBehavior} from "./third-person.js";
-import {createTargetFinder} from "./target.js";
+import {CameraSystem} from "./camera-system.js";
+import {freeFly} from "./free-fly.js";
+import {firstPerson} from "./first-person.js";
+import {thirdPerson} from "./third-person.js";
+import {findTarget} from "./target.js";
 
-// A camera behavior decides how a camera responds to the player's input.
-// Every behavior is created with (sceneManager, getCamera), where getCamera
-// returns the camera to control, and provides the same four calls, so that
-// switching how a camera moves means swapping its behavior and nothing else:
+// CameraSystem runs a viewport's cameras and moves the active one by its type
+// (see camera-system.js). Each type of camera that moves has a behavior: an
+// object of functions that read the camera's state and write back to it, so
+// that every type of camera is driven the same way. Each takes the scene
+// manager and the camera node first:
 // - turn(rightDegrees, upDegrees): turn in response to looking around, such as
 //   moving the mouse.
 // - move(forward, right, up): move once by the given distances in scene units,
@@ -14,20 +16,8 @@ import {createTargetFinder} from "./target.js";
 // - setMovement({forward, right, up}): keep moving while input is held down,
 //   such as keys. Each value is -1, 0 or 1.
 // - update(seconds): called every frame with the seconds since the last one.
-//
-// cameraModes lists the behaviors by mode name, each with the key in a
-// camera's "camera" config block that holds its settings. A camera can only
-// use the modes it has settings for.
-const cameraModes = {
-  "free-fly": {createBehavior: createFreeFlyBehavior, settingsKey: "freeFly"},
-  "first-person": {createBehavior: createFirstPersonBehavior, settingsKey: "firstPerson"},
-  "third-person": {createBehavior: createThirdPersonBehavior, settingsKey: "thirdPerson"},
-};
-
-export {
-  cameraModes,
-  createFreeFlyBehavior,
-  createFirstPersonBehavior,
-  createThirdPersonBehavior,
-  createTargetFinder,
-};
+// A behavior also has stateKey, the block of the camera's state it reads,
+// and reset(state, originalState), which is that block with what the
+// behavior changes as it is used put back to originalState's, the block in
+// the scene config.
+export {CameraSystem, freeFly, firstPerson, thirdPerson, findTarget};

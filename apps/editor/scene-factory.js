@@ -73,8 +73,17 @@ export function isSky(nodeConfig) {
   return nodeConfig.type === "sky";
 }
 
+const cameraTypes = new Set([
+  "camera",
+  "free-fly-camera",
+  "first-person-camera",
+  "third-person-camera",
+]);
+
+// isCamera is whether nodeConfig is a camera: a plain "camera", or one that
+// moves in its own way, such as a "third-person-camera".
 export function isCamera(nodeConfig) {
-  return nodeConfig.type === "camera";
+  return cameraTypes.has(nodeConfig.type);
 }
 
 export function isLight(nodeConfig) {

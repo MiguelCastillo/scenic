@@ -18,10 +18,11 @@ Quick intro:
 3. W and S fly forward and back, A and D fly left and right, E and Q fly up
    and down
 4. Scroll (or two fingers on a trackpad) to fly forward, back, left and right
-5. Press V to switch camera mode, in scenes with a character (the dancing
-   character): first V looks out through the character's eyes, the next
-   follows it from behind, and the next flies freely again. Looking through the
-   eyes, the mouse looks around. Orbiting, the mouse orbits and scrolling zooms
+5. Press C to switch cameras, in scenes with more than one: the dancing
+   character can be seen from a free camera, through its eyes, or from behind
+   it, and the flying rocket from behind it, from its cockpit, or from a free
+   camera. Looking through the eyes, the mouse looks around. Following from
+   behind, the mouse orbits and scrolling zooms
 6. Press ESC to let go of the camera
 7. Use "Change scene" in the scene graph panel to switch to another scene
 
@@ -81,7 +82,8 @@ sceneManager.updateNodeStateByID("world", {activeCamera: "side camera"});
 
 Each camera keeps its own state, so switching back returns to where that camera
 was left. A name that matches no camera falls back to the first camera, with a
-warning in the console.
+warning in the console. In the editor, C switches to the next camera, and a
+camera's Info tab shows whether it is active, with a button to look through it.
 
 A viewport must always have a camera. Loading a scene with a viewport that has
 no camera fails with an error that names the viewport, and removing a
@@ -94,30 +96,41 @@ viewport's last camera throws.
   "items": [
     {
       "name": "camera",
-      "type": "camera",
+      "type": "free-fly-camera",
       "projection": {"type": "perspective", "fov": 30, "near": 1, "far": 10000},
       "transform": {"position": [0, 0, 300]},
-      "camera": {"freeFly": {"speed": 200, "maxPitch": 89}}
+      "freeFly": {"speed": 200, "maxPitch": 89}
     }
   ]
 }
 ```
 
-#### Camera modes
+#### Camera types
 
-The editor controls the world viewport's active camera in one of a few modes,
-and V switches between them. Each mode is a camera behavior in the
-`@scenic/camera` package (`packages/camera/`), and the one in use is
-`cameraMode` in the world viewport's state. A camera can only use the modes its
-`camera` block has settings for; free-fly is used otherwise.
+A camera's `type` says how it moves. A plain `camera` stays where its
+transform puts it, like the axis gizmo's. The others are moved by the editor,
+which runs the world viewport's cameras with a `CameraSystem` from the
+`@scenic/camera` package (`packages/camera/`). Each type has a behavior class
+there, and its settings in a block named for it. The behaviors keep nothing
+themselves: everything a camera does as you play, such as its orbit, zoom and
+the way it keeps flying while a key is held, is written back to its settings
+block, so switching cameras and back finds each one as it was left, and a
+saved state puts every camera back where it was. The values in the scene file
+are where each camera starts.
 
-- **Free-fly** (`freeFly`) flies the camera around the scene. Its rotation is
+A camera's settings can include `"mouseOrbit": false` to leave the mouse to
+the scene, such as for steering a rocket: the mouse then doesn't turn that
+camera, except while the scene is paused.
+
+- **`free-fly-camera`** (`freeFly`) flies around the scene. Its rotation is
   `[pitch, yaw, 0]` in degrees, and lights and models stay where they are in
   the world while it moves around them.
   - `speed`: how fast it flies, in scene units per second.
   - `maxPitch`: how far up or down it can look, in degrees. Looking straight up
     or down would flip the camera over, so keep this under 90.
-- **First-person** (`firstPerson`) looks out from a node, such as a
+  - `movement`: which way it keeps flying while keys are held, as
+    `{forward, right, up}`, each -1, 0 or 1. Still without it.
+- **`first-person-camera`** (`firstPerson`) looks out from a node, such as a
   character's head bone, and moves with it, animation included. The mouse looks
   around from there, and the camera cannot move on its own.
   - `target`: the node to look out from (see targets below).
@@ -125,24 +138,30 @@ and V switches between them. Each mode is a camera behavior in the
     own coordinates, as `{"position": [x, y, z], "rotation": [x, y, z]}`.
   - `maxPitch`: how far up or down it can look from where the target faces, in
     degrees.
-- **Third-person** (`thirdPerson`) stays behind a node, such as a character,
-  and follows it as it moves and turns. When the node turns, the camera swings
-  around with it, staying level: only the node's heading counts, not its
-  leaning or tilting. The node's front is its local +Z axis. The mouse orbits
-  around it from there, and scrolling zooms in and out.
+  - `look`: where it is looking, as `[pitch, yaw]` in degrees from where the
+    target faces. Straight ahead without it.
+- **`third-person-camera`** (`thirdPerson`) stays behind a node, such as a
+  character, and follows it as it moves and turns. When the node turns, the
+  camera swings around with it, staying level: only the node's heading counts,
+  not its leaning or tilting. The node's front is its local +Z axis. The mouse
+  orbits around it from there, and scrolling zooms in and out. Its settings
+  can be changed live from its Third person tab.
   - `target`: the node to orbit and follow (see targets below).
   - `offset`: where the orbit's pivot is relative to the target's position, in
     world coordinates, as `[x, y, z]`.
   - `distance`, `minDistance`, `maxDistance`: how far from the pivot the camera
-    starts, and how close and far zooming can go, in scene units.
-  - `rotation`: the orbit it starts with, as `[pitch, yaw]` in degrees,
-    relative to behind the target. A yaw of 0 is directly behind it, and a
-    negative pitch looks down at it.
+    is, and how close and far zooming can go, in scene units.
+  - `rotation`: the orbit, as `[pitch, yaw]` in degrees, relative to behind the
+    target. A yaw of 0 is directly behind it, and a negative pitch looks down
+    at it.
   - `maxPitch`: how far above or below the target it can orbit, in degrees.
   - `followTime`: how quickly the camera catches up when the target turns, in
     seconds. After `followTime` it has closed about two thirds of the gap, so a
     quick turn swings the view around smoothly instead of snapping. 0 keeps it
     exactly behind.
+  - `lookUp`: how far it tilts its view up from the pivot, in degrees.
+  - `heading`: the heading it is at, in degrees, which trails the target's.
+    Without it, the camera starts right behind the target.
 
 A **target** names a node in two parts, `{"nodeID": ..., "boneName": ...}`,
 so that it picks out one character even when several share the same model:
@@ -160,12 +179,13 @@ once it has loaded, and finds it again if the model is rebuilt. An FBX model's
 node names are the same every time it loads; a name that repeats within one
 file gets `_n1`, `_n2` and so on.
 
-V cycles through the modes in that order, skipping the ones the active camera
-has no settings for. The dancing character's camera has all three:
+The dancing character has one camera of each type: a free camera, one
+through its eyes, and one following it from behind.
 
 ```json
-"camera": {
-  "freeFly": {"speed": 200, "maxPitch": 89},
+{
+  "name": "eyes camera",
+  "type": "first-person-camera",
   "firstPerson": {
     "target": {
       "nodeID": "skinning mesh animation",
@@ -173,7 +193,11 @@ has no settings for. The dancing character's camera has all three:
     },
     "offset": {"position": [0, 6.4, 9.3], "rotation": [0, 180, 0]},
     "maxPitch": 80
-  },
+  }
+},
+{
+  "name": "chase camera",
+  "type": "third-person-camera",
   "thirdPerson": {
     "target": {
       "nodeID": "skinning mesh animation",
@@ -194,6 +218,24 @@ The first-person offset puts the camera between the eyes, and turns it around
 to face the same way as the head: the camera looks down its own -Z axis, and
 the head's front is its +Z. The third-person offset moves the orbit's pivot up
 from the hips to the chest.
+
+The flying rocket's scene has a chase camera that follows the rocket, a
+cockpit camera that looks out from just above its nose, banking with it, and a
+free camera:
+
+```json
+{
+  "name": "cockpit camera",
+  "type": "first-person-camera",
+  "projection": {"type": "perspective", "near": 1, "far": 12000, "fov": 75},
+  "firstPerson": {
+    "target": {"nodeID": "rocket"},
+    "offset": {"position": [0, 32, 45], "rotation": [0, 180, 0]},
+    "maxPitch": 80,
+    "mouseOrbit": false
+  }
+}
+```
 
 ### Scripts
 
@@ -235,9 +277,10 @@ being held, by `KeyboardEvent.code`, and how far the `mouse` moved since the
 last frame, as `{x, y}` in pixels. Input only reaches the scene while the
 pointer is locked to it, by clicking it. Pressing P pauses the scene: its
 clock stops, and scripts get no time and no input until P is pressed again,
-while the camera can still look around. A third-person camera orbits its
-target with the mouse while paused, even when its `mouseOrbit` setting is off,
-and goes back behind its target when the scene resumes. Scripts are loaded with the scene, and
+while the camera can still look around. The mouse turns the camera while
+paused even when its `mouseOrbit` setting is off, so a third-person camera can
+orbit the rocket, and when the scene resumes the camera is reset to the scene
+file's values, putting it back behind its target. Scripts are loaded with the scene, and
 `src` is relative to the editor page.
 
 Scripts run like CommonJS modules: the editor fetches the script and runs it
