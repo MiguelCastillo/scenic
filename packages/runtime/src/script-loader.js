@@ -20,9 +20,9 @@ const scriptModules = {
 // libraries they need with their own build, marking the @scenic packages as
 // external so that their bundle requires them from the app. It returns the
 // script's factory, from `module.exports = createScript` or, for a bundled ES
-// module, its default export.
-async function loadScript(src) {
-  const response = await fetch(new URL(src, self.location.href).href);
+// module, its default export. src is relative to baseURL.
+async function loadScript(src, baseURL) {
+  const response = await fetch(new URL(src, baseURL).href);
   if (!response.ok) {
     throw new Error(`unable to load script "${src}": ${response.status} ${response.statusText}`);
   }
@@ -52,11 +52,13 @@ async function loadScript(src) {
 }
 
 // loadScripts attaches scripts to the nodes whose config has a "script":
-// {"src": "scripts/orbit.js", "settings": {...}}. A script's factory takes the
+// {"src": "/resources/scripts/orbit.js", "settings": {...}}. A script's factory takes the
 // node and returns the script's hooks (see Node.withScript), so every node
-// gets its own instance. src is relative to the app's page, and each script
-// is loaded once however many nodes use it.
-export function loadScripts(sceneManager) {
+// gets its own instance. src is relative to baseURL, the scene file's URL,
+// the way a page's links are relative to the page, so a scene finds the
+// scripts next to it whichever app runs it. It is the app's page by
+// default. Each script is loaded once however many nodes use it.
+export function loadScripts(sceneManager, baseURL = self.location.href) {
   const factories = {};
   const loads = [];
 
@@ -64,7 +66,7 @@ export function loadScripts(sceneManager) {
     const src = sceneManager.getNodeStateByID(node.id)?.script?.src;
     if (src) {
       if (!factories[src]) {
-        factories[src] = loadScript(src);
+        factories[src] = loadScript(src, baseURL);
       }
       loads.push(factories[src].then((createScript) => node.withScript(createScript(node))));
     }

@@ -68,8 +68,8 @@
 // - its spinner, if it has one: the parts that turn around the fighter's
 //   length, such as the seedpod's petals, which are written to a file of
 //   their own beside the fighter's, named for it with "-spinner", so a scene
-//   can turn them, such as with scripts/spin.js. It lists the file and the
-//   axis they turn around.
+//   can turn them, such as with resources/scripts/spin.js. It
+//   lists the file and the axis they turn around.
 // - its translucent parts, if it has any: the see-through parts, such as the
 //   bumblebee's wings, written to a file of their own named for it with
 //   "-translucent", so a scene can draw them with a material's opacity (see

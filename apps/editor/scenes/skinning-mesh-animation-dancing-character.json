@@ -158,7 +158,7 @@
             "position": [0, 0, 330]
           },
           "script": {
-            "src": "scripts/orbit.js",
+            "src": "/resources/scripts/orbit.js",
             "settings": {
               "center": [0, 150, 0],
               "radius": 300,
@@ -183,7 +183,7 @@
             "position": [-200, 0, 0]
           },
           "script": {
-            "src": "scripts/orbit.js",
+            "src": "/resources/scripts/orbit.js",
             "settings": {
               "center": [0, 150, 0],
               "radius": 300,
@@ -210,7 +210,7 @@
             "rotation": [0, 0, 0]
           },
           "script": {
-            "src": "scripts/orbit.js",
+            "src": "/resources/scripts/orbit.js",
             "settings": {
               "center": [0, 150, 0],
               "radius": 300,

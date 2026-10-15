@@ -1,0 +1,6 @@
+{
+  "name": "Bubble Squadron",
+  "description": "Race a bubbly starfighter through gates in a cartoon forest.",
+  "scene": "race.json",
+  "scenes": ["race.json", "starfighters.json"]
+}

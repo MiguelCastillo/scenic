@@ -13,17 +13,18 @@ import {createSplitPanel} from "./split-panel.js";
 import _console from "./logging.js";
 
 // The dev server serves static files and cannot list a directory, so the
-// scenes available to pick from are listed here. Keep in sync with scenes/.
+// scenes available to pick from are listed here: the editor's own, and the
+// scenes of the games in games/. Keep in sync with both.
 const sceneFiles = [
   "scenes/armatured-cube-simple.json",
   "scenes/armatured-cube.json",
-  "scenes/bubble-squadron.json",
   "scenes/bump-lighting-sphere.json",
   "scenes/jedi-star-fighter.json",
   "scenes/rockets.json",
   "scenes/skinning-mesh-animation-dancing-character.json",
-  "scenes/starfighters.json",
   "scenes/trees.json",
+  "/games/bubble-squadron/race.json",
+  "/games/bubble-squadron/starfighters.json",
 ];
 
 domReady.onReady(() => {
@@ -125,7 +126,7 @@ domReady.onReady(() => {
       .then((response) => response.json())
       // window.scene is exported from scene-main.js via the UMD export.
       // See .pakit-scene.js for more details.
-      .then((config) => window.scene.renderScene(gl, config))
+      .then((config) => window.scene.renderScene(gl, config, sceneFile))
       .then((scene) => {
         currentScene = scene;
         const {registerRefreshRateUpdater, registerHudUpdater} = scene;

@@ -10,4 +10,5 @@
 /editor/**/*.frag
 /editor/**/*.vert
 
-/resources
+/resources/*
+!/resources/scripts

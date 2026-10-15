@@ -195,7 +195,7 @@
                 "rotation": [0, 0, 0]
               },
               "script": {
-                "src": "scripts/hover.js",
+                "src": "/resources/scripts/hover.js",
                 "settings": {
                   "bob": 5,
                   "roll": 6,

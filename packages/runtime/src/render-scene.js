@@ -150,7 +150,10 @@ function createSceneUpdater(gl, sceneManager) {
 // models, shaders and scripts, its cameras, and the player's input. It is
 // what an app built on the runtime calls to run a scene, and it returns what
 // the app needs to drive it, such as forwarding input or pausing it.
-export const renderScene = async (gl, config) => {
+// sceneURL is where config came from, such as "/games/bubble-squadron/
+// race.json", which the scene's script paths are relative to. It is the
+// app's page by default.
+export const renderScene = async (gl, config, sceneURL = self.location.href) => {
   const {vendor, renderer, limits, contextAttributes} = webgl.getDebugData(gl);
 
   // eslint-disable-next-line no-console
@@ -208,7 +211,7 @@ export const renderScene = async (gl, config) => {
     await Promise.all([
       resourceLoader.loadMany(getResourcesFromConfig(sceneConfig)),
       applyShaders(gl, sceneManager.scene, () => disposed),
-      loadScripts(sceneManager),
+      loadScripts(sceneManager, new URL(sceneURL, self.location.href).href),
     ]);
   } catch (ex) {
     // The caller never receives dispose when loading fails, so tear down

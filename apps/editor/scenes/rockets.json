@@ -199,7 +199,7 @@
                 "scale": [1, 1, 1]
               },
               "script": {
-                "src": "scripts/hover.js",
+                "src": "/resources/scripts/hover.js",
                 "settings": {
                   "bob": 4,
                   "roll": 4,
@@ -240,7 +240,7 @@
                     "scale": [8, 8, 8]
                   },
                   "script": {
-                    "src": "scripts/flame.js",
+                    "src": "/resources/scripts/flame.js",
                     "settings": {
                       "flicker": 0.15,
                       "speed": 1
@@ -258,7 +258,7 @@
                 "scale": [1, 1, 1]
               },
               "script": {
-                "src": "scripts/hover.js",
+                "src": "/resources/scripts/hover.js",
                 "settings": {
                   "bob": 4,
                   "roll": 4,
@@ -299,7 +299,7 @@
                     "scale": [6.5, 6.5, 6.5]
                   },
                   "script": {
-                    "src": "scripts/flame.js",
+                    "src": "/resources/scripts/flame.js",
                     "settings": {
                       "flicker": 0.15,
                       "speed": 1
@@ -323,7 +323,7 @@
                     "scale": [3.85, 3.85, 3.85]
                   },
                   "script": {
-                    "src": "scripts/flame.js",
+                    "src": "/resources/scripts/flame.js",
                     "settings": {
                       "flicker": 0.15,
                       "speed": 1
@@ -347,7 +347,7 @@
                     "scale": [3.85, 3.85, 3.85]
                   },
                   "script": {
-                    "src": "scripts/flame.js",
+                    "src": "/resources/scripts/flame.js",
                     "settings": {
                       "flicker": 0.15,
                       "speed": 1
@@ -371,7 +371,7 @@
                     "scale": [3.85, 3.85, 3.85]
                   },
                   "script": {
-                    "src": "scripts/flame.js",
+                    "src": "/resources/scripts/flame.js",
                     "settings": {
                       "flicker": 0.15,
                       "speed": 1
@@ -389,7 +389,7 @@
                 "scale": [1, 1, 1]
               },
               "script": {
-                "src": "scripts/hover.js",
+                "src": "/resources/scripts/hover.js",
                 "settings": {
                   "bob": 4,
                   "roll": 4,
@@ -430,7 +430,7 @@
                     "scale": [5.837, 5.837, 5.837]
                   },
                   "script": {
-                    "src": "scripts/flame.js",
+                    "src": "/resources/scripts/flame.js",
                     "settings": {
                       "flicker": 0.15,
                       "speed": 1
@@ -454,7 +454,7 @@
                     "scale": [3.811, 3.811, 3.811]
                   },
                   "script": {
-                    "src": "scripts/flame.js",
+                    "src": "/resources/scripts/flame.js",
                     "settings": {
                       "flicker": 0.15,
                       "speed": 1
@@ -478,7 +478,7 @@
                     "scale": [3.811, 3.811, 3.811]
                   },
                   "script": {
-                    "src": "scripts/flame.js",
+                    "src": "/resources/scripts/flame.js",
                     "settings": {
                       "flicker": 0.15,
                       "speed": 1
@@ -502,7 +502,7 @@
                     "scale": [3.811, 3.811, 3.811]
                   },
                   "script": {
-                    "src": "scripts/flame.js",
+                    "src": "/resources/scripts/flame.js",
                     "settings": {
                       "flicker": 0.15,
                       "speed": 1
@@ -520,7 +520,7 @@
                 "scale": [1, 1, 1]
               },
               "script": {
-                "src": "scripts/hover.js",
+                "src": "/resources/scripts/hover.js",
                 "settings": {
                   "bob": 4,
                   "roll": 4,
@@ -561,7 +561,7 @@
                     "scale": [9.692, 9.692, 9.692]
                   },
                   "script": {
-                    "src": "scripts/flame.js",
+                    "src": "/resources/scripts/flame.js",
                     "settings": {
                       "flicker": 0.15,
                       "speed": 1
@@ -579,7 +579,7 @@
                 "scale": [1, 1, 1]
               },
               "script": {
-                "src": "scripts/hover.js",
+                "src": "/resources/scripts/hover.js",
                 "settings": {
                   "bob": 4,
                   "roll": 4,
@@ -620,7 +620,7 @@
                     "scale": [5.594, 5.594, 5.594]
                   },
                   "script": {
-                    "src": "scripts/flame.js",
+                    "src": "/resources/scripts/flame.js",
                     "settings": {
                       "flicker": 0.15,
                       "speed": 1
@@ -644,7 +644,7 @@
                     "scale": [3.94, 3.94, 3.94]
                   },
                   "script": {
-                    "src": "scripts/flame.js",
+                    "src": "/resources/scripts/flame.js",
                     "settings": {
                       "flicker": 0.15,
                       "speed": 1
@@ -668,7 +668,7 @@
                     "scale": [3.94, 3.94, 3.94]
                   },
                   "script": {
-                    "src": "scripts/flame.js",
+                    "src": "/resources/scripts/flame.js",
                     "settings": {
                       "flicker": 0.15,
                       "speed": 1
@@ -692,7 +692,7 @@
                     "scale": [3.94, 3.94, 3.94]
                   },
                   "script": {
-                    "src": "scripts/flame.js",
+                    "src": "/resources/scripts/flame.js",
                     "settings": {
                       "flicker": 0.15,
                       "speed": 1
@@ -710,7 +710,7 @@
                 "scale": [1, 1, 1]
               },
               "script": {
-                "src": "scripts/hover.js",
+                "src": "/resources/scripts/hover.js",
                 "settings": {
                   "bob": 4,
                   "roll": 4,
@@ -751,7 +751,7 @@
                     "scale": [8.588, 8.588, 8.588]
                   },
                   "script": {
-                    "src": "scripts/flame.js",
+                    "src": "/resources/scripts/flame.js",
                     "settings": {
                       "flicker": 0.15,
                       "speed": 1
@@ -769,7 +769,7 @@
                 "scale": [1, 1, 1]
               },
               "script": {
-                "src": "scripts/hover.js",
+                "src": "/resources/scripts/hover.js",
                 "settings": {
                   "bob": 4,
                   "roll": 4,
@@ -810,7 +810,7 @@
                     "scale": [8, 8, 8]
                   },
                   "script": {
-                    "src": "scripts/flame.js",
+                    "src": "/resources/scripts/flame.js",
                     "settings": {
                       "flicker": 0.15,
                       "speed": 1

@@ -6,7 +6,8 @@ Scenic uses a configuration first approach to define a scene: a scene is a JSON
 file describing a tree of nodes and their state, and Scenic builds and renders
 that tree with WebGL.
 
-The editor app renders a scene that you pick from a list. Here it is rendering
+The editor app renders a scene that you pick from a list, its own or a game's
+from `games/` (see [`games/README.md`](games/README.md)). Here it is rendering
 skinned animation:
 
 ![dancing-character](https://user-images.githubusercontent.com/1457701/163882070-23ef08d0-a0da-4b0b-95e7-f36e8c84186d.gif)
@@ -219,7 +220,7 @@ to face the same way as the head: the camera looks down its own -Z axis, and
 the head's front is its +Z. The third-person offset moves the orbit's pivot up
 from the hips to the chest.
 
-Bubble Squadron (`scenes/bubble-squadron.json`) has a chase camera that
+Bubble Squadron (`games/bubble-squadron/race.json`) has a chase camera that
 follows the player's starfighter, a cockpit camera that looks out from just
 above its canopy, banking with it, and a free camera:
 
@@ -248,7 +249,7 @@ and the script's `settings` are part of the node's state:
   "name": "light-cyan",
   "type": "light",
   "script": {
-    "src": "scripts/orbit.js",
+    "src": "/resources/scripts/orbit.js",
     "settings": {"center": [0, 150, 0], "radius": 300, "speed": 60, "phase": 120}
   }
 }
@@ -281,7 +282,11 @@ while the camera can still look around. The mouse turns the camera while
 paused even when its `mouseOrbit` setting is off, so a third-person camera can
 orbit the starfighter, and when the scene resumes the camera is reset to the scene
 file's values, putting it back behind its target. Scripts are loaded with the scene, and
-`src` is relative to the editor page.
+`src` is relative to the scene file, the way a page's links are relative to the
+page, so a game's scenes find the scripts next to them in any app. Scripts
+that games and apps share, such as `hover.js` and `flame.js`, are in
+`resources/scripts`, and scenes load them by absolute path, such as
+`/resources/scripts/hover.js`.
 
 Scripts run like CommonJS modules: the editor fetches the script and runs it
 inside a function given `require`, `module` and `exports`
@@ -293,24 +298,25 @@ ES modules, mark the `@scenic` packages as external, and output CommonJS. A
 bundled `export default` works too. Errors in a script show the script's name,
 because the editor names its code with `//# sourceURL`.
 
-The dancing character's three lights each run `apps/editor/scripts/orbit.js`,
+The dancing character's three lights each run `resources/scripts/orbit.js`,
 with phases of 0, 120 and 240 degrees, so they circle the dancer evenly spaced.
 
-The Jedi star fighter runs `apps/editor/scripts/hover.js`, which makes it bob,
+The Jedi star fighter runs `resources/scripts/hover.js`, which makes it bob,
 bank and tip its nose as if it were holding position in the air:
 
 ```json
 "script": {
-  "src": "scripts/hover.js",
+  "src": "/resources/scripts/hover.js",
   "settings": {"bob": 5, "roll": 6, "pitch": 2, "period": 6}
 }
 ```
 
 ### Racing and the HUD
 
-Bubble Squadron is a race. Its `race` node runs `apps/editor/scripts/race.js`,
-and its children are the course's gates, in the order they are flown through:
-bubble rings from `bin/generate-gate.js`, with the checkered start gate first.
+Bubble Squadron is a race. Its `race` node runs
+`games/bubble-squadron/scripts/race.js`, and its children are the course's
+gates, in the order they are flown through: bubble rings from
+`bin/generate-gate.js`, with the checkered start gate first.
 Flying through the start gate starts the clock, a lap is every gate in order
 and then the start gate again, and after the last lap the race is over, until
 the start gate starts it again. A gate only counts when it is next and flown

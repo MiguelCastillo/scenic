@@ -6,7 +6,7 @@
 // colors, so it renders without a material color: the lit shaders add the
 // material color to the vertex color, so leave it black, or use it to make a
 // gate glow, as a race does to show which gate is next (see
-// apps/editor/scripts/race.js).
+// games/bubble-squadron/scripts/race.js).
 //
 // The ring stands in the XY plane around the origin, so racers fly through
 // it along Z, and its radius is the radius of the circle through the

@@ -288,7 +288,7 @@
                     "scale": [1, 1, 1]
                   },
                   "script": {
-                    "src": "scripts/spin.js",
+                    "src": "/resources/scripts/spin.js",
                     "settings": {
                       "idleSpeed": 60,
                       "speed": 720
@@ -312,7 +312,7 @@
                     "scale": [6.396, 6.396, 6.396]
                   },
                   "script": {
-                    "src": "scripts/flame.js",
+                    "src": "/resources/scripts/flame.js",
                     "settings": {
                       "flicker": 0.15,
                       "speed": 1
