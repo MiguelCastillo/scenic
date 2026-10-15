@@ -8,20 +8,33 @@
 //
 // The crown's shape comes from its style:
 // - round: the trunk forks into branches, each holding up a bubble, with
-//   more bubbles filling in between and on top.
+//   more bubbles filling in between and on top. Branches can fork again
+//   into smaller twigs, each with a smaller bubble of its own.
 // - sprig: a thin, straight trunk with straight branches forking off at
 //   different heights, each ending in one bubble, like a simple drawing.
 // - tall: a column of bubbles stacked up the trunk, like a poplar.
 // - pine: rings of bubbles that shrink toward the top, like a fir.
 // - lollipop: one big bubble on a thin trunk, with a few small ones tucked
 //   under it.
+// - canopy: the trunk forks into a few limbs that fork again into twigs,
+//   with small bubbles on their tips amid bigger bubbles filling in the
+//   crown, more small bubbles nestled into its surface, and tiny ones
+//   floating around its edge: bubbles of all sizes, mostly small.
+// - cloud: a leaning trunk with limbs reaching out nearly level at
+//   different heights, each holding up a flat pad of bubbles, like a tree
+//   pruned into clouds. Lower limbs reach farther and hold bigger pads.
+// - weeping: a small round crown with strands of bubbles hanging from its
+//   branch tips, shrinking toward the ground, like a willow or wisteria.
+// - acacia: a tall trunk whose limbs reach far out to a wide, flat crown,
+//   like an umbrella.
+// - orchard: a full crown dotted with small, bright fruit.
 //
 // The tree stands on its origin, growing up +Y.
 //
 // Usage:
-//   node bin/generate-tree.js                    the round tree, tree.obj
-//   node bin/generate-tree.js --style pine       the pine tree, tree-pine.obj
-//   node bin/generate-tree.js --seed 42          a random tree, tree-42.obj
+//   node bin/generate-tree.js                    the round tree, round-tree.obj
+//   node bin/generate-tree.js --style pine       the pine tree, pine-tree.obj
+//   node bin/generate-tree.js --seed 42          a random tree, such as canopy-tree-42.obj
 //   node bin/generate-tree.js --random           a random tree from a new seed
 //   node bin/generate-tree.js --seed 42 --style round --branches 5 --out my-tree.obj
 //   node bin/generate-tree.js --seed 42 --min-branches 2   allow as few as 2 branches
@@ -48,7 +61,7 @@ const {Mesh, add, sub, scale, dot, cross, normalize, hsl, parseArgs} = require("
 // what each parameter means.
 const styles = {
   round: {
-    crown: "round", // how bubbles are placed: round, tall, pine or lollipop
+    crown: "round", // how bubbles are placed: round, cloud, tall, pine or lollipop
     trunkHeight: 200, // how tall the trunk is, to where the crown starts
     trunkRadius: 26, // the trunk's radius, above its flared base
     trunkTaper: 0.65, // the trunk's radius at its top, as a part of its base
@@ -63,10 +76,26 @@ const styles = {
     branchRadius: 0.5, // how thick branches are, as a part of the trunk's top
     branchCurve: 1, // how much branches curve up toward their tips; 0 is straight
     branchStagger: 0, // how far apart up the trunk branches fork, 0 to 1
+    twigs: 0, // how many smaller branches fork off each branch, each with a bubble
     topBubble: 1, // 1 for a bubble on top of the trunk, 0 for none
     bubbles: 6, // how many leaf bubbles
     bubbleSize: 95, // the bubbles' average radius
-    bubbleVariety: 0.2, // how much bubbles' sizes vary, 0 to 1
+    tipSize: 1, // how big bubbles on branch tips are, as a part of bubbleSize;
+    // twigs' bubbles are about two thirds of that
+    fillSize: 0.95, // how big the bubbles filling in the crown are, as a part
+    // of bubbleSize
+    smallBubbles: 0, // how many small bubbles nestle half sunk into the
+    // crown's surface, a quarter to half of bubbleSize across
+    dots: 0, // how many tiny bubbles float around the edge of the crown
+    crownHeight: 0.9, // how far above the branch tips the crown's filling
+    // bubbles reach, as a part of bubbleSize; small for a flat crown
+    strands: 0, // how many strands of bubbles hang from each branch and twig
+    // tip, like a weeping willow
+    strandBubbles: 5, // how many bubbles each strand has, shrinking downward
+    fruit: 0, // how many small fruit bubbles dot the crown's surface
+    fruitColor: [0.9, 0.2, 0.2], // the fruit's color, as [r, g, b]
+    bubbleVariety: 0.2, // how much bubbles' sizes vary, 0 to 1: at 0.6, from
+    // under half the average size to over one and a half times it
     crownSpread: 1, // how far apart the bubbles spread, 1 is snug
     squash: 0.9, // how tall bubbles are for how wide; 1 is round
     highlight: 0.3, // how much lighter each bubble's highlight is; 0 for none
@@ -92,9 +121,19 @@ const styles = {
     branchRadius: 0.9,
     branchCurve: 0,
     branchStagger: 0.35,
+    twigs: 0,
     topBubble: 0,
     bubbles: 4,
     bubbleSize: 50,
+    tipSize: 1,
+    fillSize: 0.95,
+    smallBubbles: 0,
+    dots: 0,
+    crownHeight: 0.9,
+    strands: 0,
+    strandBubbles: 5,
+    fruit: 0,
+    fruitColor: [0.9, 0.2, 0.2],
     bubbleVariety: 0.15,
     crownSpread: 1,
     squash: 1,
@@ -121,9 +160,19 @@ const styles = {
     branchRadius: 0.5,
     branchCurve: 1,
     branchStagger: 0,
+    twigs: 0,
     topBubble: 1,
     bubbles: 9,
     bubbleSize: 70,
+    tipSize: 1,
+    fillSize: 0.95,
+    smallBubbles: 0,
+    dots: 0,
+    crownHeight: 0.9,
+    strands: 0,
+    strandBubbles: 5,
+    fruit: 0,
+    fruitColor: [0.9, 0.2, 0.2],
     bubbleVariety: 0.15,
     crownSpread: 1,
     squash: 0.95,
@@ -150,9 +199,19 @@ const styles = {
     branchRadius: 0.5,
     branchCurve: 1,
     branchStagger: 0,
+    twigs: 0,
     topBubble: 1,
     bubbles: 12,
     bubbleSize: 60,
+    tipSize: 1,
+    fillSize: 0.95,
+    smallBubbles: 0,
+    dots: 0,
+    crownHeight: 0.9,
+    strands: 0,
+    strandBubbles: 5,
+    fruit: 0,
+    fruitColor: [0.9, 0.2, 0.2],
     bubbleVariety: 0.1,
     crownSpread: 1,
     squash: 0.85,
@@ -179,9 +238,19 @@ const styles = {
     branchRadius: 0.5,
     branchCurve: 1,
     branchStagger: 0,
+    twigs: 0,
     topBubble: 1,
     bubbles: 4,
     bubbleSize: 110,
+    tipSize: 1,
+    fillSize: 0.95,
+    smallBubbles: 0,
+    dots: 0,
+    crownHeight: 0.9,
+    strands: 0,
+    strandBubbles: 5,
+    fruit: 0,
+    fruitColor: [0.9, 0.2, 0.2],
     bubbleVariety: 0.2,
     crownSpread: 1,
     squash: 0.92,
@@ -193,17 +262,222 @@ const styles = {
       [0.98, 0.6, 0.75],
     ],
   },
+  canopy: {
+    crown: "round",
+    trunkHeight: 190,
+    trunkRadius: 24,
+    trunkTaper: 0.6,
+    trunkLean: 14,
+    rootFlare: 1.6,
+    branches: 3,
+    minBranches: 3,
+    branchAngle: 45,
+    branchLength: 200,
+    branchStart: 0.75,
+    branchRadius: 0.6,
+    branchCurve: 0.6,
+    branchStagger: 0.3,
+    twigs: 2,
+    topBubble: 1,
+    bubbles: 17,
+    bubbleSize: 70,
+    tipSize: 0.8,
+    fillSize: 1.15,
+    smallBubbles: 12,
+    dots: 6,
+    crownHeight: 0.9,
+    strands: 0,
+    strandBubbles: 5,
+    fruit: 0,
+    fruitColor: [0.9, 0.2, 0.2],
+    bubbleVariety: 0.3,
+    crownSpread: 1.1,
+    squash: 1,
+    highlight: 0.35,
+    highlightSize: 0.3,
+    trunkColor: [0.45, 0.32, 0.22],
+    leafColors: [
+      [0.36, 0.72, 0.58],
+      [0.62, 0.8, 0.78],
+      [0.72, 0.84, 0.5],
+      [0.9, 0.92, 0.7],
+    ],
+  },
+  cloud: {
+    crown: "cloud",
+    trunkHeight: 230,
+    trunkRadius: 20,
+    trunkTaper: 0.55,
+    trunkLean: 70,
+    rootFlare: 1.6,
+    branches: 4,
+    minBranches: 3,
+    branchAngle: 72,
+    branchLength: 150,
+    branchStart: 0.35,
+    branchRadius: 0.6,
+    branchCurve: 0.6,
+    branchStagger: 0,
+    twigs: 0,
+    topBubble: 1,
+    bubbles: 7,
+    bubbleSize: 50,
+    tipSize: 1,
+    fillSize: 1,
+    smallBubbles: 0,
+    dots: 0,
+    crownHeight: 0.9,
+    strands: 0,
+    strandBubbles: 5,
+    fruit: 0,
+    fruitColor: [0.9, 0.2, 0.2],
+    bubbleVariety: 0.15,
+    crownSpread: 1,
+    squash: 0.7,
+    highlight: 0.3,
+    highlightSize: 0.35,
+    trunkColor: [0.42, 0.3, 0.24],
+    leafColors: [
+      [0.2, 0.5, 0.3],
+      [0.26, 0.58, 0.32],
+      [0.34, 0.64, 0.36],
+    ],
+  },
+  weeping: {
+    crown: "round",
+    trunkHeight: 220,
+    trunkRadius: 22,
+    trunkTaper: 0.6,
+    trunkLean: 16,
+    rootFlare: 1.5,
+    branches: 5,
+    minBranches: 4,
+    branchAngle: 50,
+    branchLength: 140,
+    branchStart: 0.8,
+    branchRadius: 0.5,
+    branchCurve: 1,
+    branchStagger: 0.2,
+    twigs: 1,
+    topBubble: 1,
+    bubbles: 14,
+    bubbleSize: 55,
+    tipSize: 0.9,
+    fillSize: 1,
+    smallBubbles: 6,
+    dots: 0,
+    crownHeight: 0.6,
+    strands: 2,
+    strandBubbles: 5,
+    fruit: 0,
+    fruitColor: [0.9, 0.2, 0.2],
+    bubbleVariety: 0.2,
+    crownSpread: 1,
+    squash: 1,
+    highlight: 0.3,
+    highlightSize: 0.3,
+    trunkColor: [0.4, 0.3, 0.26],
+    leafColors: [
+      [0.62, 0.48, 0.85],
+      [0.72, 0.58, 0.9],
+      [0.82, 0.7, 0.95],
+    ],
+  },
+  acacia: {
+    crown: "round",
+    trunkHeight: 300,
+    trunkRadius: 20,
+    trunkTaper: 0.6,
+    trunkLean: 30,
+    rootFlare: 1.5,
+    branches: 4,
+    minBranches: 3,
+    branchAngle: 60,
+    branchLength: 230,
+    branchStart: 0.85,
+    branchRadius: 0.55,
+    branchCurve: 1,
+    branchStagger: 0.15,
+    twigs: 2,
+    topBubble: 1,
+    bubbles: 22,
+    bubbleSize: 55,
+    tipSize: 0.9,
+    fillSize: 1,
+    smallBubbles: 10,
+    dots: 0,
+    crownHeight: 0.25,
+    strands: 0,
+    strandBubbles: 5,
+    fruit: 0,
+    fruitColor: [0.9, 0.2, 0.2],
+    bubbleVariety: 0.25,
+    crownSpread: 1.3,
+    squash: 0.75,
+    highlight: 0.3,
+    highlightSize: 0.35,
+    trunkColor: [0.5, 0.36, 0.25],
+    leafColors: [
+      [0.5, 0.62, 0.2],
+      [0.58, 0.68, 0.24],
+      [0.68, 0.72, 0.3],
+    ],
+  },
+  orchard: {
+    crown: "round",
+    trunkHeight: 170,
+    trunkRadius: 24,
+    trunkTaper: 0.6,
+    trunkLean: 12,
+    rootFlare: 1.6,
+    branches: 4,
+    minBranches: 3,
+    branchAngle: 45,
+    branchLength: 170,
+    branchStart: 0.7,
+    branchRadius: 0.6,
+    branchCurve: 0.7,
+    branchStagger: 0.25,
+    twigs: 1,
+    topBubble: 1,
+    bubbles: 16,
+    bubbleSize: 70,
+    tipSize: 0.85,
+    fillSize: 1.1,
+    smallBubbles: 10,
+    dots: 0,
+    crownHeight: 0.9,
+    strands: 0,
+    strandBubbles: 5,
+    fruit: 16,
+    fruitColor: [0.9, 0.2, 0.2],
+    bubbleVariety: 0.25,
+    crownSpread: 1,
+    squash: 0.95,
+    highlight: 0.3,
+    highlightSize: 0.35,
+    trunkColor: [0.45, 0.3, 0.2],
+    leafColors: [
+      [0.28, 0.58, 0.22],
+      [0.36, 0.66, 0.26],
+      [0.22, 0.5, 0.24],
+    ],
+  },
 };
 
 // The leaf palettes random trees pick from, as hues with a spread to vary
 // them by, and their saturation and lightness ranges. Each tree picks a few
-// colors from one, so its bubbles can differ while still going together.
+// colors from one, so its bubbles can differ while still going together. A
+// canopy tree also picks a color or two from a second palette, for accents.
 const palettes = {
   green: {hue: 0.25, spread: 0.06, saturation: [0.55, 0.75], lightness: [0.38, 0.5]},
   spring: {hue: 0.2, spread: 0.05, saturation: [0.65, 0.85], lightness: [0.48, 0.6]},
   forest: {hue: 0.36, spread: 0.06, saturation: [0.45, 0.65], lightness: [0.34, 0.44]},
   autumn: {hue: 0.07, spread: 0.07, saturation: [0.75, 0.9], lightness: [0.48, 0.58]},
   blossom: {hue: 0.93, spread: 0.04, saturation: [0.6, 0.8], lightness: [0.7, 0.8]},
+  mint: {hue: 0.33, spread: 0.15, saturation: [0.35, 0.55], lightness: [0.6, 0.75]},
+  ocean: {hue: 0.5, spread: 0.06, saturation: [0.4, 0.6], lightness: [0.55, 0.7]},
+  lemon: {hue: 0.15, spread: 0.03, saturation: [0.6, 0.8], lightness: [0.65, 0.78]},
   candy: {hue: 0.8, spread: 0.3, saturation: [0.55, 0.75], lightness: [0.6, 0.72]},
 };
 
@@ -220,17 +494,33 @@ function randomParameters(random, styleName, minBranches) {
   const size = between(0.85, 1.2);
   const r = (value) => value * size * between(0.9, 1.1);
 
-  const palette =
-    palettes[
-      pick(name === "pine" ? ["green", "forest", "forest", "candy"] : Object.keys(palettes))
-    ];
-  const leafColors = Array.from({length: pick([1, 2, 2, 3])}, () =>
-    hsl(
-      (palette.hue + between(-palette.spread, palette.spread) + 1) % 1,
-      between(...palette.saturation),
-      between(...palette.lightness)
-    )
+  const paletteName = pick(
+    {
+      pine: ["green", "forest", "forest", "candy"],
+      cloud: ["forest", "green", "blossom", "mint"],
+      weeping: ["candy", "blossom", "spring", "mint", "lemon"],
+      acacia: ["green", "spring", "autumn", "lemon", "forest"],
+      orchard: ["green", "forest", "spring"],
+    }[name] || Object.keys(palettes)
   );
+  const colorsFrom = (palette, count) =>
+    Array.from({length: count}, () =>
+      hsl(
+        (palette.hue + between(-palette.spread, palette.spread) + 1) % 1,
+        between(...palette.saturation),
+        between(...palette.lightness)
+      )
+    );
+  const leafColors =
+    name === "canopy"
+      ? [
+          ...colorsFrom(palettes[paletteName], pick([3, 4])),
+          ...colorsFrom(
+            palettes[pick(Object.keys(palettes).filter((other) => other !== paletteName))],
+            pick([1, 2])
+          ),
+        ]
+      : colorsFrom(palettes[paletteName], pick([1, 2, 2, 3]));
 
   const parameters = {
     ...style,
@@ -252,17 +542,69 @@ function randomParameters(random, styleName, minBranches) {
   // Trees that fork get at least minBranches branches, and sometimes a
   // couple more.
   const fewest = minBranches ?? style.minBranches;
+  // Some forking trees are bushier, with more branches or with twigs forking
+  // off their branches, and their bubbles come in all sizes, from small to
+  // large.
   if (name === "round") {
-    const branches = fewest + pick([0, 0, 1, 2]);
-    Object.assign(parameters, {branches, bubbles: branches + 1 + pick([0, 1, 2, 3])});
-  } else if (name === "sprig") {
-    const branches = fewest + pick([0, 0, 1, 2]);
+    const branches = fewest + pick([0, 0, 1, 2, 3, 4]);
     Object.assign(parameters, {
       branches,
+      twigs: pick([0, 0, 1, 2]),
+      bubbles: branches + 1 + pick([0, 1, 2, 3]),
+      bubbleVariety: between(0.15, 0.6),
+    });
+  } else if (name === "sprig") {
+    const branches = fewest + pick([0, 0, 1, 2, 4]);
+    Object.assign(parameters, {
+      branches,
+      twigs: pick([0, 0, 1, 1, 2]),
+      bubbleVariety: between(0.1, 0.55),
       branchStagger: between(0.2, 0.5),
       bubbles: branches + (random() < 0.3 ? 1 : 0),
       topBubble: random() < 0.3 ? 1 : 0,
       trunkColor: hsl(between(0.05, 0.6), between(0, 0.25), between(0.25, 0.4)),
+    });
+  } else if (name === "canopy") {
+    const branches = fewest + pick([0, 1, 1, 2]);
+    const twigs = pick([1, 2, 2, 3]);
+    Object.assign(parameters, {
+      branches,
+      twigs,
+      bubbles: branches * (1 + twigs) + 1 + pick([4, 5, 6]),
+      smallBubbles: pick([8, 12, 16]),
+      dots: pick([3, 5, 7]),
+      bubbleVariety: between(0.2, 0.4),
+      fillSize: between(1, 1.3),
+    });
+  } else if (name === "cloud") {
+    Object.assign(parameters, {
+      branches: fewest + pick([0, 1, 2]),
+      bubbles: pick([5, 6, 7]),
+      trunkLean: style.trunkLean * between(0.6, 1.3),
+    });
+  } else if (name === "weeping") {
+    Object.assign(parameters, {
+      branches: fewest + pick([0, 1, 2]),
+      twigs: pick([0, 1, 1]),
+      strands: pick([1, 2, 2, 3]),
+      strandBubbles: pick([4, 5, 6]),
+    });
+  } else if (name === "acacia") {
+    Object.assign(parameters, {
+      branches: fewest + pick([0, 1, 2]),
+      twigs: pick([1, 2, 2]),
+      crownHeight: between(0.15, 0.35),
+    });
+  } else if (name === "orchard") {
+    Object.assign(parameters, {
+      branches: fewest + pick([0, 1, 1, 2]),
+      fruit: pick([10, 14, 18]),
+      fruitColor: pick([
+        [0.9, 0.2, 0.2],
+        [1, 0.55, 0.1],
+        [1, 0.88, 0.2],
+        [0.55, 0.2, 0.6],
+      ]),
     });
   } else if (name === "tall") {
     parameters.bubbles = pick([7, 9, 11]);
@@ -278,8 +620,8 @@ function randomParameters(random, styleName, minBranches) {
 // Resolution.
 const TUBE_SIDES = 16; // around a trunk or branch
 const TUBE_STEPS = 14; // along a trunk or branch
-const BUBBLE_SIDES = 28; // around a bubble
-const BUBBLE_RINGS = 18; // from a bubble's bottom to its top
+const BUBBLE_SIDES = 28; // around a big bubble; smaller ones get fewer
+const BUBBLE_RINGS = 18; // from a big bubble's bottom to its top
 
 // The way highlights face: up, and a little to the left and front, the way
 // cartoons are usually lit.
@@ -356,10 +698,15 @@ function tube(mesh, [p0, p1, p2], radiusAt, color, p) {
 // bubble adds a leaf bubble: a sphere, squashed by squash, in one color with
 // a highlight.
 function bubble(mesh, center, radius, color, p) {
-  const rings = Array.from({length: BUBBLE_RINGS + 1}, (_, i) => {
-    const latitude = Math.PI * (i / BUBBLE_RINGS - 0.5);
-    return Array.from({length: BUBBLE_SIDES}, (_, s) => {
-      const longitude = (s / BUBBLE_SIDES) * 2 * Math.PI;
+  // Small bubbles are seen small, so they get fewer sides and rings, down to
+  // a third of a big one's, which keeps trees with many of them light.
+  const detail = Math.max(1 / 3, Math.min(1, radius / 60));
+  const sides = Math.round(BUBBLE_SIDES * detail);
+  const ringCount = Math.round(BUBBLE_RINGS * detail);
+  const rings = Array.from({length: ringCount + 1}, (_, i) => {
+    const latitude = Math.PI * (i / ringCount - 0.5);
+    return Array.from({length: sides}, (_, s) => {
+      const longitude = (s / sides) * 2 * Math.PI;
       const direction = [
         Math.cos(latitude) * Math.cos(longitude),
         Math.sin(latitude),
@@ -376,9 +723,9 @@ function bubble(mesh, center, radius, color, p) {
     });
   });
 
-  for (let i = 0; i < BUBBLE_RINGS; i++) {
-    for (let s = 0; s < BUBBLE_SIDES; s++) {
-      const t = (s + 1) % BUBBLE_SIDES;
+  for (let i = 0; i < ringCount; i++) {
+    for (let s = 0; s < sides; s++) {
+      const t = (s + 1) % sides;
       mesh.quad(rings[i][s], rings[i][t], rings[i + 1][t], rings[i + 1][s]);
     }
   }
@@ -407,6 +754,8 @@ function buildTree(p, random) {
 
   if (p.crown === "round") {
     const anchors = [];
+    // The bubbles on the branches' and twigs' tips, which strands hang from.
+    const tips = [];
 
     // Branches fork evenly around the trunk, each leaning out and curving
     // up, with a bubble on its tip.
@@ -437,7 +786,44 @@ function buildTree(p, random) {
       const bend = add(scale(straightBend, 1 - p.branchCurve), scale(curvedBend, p.branchCurve));
       tube(mesh, [start, bend, end], (t) => branchRadius * (1 - 0.35 * t), p.trunkColor, p);
       anchors.push(end);
-      bubbles.push([end, sized()]);
+      bubbles.push([end, sized(p.tipSize)]);
+      tips.push(bubbles[bubbles.length - 1]);
+
+      // Twigs fork off along the branch, turned to either side of it and
+      // leaning out further, each about half as long and as thick as the
+      // branch, with a smaller bubble on its tip.
+      for (let w = 0; w < p.twigs; w++) {
+        const side = w % 2 ? -1 : 1;
+        const twigAround = around + side * between(0.6, 1.1);
+        const twigLean = Math.min(lean + between(0.15, 0.4), (80 * Math.PI) / 180);
+        const twigOut = [
+          Math.cos(twigAround) * Math.sin(twigLean),
+          Math.cos(twigLean),
+          Math.sin(twigAround) * Math.sin(twigLean),
+        ];
+        const forkT = between(0.4, 0.75);
+        const twigStart = curve(start, bend, end, forkT);
+        const twigLength = length * between(0.4, 0.6);
+        const twigEnd = add(add(twigStart, scale(twigOut, twigLength)), [
+          0,
+          twigLength * 0.25 * p.branchCurve,
+          0,
+        ]);
+        const twigBend = add(
+          scale(scale(add(twigStart, twigEnd), 0.5), 1 - p.branchCurve),
+          scale(add(twigStart, scale(twigOut, twigLength * 0.55)), p.branchCurve)
+        );
+        const twigRadius = branchRadius * (1 - 0.35 * forkT) * 0.6;
+        tube(
+          mesh,
+          [twigStart, twigBend, twigEnd],
+          (t) => twigRadius * (1 - 0.35 * t),
+          p.trunkColor,
+          p
+        );
+        bubbles.push([twigEnd, sized(p.tipSize * 0.65)]);
+        tips.push(bubbles[bubbles.length - 1]);
+      }
     }
 
     // A bubble crowns the trunk, a little above its top.
@@ -447,23 +833,179 @@ function buildTree(p, random) {
 
     if (p.topBubble) {
       const crownTop = add(top, [0, p.bubbleSize * 0.6 * spread, 0]);
-      bubbles.push([crownTop, sized(1.1)]);
+      bubbles.push([crownTop, sized(1.1 * p.tipSize)]);
       anchors.push(crownTop);
     }
 
     // The rest fill in between and above the others, so the crown reads as
-    // one rounded mass.
+    // one rounded mass. A filling bubble is kept small enough that it covers
+    // no other bubble's center, so the bubbles on the tips still poke out of
+    // it and filling bubbles don't pile up into one big clump. A few places
+    // are tried for each, taking the first where it can be most of the size
+    // it wants, or else the one where it can be biggest.
     const center = anchors.length
       ? scale(anchors.reduce(add, [0, 0, 0]), 1 / anchors.length)
       : add(top, [0, p.bubbleSize * 0.6 * spread, 0]);
     for (let i = bubbles.length; i < p.bubbles; i++) {
+      const wanted = sized(p.fillSize);
+      let best = null;
+      for (let attempt = 0; attempt < 8; attempt++) {
+        const angle = between(0, 2 * Math.PI);
+        const reach = p.bubbleSize * spread * between(0.5, 1.1);
+        const lift = p.bubbleSize * spread * between(-0.2, p.crownHeight);
+        const position = add(center, [Math.cos(angle) * reach, lift, Math.sin(angle) * reach]);
+        const radius = Math.min(
+          wanted,
+          ...bubbles.map(
+            ([other, otherRadius]) => Math.hypot(...sub(other, position)) - otherRadius * 0.4
+          )
+        );
+        if (!best || radius > best[1]) {
+          best = [position, radius];
+        }
+        if (radius > wanted * 0.75) {
+          break;
+        }
+      }
+      if (best[1] > wanted * 0.4) {
+        bubbles.push(best);
+      }
+    }
+
+    // Small bubbles nestle into the crown's surface, each half sunk into a
+    // bubble already there. Where one would be buried in another bubble, a
+    // few other places are tried, and it is left out if none shows.
+    for (let i = 0; i < p.smallBubbles; i++) {
+      const radius = p.bubbleSize * between(0.25, 0.5);
+      for (let attempt = 0; attempt < 8; attempt++) {
+        const [near, nearRadius] = bubbles[Math.floor(random() * bubbles.length)];
+        const angle = between(0, 2 * Math.PI);
+        const away = normalize(
+          add(
+            sub(near, center),
+            scale([Math.cos(angle), between(-0.6, 0.8), Math.sin(angle)], nearRadius)
+          )
+        );
+        const position = add(near, scale(away, nearRadius * between(0.85, 1)));
+        const buried = bubbles.some(
+          ([other, otherRadius]) => Math.hypot(...sub(other, position)) < otherRadius - radius * 0.3
+        );
+        if (!buried) {
+          bubbles.push([position, radius]);
+          break;
+        }
+      }
+    }
+
+    // Fruit dots the crown's surface, each mostly sunk into a bubble, in its
+    // own color.
+    const leaves = [...bubbles];
+    for (let i = 0; i < p.fruit; i++) {
+      const radius = p.bubbleSize * between(0.1, 0.15);
+      for (let attempt = 0; attempt < 8; attempt++) {
+        const [near, nearRadius] = leaves[Math.floor(random() * leaves.length)];
+        const angle = between(0, 2 * Math.PI);
+        const away = normalize(
+          add(
+            sub(near, center),
+            scale([Math.cos(angle), between(-0.8, 0.6), Math.sin(angle)], nearRadius)
+          )
+        );
+        const position = add(near, scale(away, nearRadius * 0.98));
+        const buried = bubbles.some(
+          ([other, otherRadius]) => Math.hypot(...sub(other, position)) < otherRadius - radius * 0.5
+        );
+        if (!buried) {
+          bubbles.push([position, radius, p.fruitColor]);
+          break;
+        }
+      }
+    }
+
+    // Tiny bubbles float around the edge of the crown, just outside the
+    // bubbles they are by.
+    const placed = [...bubbles];
+    for (let i = 0; i < p.dots; i++) {
+      const [near, nearRadius] = placed[Math.floor(random() * placed.length)];
       const angle = between(0, 2 * Math.PI);
-      const reach = p.bubbleSize * spread * between(0.5, 1.1);
-      const lift = p.bubbleSize * spread * between(-0.2, 0.9);
-      bubbles.push([
-        add(center, [Math.cos(angle) * reach, lift, Math.sin(angle) * reach]),
-        sized(0.95),
-      ]);
+      const away = normalize(
+        add(sub(near, center), [Math.cos(angle), between(-0.5, 0.5), Math.sin(angle)])
+      );
+      const radius = p.bubbleSize * between(0.1, 0.2);
+      bubbles.push([add(near, scale(away, nearRadius + radius * between(1, 2.5))), radius]);
+    }
+
+    // Strands hang from the tips: a chain of bubbles from under each tip,
+    // each a little smaller than the one above it and drifting out from the
+    // trunk, like a weeping willow's.
+    for (const [tip, tipRadius] of tips) {
+      const outward = normalize([tip[0] - top[0], 0, tip[2] - top[2]]);
+      for (let k = 0; k < p.strands; k++) {
+        const angle = between(0, 2 * Math.PI);
+        let radius = tipRadius * between(0.4, 0.55);
+        let position = add(tip, [
+          Math.cos(angle) * tipRadius * 0.5,
+          -tipRadius * 0.75,
+          Math.sin(angle) * tipRadius * 0.5,
+        ]);
+        for (let n = 0; n < p.strandBubbles; n++) {
+          bubbles.push([position, radius]);
+          const next = radius * between(0.8, 0.9);
+          position = add(
+            position,
+            add([0, -(radius + next) * 0.75, 0], scale(outward, next * 0.3))
+          );
+          radius = next;
+        }
+      }
+    }
+  } else if (p.crown === "cloud") {
+    // Limbs reach out nearly level at heights from branchStart to the top
+    // of the trunk, each turned well around from the one below. Lower limbs
+    // reach farther and hold bigger pads, the way cloud-pruned trees are
+    // shaped. Each pad is a flat cluster of bubbles: one in the middle and
+    // a ring of smaller ones around it, bubbles bubbles in all.
+    const pad = (padCenter, size) => {
+      bubbles.push([padCenter, sized(0.8 * size)]);
+      const ring = p.bubbles - 1;
+      const turn = between(0, 2 * Math.PI);
+      for (let i = 0; i < ring; i++) {
+        const angle = turn + (i / ring) * 2 * Math.PI + between(-0.2, 0.2);
+        const reach = p.bubbleSize * 0.75 * size * spread * between(0.85, 1.1);
+        bubbles.push([
+          add(padCenter, [
+            Math.cos(angle) * reach,
+            p.bubbleSize * size * between(-0.1, 0.2),
+            Math.sin(angle) * reach,
+          ]),
+          sized(0.55 * size),
+        ]);
+      }
+    };
+
+    const twist = between(0, 2 * Math.PI);
+    const branchRadius = p.trunkRadius * p.trunkTaper * p.branchRadius;
+    for (let b = 0; b < p.branches; b++) {
+      const order = p.branches > 1 ? b / (p.branches - 1) : 1;
+      const start = curve(...trunk, p.branchStart + (0.95 - p.branchStart) * order);
+      const around = twist + b * 2.4 + between(-0.3, 0.3);
+      const lean = (p.branchAngle * between(0.9, 1.1) * Math.PI) / 180;
+      const out = [
+        Math.cos(around) * Math.sin(lean),
+        Math.cos(lean),
+        Math.sin(around) * Math.sin(lean),
+      ];
+      const length = p.branchLength * spread * (1.15 - 0.5 * order) * between(0.9, 1.1);
+      const end = add(add(start, scale(out, length)), [0, length * 0.2 * p.branchCurve, 0]);
+      const bend = add(start, scale(out, length * 0.55));
+      tube(mesh, [start, bend, end], (t) => branchRadius * (1 - 0.35 * t), p.trunkColor, p);
+      pad(add(end, [0, p.bubbleSize * 0.25, 0]), 1.15 - 0.45 * order);
+    }
+
+    // The trunk's top is rounded off, and holds the smallest pad.
+    bubble(mesh, top, p.trunkRadius * p.trunkTaper, p.trunkColor, {...p, highlight: 0, squash: 1});
+    if (p.topBubble) {
+      pad(add(top, [0, p.bubbleSize * 0.4, 0]), 0.7);
     }
   } else if (p.crown === "tall") {
     // Bubbles climb the trunk in a tall teardrop, widest a third of the way
@@ -528,9 +1070,9 @@ function buildTree(p, random) {
   }
 
   // Each bubble picks one of the leaf colors, a little lighter or darker, so
-  // even a one-color tree's bubbles stand apart.
-  for (const [center, radius] of bubbles) {
-    const color = p.leafColors[Math.floor(random() * p.leafColors.length)];
+  // even a one-color tree's bubbles stand apart. Fruit has its own color.
+  for (const [center, radius, ownColor] of bubbles) {
+    const color = ownColor || p.leafColors[Math.floor(random() * p.leafColors.length)];
     const tint = between(-0.06, 0.06);
     bubble(
       mesh,
@@ -619,15 +1161,26 @@ function main() {
         ? String(value)
         : Number(value);
   }
-  for (const name of ["branches", "minBranches", "bubbles", "topBubble"]) {
+  for (const name of [
+    "branches",
+    "minBranches",
+    "twigs",
+    "smallBubbles",
+    "dots",
+    "strands",
+    "strandBubbles",
+    "fruit",
+    "bubbles",
+    "topBubble",
+  ]) {
     parameters[name] = Math.max(name === "bubbles" ? 1 : 0, Math.round(parameters[name]));
   }
   if (parameters.crown === "round") {
     parameters.branches = Math.max(parameters.branches, parameters.minBranches);
   }
 
-  const defaultName =
-    seed != null ? `tree-${seed}.obj` : style === "round" ? "tree.obj" : `tree-${style}.obj`;
+  // Files are named for their style, then their seed, if any.
+  const defaultName = seed != null ? `${style}-tree-${seed}.obj` : `${style}-tree.obj`;
   const filename = out || defaultName;
   const output = path.isAbsolute(filename)
     ? filename

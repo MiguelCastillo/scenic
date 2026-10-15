@@ -171,7 +171,7 @@
             {
               "name": "tree",
               "type": "static-mesh",
-              "resource": "/resources/obj/tree.obj",
+              "resource": "/resources/obj/round-tree.obj",
               "transform": {
                 "position": [-1075, 0, 0],
                 "rotation": [0, 0, 0],
@@ -190,7 +190,7 @@
             {
               "name": "tree-sprig",
               "type": "static-mesh",
-              "resource": "/resources/obj/tree-sprig.obj",
+              "resource": "/resources/obj/sprig-tree.obj",
               "transform": {
                 "position": [-645, 0, 0],
                 "rotation": [0, 0, 0],
@@ -209,7 +209,7 @@
             {
               "name": "tree-tall",
               "type": "static-mesh",
-              "resource": "/resources/obj/tree-tall.obj",
+              "resource": "/resources/obj/tall-tree.obj",
               "transform": {
                 "position": [-215, 0, 0],
                 "rotation": [0, 0, 0],
@@ -228,7 +228,7 @@
             {
               "name": "tree-pine",
               "type": "static-mesh",
-              "resource": "/resources/obj/tree-pine.obj",
+              "resource": "/resources/obj/pine-tree.obj",
               "transform": {
                 "position": [215, 0, 0],
                 "rotation": [0, 0, 0],
@@ -247,7 +247,7 @@
             {
               "name": "tree-lollipop",
               "type": "static-mesh",
-              "resource": "/resources/obj/tree-lollipop.obj",
+              "resource": "/resources/obj/lollipop-tree.obj",
               "transform": {
                 "position": [645, 0, 0],
                 "rotation": [0, 0, 0],
@@ -266,7 +266,7 @@
             {
               "name": "tree-1",
               "type": "static-mesh",
-              "resource": "/resources/obj/tree-1.obj",
+              "resource": "/resources/obj/lollipop-tree-1.obj",
               "transform": {
                 "position": [1075, 0, 0],
                 "rotation": [0, 0, 0],
@@ -285,7 +285,7 @@
             {
               "name": "tree-2",
               "type": "static-mesh",
-              "resource": "/resources/obj/tree-2.obj",
+              "resource": "/resources/obj/sprig-tree-2.obj",
               "transform": {
                 "position": [-1075, 0, -650],
                 "rotation": [0, 0, 0],
@@ -304,7 +304,7 @@
             {
               "name": "tree-3",
               "type": "static-mesh",
-              "resource": "/resources/obj/tree-3.obj",
+              "resource": "/resources/obj/pine-tree-3.obj",
               "transform": {
                 "position": [-645, 0, -650],
                 "rotation": [0, 0, 0],
@@ -323,7 +323,7 @@
             {
               "name": "tree-4",
               "type": "static-mesh",
-              "resource": "/resources/obj/tree-4.obj",
+              "resource": "/resources/obj/tall-tree-4.obj",
               "transform": {
                 "position": [-215, 0, -650],
                 "rotation": [0, 0, 0],
@@ -342,7 +342,7 @@
             {
               "name": "tree-5",
               "type": "static-mesh",
-              "resource": "/resources/obj/tree-5.obj",
+              "resource": "/resources/obj/pine-tree-5.obj",
               "transform": {
                 "position": [215, 0, -650],
                 "rotation": [0, 0, 0],
@@ -361,7 +361,7 @@
             {
               "name": "tree-6",
               "type": "static-mesh",
-              "resource": "/resources/obj/tree-6.obj",
+              "resource": "/resources/obj/round-tree-6.obj",
               "transform": {
                 "position": [645, 0, -650],
                 "rotation": [0, 0, 0],
@@ -380,9 +380,275 @@
             {
               "name": "tree-7",
               "type": "static-mesh",
-              "resource": "/resources/obj/tree-7.obj",
+              "resource": "/resources/obj/pine-tree-7.obj",
               "transform": {
                 "position": [1075, 0, -650],
+                "rotation": [0, 0, 0],
+                "scale": [1, 1, 1]
+              },
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.1,
+                "shininess": 16
+              },
+              "ambient": {
+                "color": [0.4, 0.4, 0.43]
+              }
+            },
+            {
+              "name": "tree-canopy",
+              "type": "static-mesh",
+              "resource": "/resources/obj/canopy-tree.obj",
+              "transform": {
+                "position": [-1075, 0, 650],
+                "rotation": [0, 0, 0],
+                "scale": [1, 1, 1]
+              },
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.1,
+                "shininess": 16
+              },
+              "ambient": {
+                "color": [0.4, 0.4, 0.43]
+              }
+            },
+            {
+              "name": "tree-205",
+              "type": "static-mesh",
+              "resource": "/resources/obj/canopy-tree-205.obj",
+              "transform": {
+                "position": [-645, 0, 650],
+                "rotation": [0, 0, 0],
+                "scale": [1, 1, 1]
+              },
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.1,
+                "shininess": 16
+              },
+              "ambient": {
+                "color": [0.4, 0.4, 0.43]
+              }
+            },
+            {
+              "name": "tree-207",
+              "type": "static-mesh",
+              "resource": "/resources/obj/canopy-tree-207.obj",
+              "transform": {
+                "position": [-215, 0, 650],
+                "rotation": [0, 0, 0],
+                "scale": [1, 1, 1]
+              },
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.1,
+                "shininess": 16
+              },
+              "ambient": {
+                "color": [0.4, 0.4, 0.43]
+              }
+            },
+            {
+              "name": "tree-211",
+              "type": "static-mesh",
+              "resource": "/resources/obj/canopy-tree-211.obj",
+              "transform": {
+                "position": [215, 0, 650],
+                "rotation": [0, 0, 0],
+                "scale": [1, 1, 1]
+              },
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.1,
+                "shininess": 16
+              },
+              "ambient": {
+                "color": [0.4, 0.4, 0.43]
+              }
+            },
+            {
+              "name": "tree-217",
+              "type": "static-mesh",
+              "resource": "/resources/obj/canopy-tree-217.obj",
+              "transform": {
+                "position": [645, 0, 650],
+                "rotation": [0, 0, 0],
+                "scale": [1, 1, 1]
+              },
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.1,
+                "shininess": 16
+              },
+              "ambient": {
+                "color": [0.4, 0.4, 0.43]
+              }
+            },
+            {
+              "name": "tree-233",
+              "type": "static-mesh",
+              "resource": "/resources/obj/canopy-tree-233.obj",
+              "transform": {
+                "position": [1075, 0, 650],
+                "rotation": [0, 0, 0],
+                "scale": [1, 1, 1]
+              },
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.1,
+                "shininess": 16
+              },
+              "ambient": {
+                "color": [0.4, 0.4, 0.43]
+              }
+            },
+            {
+              "name": "cloud-tree",
+              "type": "static-mesh",
+              "resource": "/resources/obj/cloud-tree.obj",
+              "transform": {
+                "position": [-967, 0, 1950],
+                "rotation": [0, 0, 0],
+                "scale": [1, 1, 1]
+              },
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.1,
+                "shininess": 16
+              },
+              "ambient": {
+                "color": [0.4, 0.4, 0.43]
+              }
+            },
+            {
+              "name": "weeping-tree",
+              "type": "static-mesh",
+              "resource": "/resources/obj/weeping-tree.obj",
+              "transform": {
+                "position": [-322, 0, 1950],
+                "rotation": [0, 0, 0],
+                "scale": [1, 1, 1]
+              },
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.1,
+                "shininess": 16
+              },
+              "ambient": {
+                "color": [0.4, 0.4, 0.43]
+              }
+            },
+            {
+              "name": "acacia-tree",
+              "type": "static-mesh",
+              "resource": "/resources/obj/acacia-tree.obj",
+              "transform": {
+                "position": [322, 0, 1950],
+                "rotation": [0, 0, 0],
+                "scale": [1, 1, 1]
+              },
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.1,
+                "shininess": 16
+              },
+              "ambient": {
+                "color": [0.4, 0.4, 0.43]
+              }
+            },
+            {
+              "name": "orchard-tree",
+              "type": "static-mesh",
+              "resource": "/resources/obj/orchard-tree.obj",
+              "transform": {
+                "position": [967, 0, 1950],
+                "rotation": [0, 0, 0],
+                "scale": [1, 1, 1]
+              },
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.1,
+                "shininess": 16
+              },
+              "ambient": {
+                "color": [0.4, 0.4, 0.43]
+              }
+            },
+            {
+              "name": "cloud-tree-1",
+              "type": "static-mesh",
+              "resource": "/resources/obj/cloud-tree-1.obj",
+              "transform": {
+                "position": [-967, 0, 1300],
+                "rotation": [0, 0, 0],
+                "scale": [1, 1, 1]
+              },
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.1,
+                "shininess": 16
+              },
+              "ambient": {
+                "color": [0.4, 0.4, 0.43]
+              }
+            },
+            {
+              "name": "weeping-tree-1",
+              "type": "static-mesh",
+              "resource": "/resources/obj/weeping-tree-1.obj",
+              "transform": {
+                "position": [-322, 0, 1300],
+                "rotation": [0, 0, 0],
+                "scale": [1, 1, 1]
+              },
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.1,
+                "shininess": 16
+              },
+              "ambient": {
+                "color": [0.4, 0.4, 0.43]
+              }
+            },
+            {
+              "name": "acacia-tree-1",
+              "type": "static-mesh",
+              "resource": "/resources/obj/acacia-tree-1.obj",
+              "transform": {
+                "position": [322, 0, 1300],
+                "rotation": [0, 0, 0],
+                "scale": [1, 1, 1]
+              },
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.1,
+                "shininess": 16
+              },
+              "ambient": {
+                "color": [0.4, 0.4, 0.43]
+              }
+            },
+            {
+              "name": "orchard-tree-1",
+              "type": "static-mesh",
+              "resource": "/resources/obj/orchard-tree-1.obj",
+              "transform": {
+                "position": [967, 0, 1300],
                 "rotation": [0, 0, 0],
                 "scale": [1, 1, 1]
               },
