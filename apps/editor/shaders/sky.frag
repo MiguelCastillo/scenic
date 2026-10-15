@@ -30,6 +30,11 @@ uniform float mountainHeight;
 uniform vec3 farMountainColor;
 uniform vec3 nearMountainColor;
 
+uniform bool fogEnabled;
+uniform vec3 fogColor;
+uniform float fogNear;
+uniform float fogFar;
+
 float hash(vec2 p) {
   p = fract(p * vec2(123.34, 456.21));
   p += dot(p, p + 45.32);
@@ -125,8 +130,14 @@ void main() {
     }
   }
 
-  // The ground below the horizon, fading out of the horizon's haze.
-  if (up < -0.005) {
+  // The ground below the horizon. In fog, it is a flat ground at height 0,
+  // fogged by how far away each pixel's point on it is, the same as the
+  // world's floor, so a floor fades into it and both reach the horizon
+  // together. Without fog, it fades out of the horizon's haze.
+  if (fogEnabled && up < 0.0) {
+    float groundDistance = cameraPosition.y > 0.0 ? cameraPosition.y / -up : fogFar;
+    color = mix(groundColor, fogColor, smoothstep(fogNear, fogFar, groundDistance));
+  } else if (up < -0.005) {
     color = mix(horizonColor, groundColor, smoothstep(-0.005, -0.08, up));
   }
 

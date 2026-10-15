@@ -445,8 +445,11 @@ Without a sun, the sky places its sun with `sunElevation` and `sunAzimuth`.
 The sky is a shader rather than images or a mesh (`apps/editor/sky.js` and
 `shaders/sky.frag`): one triangle covering the screen at the far plane, where
 each pixel is painted from the direction it looks in. So it is infinitely far
-away, the mountains never get closer, and fog does not touch it. Making the
-viewport's fog the horizon color fades the world into the sky. Its settings
+away, the mountains never get closer, and fog does not touch the sky itself.
+Its ground below the horizon is the exception: in fog, it is a flat ground at
+height 0, fogged by how far away each pixel's point on it is, the same as the
+floor. Making the viewport's fog the horizon color then fades the floor and
+the sky's ground into the horizon together, so they meet. Its settings
 can be tuned live from its Sky tab; every setting is listed in `sky.js`.
 
 ### Renderable, Mesh and Geometry

@@ -10,7 +10,10 @@ import {shaderRegistry} from "./shader-registry.js";
 // painted from the direction the camera looks through each pixel, so it is
 // infinitely far away: flying never gets any closer to the mountains, and fog
 // does not touch it. Fog that is the horizon color fades the world into the
-// sky.
+// sky. The ground below the horizon is the exception: in fog, it is a flat
+// ground at height 0, fogged by how far away each pixel's point on it is, the
+// same as a floor there, so a floor and the sky's ground fade into the
+// horizon together.
 //
 // The sky is one triangle that covers the screen, drawn at the far plane and
 // only where nothing else has been drawn, so it can be anywhere in its
@@ -27,7 +30,8 @@ import {shaderRegistry} from "./shader-registry.js";
 // Its settings come from "sky" in its state, and all are optional (see
 // defaults):
 // - zenithColor, horizonColor, groundColor: the sky straight up, the sky at
-//   the horizon, and the ground below it, as [r, g, b].
+//   the horizon, and the ground below it, as [r, g, b]. In fog, the ground
+//   should match the floor's color, so the two meet without a seam.
 // - sunColor: the sun and its glow, as [r, g, b].
 // - sunElevation, sunAzimuth: where the sun is when none of the sky's lights
 //   is marked as the sun (see below), in degrees: how high above the horizon,

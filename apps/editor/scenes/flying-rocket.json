@@ -71,8 +71,8 @@
       "type": "viewport",
       "fog": {
         "color": [0.75, 0.88, 1],
-        "near": 2500,
-        "far": 9000
+        "near": 1000,
+        "far": 11000
       },
       "items": [
         {
