@@ -169,7 +169,7 @@
           },
           "items": [
             {
-              "name": "tree",
+              "name": "round tree",
               "type": "static-mesh",
               "resource": "/resources/obj/round-tree.obj",
               "transform": {
@@ -188,7 +188,7 @@
               }
             },
             {
-              "name": "tree-sprig",
+              "name": "sprig tree",
               "type": "static-mesh",
               "resource": "/resources/obj/sprig-tree.obj",
               "transform": {
@@ -207,7 +207,7 @@
               }
             },
             {
-              "name": "tree-tall",
+              "name": "tall tree",
               "type": "static-mesh",
               "resource": "/resources/obj/tall-tree.obj",
               "transform": {
@@ -226,7 +226,7 @@
               }
             },
             {
-              "name": "tree-pine",
+              "name": "pine tree",
               "type": "static-mesh",
               "resource": "/resources/obj/pine-tree.obj",
               "transform": {
@@ -245,7 +245,7 @@
               }
             },
             {
-              "name": "tree-lollipop",
+              "name": "lollipop tree",
               "type": "static-mesh",
               "resource": "/resources/obj/lollipop-tree.obj",
               "transform": {
@@ -264,7 +264,7 @@
               }
             },
             {
-              "name": "tree-1",
+              "name": "lollipop tree 1",
               "type": "static-mesh",
               "resource": "/resources/obj/lollipop-tree-1.obj",
               "transform": {
@@ -283,7 +283,7 @@
               }
             },
             {
-              "name": "tree-2",
+              "name": "sprig tree 2",
               "type": "static-mesh",
               "resource": "/resources/obj/sprig-tree-2.obj",
               "transform": {
@@ -302,7 +302,7 @@
               }
             },
             {
-              "name": "tree-3",
+              "name": "pine tree 3",
               "type": "static-mesh",
               "resource": "/resources/obj/pine-tree-3.obj",
               "transform": {
@@ -321,7 +321,7 @@
               }
             },
             {
-              "name": "tree-4",
+              "name": "tall tree 4",
               "type": "static-mesh",
               "resource": "/resources/obj/tall-tree-4.obj",
               "transform": {
@@ -340,7 +340,7 @@
               }
             },
             {
-              "name": "tree-5",
+              "name": "pine tree 5",
               "type": "static-mesh",
               "resource": "/resources/obj/pine-tree-5.obj",
               "transform": {
@@ -359,7 +359,7 @@
               }
             },
             {
-              "name": "tree-6",
+              "name": "round tree 6",
               "type": "static-mesh",
               "resource": "/resources/obj/round-tree-6.obj",
               "transform": {
@@ -378,7 +378,7 @@
               }
             },
             {
-              "name": "tree-7",
+              "name": "pine tree 7",
               "type": "static-mesh",
               "resource": "/resources/obj/pine-tree-7.obj",
               "transform": {
@@ -397,7 +397,7 @@
               }
             },
             {
-              "name": "tree-canopy",
+              "name": "canopy tree",
               "type": "static-mesh",
               "resource": "/resources/obj/canopy-tree.obj",
               "transform": {
@@ -416,7 +416,7 @@
               }
             },
             {
-              "name": "tree-205",
+              "name": "canopy tree 205",
               "type": "static-mesh",
               "resource": "/resources/obj/canopy-tree-205.obj",
               "transform": {
@@ -435,7 +435,7 @@
               }
             },
             {
-              "name": "tree-207",
+              "name": "canopy tree 207",
               "type": "static-mesh",
               "resource": "/resources/obj/canopy-tree-207.obj",
               "transform": {
@@ -454,7 +454,7 @@
               }
             },
             {
-              "name": "tree-211",
+              "name": "canopy tree 211",
               "type": "static-mesh",
               "resource": "/resources/obj/canopy-tree-211.obj",
               "transform": {
@@ -473,7 +473,7 @@
               }
             },
             {
-              "name": "tree-217",
+              "name": "canopy tree 217",
               "type": "static-mesh",
               "resource": "/resources/obj/canopy-tree-217.obj",
               "transform": {
@@ -492,7 +492,7 @@
               }
             },
             {
-              "name": "tree-233",
+              "name": "canopy tree 233",
               "type": "static-mesh",
               "resource": "/resources/obj/canopy-tree-233.obj",
               "transform": {
@@ -511,7 +511,7 @@
               }
             },
             {
-              "name": "cloud-tree",
+              "name": "cloud tree",
               "type": "static-mesh",
               "resource": "/resources/obj/cloud-tree.obj",
               "transform": {
@@ -530,7 +530,7 @@
               }
             },
             {
-              "name": "weeping-tree",
+              "name": "weeping tree",
               "type": "static-mesh",
               "resource": "/resources/obj/weeping-tree.obj",
               "transform": {
@@ -549,7 +549,7 @@
               }
             },
             {
-              "name": "acacia-tree",
+              "name": "acacia tree",
               "type": "static-mesh",
               "resource": "/resources/obj/acacia-tree.obj",
               "transform": {
@@ -568,7 +568,7 @@
               }
             },
             {
-              "name": "orchard-tree",
+              "name": "orchard tree",
               "type": "static-mesh",
               "resource": "/resources/obj/orchard-tree.obj",
               "transform": {
@@ -587,7 +587,7 @@
               }
             },
             {
-              "name": "cloud-tree-1",
+              "name": "cloud tree 1",
               "type": "static-mesh",
               "resource": "/resources/obj/cloud-tree-1.obj",
               "transform": {
@@ -606,7 +606,7 @@
               }
             },
             {
-              "name": "weeping-tree-1",
+              "name": "weeping tree 1",
               "type": "static-mesh",
               "resource": "/resources/obj/weeping-tree-1.obj",
               "transform": {
@@ -625,7 +625,7 @@
               }
             },
             {
-              "name": "acacia-tree-1",
+              "name": "acacia tree 1",
               "type": "static-mesh",
               "resource": "/resources/obj/acacia-tree-1.obj",
               "transform": {
@@ -644,7 +644,7 @@
               }
             },
             {
-              "name": "orchard-tree-1",
+              "name": "orchard tree 1",
               "type": "static-mesh",
               "resource": "/resources/obj/orchard-tree-1.obj",
               "transform": {
