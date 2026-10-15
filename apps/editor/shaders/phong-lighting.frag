@@ -18,6 +18,9 @@ in vec3 fragmentWorldPosition;
 
 uniform vec3 ambientColor;
 uniform vec4 materialColor;
+// How opaque the surface is, 0 to 1, which is its alpha: below 1 it is drawn
+// blended over what is behind it (see Mesh).
+uniform float materialOpacity;
 uniform float materialReflectiveness;
 uniform float materialSpecular;
 uniform float materialShininess;
@@ -83,4 +86,5 @@ void main() {
   // added rather than tinted by the surface color.
   pixelColor.rgb += specularLightColor;
   pixelColor.rgb = applyFog(pixelColor.rgb, fragmentWorldPosition);
+  pixelColor.a = materialOpacity;
 }

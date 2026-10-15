@@ -77,6 +77,9 @@ export class SceneManager {
       gl,
       ms,
       sceneManager: this,
+      // Translucent meshes, which are drawn after everything else (see
+      // Mesh.render), as {distance, draw}.
+      translucent: [],
     };
 
     // When we are traversing the scene graph from the root to its leaf nodes
@@ -129,5 +132,20 @@ export class SceneManager {
 
     this.scene.items.forEach(preRenderPass);
     this.scene.items.forEach(renderPass);
+
+    // Translucent meshes are drawn last, once everything solid is in the
+    // depth buffer, and farthest first, so that each is blended over what is
+    // behind it. They don't write depth, so they never hide each other.
+    if (context.translucent.length) {
+      context.translucent.sort((a, b) => b.distance - a.distance);
+      gl.enable(gl.BLEND);
+      // Only colors are blended: the canvas keeps its own alpha, so that
+      // the page never shows through it.
+      gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ZERO, gl.ONE);
+      gl.depthMask(false);
+      context.translucent.forEach(({draw}) => draw());
+      gl.depthMask(true);
+      gl.disable(gl.BLEND);
+    }
   }
 }

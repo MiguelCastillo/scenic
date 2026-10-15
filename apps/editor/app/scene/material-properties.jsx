@@ -45,6 +45,17 @@ export class MaterialProperties extends WithNodeState {
     });
   };
 
+  handleChangeOpacity = (evt) => {
+    const nodeState = this.getNodeState();
+    this.updateNodeState({
+      ...nodeState,
+      material: {
+        ...nodeState.material,
+        opacity: float.fixed3f(evt.target.value),
+      },
+    });
+  };
+
   handleChangeSpecular = (which, evt) => {
     const nodeState = this.getNodeState();
     this.updateNodeState({
@@ -79,6 +90,19 @@ export class MaterialProperties extends WithNodeState {
               max="1"
               onChange={this.handleChangeReflectiveness}
               value={material.reflectiveness}
+            />
+          </div> : null}
+        {/* Opacity is 1 for a material without its own, which is solid. */}
+        {material ?
+          <div className="opacity">
+            <label>Opacity</label>
+            <input
+              type="number"
+              step=".1"
+              min="0"
+              max="1"
+              onChange={this.handleChangeOpacity}
+              value={material.opacity ?? 1}
             />
           </div> : null}
         {/* Specular settings are only shown for lit materials, the ones with

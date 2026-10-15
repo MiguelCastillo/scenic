@@ -20,9 +20,9 @@ Quick intro:
 4. Scroll (or two fingers on a trackpad) to fly forward, back, left and right
 5. Press C to switch cameras, in scenes with more than one: the dancing
    character can be seen from a free camera, through its eyes, or from behind
-   it, and the flying rocket from behind it, from its cockpit, or from a free
-   camera. Looking through the eyes, the mouse looks around. Following from
-   behind, the mouse orbits and scrolling zooms
+   it, and Bubble Squadron's starfighter from behind it, from its cockpit, or
+   from a free camera. Looking through the eyes, the mouse looks around.
+   Following from behind, the mouse orbits and scrolling zooms
 6. Press ESC to let go of the camera
 7. Use "Change scene" in the scene graph panel to switch to another scene
 
@@ -219,9 +219,9 @@ to face the same way as the head: the camera looks down its own -Z axis, and
 the head's front is its +Z. The third-person offset moves the orbit's pivot up
 from the hips to the chest.
 
-The flying rocket's scene has a chase camera that follows the rocket, a
-cockpit camera that looks out from just above its nose, banking with it, and a
-free camera:
+Bubble Squadron (`scenes/bubble-squadron.json`) has a chase camera that
+follows the player's starfighter, a cockpit camera that looks out from just
+above its canopy, banking with it, and a free camera:
 
 ```json
 {
@@ -229,8 +229,8 @@ free camera:
   "type": "first-person-camera",
   "projection": {"type": "perspective", "near": 1, "far": 12000, "fov": 75},
   "firstPerson": {
-    "target": {"nodeID": "rocket"},
-    "offset": {"position": [0, 32, 45], "rotation": [0, 180, 0]},
+    "target": {"nodeID": "starfighter"},
+    "offset": {"position": [0, 40, 30], "rotation": [0, 180, 0]},
     "maxPitch": 80,
     "mouseOrbit": false
   }
@@ -279,7 +279,7 @@ pointer is locked to it, by clicking it. Pressing P pauses the scene: its
 clock stops, and scripts get no time and no input until P is pressed again,
 while the camera can still look around. The mouse turns the camera while
 paused even when its `mouseOrbit` setting is off, so a third-person camera can
-orbit the rocket, and when the scene resumes the camera is reset to the scene
+orbit the starfighter, and when the scene resumes the camera is reset to the scene
 file's values, putting it back behind its target. Scripts are loaded with the scene, and
 `src` is relative to the editor page.
 
@@ -324,9 +324,9 @@ out of each.
   cone meshes, so a column made from those meshes only needs its `shape`.
 
 Only spheres are tested against other shapes, so of any two shapes that should
-collide, at least one is a sphere. In the flying rocket scene, the rocket has a
-sphere and each tree has a cylinder up its trunk and one around its crown, and
-`fly.js` bounces the rocket off whatever it hits. A collider doesn't need a
+collide, at least one is a sphere. In Bubble Squadron, the starfighter
+has a sphere and each tree has a cylinder up its trunk and one around its
+crown, and `fly.js` bounces the starfighter off whatever it hits. A collider doesn't need a
 mesh: the trees' are on transform nodes beside their meshes, placed where
 `bin/generate-tree.js` says they go. A Collider tab in the editor edits a
 collider's size live.
@@ -360,7 +360,7 @@ and `shaders/grid.frag`): the grid draws one square, and each pixel works out
 how close it is to a line. Lines stay crisp up close and fade out in the
 distance instead of shimmering. A finite grid is a square its transform
 places. An infinite grid's square follows the camera, as far as it can see, so
-the floor never ends; the flying rocket's scene uses one, filled green. Its
+the floor never ends; Bubble Squadron uses one, filled green. Its
 settings can be tuned live from its Grid tab.
 
 The grid is part of the editor rather than the engine packages, like the axis
@@ -382,6 +382,13 @@ diffuse lighting. A mesh's material can tune them:
 
 Highlights are scaled by `reflectiveness` like diffuse light, so a material
 that does not reflect light, like the axis gizmo's, has none.
+
+A material can also be see-through: `material.opacity` is how opaque it is,
+from 0 to 1, and 1, solid, by default. A mesh with an opacity below 1 is
+drawn after everything solid in the frame, farthest first, blended over what
+is behind it, and it doesn't hide anything drawn after it. Bubble Squadron's
+seedpod has translucent petals, at 0.55. Opacity can be adjusted live on a
+mesh's Material tab.
 
 A viewport's `fog` fades what it draws toward a color the farther it is from
 the active camera, starting at `near` and fully fogged at `far`. Every scene's
@@ -408,7 +415,7 @@ view-projection matrix.
 A `sky` node paints a cartoon sky behind everything in its viewport: a
 gradient from the horizon to the zenith, a sun, puffy two-tone clouds that
 drift, two hazy mountain ranges around the horizon, and the ground below it.
-The flying rocket's scene has one:
+Bubble Squadron has one:
 
 ```json
 {

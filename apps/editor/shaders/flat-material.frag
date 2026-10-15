@@ -6,6 +6,9 @@ in vec4 fragmentColor;
 in vec3 fragmentWorldPosition;
 
 uniform vec4 materialColor;
+// How opaque the surface is, 0 to 1, which is its alpha: below 1 it is drawn
+// blended over what is behind it (see Mesh).
+uniform float materialOpacity;
 uniform vec3 cameraPosition;
 uniform bool fogEnabled;
 uniform vec3 fogColor;
@@ -26,4 +29,5 @@ vec3 applyFog(vec3 color, vec3 worldPosition) {
 void main() {
   pixelColor = fragmentColor + materialColor;
   pixelColor.rgb = applyFog(pixelColor.rgb, fragmentWorldPosition);
+  pixelColor.a = materialOpacity;
 }

@@ -17,11 +17,12 @@ import _console from "./logging.js";
 const sceneFiles = [
   "scenes/armatured-cube-simple.json",
   "scenes/armatured-cube.json",
+  "scenes/bubble-squadron.json",
   "scenes/bump-lighting-sphere.json",
-  "scenes/flying-rocket.json",
   "scenes/jedi-star-fighter.json",
   "scenes/rockets.json",
   "scenes/skinning-mesh-animation-dancing-character.json",
+  "scenes/starfighters.json",
   "scenes/trees.json",
 ];
 

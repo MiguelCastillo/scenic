@@ -108,7 +108,8 @@ export class Grid extends Renderable {
     gl.disable(gl.CULL_FACE);
     if (!fillColor) {
       gl.enable(gl.BLEND);
-      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+      // Only colors are blended, so the canvas keeps its own alpha.
+      gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ZERO, gl.ONE);
     }
     this.shaderProgram.render(this.square);
     gl.disable(gl.BLEND);

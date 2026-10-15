@@ -89,7 +89,7 @@
           },
           "thirdPerson": {
             "target": {
-              "nodeID": "rocket"
+              "nodeID": "starfighter"
             },
             "offset": [0, 0, 0],
             "distance": 600,
@@ -117,10 +117,10 @@
           },
           "firstPerson": {
             "target": {
-              "nodeID": "rocket"
+              "nodeID": "starfighter"
             },
             "offset": {
-              "position": [0, 32, 45],
+              "position": [0, 36, 40],
               "rotation": [0, 180, 0]
             },
             "maxPitch": 80,
@@ -222,10 +222,10 @@
           },
           "items": [
             {
-              "name": "rocket",
+              "name": "starfighter",
               "collider": {
                 "shape": "sphere",
-                "radius": 75
+                "radius": 95
               },
               "type": "transform",
               "transform": {
@@ -255,9 +255,9 @@
               },
               "items": [
                 {
-                  "name": "rocket body",
+                  "name": "starfighter body",
                   "type": "static-mesh",
-                  "resource": "/resources/obj/rocket-slender.obj",
+                  "resource": "/resources/obj/seedpod-starfighter-3.obj",
                   "material": {
                     "color": [0, 0, 0, 1],
                     "reflectiveness": 1,
@@ -269,31 +269,34 @@
                   }
                 },
                 {
-                  "name": "rocket flame",
+                  "name": "starfighter petals",
                   "type": "static-mesh",
-                  "resource": "/resources/obj/flame.obj",
+                  "resource": "/resources/obj/seedpod-starfighter-3-spinner.obj",
                   "material": {
                     "color": [0, 0, 0, 1],
-                    "reflectiveness": 0
+                    "reflectiveness": 1,
+                    "specular": 0.6,
+                    "shininess": 64,
+                    "opacity": 0.55
                   },
                   "ambient": {
-                    "color": [1, 1, 1]
+                    "color": [0.3, 0.3, 0.35]
                   },
                   "transform": {
-                    "position": [0, 0, -78.563],
+                    "position": [0, 0, 0],
                     "rotation": [0, 0, 0],
-                    "scale": [6.5, 6.5, 6.5]
+                    "scale": [1, 1, 1]
                   },
                   "script": {
-                    "src": "scripts/flame.js",
+                    "src": "scripts/spin.js",
                     "settings": {
-                      "flicker": 0.15,
-                      "speed": 1
+                      "idleSpeed": 60,
+                      "speed": 720
                     }
                   }
                 },
                 {
-                  "name": "rocket booster flame 1",
+                  "name": "starfighter flame 1",
                   "type": "static-mesh",
                   "resource": "/resources/obj/flame.obj",
                   "material": {
@@ -304,57 +307,9 @@
                     "color": [1, 1, 1]
                   },
                   "transform": {
-                    "position": [0, 70, -77.606],
+                    "position": [0, 0, -93.002],
                     "rotation": [0, 0, 0],
-                    "scale": [3.85, 3.85, 3.85]
-                  },
-                  "script": {
-                    "src": "scripts/flame.js",
-                    "settings": {
-                      "flicker": 0.15,
-                      "speed": 1
-                    }
-                  }
-                },
-                {
-                  "name": "rocket booster flame 2",
-                  "type": "static-mesh",
-                  "resource": "/resources/obj/flame.obj",
-                  "material": {
-                    "color": [0, 0, 0, 1],
-                    "reflectiveness": 0
-                  },
-                  "ambient": {
-                    "color": [1, 1, 1]
-                  },
-                  "transform": {
-                    "position": [-60.622, -35, -77.606],
-                    "rotation": [0, 0, 0],
-                    "scale": [3.85, 3.85, 3.85]
-                  },
-                  "script": {
-                    "src": "scripts/flame.js",
-                    "settings": {
-                      "flicker": 0.15,
-                      "speed": 1
-                    }
-                  }
-                },
-                {
-                  "name": "rocket booster flame 3",
-                  "type": "static-mesh",
-                  "resource": "/resources/obj/flame.obj",
-                  "material": {
-                    "color": [0, 0, 0, 1],
-                    "reflectiveness": 0
-                  },
-                  "ambient": {
-                    "color": [1, 1, 1]
-                  },
-                  "transform": {
-                    "position": [60.622, -35, -77.606],
-                    "rotation": [0, 0, 0],
-                    "scale": [3.85, 3.85, 3.85]
+                    "scale": [6.396, 6.396, 6.396]
                   },
                   "script": {
                     "src": "scripts/flame.js",

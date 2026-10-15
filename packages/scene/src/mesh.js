@@ -38,8 +38,18 @@ export class Mesh extends Renderable {
     return this;
   }
 
+  // render draws the mesh, unless its material's `opacity` is below 1: a
+  // translucent mesh is blended over what is behind it, so it is held back
+  // in the frame's `translucent` list for SceneManager to draw after
+  // everything solid, farthest first (see SceneManager.render). It sets its
+  // lights and material up again when it is drawn then, since meshes share
+  // shader programs.
   render(context) {
-    if (this.vertexBuffers.length && this.shaderProgram) {
+    if (!this.vertexBuffers.length || !this.shaderProgram) {
+      return;
+    }
+
+    const draw = () => {
       const lightsState = this.getLightsState(context);
       if (lightsState) {
         Mesh.configureLighting(this.shaderProgram, lightsState);
@@ -51,6 +61,20 @@ export class Mesh extends Renderable {
       }
 
       Mesh.render(this);
+    };
+
+    const opacity = this.getMaterialsState(context)?.material?.opacity ?? 1;
+    if (opacity < 1 && context.translucent) {
+      // Matrix4 data is row-major, so positions are the last column of world
+      // matrices.
+      const camera = this.getViewport()?.activeCamera?.worldMatrix.data;
+      const m = this.worldMatrix.data;
+      const distance = camera
+        ? Math.hypot(m[3] - camera[3], m[7] - camera[7], m[11] - camera[11])
+        : 0;
+      context.translucent.push({distance, draw});
+    } else {
+      draw();
     }
   }
 
@@ -155,6 +179,16 @@ export class Mesh extends Renderable {
     if (material) {
       uniforms.push(...Mesh.specularUniforms(material));
     }
+
+    // Opacity is always set, since a program keeps uniform values between
+    // meshes, and a translucent mesh drawn before a solid one would
+    // otherwise leave it translucent.
+    uniforms.push({
+      name: "materialOpacity",
+      update: (gl, {index}) => {
+        gl.uniform1f(index, material?.opacity ?? 1);
+      },
+    });
 
     if (ambient) {
       if (ambient.color != null) {
