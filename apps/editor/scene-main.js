@@ -10,6 +10,7 @@ import "./logging.js";
 import {mat4} from "@scenic/math";
 import {webgl} from "@scenic/renderer";
 import {CameraSystem} from "@scenic/camera";
+import {Node} from "@scenic/scene";
 
 import {createScene, buildDefaultState} from "./scene-factory.js";
 import {createResourceLoader, getResourcesFromConfig} from "./loaders/resource-loader.js";
@@ -86,6 +87,16 @@ function createSceneUpdater(gl, sceneManager) {
     refreshRateUpdater = cb;
   };
 
+  // Any node can show text over the scene with "hud" in its state, {text},
+  // such as a race's lap and time (see scripts/race.js). The app is told
+  // the text of all of them, a blank line apart, whenever it changes.
+  let lastHud = null;
+  let hudUpdater = () => {};
+  const registerHudUpdater = (cb) => {
+    hudUpdater = cb;
+    lastHud = null;
+  };
+
   function renderFrame(ms) {
     // Scripts get the frame's seconds, the held keys and the mouse's
     // movement, so that a script such as a flight controller can move at the
@@ -96,6 +107,15 @@ function createSceneUpdater(gl, sceneManager) {
       mouse: paused ? {x: 0, y: 0} : mouseMovement,
     });
     mouseMovement = {x: 0, y: 0};
+
+    const hud = Node.findChildrenByType(sceneManager.scene, Node)
+      .map((node) => sceneManager.getNodeStateByID(node.id)?.hud?.text)
+      .filter(Boolean)
+      .join("\n\n");
+    if (hud !== lastHud) {
+      lastHud = hud;
+      hudUpdater(hud);
+    }
 
     // Let's write out the number of frames per second that we are able to
     // render.
@@ -110,6 +130,7 @@ function createSceneUpdater(gl, sceneManager) {
     updateScene,
     renderFrame,
     registerRefreshRateUpdater,
+    registerHudUpdater,
     cameras,
     setHeldKeys: (keys) => {
       heldKeys = new Set(keys);
@@ -161,6 +182,7 @@ export const renderScene = async (gl, config) => {
     updateScene,
     renderFrame,
     registerRefreshRateUpdater,
+    registerHudUpdater,
     cameras,
     setHeldKeys,
     addMouseMovement,
@@ -205,6 +227,7 @@ export const renderScene = async (gl, config) => {
     resourceLoader,
     sceneManager,
     registerRefreshRateUpdater,
+    registerHudUpdater,
     cameras,
     setHeldKeys,
     addMouseMovement,

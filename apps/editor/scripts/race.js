@@ -1,0 +1,178 @@
+// race runs a race through a course of gates: its node's children, such as
+// rings from bin/generate-gate.js, in the order they are flown through. The
+// first gate is the start and the finish. Flying through it starts the clock
+// and the first lap, a lap is every other gate in order and then the first
+// one again, and the race is over after the last lap. Flying through the
+// start gate after that races again.
+//
+// A gate is flown through when the racer crosses the plane it stands in, its
+// local XY plane, within gateRadius of its center, going the way it faces,
+// along its +Z axis, so a course turns its gates to face along it. Gates
+// flown through backwards or out of turn don't count, so a racer can't skip
+// any. The next gate glows, the ones
+// still ahead this lap are see-through, and the ones already flown through
+// fade further, by setting their material's color and opacity.
+//
+// Its settings come from "script.settings" in the node's config, and all are
+// optional:
+// - racer: the ID of the node that races, such as a starfighter flown with
+//   fly.js. "starfighter" by default.
+// - laps: how many laps a race is. 3 by default.
+// - gateRadius: how close to a gate's center the racer has to fly through
+//   it, in the gate's own units, so it scales with the gate. 300 by default,
+//   the radius of a gate from bin/generate-gate.js.
+// - glow: the color added to the next gate. [0.35, 0.3, 0.05] by default.
+// - opacity: the opacity of the gates still ahead. 0.6 by default.
+// - passedOpacity: the opacity of the gates flown through this lap. 0.2 by
+//   default.
+//
+// How the race is going is written to its settings every frame, so a saved
+// state races on from where it was:
+// - lap: the lap being raced, 1 for the first, or 0 before the start.
+// - gate: the index of the next gate.
+// - time: the race's time so far, in seconds.
+// - lapTimes: how long each lap took, in seconds.
+// - finished: whether the race is over.
+// - best: the fastest race's time, in seconds, or null before one finishes.
+// - from: where the racer was in the world last frame, to see which gates it
+//   crossed since.
+// It also writes "hud" in its node's state, {text}, which the app shows over
+// the scene. The clock runs on the frame's `seconds`, so it stops while the
+// scene is paused.
+
+const defaults = {
+  racer: "starfighter",
+  laps: 3,
+  gateRadius: 300,
+  glow: [0.35, 0.3, 0.05],
+  opacity: 0.6,
+  passedOpacity: 0.2,
+  lap: 0,
+  gate: 0,
+  time: 0,
+  lapTimes: [],
+  finished: false,
+  best: null,
+  from: null,
+};
+
+// clock is seconds as minutes, seconds and tenths, such as 1:05.3.
+function clock(seconds) {
+  const minutes = Math.floor(seconds / 60);
+  const rest = (seconds % 60).toFixed(1).padStart(4, "0");
+  return `${minutes}:${rest}`;
+}
+
+module.exports = function createRaceScript(node) {
+  return {
+    preRender({seconds = 0, sceneManager}) {
+      const state = sceneManager.getNodeStateByID(node.id);
+      const settings = {...defaults, ...state.script.settings};
+      const gates = node.items;
+      const racer = sceneManager.getNodeByID(settings.racer);
+      if (!racer || !gates.length) {
+        return;
+      }
+
+      const race = {
+        lap: settings.lap,
+        gate: settings.gate,
+        time: settings.time,
+        lapTimes: settings.lapTimes,
+        finished: settings.finished,
+        best: settings.best,
+      };
+      if (race.lap > 0 && !race.finished) {
+        race.time += seconds;
+      }
+
+      // Matrix4 data is row-major, so a node's position in the world is the
+      // last column of its world matrix, and its Z axis the third.
+      const m = racer.worldMatrix.data;
+      const to = [m[3], m[7], m[11]];
+      const from = settings.from || to;
+
+      // Whether the racer flew through the gate from `from` to `to`: where
+      // that path crosses the gate's plane, if it does, is within the gate.
+      const flewThrough = (gate) => {
+        const g = gate.worldMatrix.data;
+        const center = [g[3], g[7], g[11]];
+        const zAxis = [g[2], g[6], g[10]];
+        const scale = Math.hypot(g[0], g[4], g[8]);
+        const normal = zAxis.map((v) => v / (Math.hypot(...zAxis) || 1));
+        const side = (p) => p.reduce((sum, v, i) => sum + (v - center[i]) * normal[i], 0);
+        const [before, after] = [side(from), side(to)];
+        if (before >= 0 || after < 0) {
+          return false;
+        }
+        const t = before / (before - after);
+        const crossing = from.map((v, i) => v + (to[i] - v) * t);
+        const distance = Math.hypot(...crossing.map((v, i) => v - center[i]));
+        return distance <= settings.gateRadius * scale;
+      };
+
+      if (flewThrough(gates[race.gate])) {
+        if (race.gate !== 0) {
+          race.gate = (race.gate + 1) % gates.length;
+        } else if (race.lap === 0 || race.finished) {
+          // Through the start gate: the race starts, or starts over.
+          Object.assign(race, {
+            lap: 1,
+            gate: 1 % gates.length,
+            time: 0,
+            lapTimes: [],
+            finished: false,
+          });
+        } else {
+          // Through the finish gate: a lap is done.
+          const lapped = race.lapTimes.reduce((sum, v) => sum + v, 0);
+          race.lapTimes = [...race.lapTimes, race.time - lapped];
+          if (race.lap >= settings.laps) {
+            race.finished = true;
+            race.best = race.best == null ? race.time : Math.min(race.best, race.time);
+          } else {
+            race.lap += 1;
+            race.gate = 1 % gates.length;
+          }
+        }
+      }
+
+      // The next gate glows. Before the start and after the finish that is
+      // the start gate, and the rest wait.
+      const waiting = race.lap === 0 || race.finished;
+      gates.forEach((gate, i) => {
+        const gateState = sceneManager.getNodeStateByID(gate.id);
+        if (!gateState.material) {
+          return;
+        }
+        const next = i === race.gate;
+        // Heading back to the start gate, every other gate has been passed.
+        const passed = !waiting && i !== 0 && (race.gate === 0 || i < race.gate);
+        const opacity = next ? 1 : passed ? settings.passedOpacity : settings.opacity;
+        const color = next ? [...settings.glow, 1] : [0, 0, 0, 1];
+        sceneManager.updateNodeStateByID(gate.id, {
+          material: {...gateState.material, color, opacity},
+        });
+      });
+
+      const best = race.best == null ? "" : `\nBest ${clock(race.best)}`;
+      const lines = race.finished
+        ? [`Finished in ${clock(race.time)}`, "Fly through the start gate to race again"]
+        : race.lap === 0
+        ? ["Fly through the start gate to race"]
+        : [
+            `Lap ${race.lap}/${settings.laps}   ${clock(race.time)}`,
+            race.gate === 0
+              ? race.lap === settings.laps
+                ? "Next: the finish"
+                : "Next: the start gate"
+              : `Next: gate ${race.gate} of ${gates.length - 1}`,
+          ];
+
+      sceneManager.updateNodeStateByID(node.id, {
+        script: {...state.script, settings: {...state.script.settings, ...race, from: to}},
+        hud: {text: lines.join("\n") + best},
+      });
+    },
+  };
+};

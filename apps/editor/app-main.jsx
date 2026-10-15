@@ -37,6 +37,7 @@ domReady.onReady(() => {
   const sceneSelectorRoot = createRoot(document.querySelector("#scene-selector-container"));
   const sceneGraphRoot = createRoot(document.querySelector("#scene-graph-container"));
   const fpsEl = document.querySelector("#fps");
+  const hudEl = document.querySelector("#hud");
 
   // The scene currently rendering, as returned by renderScene. It is disposed
   // before another scene is rendered in its place.
@@ -116,6 +117,7 @@ domReady.onReady(() => {
     // as the selected node, does not carry over to the new scene.
     sceneGraphRoot.render(null);
     fpsEl.innerHTML = "";
+    hudEl.textContent = "";
     showPaused(false);
     loadingRoot.render(<Loading isLoading={true} />);
 
@@ -126,12 +128,17 @@ domReady.onReady(() => {
       .then((config) => window.scene.renderScene(gl, config))
       .then((scene) => {
         currentScene = scene;
-        const {registerRefreshRateUpdater} = scene;
+        const {registerRefreshRateUpdater, registerHudUpdater} = scene;
 
         renderSceneGraph();
 
         registerRefreshRateUpdater((fps) => {
           fpsEl.innerHTML = fps;
+        });
+
+        // The scene's HUD text, such as a race's lap and time, shows over it.
+        registerHudUpdater((text) => {
+          hudEl.textContent = text;
         });
 
         loadingRoot.render(<Loading isLoading={false} />);

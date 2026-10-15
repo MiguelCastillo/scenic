@@ -247,7 +247,7 @@
                   "levelTime": 1.5,
                   "minHeight": 80,
                   "pullUpHeight": 400,
-                  "upArrowDives": true,
+                  "upArrowDives": false,
                   "mouseSteering": false,
                   "mouseSensitivity": 0.15,
                   "throttle": 0.3
@@ -1208,6 +1208,242 @@
                   }
                 }
               ]
+            }
+          ]
+        },
+        {
+          "name": "race",
+          "type": "transform",
+          "script": {
+            "src": "scripts/race.js",
+            "settings": {
+              "racer": "starfighter",
+              "laps": 3,
+              "gateRadius": 300,
+              "opacity": 0.6,
+              "passedOpacity": 0.2
+            }
+          },
+          "items": [
+            {
+              "name": "start gate",
+              "type": "static-mesh",
+              "resource": "/resources/obj/race-gate-checker.obj",
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.3,
+                "shininess": 32,
+                "opacity": 0.6
+              },
+              "ambient": {
+                "color": [0.4, 0.4, 0.43]
+              },
+              "transform": {
+                "position": [0, 400, 1200],
+                "rotation": [0, 0, 0],
+                "scale": [1, 1, 1]
+              }
+            },
+            {
+              "name": "gate 1",
+              "type": "static-mesh",
+              "resource": "/resources/obj/race-gate.obj",
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.3,
+                "shininess": 32,
+                "opacity": 0.6
+              },
+              "ambient": {
+                "color": [0.4, 0.4, 0.43]
+              },
+              "transform": {
+                "position": [600, 550, 2900],
+                "rotation": [0, 44, 0],
+                "scale": [1, 1, 1]
+              }
+            },
+            {
+              "name": "gate 2",
+              "type": "static-mesh",
+              "resource": "/resources/obj/race-gate.obj",
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.3,
+                "shininess": 32,
+                "opacity": 0.6
+              },
+              "ambient": {
+                "color": [0.4, 0.4, 0.43]
+              },
+              "transform": {
+                "position": [2400, 700, 3700],
+                "rotation": [0, 95, 0],
+                "scale": [1, 1, 1]
+              }
+            },
+            {
+              "name": "gate 3",
+              "type": "static-mesh",
+              "resource": "/resources/obj/race-gate.obj",
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.3,
+                "shininess": 32,
+                "opacity": 0.6
+              },
+              "ambient": {
+                "color": [0.4, 0.4, 0.43]
+              },
+              "transform": {
+                "position": [4000, 500, 2600],
+                "rotation": [0, 148, 0],
+                "scale": [1, 1, 1]
+              }
+            },
+            {
+              "name": "gate 4",
+              "type": "static-mesh",
+              "resource": "/resources/obj/race-gate.obj",
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.3,
+                "shininess": 32,
+                "opacity": 0.6
+              },
+              "ambient": {
+                "color": [0.4, 0.4, 0.43]
+              },
+              "transform": {
+                "position": [4300, 650, 600],
+                "rotation": [0, -163, 0],
+                "scale": [1, 1, 1]
+              }
+            },
+            {
+              "name": "gate 5",
+              "type": "static-mesh",
+              "resource": "/resources/obj/race-gate.obj",
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.3,
+                "shininess": 32,
+                "opacity": 0.6
+              },
+              "ambient": {
+                "color": [0.4, 0.4, 0.43]
+              },
+              "transform": {
+                "position": [3000, 450, -700],
+                "rotation": [0, -155, 0],
+                "scale": [1, 1, 1]
+              }
+            },
+            {
+              "name": "gate 6",
+              "type": "static-mesh",
+              "resource": "/resources/obj/race-gate.obj",
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.3,
+                "shininess": 32,
+                "opacity": 0.6
+              },
+              "ambient": {
+                "color": [0.4, 0.4, 0.43]
+              },
+              "transform": {
+                "position": [2700, 600, -2800],
+                "rotation": [0, -144, 0],
+                "scale": [1, 1, 1]
+              }
+            },
+            {
+              "name": "gate 7",
+              "type": "static-mesh",
+              "resource": "/resources/obj/race-gate.obj",
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.3,
+                "shininess": 32,
+                "opacity": 0.6
+              },
+              "ambient": {
+                "color": [0.4, 0.4, 0.43]
+              },
+              "transform": {
+                "position": [1000, 750, -3500],
+                "rotation": [0, -100, 0],
+                "scale": [1, 1, 1]
+              }
+            },
+            {
+              "name": "gate 8",
+              "type": "static-mesh",
+              "resource": "/resources/obj/race-gate.obj",
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.3,
+                "shininess": 32,
+                "opacity": 0.6
+              },
+              "ambient": {
+                "color": [0.4, 0.4, 0.43]
+              },
+              "transform": {
+                "position": [-600, 500, -3400],
+                "rotation": [0, -48, 0],
+                "scale": [1, 1, 1]
+              }
+            },
+            {
+              "name": "gate 9",
+              "type": "static-mesh",
+              "resource": "/resources/obj/race-gate.obj",
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.3,
+                "shininess": 32,
+                "opacity": 0.6
+              },
+              "ambient": {
+                "color": [0.4, 0.4, 0.43]
+              },
+              "transform": {
+                "position": [-1200, 650, -1500],
+                "rotation": [0, 5, 0],
+                "scale": [1, 1, 1]
+              }
+            },
+            {
+              "name": "gate 10",
+              "type": "static-mesh",
+              "resource": "/resources/obj/race-gate.obj",
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.3,
+                "shininess": 32,
+                "opacity": 0.6
+              },
+              "ambient": {
+                "color": [0.4, 0.4, 0.43]
+              },
+              "transform": {
+                "position": [-300, 450, -200],
+                "rotation": [0, 24, 0],
+                "scale": [1, 1, 1]
+              }
             }
           ]
         }

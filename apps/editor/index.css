@@ -450,3 +450,24 @@ body {
 .console-ERROR {
   color: red;
 }
+
+/* Text the scene shows over itself, such as a race's lap and time. */
+#hud {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 20px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.45);
+  color: white;
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  white-space: pre-line;
+  pointer-events: none;
+}
+
+#hud:empty {
+  display: none;
+}

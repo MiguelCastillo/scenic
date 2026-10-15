@@ -306,6 +306,34 @@ bank and tip its nose as if it were holding position in the air:
 }
 ```
 
+### Racing and the HUD
+
+Bubble Squadron is a race. Its `race` node runs `apps/editor/scripts/race.js`,
+and its children are the course's gates, in the order they are flown through:
+bubble rings from `bin/generate-gate.js`, with the checkered start gate first.
+Flying through the start gate starts the clock, a lap is every gate in order
+and then the start gate again, and after the last lap the race is over, until
+the start gate starts it again. A gate only counts when it is next and flown
+through the way it faces, along its +Z axis. The next gate glows, and the
+ones already flown through this lap fade:
+
+```json
+"script": {
+  "src": "scripts/race.js",
+  "settings": {"racer": "starfighter", "laps": 3, "gateRadius": 300}
+}
+```
+
+The race keeps its lap, next gate, time, lap times and best time in its
+settings, and writes what the player should see to `hud` in its node's state:
+
+```json
+"hud": {"text": "Lap 2/3   1:04.2\nNext: gate 4 of 10"}
+```
+
+Any node can do the same: the editor shows the `hud` text of every node over
+the scene, with a blank line between nodes.
+
 ### Collisions
 
 A node with a `collider` in its state takes part in collisions: a simple shape
