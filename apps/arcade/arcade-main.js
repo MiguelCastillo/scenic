@@ -96,19 +96,19 @@ domReady.onReady(async () => {
     };
 
     // play makes loaded the game's scene, at the bottom of the stack. Its
-    // HUD shows what it publishes on the channels the arcade knows, such as
-    // a race's lap and time, a blank line apart, in the order they first
-    // came, and its frame rate shows too.
+    // HUD shows what it published last frame on the channels the arcade
+    // knows, such as a race's lap and time, a blank line apart, and its
+    // frame rate shows too.
     const play = (loaded) => {
-      const hud = new Map();
       hudEl.textContent = "";
-      loaded.scene.sceneManager.ui.onUpdate((channel, message) => {
-        const text = hudTexts[channel]?.(message);
-        if (text === undefined || hud.get(channel) === text) {
-          return;
+      loaded.scene.sceneManager.ui.onUpdate((messages) => {
+        const text = Object.entries(messages)
+          .map(([channel, message]) => hudTexts[channel]?.(message))
+          .filter(Boolean)
+          .join("\n\n");
+        if (hudEl.textContent !== text) {
+          hudEl.textContent = text;
         }
-        hud.set(channel, text);
-        hudEl.textContent = [...hud.values()].filter(Boolean).join("\n\n");
       });
       loaded.runner.registerRefreshRateUpdater((fps) => {
         fpsEl.textContent = fps;
@@ -162,8 +162,8 @@ domReady.onReady(async () => {
       document.body.classList.add("menu-open");
       menu = await load(manifest.menu, {paused: false});
       let shown = null;
-      menu.scene.sceneManager.ui.onUpdate(async (channel, message) => {
-        if (channel !== "menu" || going) {
+      menu.scene.sceneManager.ui.onUpdate(async ({menu: message}) => {
+        if (!message || going) {
           return;
         }
 

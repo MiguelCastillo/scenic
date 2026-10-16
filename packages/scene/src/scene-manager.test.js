@@ -68,15 +68,61 @@ describe("scripts", () => {
 });
 
 describe("ui", () => {
-  test("tells listeners about messages until they stop", () => {
-    const sceneManager = new SceneManager(new StateManager([]));
+  // createScene is a scene with a node that publishes what it is given on
+  // "race" when it updates, and its messages, which listeners get.
+  function createScene() {
+    const node = new Node({name: "race", id: "race"});
+    let publish = null;
+    node.withScript({
+      update: ({sceneManager}) => publish && sceneManager.ui.publish("race", publish),
+    });
+    const sceneManager = new SceneManager(new StateManager([])).withNodes([node]);
     const messages = [];
-    const stop = sceneManager.ui.onUpdate((channel, message) => messages.push([channel, message]));
+    const stop = sceneManager.ui.onUpdate((frame) => messages.push(frame));
+    return {sceneManager, messages, stop, publish: (message) => (publish = message)};
+  }
 
-    sceneManager.ui.publish("race", {lap: 1});
-    stop();
+  test("sends a frame's last message on each channel once it is drawn", () => {
+    const {sceneManager, messages, publish} = createScene();
+    publish({lap: 1});
+    sceneManager.update(0);
     sceneManager.ui.publish("race", {lap: 2});
+    expect(messages).toEqual([]);
 
-    expect(messages).toEqual([["race", {lap: 1}]]);
+    sceneManager.render(0, null);
+
+    expect(messages).toEqual([{race: {lap: 2}}]);
+  });
+
+  test("leaves out channels that stopped publishing", () => {
+    const {sceneManager, messages, publish} = createScene();
+    publish({lap: 1});
+    sceneManager.update(0);
+    sceneManager.render(0, null);
+    publish(null);
+    sceneManager.update(0);
+    sceneManager.render(0, null);
+
+    expect(messages).toEqual([{race: {lap: 1}}, {}]);
+  });
+
+  test("sends the same frame's messages again when drawn again", () => {
+    const {sceneManager, messages, publish} = createScene();
+    publish({lap: 1});
+    sceneManager.update(0);
+    sceneManager.render(0, null);
+    sceneManager.render(0, null);
+
+    expect(messages).toEqual([{race: {lap: 1}}, {race: {lap: 1}}]);
+  });
+
+  test("stops telling listeners that stop", () => {
+    const {sceneManager, messages, stop, publish} = createScene();
+    publish({lap: 1});
+    stop();
+    sceneManager.update(0);
+    sceneManager.render(0, null);
+
+    expect(messages).toEqual([]);
   });
 });

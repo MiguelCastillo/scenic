@@ -382,10 +382,18 @@ sceneManager.ui.publish("race", {
   best: null,
   finished: false,
 });
-sceneManager.ui.onUpdate((channel, message) => {
-  /* the app */
+sceneManager.ui.onUpdate((messages) => {
+  /* the app, once a frame, with {race: {...}, terrain: {...}} */
 });
 ```
+
+Messages are kept for the frame rather than sent as they come, so a scene
+that publishes often tells the app once a frame. `SceneManager.update` starts
+each frame's messages, and `SceneManager.render` sends them once the frame is
+drawn: every listener gets the last message on each channel, as
+`{channel: message}`. A channel that stops publishing is missing from the
+next frame's messages, so the app stops showing it. Drawing again without an
+update sends the same frame's messages again.
 
 The race publishes `{lap, laps, time, gate, gates, best, finished}` every
 frame, and a terrain `{tiles, drawn, triangles, built}`. Messages are output

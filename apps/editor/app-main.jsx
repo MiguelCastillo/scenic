@@ -186,17 +186,16 @@ domReady.onReady(() => {
           fpsEl.innerHTML = fps;
         });
 
-        // The HUD shows what the scene publishes on the channels it knows,
-        // such as a race's lap and time, a blank line apart, in the order
-        // they first came.
-        const hud = new Map();
-        scene.sceneManager.ui.onUpdate((channel, message) => {
-          const text = hudTexts[channel]?.(message);
-          if (text === undefined || hud.get(channel) === text) {
-            return;
+        // The HUD shows what the scene published last frame on the channels
+        // it knows, such as a race's lap and time, a blank line apart.
+        scene.sceneManager.ui.onUpdate((messages) => {
+          const text = Object.entries(messages)
+            .map(([channel, message]) => hudTexts[channel]?.(message))
+            .filter(Boolean)
+            .join("\n\n");
+          if (hudEl.textContent !== text) {
+            hudEl.textContent = text;
           }
-          hud.set(channel, text);
-          hudEl.textContent = [...hud.values()].filter(Boolean).join("\n\n");
         });
 
         loadingRoot.render(<Loading isLoading={false} />);

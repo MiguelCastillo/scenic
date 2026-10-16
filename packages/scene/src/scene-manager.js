@@ -81,7 +81,11 @@ export class SceneManager {
   //
   // World matrices are only worked out by render, so a script reading
   // another node's world matrix sees where it was last drawn.
+  //
+  // It also starts the frame's messages to the app's UI (see UiBus), which
+  // render sends.
   update(ms, frame = {}) {
+    this.ui.beginFrame();
     const context = {...frame, ms, sceneManager: this};
     const updatePass = bubbleTraversal(
       (node) => {
@@ -172,5 +176,9 @@ export class SceneManager {
       gl.depthMask(true);
       gl.disable(gl.BLEND);
     }
+
+    // Now the frame is drawn, the app's UI hears what the scene published
+    // for it, once (see UiBus).
+    this.ui.flush();
   }
 }
