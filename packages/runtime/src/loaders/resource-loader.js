@@ -29,7 +29,7 @@ export function createResourceLoader(gl, sceneManager) {
   // file loader, which relies on the file extension. Blobs do not have
   // filenames with extensions, and that's a security feature. They looks like:
   // blob:http://localhost:3000/9f19dc8a-02fd-4554-99a0-8ee40151b4a1
-  function load({node, url, filename}) {
+  function load({node, url, filename, lodDistance}) {
     const {loader, buildSceneNode} = loaderManager.getLoader(filename);
 
     if (!cache[filename]) {
@@ -48,7 +48,7 @@ export function createResourceLoader(gl, sceneManager) {
       if (!sceneNode) {
         throw new Error(`unable to load resource. scene node with "${node.id}" was not found.`);
       }
-      buildSceneNode(gl, data, sceneNode, sceneManager);
+      buildSceneNode(gl, data, sceneNode, sceneManager, lodDistance);
 
       // Now that the node is built, give its renderables the shader programs
       // they draw with.
@@ -75,13 +75,19 @@ export function getResourcesFromConfig(config) {
       typeof item.resource === "string"
   );
 
-  return traverse(config.items).map((item) => {
-    return {
+  // A static mesh's lods are simpler versions of its resource for far away,
+  // each loaded into the mesh too, with the distance it takes over from (see
+  // Mesh.render in @scenic/scene).
+  const filename = (resource) => resource.split(/[\/]/).pop();
+  return traverse(config.items).flatMap((item) => [
+    {node: item, url: item.resource, filename: filename(item.resource)},
+    ...(item.lods || []).map(({resource, distance}) => ({
       node: item,
-      url: item.resource,
-      filename: item.resource.split(/[\/]/).pop(),
-    };
-  });
+      url: resource,
+      filename: filename(resource),
+      lodDistance: distance,
+    })),
+  ]);
 }
 
 class LoaderManager {

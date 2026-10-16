@@ -28,6 +28,13 @@ const findLights = (node) => {
 export const specularDefaults = {specular: 0.5, shininess: 32};
 
 export class Mesh extends Renderable {
+  constructor(options) {
+    super(options);
+    // World matrices to draw the mesh at instead of where it is, when set by
+    // code such as a forest (see render).
+    this.instances = null;
+  }
+
   // Specular defaults are set once, when the mesh gets its program, and a
   // program keeps uniform values between frames. A Material node under the
   // mesh can then override them as it renders, and the mesh's own material
@@ -243,10 +250,11 @@ export class Mesh extends Renderable {
     return uniforms;
   }
 
-  // isVisible is whether any of vertexBuffer, drawn where this mesh is, can
-  // be in view of its viewport's camera, by the sphere around the buffer's
-  // positions. The sphere is worked out the first time it is needed.
-  isVisible(vertexBuffer) {
+  // isVisible is whether any of vertexBuffer, drawn with worldMatrix, where
+  // this mesh is by default, can be in view of its viewport's camera, by the
+  // sphere around the buffer's positions. The sphere is worked out the first
+  // time it is needed.
+  isVisible(vertexBuffer, worldMatrix = this.worldMatrix) {
     const viewport = this.getViewport();
     if (!viewport || !vertexBuffer.positions) {
       return true;
@@ -258,7 +266,7 @@ export class Mesh extends Renderable {
     // Matrix4 data is row-major: each row is an axis of the world matrix
     // applied to the center, and the longest column is how much it scales.
     const {center, radius} = vertexBuffer.bounds;
-    const m = this.worldMatrix.data;
+    const m = worldMatrix.data;
     const world = [0, 1, 2].map(
       (r) =>
         m[r * 4] * center[0] + m[r * 4 + 1] * center[1] + m[r * 4 + 2] * center[2] + m[r * 4 + 3]
@@ -267,30 +275,65 @@ export class Mesh extends Renderable {
     return viewport.canSee(world, radius * scale);
   }
 
+  // levelOfDetail is the buffer to draw of a mesh with levels of detail,
+  // drawn with worldMatrix, where this mesh is by default: each of its
+  // buffers with a lodDistance takes over from that distance from the
+  // camera, so it is the one with the farthest lodDistance the mesh is past.
+  // It is undefined for a mesh without levels of detail.
+  levelOfDetail(worldMatrix = this.worldMatrix) {
+    const levels = this.vertexBuffers.filter((vb) => vb.lodDistance != null);
+    const camera = this.getViewport()?.activeCamera;
+    if (!levels.length || !camera) {
+      return levels[0];
+    }
+
+    // Matrix4 data is row-major, so positions are the last column of world
+    // matrices.
+    const [c, m] = [camera.worldMatrix.data, worldMatrix.data];
+    const distance = Math.hypot(c[3] - m[3], c[7] - m[7], c[11] - m[11]);
+    return levels
+      .filter((vb) => vb.lodDistance <= distance)
+      .reduce((best, vb) => (!best || vb.lodDistance > best.lodDistance ? vb : best), null);
+  }
+
+  // render draws node where it is, or, when it has instances, a list of
+  // world matrices, at each of them instead, such as the trees of a forest
+  // (see Forest in @scenic/runtime). Each place gets its own level of detail,
+  // and places out of view are skipped.
   static render(node) {
-    const {shaderProgram, worldMatrix, vertexBuffers} = node;
+    const {shaderProgram, vertexBuffers} = node;
     const projectionMatrix = node.getViewProjectionMatrix();
 
-    const uniforms = [
+    // Configure shader program with its current state.
+    const program = shaderProgram.addUniforms([
       {
         name: "projectionMatrix",
         update: (gl, {index}) => {
           gl.uniformMatrix4fv(index, false, projectionMatrix.data);
         },
       },
-      {
-        name: "worldMatrix",
-        update: (gl, {index}) => {
-          gl.uniformMatrix4fv(index, true, worldMatrix.data);
-        },
-      },
       ...node.getViewUniforms(),
-    ];
+    ]);
 
-    // Configure shader program with its current state. Buffers out of view
-    // are skipped, such as the trees behind a camera.
-    const program = shaderProgram.addUniforms(uniforms);
-    vertexBuffers.filter((vb) => node.isVisible(vb)).forEach((vb) => program.render(vb));
+    // Buffers out of view are skipped, such as the trees behind a camera,
+    // and so are the levels of detail the mesh is too near or too far for.
+    for (const worldMatrix of node.instances || [node.worldMatrix]) {
+      const lod = node.levelOfDetail(worldMatrix);
+      const buffers = vertexBuffers
+        .filter((vb) => vb.lodDistance == null || vb === lod)
+        .filter((vb) => node.isVisible(vb, worldMatrix));
+      if (buffers.length) {
+        program.addUniforms([
+          {
+            name: "worldMatrix",
+            update: (gl, {index}) => {
+              gl.uniformMatrix4fv(index, true, worldMatrix.data);
+            },
+          },
+        ]);
+        buffers.forEach((vb) => program.render(vb));
+      }
+    }
   }
 }
 

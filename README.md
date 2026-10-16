@@ -675,6 +675,42 @@ tile without seams, so they repeat across the ground forever.
 node bin/generate-texture.js --kind blend --cover 0.08
 ```
 
+### Forest
+
+A `forest` node plants trees across a terrain as far as the camera can see,
+with none of them stored. Its children are the kinds of tree it plants,
+static meshes with their resources and levels of detail, and its settings say
+how many grow and how far they reach:
+
+```json
+{
+  "name": "forest",
+  "type": "forest",
+  "forest": {"terrain": "terrain", "seed": 1, "density": 6, "distance": 9000, "margin": 150},
+  "items": [
+    {
+      "name": "tree kind 1",
+      "type": "static-mesh",
+      "resource": "/resources/obj/acacia-tree-1.obj",
+      "lods": [{"resource": "/resources/obj/acacia-tree-1-lod1.obj", "distance": 1500}]
+    }
+  ]
+}
+```
+
+It works like the terrain's tiles: the ground is cut into square tiles, and
+each tile's trees come from the forest's seed and the tile, so the same ground
+always grows the same trees. Tiles are planted as they come within `distance`
+of the camera, nearest first, a couple of milliseconds a frame, and dropped
+once they are well behind. A tile gets about `density` trees in each square
+1000 on a side, each a kind picked at random, turned and sized at random, and
+standing on the terrain (`heightAt`). Trees keep off the ground the terrain
+keeps for something else, its paths' flat valleys and its clearings, `margin`
+farther, and its bumps (`isClear` in `terrain.js`), so they are never in the
+way of a race's course. Each kind of tree then draws at all of its trees, as
+its `instances`. Every setting is listed in `forest.js`, and they can be tuned
+live from its Forest tab.
+
 ### Renderable, Mesh and Geometry
 
 Drawing is split across three kinds of nodes:
@@ -748,6 +784,44 @@ Viewport "world"
 FBX models follow the same pattern with more node types: an FBX `Mesh` has
 `Geometry`, `Material` and `Texture` children, and the FBX `Geometry` adds
 skinning on top of the scene `Geometry`.
+
+#### Levels of detail
+
+A static mesh far away is small on screen, so it can be drawn with far fewer
+triangles. Its `lods` list simpler versions of its resource, each taking over
+from a distance from the camera:
+
+```json
+{
+  "name": "tree 1 mesh",
+  "type": "static-mesh",
+  "resource": "/resources/obj/canopy-tree-205.obj",
+  "lods": [
+    {"resource": "/resources/obj/canopy-tree-205-lod1.obj", "distance": 1500},
+    {"resource": "/resources/obj/canopy-tree-205-lod2.obj", "distance": 4000}
+  ]
+}
+```
+
+Each is loaded into its own `Geometry` child of the mesh, and the mesh draws
+only the one for how far it is from the camera (`Mesh.levelOfDetail`): its
+resource up close, then each lod past its distance. `bin/simplify-obj.js`
+makes the simpler versions from an OBJ file, by merging its points that fall
+in the same cube of a grid (vertex clustering); bigger cubes make fewer
+triangles:
+
+```bash
+node bin/simplify-obj.js canopy-tree-205.obj --lod 1 --cell 12
+```
+
+The drone race's trees have three, taking over at 1500, 4000 and 8000, which
+took a frame of its old hand-placed trees from about 1.2 million triangles to
+under 200 thousand.
+
+A mesh can also be drawn at many places at once: code that sets its
+`instances` to a list of world matrices has it drawn at each of them instead
+of where it is, each with its own level of detail and out-of-view check. A
+forest draws its trees that way (see [Forest](#forest)).
 
 ### Shaders
 

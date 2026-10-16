@@ -14,10 +14,18 @@ export class Loader extends WorkerLoader {
   }
 }
 
-export function buildSceneNode(gl, model, sceneNode /*, sceneManager*/) {
-  // Release the GPU resources from a previous build before replacing them.
-  sceneNode.dispose(gl);
-  sceneNode.clear();
+// buildSceneNode adds the model to sceneNode as a geometry child. A static
+// mesh with lods (see getResourcesFromConfig) gets one for its resource and
+// one for each of its lods, lodDistance being the distance from the camera a
+// lod takes over from, and the mesh draws the one for how far away it is. A
+// geometry it already has for the same lod is replaced.
+export function buildSceneNode(gl, model, sceneNode, sceneManager, lodDistance) {
+  const name = lodDistance == null ? "geometry" : `geometry lod ${lodDistance}`;
+  const previous = sceneNode.items.find((child) => child.name === name);
+  if (previous) {
+    sceneNode.remove(previous);
+    previous.dispose(gl);
+  }
   let {vertices, normals, colors} = model;
 
   const vertexBuffer = VertexBuffer.create({
@@ -40,8 +48,15 @@ export function buildSceneNode(gl, model, sceneNode /*, sceneManager*/) {
     throw new Error("OBJ files can only be loaded into a static-mesh, skinned-mesh or light");
   }
 
+  // A mesh with lods draws its own resource only until its first lod takes
+  // over, from the camera.
+  const hasLods = !!sceneManager?.getNodeStateByID(sceneNode.id)?.lods?.length;
+  if (lodDistance != null || hasLods) {
+    vertexBuffer.lodDistance = lodDistance ?? 0;
+  }
+
   // The geometry child owns the vertex buffer and adds it to this node's draw
   // list every frame. The node's shader program is created afterwards, by the
   // shader registry.
-  sceneNode.add(new GeometrySceneNode({name: "geometry"}, vertexBuffer));
+  sceneNode.add(new GeometrySceneNode({name}, vertexBuffer));
 }

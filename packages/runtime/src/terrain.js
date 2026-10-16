@@ -121,6 +121,26 @@ export class Terrain extends Mesh {
     return o[7] + (this.ground ? height(this.ground, x - o[3], z - o[11]) : 0);
   }
 
+  // isClear is whether the world's (x, z) is clear of the ground the terrain
+  // keeps for something, such as a race's course: farther than margin past
+  // the flat valley of every path and the flat middle of every clearing, and
+  // off every bump. It is all clear until the terrain's first frame.
+  isClear(x, z, margin = 0) {
+    if (!this.ground) {
+      return true;
+    }
+    const o = this.worldMatrix.data;
+    const [lx, lz] = [x - o[3], z - o[11]];
+    const {clearings, paths, bumps} = this.ground;
+    return (
+      clearings.every(([cx, cz, radius]) => Math.hypot(lx - cx, lz - cz) > radius + margin) &&
+      paths.every(({pieces, width}) =>
+        pieces.every(([a, b]) => distanceToSegment(lx, lz, a, b) > width / 2 + margin)
+      ) &&
+      bumps.every((bump) => bumpOutward(bump, lx, lz) > 1)
+    );
+  }
+
   preRender(context) {
     super.preRender(context);
     const {gl, sceneManager} = context;
@@ -538,15 +558,21 @@ function height({seed, height, scale, flatness, clearings, paths, bumps}, x, z) 
   }
   // A bump is level at its top and its foot, so it rises smoothly out of the
   // ground around it.
-  for (const [bx, bz, radius, bumpHeight, length = radius, heading = 0] of bumps) {
-    const angle = (heading * Math.PI) / 180;
-    const [dx, dz] = [x - bx, z - bz];
-    const along = dx * Math.sin(angle) + dz * Math.cos(angle);
-    const across = dx * Math.cos(angle) - dz * Math.sin(angle);
-    const t = Math.min(1, Math.hypot(along / length, across / radius));
-    h += bumpHeight * (1 - t * t) ** 2;
+  for (const bump of bumps) {
+    const t = Math.min(1, bumpOutward(bump, x, z));
+    h += bump[3] * (1 - t * t) ** 2;
   }
   return h;
+}
+
+// bumpOutward is how far out from a bump's middle (x, z) is: 0 at its
+// middle, 1 at its foot, and more past it.
+function bumpOutward([bx, bz, radius, , length = radius, heading = 0], x, z) {
+  const angle = (heading * Math.PI) / 180;
+  const [dx, dz] = [x - bx, z - bz];
+  const along = dx * Math.sin(angle) + dz * Math.cos(angle);
+  const across = dx * Math.cos(angle) - dz * Math.sin(angle);
+  return Math.hypot(along / length, across / radius);
 }
 
 // track is how much of a dirt track is at (x, z), from 0 to 1: 1 within

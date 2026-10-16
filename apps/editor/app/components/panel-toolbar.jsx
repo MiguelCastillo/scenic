@@ -10,6 +10,7 @@ import {
   Fog,
   InfoEmpty,
   Keyframes,
+  Leaf,
   Map as MapIcon,
   PerspectiveView,
   SunLight,
@@ -49,6 +50,8 @@ function getTabDetails(tab) {
       return {icon: Cloud, label: "Sky"};
     case "terrain":
       return {icon: MapIcon, label: "Terrain"};
+    case "forest":
+      return {icon: Leaf, label: "Forest"};
     case "fog":
       return {icon: Fog, label: "Fog"};
   }

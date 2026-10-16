@@ -10,6 +10,7 @@ import {ViewportDetailsPanel} from "./scene/viewport-details-panel.jsx";
 import {SkyDetailsPanel} from "./scene/sky-details-panel.jsx";
 import {GridDetailsPanel} from "./scene/grid-details-panel.jsx";
 import {TerrainDetailsPanel} from "./scene/terrain-details-panel.jsx";
+import {ForestDetailsPanel} from "./scene/forest-details-panel.jsx";
 
 export class NodeDetailsPanel extends React.Component {
   render() {
@@ -50,6 +51,9 @@ export class NodeDetailsPanel extends React.Component {
         break;
       case "terrain":
         children = <TerrainDetailsPanel node={node} />;
+        break;
+      case "forest":
+        children = <ForestDetailsPanel node={node} />;
         break;
       case "viewport":
         children = <ViewportDetailsPanel node={node} />;

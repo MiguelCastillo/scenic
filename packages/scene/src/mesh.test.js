@@ -109,3 +109,72 @@ describe("Mesh isVisible", () => {
     expect(meshAt([0, 0, 600]).isVisible({})).toBe(true);
   });
 });
+
+describe("Mesh levelOfDetail", () => {
+  // A mesh at the origin with buffers that take over at 0, 1000 and 3000
+  // from the camera, which is distance away along +Z.
+  const lodAt = (distance) => {
+    const camera = new Camera({name: "camera"})
+      .withWorldMatrix(mat4.Matrix4.trs([0, 0, distance], [0, 0, 0], [1, 1, 1]))
+      .updateProjection({type: "perspective", fov: 90, near: 1, far: 10000}, 100, 100);
+    const mesh = new Mesh({type: "static-mesh", name: "tree"}).withWorldMatrix(
+      mat4.Matrix4.trs([0, 0, 0], [0, 0, 0], [1, 1, 1])
+    );
+    new Viewport({name: "world"}).add(camera).add(mesh);
+    [0, 1000, 3000].forEach((lodDistance) => mesh.addVertexBuffer({lodDistance}));
+    return mesh.levelOfDetail().lodDistance;
+  };
+
+  test("is the full mesh up close", () => {
+    expect(lodAt(500)).toBe(0);
+  });
+
+  test("is the level whose distance the mesh is past", () => {
+    expect(lodAt(1500)).toBe(1000);
+    expect(lodAt(5000)).toBe(3000);
+  });
+
+  test("is undefined for a mesh without levels of detail", () => {
+    const mesh = new Mesh({type: "static-mesh", name: "rock"}).addVertexBuffer({});
+    expect(mesh.levelOfDetail()).toBeUndefined();
+  });
+});
+
+describe("Mesh render with instances", () => {
+  // A mesh in a viewport whose camera is at z 300 looking down -Z, with one
+  // buffer around its origin, and a program that counts what it draws.
+  const drawsAt = (instances) => {
+    const camera = new Camera({name: "camera"})
+      .withWorldMatrix(mat4.Matrix4.trs([0, 0, 300], [0, 0, 0], [1, 1, 1]))
+      .updateProjection({type: "perspective", fov: 90, near: 1, far: 1000}, 100, 100);
+    const mesh = new Mesh({type: "static-mesh", name: "tree"}).withWorldMatrix(
+      mat4.Matrix4.trs([0, 0, 0], [0, 0, 0], [1, 1, 1])
+    );
+    new Viewport({name: "world"}).add(camera).add(mesh);
+    mesh.addVertexBuffer({positions: {data: new Float32Array([-5, -5, -5, 5, 5, 5])}});
+    mesh.instances = instances && instances.map((p) => mat4.Matrix4.trs(p, [0, 0, 0], [1, 1, 1]));
+    let draws = 0;
+    mesh.shaderProgram = {addUniforms: () => mesh.shaderProgram, render: () => draws++};
+    Mesh.render(mesh);
+    return draws;
+  };
+
+  test("draws once where the mesh is without instances", () => {
+    expect(drawsAt(null)).toBe(1);
+  });
+
+  test("draws once at each instance in view, and not where the mesh is", () => {
+    // Two in front of the camera, and one behind it.
+    expect(
+      drawsAt([
+        [0, 0, 0],
+        [50, 0, -100],
+        [0, 0, 600],
+      ])
+    ).toBe(2);
+  });
+
+  test("draws nothing with no instances", () => {
+    expect(drawsAt([])).toBe(0);
+  });
+});
