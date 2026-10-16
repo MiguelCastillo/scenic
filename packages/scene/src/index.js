@@ -13,6 +13,7 @@ import {SkinnedMesh} from "./skinned-mesh.js";
 import {StateManager} from "./state-manager.js";
 import {StaticMesh} from "./static-mesh.js";
 import {Texture} from "./texture.js";
+import {UiBus} from "./ui-bus.js";
 import * as traversal from "./traversal.js";
 import {Viewport} from "./viewport.js";
 
@@ -34,5 +35,6 @@ export {
   StaticMesh,
   Texture,
   traversal,
+  UiBus,
   Viewport,
 };

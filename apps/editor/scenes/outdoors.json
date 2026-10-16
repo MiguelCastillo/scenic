@@ -133,6 +133,7 @@
         {
           "name": "terrain",
           "type": "terrain",
+          "hud": "terrain",
           "terrain": {
             "seed": 1,
             "height": 700,

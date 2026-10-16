@@ -62,6 +62,9 @@ export class InfoDetailsProperties extends WithNodeState {
     const {node} = this.props;
     const canSelectFile =
       node.type === "static-mesh" || node.type === "skinned-mesh" || node.type === "light";
+    // Terrains and nodes with scripts can tell the app's UI what they know,
+    // on the channel named by their "hud" (see UiBus in @scenic/scene).
+    const canPublish = node.type === "terrain" || !!nodeState.script || !!nodeState.hud;
 
     // Cameras the editor runs show whether they are the one being looked
     // through.
@@ -96,6 +99,17 @@ export class InfoDetailsProperties extends WithNodeState {
             ) : (
               <button onClick={() => this.handleLookThrough(node)}>Look through this camera</button>
             )}
+          </div>
+        ) : null}
+        {canPublish ? (
+          <div className="hud">
+            <label>HUD</label>
+            <input
+              type="text"
+              placeholder="channel"
+              onChange={(evt) => this.handleChange("hud", evt)}
+              value={nodeState.hud ?? ""}
+            />
           </div>
         ) : null}
         {canSelectFile ? (

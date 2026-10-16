@@ -345,6 +345,7 @@
         {
           "name": "race",
           "type": "transform",
+          "hud": "race",
           "script": {
             "src": "scripts/race.js",
             "settings": {

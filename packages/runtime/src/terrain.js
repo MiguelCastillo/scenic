@@ -3,7 +3,6 @@ import {
   VertexBuffer,
   VertexBufferData,
   VertexBufferIndexes,
-  renderStats,
 } from "@scenic/renderer";
 import {Mesh} from "@scenic/scene";
 
@@ -60,9 +59,13 @@ import {shaderRegistry} from "./shader-registry.js";
 //   a quarter, since far ground is small on screen and in the fog.
 // - terrain.showTiles: whether to draw lines on the ground where its tiles'
 //   edges are, and thinner ones around every square of their grids, to see
-//   how the ground is cut up, and to show on the HUD how many tiles there
-//   are, how many were drawn and built in the last frame, and how many draw
-//   calls and triangles the whole frame took. Off by default.
+//   how the ground is cut up. Off by default.
+//
+// With "hud" in its state, such as {"hud": "terrain"}, it tells the app's UI
+// what the ground costs every frame, on that channel of sceneManager.ui (see
+// UiBus in @scenic/scene): {tiles, drawn, triangles, built}, how many tiles
+// it has, and how many it drew, their triangles, and how many it built in
+// the last frame.
 // Its material and ambient work as a mesh's do; the grass colors are vertex
 // colors, which the material color adds to, so leave it black.
 export class Terrain extends Mesh {
@@ -222,18 +225,16 @@ export class Terrain extends Mesh {
       }
     }
 
-    // With showTiles, what the ground and the last frame cost, on the HUD.
-    // Tiles are counted as they are drawn, after this, so the counts are the
-    // last frame's.
-    const thousands = (n) => `${Math.round(n / 1000)}k`;
-    const text = this.settings.showTiles
-      ? `Terrain: ${this.tiles.size} tiles, ${this.drawn.tiles} drawn, ` +
-        `${thousands(this.drawn.triangles)} triangles, ${built} built\n` +
-        `Frame: ${renderStats.last.drawCalls} draw calls, ` +
-        `${thousands(renderStats.last.triangles)} triangles`
-      : undefined;
-    if (sceneManager.getNodeStateByID(this.id).hud?.text !== text) {
-      sceneManager.updateNodeStateByID(this.id, {hud: text && {text}});
+    // What the ground cost, for the app's UI. Tiles are counted as they are
+    // drawn, after this, so the counts are the last frame's.
+    const {hud} = sceneManager.getNodeStateByID(this.id);
+    if (hud) {
+      sceneManager.ui.publish(hud, {
+        tiles: this.tiles.size,
+        drawn: this.drawn.tiles,
+        triangles: this.drawn.triangles,
+        built,
+      });
     }
     this.drawn = {tiles: 0, triangles: 0};
 

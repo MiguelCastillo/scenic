@@ -2,7 +2,7 @@ import React from "react";
 import {createRoot} from "react-dom/client";
 import {ready as domReady, events as domEvents} from "@scenic/dom";
 import {webgl} from "@scenic/renderer";
-import {loadScene, SceneRunner, startRenderLoop} from "@scenic/runtime";
+import {loadScene, renderStats, SceneRunner, startRenderLoop} from "@scenic/runtime";
 
 import {SceneGraph} from "./app/app.jsx";
 import {Error} from "./app/error.jsx";
@@ -29,6 +29,47 @@ const sceneFiles = [
   "/games/bubble-squadron/highway.json",
   "/games/bubble-squadron/starfighters.json",
 ];
+
+// clock is seconds as minutes, seconds and tenths, such as 1:05.3.
+const clock = (seconds) =>
+  `${Math.floor(seconds / 60)}:${(seconds % 60).toFixed(1).padStart(4, "0")}`;
+
+// raceText is a race's message (see games/bubble-squadron/scripts/race.js)
+// as the HUD shows it: the lap, time and next gate, and the best time.
+function raceText({lap, laps, time, gate, gates, best, finished}) {
+  const lines = finished
+    ? [`Finished in ${clock(time)}`, "Fly through the start gate to race again"]
+    : lap === 0
+    ? ["Fly through the start gate to race"]
+    : [
+        `Lap ${lap}/${laps}   ${clock(time)}`,
+        gate === 0
+          ? lap === laps
+            ? "Next: the finish"
+            : "Next: the start gate"
+          : `Next: gate ${gate} of ${gates}`,
+      ];
+  if (best != null) {
+    lines.push(`Best ${clock(best)}`);
+  }
+  return lines.join("\n");
+}
+
+// thousands is n rounded to thousands, such as 18k.
+const thousands = (n) => `${Math.round(n / 1000)}k`;
+
+// What the HUD shows for each channel of the scene's sceneManager.ui (see
+// UiBus in @scenic/scene), from its messages. Channels not here don't show.
+// A terrain's (see Terrain in @scenic/runtime) also shows what the whole
+// frame cost.
+const hudTexts = {
+  race: raceText,
+  terrain: ({tiles, drawn, triangles, built}) =>
+    `Terrain: ${tiles} tiles, ${drawn} drawn, ${thousands(triangles)} triangles, ${built} built\n` +
+    `Frame: ${renderStats.last.drawCalls} draw calls, ${thousands(
+      renderStats.last.triangles
+    )} triangles`,
+};
 
 domReady.onReady(() => {
   const canvas = document.querySelector("#glCanvas");
@@ -144,9 +185,17 @@ domReady.onReady(() => {
           fpsEl.innerHTML = fps;
         });
 
-        // The scene's HUD text, such as a race's lap and time, shows over it.
-        runner.registerHudUpdater((text) => {
-          hudEl.textContent = text;
+        // The HUD shows what the scene publishes on the channels it knows,
+        // such as a race's lap and time, a blank line apart, in the order
+        // they first came.
+        const hud = new Map();
+        scene.sceneManager.ui.onUpdate((channel, message) => {
+          const text = hudTexts[channel]?.(message);
+          if (text === undefined || hud.get(channel) === text) {
+            return;
+          }
+          hud.set(channel, text);
+          hudEl.textContent = [...hud.values()].filter(Boolean).join("\n\n");
         });
 
         loadingRoot.render(<Loading isLoading={false} />);

@@ -327,7 +327,7 @@ it against the `world` viewport's active camera, so it shows the world's axes
 as that camera sees them. Its `viewport` setting follows another viewport's
 camera instead.
 
-### Racing and the HUD
+### Racing
 
 Bubble Squadron is a race. Its `race` node runs
 `games/bubble-squadron/scripts/race.js`, and its children are the course's
@@ -354,14 +354,47 @@ finish coming:
 ```
 
 The race keeps its lap, next gate, time, lap times and best time in its
-settings, and writes what the player should see to `hud` in its node's state:
+settings, and tells the app's UI how it is going, as described next.
+
+### Telling the UI: `sceneManager.ui`
+
+A scene tells the app's UI what it knows, such as a race's lap and time for
+the HUD, through `sceneManager.ui`, a small pub/sub (`UiBus` in
+`@scenic/scene`). A node or script publishes plain data on a channel, and
+the app, which knows what each channel's messages hold, shows them however
+it likes. The scene never knows about the page, or about other nodes that
+show things.
+
+A node publishes on the channel named by `hud` in its own state, and
+publishes nothing without one:
 
 ```json
-"hud": {"text": "Lap 2/3   1:04.2\nNext: gate 4 of 10"}
+{"name": "race", "type": "transform", "hud": "race", "script": {"src": "scripts/race.js"}}
 ```
 
-Any node can do the same: the editor shows the `hud` text of every node over
-the scene, with a blank line between nodes.
+```js
+sceneManager.ui.publish("race", {
+  lap: 2,
+  laps: 3,
+  time: 64.2,
+  gate: 4,
+  gates: 10,
+  best: null,
+  finished: false,
+});
+sceneManager.ui.onUpdate((channel, message) => {
+  /* the app */
+});
+```
+
+The race publishes `{lap, laps, time, gate, gates, best, finished}` every
+frame, and a terrain `{tiles, drawn, triangles, built}`. Messages are output
+worked out from the scene's state, not state themselves: publishing never
+changes the scene, so a terrain can publish while drawing, and they are not
+saved or synced. The arcade's HUD shows the race; the editor's shows the
+race, and a terrain's counts with what the whole frame cost. Each ignores
+channels it doesn't know. In the editor, the Info tab of a terrain or a node
+with a script sets its `hud` channel.
 
 ### Collisions
 
@@ -657,7 +690,9 @@ small pieces: a tile is drawn whole if any of it is in view (see
 beside the camera, at the cost of more tiles to build and draw. With
 `showTiles` on, the terrain draws lines on the ground around every tile and
 every square of its grid, to see how the ground is cut up and where tiles
-change their steps.
+change their steps. With a `hud` channel, it publishes how many tiles it has,
+drew and built, which the editor shows on its HUD (see
+[Telling the UI](#telling-the-ui-scenemanagerui)).
 
 Tiles with as many steps share one index buffer, the list of triangles that
 join a grid of points and its skirt, since their grids are the same. Changing a setting that shapes
@@ -947,7 +982,7 @@ which keeps things faster and easier to debug in the browser. Use
 Scenes are run by `@scenic/runtime` (`packages/runtime`), which apps are built
 on, in three steps: `loadScene` builds a scene from its config and loads its
 models, shaders and scripts; a `SceneRunner` steps it a frame at a time, with
-its clock, pausing, cameras, the player's input, its HUD and frame rate; and
+its clock, pausing, cameras, the player's input and frame rate; and
 `startRenderLoop` calls the runner every frame. It is also where most of the
 logic for FBX animation lives while support for it is implemented. It
 generates two bundles:

@@ -66,3 +66,17 @@ describe("scripts", () => {
     }).not.toThrow();
   });
 });
+
+describe("ui", () => {
+  test("tells listeners about messages until they stop", () => {
+    const sceneManager = new SceneManager(new StateManager([]));
+    const messages = [];
+    const stop = sceneManager.ui.onUpdate((channel, message) => messages.push([channel, message]));
+
+    sceneManager.ui.publish("race", {lap: 1});
+    stop();
+    sceneManager.ui.publish("race", {lap: 2});
+
+    expect(messages).toEqual([["race", {lap: 1}]]);
+  });
+});

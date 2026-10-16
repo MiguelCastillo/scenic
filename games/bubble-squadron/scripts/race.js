@@ -40,9 +40,14 @@
 // - best: the fastest race's time, in seconds, or null before one finishes.
 // - from: where the racer was in the world last frame, to see which gates it
 //   crossed since.
-// It also writes "hud" in its node's state, {text}, which the app shows over
-// the scene. The clock runs on the frame's `seconds`, so it stops while the
-// scene is paused.
+// The clock runs on the frame's `seconds`, so it stops while the scene is
+// paused.
+//
+// With "hud" in its node's state, such as {"hud": "race"}, it tells the app's
+// UI how the race is going every frame, on that channel of sceneManager.ui
+// (see UiBus in @scenic/scene): {lap, laps, time, gate, gates, best,
+// finished}, as in its settings, with gates the number of gates after the
+// start gate.
 
 const defaults = {
   racer: "starfighter",
@@ -59,13 +64,6 @@ const defaults = {
   best: null,
   from: null,
 };
-
-// clock is seconds as minutes, seconds and tenths, such as 1:05.3.
-function clock(seconds) {
-  const minutes = Math.floor(seconds / 60);
-  const rest = (seconds % 60).toFixed(1).padStart(4, "0");
-  return `${minutes}:${rest}`;
-}
 
 module.exports = function createRaceScript(node) {
   return {
@@ -168,24 +166,22 @@ module.exports = function createRaceScript(node) {
         });
       });
 
-      const best = race.best == null ? "" : `\nBest ${clock(race.best)}`;
-      const lines = race.finished
-        ? [`Finished in ${clock(race.time)}`, "Fly through the start gate to race again"]
-        : race.lap === 0
-        ? ["Fly through the start gate to race"]
-        : [
-            `Lap ${race.lap}/${settings.laps}   ${clock(race.time)}`,
-            race.gate === 0
-              ? race.lap === settings.laps
-                ? "Next: the finish"
-                : "Next: the start gate"
-              : `Next: gate ${race.gate} of ${gates.length - 1}`,
-          ];
-
       sceneManager.updateNodeStateByID(node.id, {
         script: {...state.script, settings: {...state.script.settings, ...race, from: to}},
-        hud: {text: lines.join("\n") + best},
       });
+
+      if (state.hud) {
+        const {lap, time, gate, best, finished} = race;
+        sceneManager.ui.publish(state.hud, {
+          lap,
+          laps: settings.laps,
+          time,
+          gate,
+          gates: gates.length - 1,
+          best,
+          finished,
+        });
+      }
     },
   };
 };

@@ -5,9 +5,9 @@ import {createFrameRateCounter} from "./fps-counter.js";
 
 // SceneRunner steps a scene loaded by loadScene a frame at a time: it keeps
 // the scene's clock, pauses it, moves its cameras, gives its scripts the
-// player's input, draws it, and tells the app its HUD text and frame rate. It
-// doesn't run on its own, and nothing in it touches the DOM: the app owns the
-// canvas size and input events, and drives the scene through it, with a
+// player's input, draws it, and tells the app its frame rate. It doesn't run
+// on its own, and nothing in it touches the DOM: the app owns the canvas
+// size and input events, and drives the scene through it, with a
 // render loop calling its updateScene and renderFrame every frame (see
 // startRenderLoop).
 //
@@ -31,7 +31,7 @@ import {createFrameRateCounter} from "./fps-counter.js";
 // - updateScene moves the scene a frame forward: it works out the frame's
 //   seconds since the last one, moves the scene's clock and the cameras,
 //   runs the scripts with those seconds and the input given since the last
-//   frame, and tells the app the HUD and frame rate. Call it once a frame:
+//   frame, and tells the app the frame rate. Call it once a frame:
 //   calling it again moves the scene again.
 // - renderFrame draws the scene as updateScene left it, and changes nothing,
 //   so it can be called as often as needed, such as to draw it again after
@@ -46,8 +46,9 @@ import {createFrameRateCounter} from "./fps-counter.js";
 //   input viewport, setHeldKeys(keys) and addMouseMovement(x, y).
 // - Pausing: togglePause(), which returns whether it is now paused, and
 //   isPaused().
-// - Telling the app: registerHudUpdater(cb) and
-//   registerRefreshRateUpdater(cb).
+// - Telling the app: registerRefreshRateUpdater(cb). What the scene shows
+//   the player, such as a HUD, comes from sceneManager.ui (see UiBus in
+//   @scenic/scene).
 // - sceneManager, the scene's.
 //
 // Options:
@@ -91,12 +92,6 @@ export class SceneRunner {
 
     this._lastFps = 0;
     this._refreshRateUpdater = () => {};
-
-    // Any node can show text over the scene with "hud" in its state, {text},
-    // such as a race's lap and time (see scripts/race.js). The app is told
-    // the text of all of them, a blank line apart, whenever it changes.
-    this._lastHud = null;
-    this._hudUpdater = () => {};
   }
 
   // updateScene moves the scene a frame forward, to ms, the frame's time:
@@ -125,15 +120,6 @@ export class SceneRunner {
     });
     this._mouseMovement = {x: 0, y: 0};
 
-    const hud = Node.findChildrenByType(sceneManager.scene, Node)
-      .map((node) => sceneManager.getNodeStateByID(node.id)?.hud?.text)
-      .filter(Boolean)
-      .join("\n\n");
-    if (hud !== this._lastHud) {
-      this._lastHud = hud;
-      this._hudUpdater(hud);
-    }
-
     // Let's write out the number of frames per second that we are able to
     // run.
     const {frameRate, elapsedMs} = this._getFrameRate(ms);
@@ -151,11 +137,6 @@ export class SceneRunner {
 
   registerRefreshRateUpdater(cb) {
     this._refreshRateUpdater = cb;
-  }
-
-  registerHudUpdater(cb) {
-    this._hudUpdater = cb;
-    this._lastHud = null;
   }
 
   setHeldKeys(keys) {

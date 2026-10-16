@@ -1,12 +1,16 @@
 import {bubbleTraversal} from "./traversal.js";
 import {Node} from "./node.js";
 import {Scene} from "./scene.js";
+import {UiBus} from "./ui-bus.js";
 import {Viewport} from "./viewport.js";
 
 export class SceneManager {
   constructor(stateManager) {
     this.stateManager = stateManager;
     this.scene = new Scene();
+    // Messages from the scene to the app's UI, such as a race's HUD (see
+    // UiBus).
+    this.ui = new UiBus();
   }
 
   getNodeStateByID(id) {
