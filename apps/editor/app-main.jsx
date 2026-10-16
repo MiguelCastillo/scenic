@@ -222,7 +222,7 @@ function subscribeToSceneInput(mousetrapEl, getCurrentScene, onCameraChange, onP
         movement[direction] += amount;
       }
     }
-    scene.cameras.setMovement(movement);
+    scene.cameras?.setMovement(movement);
   }
 
   domEvents.Subscription.create(mousetrapEl)
@@ -237,9 +237,9 @@ function subscribeToSceneInput(mousetrapEl, getCurrentScene, onCameraChange, onP
         const right = evt.movementX * cameraTurnDegreesPerPixel;
         const up = -evt.movementY * cameraTurnDegreesPerPixel;
         if (scene.isPaused()) {
-          scene.cameras.lookAround(right, up);
+          scene.cameras?.lookAround(right, up);
         } else {
-          scene.cameras.turn(right, up);
+          scene.cameras?.turn(right, up);
         }
         scene.addMouseMovement(evt.movementX, evt.movementY);
       }
@@ -250,7 +250,7 @@ function subscribeToSceneInput(mousetrapEl, getCurrentScene, onCameraChange, onP
 
       const scene = getCurrentScene();
       if (scene && isPointerLocked()) {
-        scene.cameras.move(
+        scene.cameras?.move(
           -evt.deltaY * cameraScrollDistancePerPixel,
           evt.deltaX * cameraScrollDistancePerPixel,
           0
@@ -285,7 +285,7 @@ function subscribeToSceneInput(mousetrapEl, getCurrentScene, onCameraChange, onP
         evt.preventDefault();
         const scene = getCurrentScene();
         if (scene) {
-          scene.cameras.nextCamera();
+          scene.cameras?.nextCamera();
           onCameraChange();
           // Held movement belongs to each camera, so tell the new one about
           // keys that are still down.

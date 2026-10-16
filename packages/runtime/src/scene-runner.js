@@ -1,11 +1,7 @@
-import {mat4} from "@scenic/math";
 import {CameraSystem} from "@scenic/camera";
-import {Node} from "@scenic/scene";
+import {Node, Viewport} from "@scenic/scene";
 
 import {createFrameRateCounter} from "./fps-counter.js";
-
-const worldViewportID = "world";
-const axisGizmoID = "axis gizmo";
 
 // SceneRunner steps a scene loaded by loadScene a frame at a time: it keeps
 // the scene's clock, pauses it, moves its cameras, gives its scripts the
@@ -15,10 +11,39 @@ const axisGizmoID = "axis gizmo";
 // render loop calling its updateScene and renderFrame every frame (see
 // startRenderLoop).
 //
+// The player's input goes to the cameras of the viewport the scene marks with
+// "input": true in its config, such as its "world" viewport. A scene without
+// one, such as a menu, has no cameras for the player to move.
+//
+// Using it: every frame, call updateScene and then renderFrame, once each,
+// with the same time, after clearing the canvas. startRenderLoop does this
+// for you:
+//
+//   const runner = new SceneRunner(gl, await loadScene(gl, config));
+//   requestAnimationFrame(function frame(ms) {
+//     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+//     runner.updateScene(ms);
+//     runner.renderFrame(ms);
+//     requestAnimationFrame(frame);
+//   });
+//
+// The order matters because each half uses what the other leaves:
+// - updateScene works out the frame's seconds from the last frame, moves the
+//   scene's clock, and moves the cameras.
+// - renderFrame runs the scripts with those seconds and the input given since
+//   the last frame, draws through the cameras where updateScene left them,
+//   then forgets the mouse's movement, and tells the app the HUD and frame
+//   rate.
+// Skipping updateScene runs the scripts with the last frame's seconds again,
+// moving things twice as far, and draws the cameras a frame behind. Calling
+// updateScene twice loses the first frame's time. Input, pausing and
+// registering can happen at any time in between; the next renderFrame picks
+// them up.
+//
 // Its API:
 // - Each frame: updateScene(ms), then renderFrame(ms).
-// - Input: cameras (see CameraSystem in @scenic/camera), setHeldKeys(keys)
-//   and addMouseMovement(x, y).
+// - Input: cameras (see CameraSystem in @scenic/camera), or null without an
+//   input viewport, setHeldKeys(keys) and addMouseMovement(x, y).
 // - Pausing: togglePause(), which returns whether it is now paused, and
 //   isPaused().
 // - Telling the app: registerHudUpdater(cb) and
@@ -34,9 +59,12 @@ export class SceneRunner {
     this._gl = gl;
     this.sceneManager = sceneManager;
 
-    // The world viewport's cameras, which the app forwards the player's
+    // The input viewport's cameras, which the app forwards the player's
     // input to (see CameraSystem in @scenic/camera).
-    this.cameras = new CameraSystem(sceneManager, worldViewportID);
+    const inputViewport = Node.findChildrenByType(sceneManager.scene, Viewport).find(
+      (viewport) => sceneManager.getNodeStateByID(viewport.id)?.input
+    );
+    this.cameras = inputViewport ? new CameraSystem(sceneManager, inputViewport.id) : null;
 
     this._getFrameRate = createFrameRateCounter();
     this._lastFrameMs = null;
@@ -75,8 +103,6 @@ export class SceneRunner {
   // This is the logic for updating the scene state and the scene graph with
   // the new scene state. This is the logic for the game itself.
   updateScene(ms) {
-    const {sceneManager, cameras} = this;
-
     // Seconds since the last frame, capped so that the camera does not jump
     // after the page has been in the background and frames were paused.
     const seconds = this._lastFrameMs === null ? 0 : Math.min((ms - this._lastFrameMs) / 1000, 0.1);
@@ -84,20 +110,7 @@ export class SceneRunner {
     this._frameSeconds = this._paused ? 0 : seconds;
     this._sceneMs = this._sceneMs === null ? ms : this._sceneMs + this._frameSeconds * 1000;
 
-    cameras.update(seconds);
-
-    // The axis gizmo shows the world's axes as the camera sees them, so it is
-    // rotated by the inverse of the camera's rotation. The inverse of a
-    // rotation matrix is its transpose.
-    const {rotation} = sceneManager.getNodeStateByID(cameras.activeCamera.id).transform;
-    const cameraRotation = mat4.rotate(mat4.identity(), ...rotation);
-    const axisGizmoState = sceneManager.getNodeStateByID(axisGizmoID);
-    sceneManager.updateNodeStateByID(axisGizmoID, {
-      transform: {
-        ...axisGizmoState.transform,
-        rotation: mat4.rotationAngles(mat4.transpose(cameraRotation)),
-      },
-    });
+    this.cameras?.update(seconds);
   }
 
   renderFrame(ms) {
@@ -152,7 +165,7 @@ export class SceneRunner {
   togglePause() {
     this._paused = !this._paused;
     if (!this._paused) {
-      this.cameras.reset();
+      this.cameras?.reset();
     }
     return this._paused;
   }

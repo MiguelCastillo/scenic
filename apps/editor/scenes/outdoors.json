@@ -15,6 +15,9 @@
         {
           "name": "axis gizmo",
           "type": "transform",
+          "script": {
+            "src": "/resources/scripts/axis-gizmo.js"
+          },
           "transform": {
             "scale": [30, 30, 30],
             "position": [100, 100, 0]
@@ -69,6 +72,7 @@
     {
       "name": "world",
       "type": "viewport",
+      "input": true,
       "items": [
         {
           "name": "camera",

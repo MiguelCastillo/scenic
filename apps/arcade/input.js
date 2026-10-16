@@ -58,7 +58,7 @@ export function subscribeToSceneInput(canvas, runner, onChange) {
         movement[direction] += amount;
       }
     }
-    runner.cameras.setMovement(movement);
+    runner.cameras?.setMovement(movement);
   }
 
   domEvents.Subscription.create(canvas)
@@ -72,9 +72,9 @@ export function subscribeToSceneInput(canvas, runner, onChange) {
         const right = evt.movementX * cameraTurnDegreesPerPixel;
         const up = -evt.movementY * cameraTurnDegreesPerPixel;
         if (runner.isPaused()) {
-          runner.cameras.lookAround(right, up);
+          runner.cameras?.lookAround(right, up);
         } else {
-          runner.cameras.turn(right, up);
+          runner.cameras?.turn(right, up);
         }
         runner.addMouseMovement(evt.movementX, evt.movementY);
       }
@@ -83,7 +83,7 @@ export function subscribeToSceneInput(canvas, runner, onChange) {
       // Prevent leaving the page when scrolling left/right with a trackpad
       evt.preventDefault();
       if (isPointerLocked()) {
-        runner.cameras.move(
+        runner.cameras?.move(
           -evt.deltaY * cameraScrollDistancePerPixel,
           evt.deltaX * cameraScrollDistancePerPixel,
           0
@@ -115,7 +115,7 @@ export function subscribeToSceneInput(canvas, runner, onChange) {
 
       if (evt.code === nextCameraKey && !evt.repeat) {
         evt.preventDefault();
-        runner.cameras.nextCamera();
+        runner.cameras?.nextCamera();
         // Held movement belongs to each camera, so tell the new one about
         // keys that are still down.
         updateCameraMovement();

@@ -62,6 +62,10 @@ what it draws, and its cameras are the angles it can draw them from. The
 editor's scenes have two viewports: `world`, with the lights and models, and
 `axis`, with the axis gizmo in the corner.
 
+The player's input goes to the cameras of the viewport marked `"input": true`,
+such as `world`. A scene can mark one; one without, such as a menu, has no
+cameras for the player to move.
+
 A **`Camera`** is a lens plus a placement:
 
 - Its `projection` block is the lens. Its `type` is one of:
@@ -94,6 +98,7 @@ viewport's last camera throws.
 {
   "name": "world",
   "type": "viewport",
+  "input": true,
   "items": [
     {
       "name": "camera",
@@ -110,7 +115,7 @@ viewport's last camera throws.
 
 A camera's `type` says how it moves. A plain `camera` stays where its
 transform puts it, like the axis gizmo's. The others are moved by the editor,
-which runs the world viewport's cameras with a `CameraSystem` from the
+which runs the input viewport's cameras with a `CameraSystem` from the
 `@scenic/camera` package (`packages/camera/`). Each type has a behavior class
 there, and its settings in a block named for it. The behaviors keep nothing
 themselves: everything a camera does as you play, such as its orbit, zoom and
@@ -311,6 +316,11 @@ bank and tip its nose as if it were holding position in the air:
   "settings": {"bob": 5, "roll": 6, "pitch": 2, "period": 6}
 }
 ```
+
+Every scene's axis gizmo runs `resources/scripts/axis-gizmo.js`, which turns
+it against the `world` viewport's active camera, so it shows the world's axes
+as that camera sees them. Its `viewport` setting follows another viewport's
+camera instead.
 
 ### Racing and the HUD
 
