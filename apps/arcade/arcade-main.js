@@ -21,6 +21,7 @@ async function fetchJSON(url) {
 domReady.onReady(async () => {
   const canvas = document.querySelector("#canvas");
   const hudEl = document.querySelector("#hud");
+  const fpsEl = document.querySelector("#fps");
   const messageEl = document.querySelector("#message");
   const gl = webgl.createContext(canvas);
 
@@ -43,10 +44,15 @@ domReady.onReady(async () => {
 
     // The game's scene, and the scripts in it, are relative to its folder.
     const sceneURL = new URL(manifest.scene, manifestURL);
-    const scene = await loadScene(gl, await fetchJSON(sceneURL), sceneURL.href);
+    // Scenes load paused, so the game doesn't run until the player clicks
+    // to play (see input.js).
+    const scene = await loadScene(gl, await fetchJSON(sceneURL), {sceneURL: sceneURL.href});
 
     scene.registerHudUpdater((text) => {
       hudEl.textContent = text;
+    });
+    scene.registerRefreshRateUpdater((fps) => {
+      fpsEl.textContent = fps;
     });
 
     subscribeToSceneInput(canvas, scene, ({locked, paused}) => {

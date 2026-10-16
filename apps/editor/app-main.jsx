@@ -20,11 +20,13 @@ const sceneFiles = [
   "scenes/armatured-cube-simple.json",
   "scenes/armatured-cube.json",
   "scenes/bump-lighting-sphere.json",
+  "scenes/clouds.json",
   "scenes/jedi-star-fighter.json",
   "scenes/rockets.json",
   "scenes/skinning-mesh-animation-dancing-character.json",
   "scenes/trees.json",
   "/games/bubble-squadron/race.json",
+  "/games/bubble-squadron/highway.json",
   "/games/bubble-squadron/starfighters.json",
 ];
 
@@ -125,10 +127,13 @@ domReady.onReady(() => {
 
     fetch(sceneFile)
       .then((response) => response.json())
-      .then((config) => loadScene(gl, config, sceneFile))
+      .then((config) => loadScene(gl, config, {sceneURL: sceneFile}))
       .then((scene) => {
         currentScene = scene;
         const {registerRefreshRateUpdater, registerHudUpdater} = scene;
+
+        // Scenes load paused, until P is pressed.
+        showPaused(scene.isPaused());
 
         renderSceneGraph();
 

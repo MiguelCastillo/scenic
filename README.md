@@ -276,9 +276,10 @@ so changes the script makes to the node's state show up in the same frame.
 it also has the player's input: `seconds` since the last frame, the `keys`
 being held, by `KeyboardEvent.code`, and how far the `mouse` moved since the
 last frame, as `{x, y}` in pixels. Input only reaches the scene while the
-pointer is locked to it, by clicking it. Pressing P pauses the scene: its
-clock stops, and scripts get no time and no input until P is pressed again,
-while the camera can still look around. The mouse turns the camera while
+pointer is locked to it, by clicking it. Scenes load paused, and pressing P
+plays and pauses them: while paused, its clock stops, and scripts get no time
+and no input until P is pressed again, while the camera can still look
+around. The mouse turns the camera while
 paused even when its `mouseOrbit` setting is off, so a third-person camera can
 orbit the starfighter, and when the scene resumes the camera is reset to the scene
 file's values, putting it back behind its target. Scripts are loaded with the scene, and
@@ -316,12 +317,19 @@ bank and tip its nose as if it were holding position in the air:
 Bubble Squadron is a race. Its `race` node runs
 `games/bubble-squadron/scripts/race.js`, and its children are the course's
 gates, in the order they are flown through: bubble rings from
-`bin/generate-gate.js`, with the checkered start gate first.
-Flying through the start gate starts the clock, a lap is every gate in order
-and then the start gate again, and after the last lap the race is over, until
-the start gate starts it again. A gate only counts when it is next and flown
+`bin/generate-gate.js`, with the start gate first: a checkered gantry across
+the course, wide enough for racers side by side and always solid, so the start
+and finish are clear. A ring counts racers flying through it within
+`gateRadius` of its center, and the gantry anywhere in its opening, which its
+node's state gives as `"gate": {"width": 2000, "height": 800}`, from the
+ground up. Flying through the start gate starts the clock, a lap is every gate
+in order and then the start gate again, and after the last lap the race is
+over, until the start gate starts it again. A gate only counts when it is next and flown
 through the way it faces, along its +Z axis. The next gate glows, and the
-ones already flown through this lap fade:
+ones already flown through this lap fade. A course leaves room around the
+start gate: the first and last gates are placed by their distance from the
+start gate, not from each other, so racers start in the clear and see the
+finish coming:
 
 ```json
 "script": {
@@ -447,15 +455,23 @@ view-projection matrix.
 ### Sky
 
 A `sky` node paints a cartoon sky behind everything in its viewport: a
-gradient from the horizon to the zenith, a sun, puffy two-tone clouds that
-drift, two hazy mountain ranges around the horizon, and the ground below it.
-Bubble Squadron has one:
+gradient from the horizon to the zenith, a sun, clouds that drift, two hazy
+mountain ranges around the horizon, and the ground below it. `cloudStyle`
+picks the clouds: 0 for soft, painted two-tone clouds on a ceiling overhead,
+1 for croissants of round puffs melted together like clay, white on top and
+lavender underneath, a big puff in the middle and smaller ones to each side,
+gathered around the horizon and round wherever you look, 2 for layered banks
+of cloud rising from the horizon, like paper cut-outs, bluer the farther they
+are, 3 for flat, two-tone cartoon clouds, white with a bumpy, pale shade along
+their flat bottoms, and 4 for clusters of 5 to 13 round puffs, one big one on
+top and the rest smaller the farther they are from it. Bubble Squadron's
+drone race uses the croissants:
 
 ```json
 {
   "name": "sky",
   "type": "sky",
-  "sky": {"horizonColor": [0.75, 0.88, 1], "cloudCover": 0.55},
+  "sky": {"horizonColor": [0.75, 0.88, 1], "cloudStyle": 1, "cloudCover": 0.72},
   "items": [
     {
       "name": "sun",

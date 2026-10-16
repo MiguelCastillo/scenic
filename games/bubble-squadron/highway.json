@@ -1,0 +1,1066 @@
+{
+  "items": [
+    {
+      "name": "axis",
+      "type": "viewport",
+      "items": [
+        {
+          "name": "axis camera",
+          "type": "camera",
+          "projection": {
+            "type": "orthographic",
+            "far": 10000
+          }
+        },
+        {
+          "name": "axis gizmo",
+          "type": "transform",
+          "transform": {
+            "scale": [30, 30, 30],
+            "position": [100, 100, 0]
+          },
+          "items": [
+            {
+              "name": "axis-x",
+              "type": "static-mesh",
+              "resource": "/resources/obj/axis.obj",
+              "material": {
+                "color": [1, 0, 0, 1],
+                "reflectiveness": 0
+              },
+              "ambient": {
+                "color": [1, 0, 0]
+              }
+            },
+            {
+              "name": "axis-y",
+              "type": "static-mesh",
+              "resource": "/resources/obj/axis.obj",
+              "material": {
+                "color": [0, 1, 0, 1],
+                "reflectiveness": 0
+              },
+              "ambient": {
+                "color": [0, 1, 0]
+              },
+              "transform": {
+                "rotation": [0, 0, 90]
+              }
+            },
+            {
+              "name": "axis-z",
+              "type": "static-mesh",
+              "resource": "/resources/obj/axis.obj",
+              "material": {
+                "color": [0, 0, 1, 1],
+                "reflectiveness": 0
+              },
+              "ambient": {
+                "color": [0, 0, 1]
+              },
+              "transform": {
+                "rotation": [0, -90, 0]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "world",
+      "type": "viewport",
+      "fog": {
+        "color": [0.75, 0.88, 1],
+        "near": 1000,
+        "far": 11000
+      },
+      "items": [
+        {
+          "name": "chase camera",
+          "type": "third-person-camera",
+          "projection": {
+            "type": "perspective",
+            "near": 1,
+            "far": 12000,
+            "fov": 60
+          },
+          "transform": {
+            "position": [-671, 350, 3620]
+          },
+          "thirdPerson": {
+            "target": {
+              "nodeID": "starfighter"
+            },
+            "offset": [0, 0, 0],
+            "distance": 600,
+            "minDistance": 200,
+            "maxDistance": 1500,
+            "rotation": [-8, 0],
+            "maxPitch": 70,
+            "followTime": 0.25,
+            "lookUp": 15,
+            "mouseOrbit": false
+          }
+        },
+        {
+          "name": "cockpit camera",
+          "type": "first-person-camera",
+          "projection": {
+            "type": "perspective",
+            "near": 1,
+            "far": 12000,
+            "fov": 75
+          },
+          "transform": {
+            "position": [0, 0, 0],
+            "rotation": [0, 0, 0]
+          },
+          "firstPerson": {
+            "target": {
+              "nodeID": "starfighter"
+            },
+            "offset": {
+              "position": [0, 36, 40],
+              "rotation": [0, 180, 0]
+            },
+            "maxPitch": 80,
+            "mouseOrbit": false
+          }
+        },
+        {
+          "projection": {
+            "type": "perspective",
+            "near": 1,
+            "far": 12000,
+            "fov": 60
+          },
+          "transform": {
+            "position": [-671, 350, 3620]
+          },
+          "name": "free camera",
+          "type": "free-fly-camera",
+          "freeFly": {
+            "speed": 200,
+            "maxPitch": 89
+          }
+        },
+        {
+          "name": "sky",
+          "type": "sky",
+          "sky": {
+            "zenithColor": [0.25, 0.5, 0.95],
+            "horizonColor": [0.75, 0.88, 1],
+            "groundColor": [0.45, 0.62, 0.42],
+            "sunColor": [1, 0.95, 0.8],
+            "cloudStyle": 2,
+            "cloudCover": 0.72,
+            "cloudScale": 1,
+            "cloudSpeed": 1,
+            "cloudColor": [1, 1, 1],
+            "cloudShadeColor": [0.72, 0.78, 0.92],
+            "mountainHeight": 7,
+            "farMountainColor": [0.58, 0.68, 0.88],
+            "nearMountainColor": [0.38, 0.48, 0.66]
+          },
+          "items": [
+            {
+              "name": "sun",
+              "type": "light",
+              "resource": "/resources/obj/sphere.obj",
+              "light": {
+                "sun": true,
+                "intensity": 0.8,
+                "color": [1, 0.96, 0.88]
+              },
+              "material": {
+                "color": [1, 0.96, 0.88, 1],
+                "reflectiveness": 1
+              },
+              "transform": {
+                "position": [1229, 1721, 2128]
+              }
+            },
+            {
+              "name": "fill",
+              "type": "light",
+              "resource": "/resources/obj/sphere.obj",
+              "light": {
+                "intensity": 0.55,
+                "color": [0.7, 0.82, 1]
+              },
+              "material": {
+                "color": [0.7, 0.82, 1, 1],
+                "reflectiveness": 1
+              },
+              "transform": {
+                "position": [-1229, 1200, -2128]
+              }
+            }
+          ]
+        },
+        {
+          "name": "floor",
+          "type": "grid",
+          "transform": {
+            "position": [0, 0, 0]
+          },
+          "grid": {
+            "spacing": 200,
+            "lineWidth": 1,
+            "fillColor": [0.45, 0.62, 0.42]
+          },
+          "material": {
+            "color": [0.78, 0.88, 0.72, 1]
+          }
+        },
+        {
+          "name": "scene objects",
+          "type": "transform",
+          "transform": {
+            "scale": [1, 1, 1],
+            "position": [0, 0, 0],
+            "rotation": [0, 0, 0]
+          },
+          "items": [
+            {
+              "name": "starfighter",
+              "collider": {
+                "shape": "sphere",
+                "radius": 95
+              },
+              "type": "transform",
+              "transform": {
+                "position": [-138, 150, 3753],
+                "rotation": [0, 76, 0],
+                "scale": [1, 1, 1]
+              },
+              "script": {
+                "src": "scripts/fly.js",
+                "settings": {
+                  "cruiseSpeed": 250,
+                  "boostSpeed": 1200,
+                  "cruiseThrottle": 0.3,
+                  "turnRate": 75,
+                  "climbRate": 45,
+                  "maxClimb": 60,
+                  "bank": 40,
+                  "response": 0.3,
+                  "levelTime": 1.5,
+                  "minHeight": 80,
+                  "pullUpHeight": 400,
+                  "upArrowDives": false,
+                  "mouseSteering": false,
+                  "mouseSensitivity": 0.15,
+                  "throttle": 0.3
+                }
+              },
+              "items": [
+                {
+                  "name": "starfighter body",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/seedpod-starfighter-3.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.6,
+                    "shininess": 64
+                  },
+                  "ambient": {
+                    "color": [0.3, 0.3, 0.35]
+                  }
+                },
+                {
+                  "name": "starfighter petals",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/seedpod-starfighter-3-spinner.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.6,
+                    "shininess": 64,
+                    "opacity": 0.55
+                  },
+                  "ambient": {
+                    "color": [0.3, 0.3, 0.35]
+                  },
+                  "transform": {
+                    "position": [0, 0, 0],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  },
+                  "script": {
+                    "src": "/resources/scripts/spin.js",
+                    "settings": {
+                      "idleSpeed": 60,
+                      "speed": 720
+                    }
+                  }
+                },
+                {
+                  "name": "starfighter flame 1",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/flame.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 0
+                  },
+                  "ambient": {
+                    "color": [1, 1, 1]
+                  },
+                  "transform": {
+                    "position": [0, 0, -93.002],
+                    "rotation": [0, 0, 0],
+                    "scale": [6.396, 6.396, 6.396]
+                  },
+                  "script": {
+                    "src": "/resources/scripts/flame.js",
+                    "settings": {
+                      "flicker": 0.15,
+                      "speed": 1
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "track",
+          "type": "static-mesh",
+          "resource": "/resources/obj/highway-track-3.obj",
+          "material": {
+            "color": [0, 0, 0, 1],
+            "reflectiveness": 1,
+            "specular": 0.1,
+            "shininess": 16
+          },
+          "ambient": {
+            "color": [0.4, 0.4, 0.43]
+          }
+        },
+        {
+          "name": "race",
+          "type": "transform",
+          "script": {
+            "src": "scripts/race.js",
+            "settings": {
+              "racer": "starfighter",
+              "laps": 3,
+              "opacity": 0.6,
+              "passedOpacity": 0.2
+            }
+          },
+          "items": [
+            {
+              "name": "start gate",
+              "type": "static-mesh",
+              "resource": "/resources/obj/highway-gantry-checker.obj",
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.3,
+                "shininess": 32,
+                "opacity": 1
+              },
+              "ambient": {
+                "color": [0.4, 0.4, 0.43]
+              },
+              "transform": {
+                "position": [299, 0, 3862],
+                "rotation": [0, 76, 0],
+                "scale": [1, 1, 1]
+              },
+              "gate": {
+                "width": 1500,
+                "height": 700
+              }
+            },
+            {
+              "name": "gate 1",
+              "type": "static-mesh",
+              "resource": "/resources/obj/highway-gantry.obj",
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.3,
+                "shininess": 32,
+                "opacity": 0.6
+              },
+              "ambient": {
+                "color": [0.4, 0.4, 0.43]
+              },
+              "transform": {
+                "position": [2479, 0, 3302],
+                "rotation": [0, 141, 0],
+                "scale": [1, 1, 1]
+              },
+              "gate": {
+                "width": 1500,
+                "height": 700
+              }
+            },
+            {
+              "name": "gate 2",
+              "type": "static-mesh",
+              "resource": "/resources/obj/highway-gantry.obj",
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.3,
+                "shininess": 32,
+                "opacity": 0.6
+              },
+              "ambient": {
+                "color": [0.4, 0.4, 0.43]
+              },
+              "transform": {
+                "position": [2967, 0, 1019],
+                "rotation": [0, 171, 0],
+                "scale": [1, 1, 1]
+              },
+              "gate": {
+                "width": 1500,
+                "height": 700
+              }
+            },
+            {
+              "name": "gate 3",
+              "type": "static-mesh",
+              "resource": "/resources/obj/highway-gantry.obj",
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.3,
+                "shininess": 32,
+                "opacity": 0.6
+              },
+              "ambient": {
+                "color": [0.4, 0.4, 0.43]
+              },
+              "transform": {
+                "position": [3613, 0, -1208],
+                "rotation": [0, 166, 0],
+                "scale": [1, 1, 1]
+              },
+              "gate": {
+                "width": 1500,
+                "height": 700
+              }
+            },
+            {
+              "name": "gate 4",
+              "type": "static-mesh",
+              "resource": "/resources/obj/highway-gantry.obj",
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.3,
+                "shininess": 32,
+                "opacity": 0.6
+              },
+              "ambient": {
+                "color": [0.4, 0.4, 0.43]
+              },
+              "transform": {
+                "position": [3348, 0, -3492],
+                "rotation": [0, -155, 0],
+                "scale": [1, 1, 1]
+              },
+              "gate": {
+                "width": 1500,
+                "height": 700
+              }
+            },
+            {
+              "name": "gate 5",
+              "type": "static-mesh",
+              "resource": "/resources/obj/highway-gantry.obj",
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.3,
+                "shininess": 32,
+                "opacity": 0.6
+              },
+              "ambient": {
+                "color": [0.4, 0.4, 0.43]
+              },
+              "transform": {
+                "position": [1838, 0, -5240],
+                "rotation": [0, -108, 0],
+                "scale": [1, 1, 1]
+              },
+              "gate": {
+                "width": 1500,
+                "height": 700
+              }
+            },
+            {
+              "name": "gate 6",
+              "type": "static-mesh",
+              "resource": "/resources/obj/highway-gantry.obj",
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.3,
+                "shininess": 32,
+                "opacity": 0.6
+              },
+              "ambient": {
+                "color": [0.4, 0.4, 0.43]
+              },
+              "transform": {
+                "position": [-166, 0, -4166],
+                "rotation": [0, -48, 0],
+                "scale": [1, 1, 1]
+              },
+              "gate": {
+                "width": 1500,
+                "height": 700
+              }
+            },
+            {
+              "name": "gate 7",
+              "type": "static-mesh",
+              "resource": "/resources/obj/highway-gantry.obj",
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.3,
+                "shininess": 32,
+                "opacity": 0.6
+              },
+              "ambient": {
+                "color": [0.4, 0.4, 0.43]
+              },
+              "transform": {
+                "position": [-2129, 0, -2913],
+                "rotation": [0, -76, 0],
+                "scale": [1, 1, 1]
+              },
+              "gate": {
+                "width": 1500,
+                "height": 700
+              }
+            },
+            {
+              "name": "gate 8",
+              "type": "static-mesh",
+              "resource": "/resources/obj/highway-gantry.obj",
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.3,
+                "shininess": 32,
+                "opacity": 0.6
+              },
+              "ambient": {
+                "color": [0.4, 0.4, 0.43]
+              },
+              "transform": {
+                "position": [-3513, 0, -1336],
+                "rotation": [0, -5, 0],
+                "scale": [1, 1, 1]
+              },
+              "gate": {
+                "width": 1500,
+                "height": 700
+              }
+            },
+            {
+              "name": "gate 9",
+              "type": "static-mesh",
+              "resource": "/resources/obj/highway-gantry.obj",
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.3,
+                "shininess": 32,
+                "opacity": 0.6
+              },
+              "ambient": {
+                "color": [0.4, 0.4, 0.43]
+              },
+              "transform": {
+                "position": [-3302, 0, 963],
+                "rotation": [0, 19, 0],
+                "scale": [1, 1, 1]
+              },
+              "gate": {
+                "width": 1500,
+                "height": 700
+              }
+            },
+            {
+              "name": "gate 10",
+              "type": "static-mesh",
+              "resource": "/resources/obj/highway-gantry.obj",
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.3,
+                "shininess": 32,
+                "opacity": 0.6
+              },
+              "ambient": {
+                "color": [0.4, 0.4, 0.43]
+              },
+              "transform": {
+                "position": [-1732, 0, 2684],
+                "rotation": [0, 52, 0],
+                "scale": [1, 1, 1]
+              },
+              "gate": {
+                "width": 1500,
+                "height": 700
+              }
+            }
+          ]
+        },
+        {
+          "name": "gate signs",
+          "type": "transform",
+          "items": [
+            {
+              "name": "gate 1 sign",
+              "type": "transform",
+              "transform": {
+                "position": [2479, 860, 3302],
+                "rotation": [0, 141, 0],
+                "scale": [1, 1, 1]
+              },
+              "items": [
+                {
+                  "name": "gate 1 sign board",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/race-sign-1.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.3,
+                    "shininess": 32
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "gate 1 sign digit 1",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/race-digit-1-ink.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.3,
+                    "shininess": 32
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  },
+                  "transform": {
+                    "position": [0, 282.5, -8]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "gate 2 sign",
+              "type": "transform",
+              "transform": {
+                "position": [2967, 860, 1019],
+                "rotation": [0, 171, 0],
+                "scale": [1, 1, 1]
+              },
+              "items": [
+                {
+                  "name": "gate 2 sign board",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/race-sign-1.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.3,
+                    "shininess": 32
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "gate 2 sign digit 1",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/race-digit-2-ink.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.3,
+                    "shininess": 32
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  },
+                  "transform": {
+                    "position": [0, 282.5, -8]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "gate 3 sign",
+              "type": "transform",
+              "transform": {
+                "position": [3613, 860, -1208],
+                "rotation": [0, 166, 0],
+                "scale": [1, 1, 1]
+              },
+              "items": [
+                {
+                  "name": "gate 3 sign board",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/race-sign-1.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.3,
+                    "shininess": 32
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "gate 3 sign digit 1",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/race-digit-3-ink.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.3,
+                    "shininess": 32
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  },
+                  "transform": {
+                    "position": [0, 282.5, -8]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "gate 4 sign",
+              "type": "transform",
+              "transform": {
+                "position": [3348, 860, -3492],
+                "rotation": [0, -155, 0],
+                "scale": [1, 1, 1]
+              },
+              "items": [
+                {
+                  "name": "gate 4 sign board",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/race-sign-1.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.3,
+                    "shininess": 32
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "gate 4 sign digit 1",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/race-digit-4-ink.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.3,
+                    "shininess": 32
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  },
+                  "transform": {
+                    "position": [0, 282.5, -8]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "gate 5 sign",
+              "type": "transform",
+              "transform": {
+                "position": [1838, 860, -5240],
+                "rotation": [0, -108, 0],
+                "scale": [1, 1, 1]
+              },
+              "items": [
+                {
+                  "name": "gate 5 sign board",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/race-sign-1.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.3,
+                    "shininess": 32
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "gate 5 sign digit 1",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/race-digit-5-ink.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.3,
+                    "shininess": 32
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  },
+                  "transform": {
+                    "position": [0, 282.5, -8]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "gate 6 sign",
+              "type": "transform",
+              "transform": {
+                "position": [-166, 860, -4166],
+                "rotation": [0, -48, 0],
+                "scale": [1, 1, 1]
+              },
+              "items": [
+                {
+                  "name": "gate 6 sign board",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/race-sign-1.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.3,
+                    "shininess": 32
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "gate 6 sign digit 1",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/race-digit-6-ink.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.3,
+                    "shininess": 32
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  },
+                  "transform": {
+                    "position": [0, 282.5, -8]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "gate 7 sign",
+              "type": "transform",
+              "transform": {
+                "position": [-2129, 860, -2913],
+                "rotation": [0, -76, 0],
+                "scale": [1, 1, 1]
+              },
+              "items": [
+                {
+                  "name": "gate 7 sign board",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/race-sign-1.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.3,
+                    "shininess": 32
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "gate 7 sign digit 1",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/race-digit-7-ink.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.3,
+                    "shininess": 32
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  },
+                  "transform": {
+                    "position": [0, 282.5, -8]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "gate 8 sign",
+              "type": "transform",
+              "transform": {
+                "position": [-3513, 860, -1336],
+                "rotation": [0, -5, 0],
+                "scale": [1, 1, 1]
+              },
+              "items": [
+                {
+                  "name": "gate 8 sign board",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/race-sign-1.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.3,
+                    "shininess": 32
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "gate 8 sign digit 1",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/race-digit-8-ink.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.3,
+                    "shininess": 32
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  },
+                  "transform": {
+                    "position": [0, 282.5, -8]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "gate 9 sign",
+              "type": "transform",
+              "transform": {
+                "position": [-3302, 860, 963],
+                "rotation": [0, 19, 0],
+                "scale": [1, 1, 1]
+              },
+              "items": [
+                {
+                  "name": "gate 9 sign board",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/race-sign-1.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.3,
+                    "shininess": 32
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "gate 9 sign digit 1",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/race-digit-9-ink.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.3,
+                    "shininess": 32
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  },
+                  "transform": {
+                    "position": [0, 282.5, -8]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "gate 10 sign",
+              "type": "transform",
+              "transform": {
+                "position": [-1732, 860, 2684],
+                "rotation": [0, 52, 0],
+                "scale": [1, 1, 1]
+              },
+              "items": [
+                {
+                  "name": "gate 10 sign board",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/race-sign-2.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.3,
+                    "shininess": 32
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "gate 10 sign digit 1",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/race-digit-1-ink.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.3,
+                    "shininess": 32
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  },
+                  "transform": {
+                    "position": [90, 282.5, -8]
+                  }
+                },
+                {
+                  "name": "gate 10 sign digit 2",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/race-digit-0-ink.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.3,
+                    "shininess": 32
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  },
+                  "transform": {
+                    "position": [-90, 282.5, -8]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

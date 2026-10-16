@@ -36,6 +36,12 @@ import {shaderRegistry} from "./shader-registry.js";
 // - sunElevation, sunAzimuth: where the sun is when none of the sky's lights
 //   is marked as the sun (see below), in degrees: how high above the horizon,
 //   and how far around from the +Z axis toward +X.
+// - cloudStyle: the clouds' shape: 0 for soft, painted clouds, 1 for
+//   croissants of round puffs, a big one in the middle and smaller ones to
+//   each side, 2 for layered banks of cloud rising from the horizon, like
+//   paper cut-outs, 3 for flat, two-tone cartoon clouds, and 4 for clusters
+//   of 5 to 13 round puffs, one big one on top and the rest smaller the
+//   farther they are from it, each standing out from the ones behind it.
 // - cloudCover: how much of the sky is cloud, 0 to 1.
 // - cloudScale: how big the clouds are. Bigger is bigger clouds.
 // - cloudSpeed: how fast the clouds drift.
@@ -53,6 +59,7 @@ export class Sky extends Renderable {
     sunColor: [1, 0.95, 0.8],
     sunElevation: 35,
     sunAzimuth: 30,
+    cloudStyle: 0,
     cloudCover: 0.55,
     cloudScale: 1,
     cloudSpeed: 1,
@@ -116,6 +123,7 @@ export class Sky extends Renderable {
       vec3Uniform("groundColor", state.groundColor),
       vec3Uniform("sunColor", state.sunColor),
       vec3Uniform("sunDirection", sunDirection),
+      floatUniform("cloudStyle", state.cloudStyle),
       floatUniform("cloudCover", state.cloudCover),
       floatUniform("cloudScale", state.cloudScale),
       floatUniform("cloudSpeed", state.cloudSpeed),

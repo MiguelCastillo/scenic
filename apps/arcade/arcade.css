@@ -13,6 +13,25 @@ body {
   width: 100vw;
 }
 
+/* The frames per second, small in the corner, while the arcade is being
+   built. */
+#fps {
+  position: absolute;
+  top: 6px;
+  left: 8px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.4);
+  color: white;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+#fps:empty {
+  display: none;
+}
+
 /* Text the game shows over itself, such as a race's lap and time. */
 #hud {
   position: absolute;

@@ -85,7 +85,7 @@
             "fov": 60
           },
           "transform": {
-            "position": [0, 300, -450]
+            "position": [2600, 500, 800]
           },
           "thirdPerson": {
             "target": {
@@ -135,7 +135,7 @@
             "fov": 60
           },
           "transform": {
-            "position": [0, 300, -450]
+            "position": [2600, 500, 800]
           },
           "name": "free camera",
           "type": "free-fly-camera",
@@ -152,7 +152,8 @@
             "horizonColor": [0.75, 0.88, 1],
             "groundColor": [0.45, 0.62, 0.42],
             "sunColor": [1, 0.95, 0.8],
-            "cloudCover": 0.55,
+            "cloudStyle": 1,
+            "cloudCover": 0.72,
             "cloudScale": 1,
             "cloudSpeed": 1,
             "cloudColor": [1, 1, 1],
@@ -229,7 +230,7 @@
               },
               "type": "transform",
               "transform": {
-                "position": [0, 200, 0],
+                "position": [2600, 400, 1250],
                 "rotation": [0, 0, 0],
                 "scale": [1, 1, 1]
               },
@@ -1208,6 +1209,2015 @@
                   }
                 }
               ]
+            },
+            {
+              "name": "tree 19",
+              "type": "transform",
+              "transform": {
+                "position": [4044, 0, 1468],
+                "rotation": [0, 262, 0],
+                "scale": [1.85, 1.85, 1.85]
+              },
+              "items": [
+                {
+                  "name": "tree 19 mesh",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/cloud-tree-111.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.1,
+                    "shininess": 16
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "tree 19 trunk",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 19.955,
+                    "height": 208.327
+                  },
+                  "transform": {
+                    "position": [0, 104.164, 0]
+                  }
+                },
+                {
+                  "name": "tree 19 crown",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 218.223,
+                    "height": 164.42
+                  },
+                  "transform": {
+                    "position": [-22.902, 186.667, -43.488]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tree 20",
+              "type": "transform",
+              "transform": {
+                "position": [1329, 0, 2105],
+                "rotation": [0, 355, 0],
+                "scale": [1.77, 1.77, 1.77]
+              },
+              "items": [
+                {
+                  "name": "tree 20 mesh",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/canopy-tree.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.1,
+                    "shininess": 16
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "tree 20 trunk",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 24,
+                    "height": 190
+                  },
+                  "transform": {
+                    "position": [0, 95, 0]
+                  }
+                },
+                {
+                  "name": "tree 20 crown",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 289.087,
+                    "height": 268.947
+                  },
+                  "transform": {
+                    "position": [-16.081, 320.558, 12.456]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tree 21",
+              "type": "transform",
+              "transform": {
+                "position": [3850, 0, 2844],
+                "rotation": [0, 322, 0],
+                "scale": [1.76, 1.76, 1.76]
+              },
+              "items": [
+                {
+                  "name": "tree 21 mesh",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/tall-tree-117.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.1,
+                    "shininess": 16
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "tree 21 trunk",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 20.776,
+                    "height": 130.897
+                  },
+                  "transform": {
+                    "position": [0, 65.449, 0]
+                  }
+                },
+                {
+                  "name": "tree 21 crown",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 120.437,
+                    "height": 568.716
+                  },
+                  "transform": {
+                    "position": [-0.246, 405.935, 8.829]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tree 22",
+              "type": "transform",
+              "transform": {
+                "position": [4848, 0, 2320],
+                "rotation": [0, 249, 0],
+                "scale": [2.07, 2.07, 2.07]
+              },
+              "items": [
+                {
+                  "name": "tree 22 mesh",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/canopy-tree-109.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.1,
+                    "shininess": 16
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "tree 22 trunk",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 22.307,
+                    "height": 175.143
+                  },
+                  "transform": {
+                    "position": [0, 87.571, 0]
+                  }
+                },
+                {
+                  "name": "tree 22 crown",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 196.954,
+                    "height": 248.355
+                  },
+                  "transform": {
+                    "position": [22.987, 270.415, -3.769]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tree 23",
+              "type": "transform",
+              "transform": {
+                "position": [1184, 0, 4088],
+                "rotation": [0, 38, 0],
+                "scale": [2.01, 2.01, 2.01]
+              },
+              "items": [
+                {
+                  "name": "tree 23 mesh",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/orchard-tree-113.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.1,
+                    "shininess": 16
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "tree 23 trunk",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 20.18,
+                    "height": 134.689
+                  },
+                  "transform": {
+                    "position": [0, 67.345, 0]
+                  }
+                },
+                {
+                  "name": "tree 23 crown",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 195.227,
+                    "height": 173.864
+                  },
+                  "transform": {
+                    "position": [23.383, 201.254, -3.633]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tree 24",
+              "type": "transform",
+              "transform": {
+                "position": [2336, 0, 6088],
+                "rotation": [0, 198, 0],
+                "scale": [2.25, 2.25, 2.25]
+              },
+              "items": [
+                {
+                  "name": "tree 24 mesh",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/cloud-tree-111.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.1,
+                    "shininess": 16
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "tree 24 trunk",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 19.955,
+                    "height": 208.327
+                  },
+                  "transform": {
+                    "position": [0, 104.164, 0]
+                  }
+                },
+                {
+                  "name": "tree 24 crown",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 218.223,
+                    "height": 164.42
+                  },
+                  "transform": {
+                    "position": [-22.902, 186.667, -43.488]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tree 25",
+              "type": "transform",
+              "transform": {
+                "position": [5747, 0, 3847],
+                "rotation": [0, 279, 0],
+                "scale": [1.76, 1.76, 1.76]
+              },
+              "items": [
+                {
+                  "name": "tree 25 mesh",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/canopy-tree-205.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.1,
+                    "shininess": 16
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "tree 25 trunk",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 20.82,
+                    "height": 174.914
+                  },
+                  "transform": {
+                    "position": [0, 87.457, 0]
+                  }
+                },
+                {
+                  "name": "tree 25 crown",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 218.246,
+                    "height": 255.484
+                  },
+                  "transform": {
+                    "position": [6.724, 238.819, -34.357]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tree 26",
+              "type": "transform",
+              "transform": {
+                "position": [6453, 0, 7204],
+                "rotation": [0, 44, 0],
+                "scale": [1.95, 1.95, 1.95]
+              },
+              "items": [
+                {
+                  "name": "tree 26 mesh",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/acacia-tree-110.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.1,
+                    "shininess": 16
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "tree 26 trunk",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 15.757,
+                    "height": 270.15
+                  },
+                  "transform": {
+                    "position": [0, 135.075, 0]
+                  }
+                },
+                {
+                  "name": "tree 26 crown",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 279.255,
+                    "height": 177.467
+                  },
+                  "transform": {
+                    "position": [-12.663, 341.041, 25.97]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tree 27",
+              "type": "transform",
+              "transform": {
+                "position": [7729, 0, 6706],
+                "rotation": [0, 16, 0],
+                "scale": [1.96, 1.96, 1.96]
+              },
+              "items": [
+                {
+                  "name": "tree 27 mesh",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/weeping-tree-1.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.1,
+                    "shininess": 16
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "tree 27 trunk",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 23.285,
+                    "height": 246.563
+                  },
+                  "transform": {
+                    "position": [0, 123.282, 0]
+                  }
+                },
+                {
+                  "name": "tree 27 crown",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 224.286,
+                    "height": 275.165
+                  },
+                  "transform": {
+                    "position": [-2.696, 241.702, 2.592]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tree 28",
+              "type": "transform",
+              "transform": {
+                "position": [7187, 0, 2988],
+                "rotation": [0, 288, 0],
+                "scale": [1.95, 1.95, 1.95]
+              },
+              "items": [
+                {
+                  "name": "tree 28 mesh",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/pine-tree-115.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.1,
+                    "shininess": 16
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "tree 28 trunk",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 20.911,
+                    "height": 84.488
+                  },
+                  "transform": {
+                    "position": [0, 42.244, 0]
+                  }
+                },
+                {
+                  "name": "tree 28 crown",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 129.368,
+                    "height": 220.01
+                  },
+                  "transform": {
+                    "position": [-5.907, 165.913, 3.199]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tree 29",
+              "type": "transform",
+              "transform": {
+                "position": [10536, 0, 4485],
+                "rotation": [0, 232, 0],
+                "scale": [1.8, 1.8, 1.8]
+              },
+              "items": [
+                {
+                  "name": "tree 29 mesh",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/pine-tree-118.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.1,
+                    "shininess": 16
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "tree 29 trunk",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 28.929,
+                    "height": 99.249
+                  },
+                  "transform": {
+                    "position": [0, 49.625, 0]
+                  }
+                },
+                {
+                  "name": "tree 29 crown",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 132.594,
+                    "height": 212.295
+                  },
+                  "transform": {
+                    "position": [-0.407, 176.73, 0.733]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tree 30",
+              "type": "transform",
+              "transform": {
+                "position": [9155, 0, 3460],
+                "rotation": [0, 199, 0],
+                "scale": [1.87, 1.87, 1.87]
+              },
+              "items": [
+                {
+                  "name": "tree 30 mesh",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/canopy-tree-217.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.1,
+                    "shininess": 16
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "tree 30 trunk",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 24.129,
+                    "height": 201.118
+                  },
+                  "transform": {
+                    "position": [0, 100.559, 0]
+                  }
+                },
+                {
+                  "name": "tree 30 crown",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 292.632,
+                    "height": 230.09
+                  },
+                  "transform": {
+                    "position": [-16.058, 314.196, 17.524]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tree 31",
+              "type": "transform",
+              "transform": {
+                "position": [10818, 0, 2888],
+                "rotation": [0, 287, 0],
+                "scale": [2.36, 2.36, 2.36]
+              },
+              "items": [
+                {
+                  "name": "tree 31 mesh",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/orchard-tree-113.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.1,
+                    "shininess": 16
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "tree 31 trunk",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 20.18,
+                    "height": 134.689
+                  },
+                  "transform": {
+                    "position": [0, 67.345, 0]
+                  }
+                },
+                {
+                  "name": "tree 31 crown",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 195.227,
+                    "height": 173.864
+                  },
+                  "transform": {
+                    "position": [23.383, 201.254, -3.633]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tree 32",
+              "type": "transform",
+              "transform": {
+                "position": [9208, 0, 915],
+                "rotation": [0, 242, 0],
+                "scale": [1.92, 1.92, 1.92]
+              },
+              "items": [
+                {
+                  "name": "tree 32 mesh",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/tall-tree-103.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.1,
+                    "shininess": 16
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "tree 32 trunk",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 26.652,
+                    "height": 135.906
+                  },
+                  "transform": {
+                    "position": [0, 67.953, 0]
+                  }
+                },
+                {
+                  "name": "tree 32 crown",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 118.796,
+                    "height": 575.887
+                  },
+                  "transform": {
+                    "position": [-2.962, 423.471, -7.192]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tree 33",
+              "type": "transform",
+              "transform": {
+                "position": [6264, 0, 1877],
+                "rotation": [0, 55, 0],
+                "scale": [2.12, 2.12, 2.12]
+              },
+              "items": [
+                {
+                  "name": "tree 33 mesh",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/weeping-tree-114.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.1,
+                    "shininess": 16
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "tree 33 trunk",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 18.503,
+                    "height": 196.933
+                  },
+                  "transform": {
+                    "position": [0, 98.466, 0]
+                  }
+                },
+                {
+                  "name": "tree 33 crown",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 183.655,
+                    "height": 286.456
+                  },
+                  "transform": {
+                    "position": [9.151, 231.419, 1.768]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tree 34",
+              "type": "transform",
+              "transform": {
+                "position": [10896, 0, 427],
+                "rotation": [0, 79, 0],
+                "scale": [1.73, 1.73, 1.73]
+              },
+              "items": [
+                {
+                  "name": "tree 34 mesh",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/acacia-tree-110.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.1,
+                    "shininess": 16
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "tree 34 trunk",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 15.757,
+                    "height": 270.15
+                  },
+                  "transform": {
+                    "position": [0, 135.075, 0]
+                  }
+                },
+                {
+                  "name": "tree 34 crown",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 279.255,
+                    "height": 177.467
+                  },
+                  "transform": {
+                    "position": [-12.663, 341.041, 25.97]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tree 35",
+              "type": "transform",
+              "transform": {
+                "position": [6774, 0, 769],
+                "rotation": [0, 298, 0],
+                "scale": [1.78, 1.78, 1.78]
+              },
+              "items": [
+                {
+                  "name": "tree 35 mesh",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/weeping-tree.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.1,
+                    "shininess": 16
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "tree 35 trunk",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 22,
+                    "height": 220
+                  },
+                  "transform": {
+                    "position": [0, 110, 0]
+                  }
+                },
+                {
+                  "name": "tree 35 crown",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 190.89,
+                    "height": 292.472
+                  },
+                  "transform": {
+                    "position": [4.975, 248.585, 23.483]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tree 36",
+              "type": "transform",
+              "transform": {
+                "position": [5910, 0, 1038],
+                "rotation": [0, 324, 0],
+                "scale": [1.72, 1.72, 1.72]
+              },
+              "items": [
+                {
+                  "name": "tree 36 mesh",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/tall-tree.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.1,
+                    "shininess": 16
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "tree 36 trunk",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 22,
+                    "height": 120
+                  },
+                  "transform": {
+                    "position": [0, 60, 0]
+                  }
+                },
+                {
+                  "name": "tree 36 crown",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 113.83,
+                    "height": 491.212
+                  },
+                  "transform": {
+                    "position": [8.258, 363.697, 6.059]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tree 37",
+              "type": "transform",
+              "transform": {
+                "position": [9187, 0, -511],
+                "rotation": [0, 68, 0],
+                "scale": [2.41, 2.41, 2.41]
+              },
+              "items": [
+                {
+                  "name": "tree 37 mesh",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/cloud-tree-111.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.1,
+                    "shininess": 16
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "tree 37 trunk",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 19.955,
+                    "height": 208.327
+                  },
+                  "transform": {
+                    "position": [0, 104.164, 0]
+                  }
+                },
+                {
+                  "name": "tree 37 crown",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 218.223,
+                    "height": 164.42
+                  },
+                  "transform": {
+                    "position": [-22.902, 186.667, -43.488]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tree 38",
+              "type": "transform",
+              "transform": {
+                "position": [6846, 0, -587],
+                "rotation": [0, 351, 0],
+                "scale": [2.1, 2.1, 2.1]
+              },
+              "items": [
+                {
+                  "name": "tree 38 mesh",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/pine-tree-112.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.1,
+                    "shininess": 16
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "tree 38 trunk",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 27.149,
+                    "height": 108.505
+                  },
+                  "transform": {
+                    "position": [0, 54.253, 0]
+                  }
+                },
+                {
+                  "name": "tree 38 crown",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 143.368,
+                    "height": 250.664
+                  },
+                  "transform": {
+                    "position": [-7.258, 199.334, 4.932]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tree 39",
+              "type": "transform",
+              "transform": {
+                "position": [5892, 0, -101],
+                "rotation": [0, 68, 0],
+                "scale": [2.16, 2.16, 2.16]
+              },
+              "items": [
+                {
+                  "name": "tree 39 mesh",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/canopy-tree-211.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.1,
+                    "shininess": 16
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "tree 39 trunk",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 21.947,
+                    "height": 168.729
+                  },
+                  "transform": {
+                    "position": [0, 84.364, 0]
+                  }
+                },
+                {
+                  "name": "tree 39 crown",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 202.715,
+                    "height": 173.541
+                  },
+                  "transform": {
+                    "position": [0.128, 242.576, -2.43]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tree 40",
+              "type": "transform",
+              "transform": {
+                "position": [10201, 0, -1425],
+                "rotation": [0, 181, 0],
+                "scale": [2.04, 2.04, 2.04]
+              },
+              "items": [
+                {
+                  "name": "tree 40 mesh",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/weeping-tree-107.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.1,
+                    "shininess": 16
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "tree 40 trunk",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 20.884,
+                    "height": 183.578
+                  },
+                  "transform": {
+                    "position": [0, 91.789, 0]
+                  }
+                },
+                {
+                  "name": "tree 40 crown",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 215.942,
+                    "height": 244.504
+                  },
+                  "transform": {
+                    "position": [26.146, 214.386, -17.067]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tree 41",
+              "type": "transform",
+              "transform": {
+                "position": [8907, 0, -1892],
+                "rotation": [0, 7, 0],
+                "scale": [1.78, 1.78, 1.78]
+              },
+              "items": [
+                {
+                  "name": "tree 41 mesh",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/cloud-tree-1.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.1,
+                    "shininess": 16
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "tree 41 trunk",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 21.168,
+                    "height": 257.771
+                  },
+                  "transform": {
+                    "position": [0, 128.885, 0]
+                  }
+                },
+                {
+                  "name": "tree 41 crown",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 254.083,
+                    "height": 215.847
+                  },
+                  "transform": {
+                    "position": [31.462, 194.808, -22.938]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tree 42",
+              "type": "transform",
+              "transform": {
+                "position": [6307, 0, -1540],
+                "rotation": [0, 355, 0],
+                "scale": [2.4, 2.4, 2.4]
+              },
+              "items": [
+                {
+                  "name": "tree 42 mesh",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/pine-tree-112.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.1,
+                    "shininess": 16
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "tree 42 trunk",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 27.149,
+                    "height": 108.505
+                  },
+                  "transform": {
+                    "position": [0, 54.253, 0]
+                  }
+                },
+                {
+                  "name": "tree 42 crown",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 143.368,
+                    "height": 250.664
+                  },
+                  "transform": {
+                    "position": [-7.258, 199.334, 4.932]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tree 43",
+              "type": "transform",
+              "transform": {
+                "position": [5078, 0, -1136],
+                "rotation": [0, 341, 0],
+                "scale": [1.89, 1.89, 1.89]
+              },
+              "items": [
+                {
+                  "name": "tree 43 mesh",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/canopy-tree-109.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.1,
+                    "shininess": 16
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "tree 43 trunk",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 22.307,
+                    "height": 175.143
+                  },
+                  "transform": {
+                    "position": [0, 87.571, 0]
+                  }
+                },
+                {
+                  "name": "tree 43 crown",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 196.954,
+                    "height": 248.355
+                  },
+                  "transform": {
+                    "position": [22.987, 270.415, -3.769]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tree 44",
+              "type": "transform",
+              "transform": {
+                "position": [9300, 0, -3102],
+                "rotation": [0, 254, 0],
+                "scale": [2.01, 2.01, 2.01]
+              },
+              "items": [
+                {
+                  "name": "tree 44 mesh",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/canopy-tree-205.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.1,
+                    "shininess": 16
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "tree 44 trunk",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 20.82,
+                    "height": 174.914
+                  },
+                  "transform": {
+                    "position": [0, 87.457, 0]
+                  }
+                },
+                {
+                  "name": "tree 44 crown",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 218.246,
+                    "height": 255.484
+                  },
+                  "transform": {
+                    "position": [6.724, 238.819, -34.357]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tree 45",
+              "type": "transform",
+              "transform": {
+                "position": [5559, 0, -2523],
+                "rotation": [0, 342, 0],
+                "scale": [2.14, 2.14, 2.14]
+              },
+              "items": [
+                {
+                  "name": "tree 45 mesh",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/canopy-tree-205.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.1,
+                    "shininess": 16
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "tree 45 trunk",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 20.82,
+                    "height": 174.914
+                  },
+                  "transform": {
+                    "position": [0, 87.457, 0]
+                  }
+                },
+                {
+                  "name": "tree 45 crown",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 218.246,
+                    "height": 255.484
+                  },
+                  "transform": {
+                    "position": [6.724, 238.819, -34.357]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tree 46",
+              "type": "transform",
+              "transform": {
+                "position": [7872, 0, -3808],
+                "rotation": [0, 253, 0],
+                "scale": [2.48, 2.48, 2.48]
+              },
+              "items": [
+                {
+                  "name": "tree 46 mesh",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/weeping-tree-114.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.1,
+                    "shininess": 16
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "tree 46 trunk",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 18.503,
+                    "height": 196.933
+                  },
+                  "transform": {
+                    "position": [0, 98.466, 0]
+                  }
+                },
+                {
+                  "name": "tree 46 crown",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 183.655,
+                    "height": 286.456
+                  },
+                  "transform": {
+                    "position": [9.151, 231.419, 1.768]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tree 47",
+              "type": "transform",
+              "transform": {
+                "position": [4460, 0, -2706],
+                "rotation": [0, 50, 0],
+                "scale": [1.74, 1.74, 1.74]
+              },
+              "items": [
+                {
+                  "name": "tree 47 mesh",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/lollipop-tree-106.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.1,
+                    "shininess": 16
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "tree 47 trunk",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 17.907,
+                    "height": 245.52
+                  },
+                  "transform": {
+                    "position": [0, 122.76, 0]
+                  }
+                },
+                {
+                  "name": "tree 47 crown",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 191.271,
+                    "height": 281.856
+                  },
+                  "transform": {
+                    "position": [28.751, 351.216, -10.792]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tree 48",
+              "type": "transform",
+              "transform": {
+                "position": [8944, 0, -4798],
+                "rotation": [0, 58, 0],
+                "scale": [2.18, 2.18, 2.18]
+              },
+              "items": [
+                {
+                  "name": "tree 48 mesh",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/lollipop-tree-106.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.1,
+                    "shininess": 16
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "tree 48 trunk",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 17.907,
+                    "height": 245.52
+                  },
+                  "transform": {
+                    "position": [0, 122.76, 0]
+                  }
+                },
+                {
+                  "name": "tree 48 crown",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 191.271,
+                    "height": 281.856
+                  },
+                  "transform": {
+                    "position": [28.751, 351.216, -10.792]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tree 49",
+              "type": "transform",
+              "transform": {
+                "position": [7662, 0, -6639],
+                "rotation": [0, 58, 0],
+                "scale": [1.89, 1.89, 1.89]
+              },
+              "items": [
+                {
+                  "name": "tree 49 mesh",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/canopy-tree-233.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.1,
+                    "shininess": 16
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "tree 49 trunk",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 30.058,
+                    "height": 216.15
+                  },
+                  "transform": {
+                    "position": [0, 108.075, 0]
+                  }
+                },
+                {
+                  "name": "tree 49 crown",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 288.999,
+                    "height": 333.846
+                  },
+                  "transform": {
+                    "position": [-12.967, 329.31, 8.162]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tree 50",
+              "type": "transform",
+              "transform": {
+                "position": [6354, 0, -5787],
+                "rotation": [0, 127, 0],
+                "scale": [1.85, 1.85, 1.85]
+              },
+              "items": [
+                {
+                  "name": "tree 50 mesh",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/lollipop-tree-106.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.1,
+                    "shininess": 16
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "tree 50 trunk",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 17.907,
+                    "height": 245.52
+                  },
+                  "transform": {
+                    "position": [0, 122.76, 0]
+                  }
+                },
+                {
+                  "name": "tree 50 crown",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 191.271,
+                    "height": 281.856
+                  },
+                  "transform": {
+                    "position": [28.751, 351.216, -10.792]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tree 51",
+              "type": "transform",
+              "transform": {
+                "position": [4802, 0, -7064],
+                "rotation": [0, 165, 0],
+                "scale": [2.07, 2.07, 2.07]
+              },
+              "items": [
+                {
+                  "name": "tree 51 mesh",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/canopy-tree-211.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.1,
+                    "shininess": 16
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "tree 51 trunk",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 21.947,
+                    "height": 168.729
+                  },
+                  "transform": {
+                    "position": [0, 84.364, 0]
+                  }
+                },
+                {
+                  "name": "tree 51 crown",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 202.715,
+                    "height": 173.541
+                  },
+                  "transform": {
+                    "position": [0.128, 242.576, -2.43]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tree 52",
+              "type": "transform",
+              "transform": {
+                "position": [3612, 0, -4720],
+                "rotation": [0, 109, 0],
+                "scale": [1.76, 1.76, 1.76]
+              },
+              "items": [
+                {
+                  "name": "tree 52 mesh",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/acacia-tree-1.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.1,
+                    "shininess": 16
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "tree 52 trunk",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 21.168,
+                    "height": 336.222
+                  },
+                  "transform": {
+                    "position": [0, 168.111, 0]
+                  }
+                },
+                {
+                  "name": "tree 52 crown",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 309.658,
+                    "height": 182.836
+                  },
+                  "transform": {
+                    "position": [35.1, 407.83, -17.641]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tree 53",
+              "type": "transform",
+              "transform": {
+                "position": [4581, 0, -8448],
+                "rotation": [0, 351, 0],
+                "scale": [2.16, 2.16, 2.16]
+              },
+              "items": [
+                {
+                  "name": "tree 53 mesh",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/weeping-tree-1.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.1,
+                    "shininess": 16
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "tree 53 trunk",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 23.285,
+                    "height": 246.563
+                  },
+                  "transform": {
+                    "position": [0, 123.282, 0]
+                  }
+                },
+                {
+                  "name": "tree 53 crown",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 224.286,
+                    "height": 275.165
+                  },
+                  "transform": {
+                    "position": [-2.696, 241.702, 2.592]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tree 54",
+              "type": "transform",
+              "transform": {
+                "position": [3738, 0, -7388],
+                "rotation": [0, 346, 0],
+                "scale": [1.72, 1.72, 1.72]
+              },
+              "items": [
+                {
+                  "name": "tree 54 mesh",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/pine-tree-116.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.1,
+                    "shininess": 16
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "tree 54 trunk",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 19.678,
+                    "height": 77.507
+                  },
+                  "transform": {
+                    "position": [0, 38.753, 0]
+                  }
+                },
+                {
+                  "name": "tree 54 crown",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 118.607,
+                    "height": 177.376
+                  },
+                  "transform": {
+                    "position": [0.108, 139.01, 2.647]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tree 55",
+              "type": "transform",
+              "transform": {
+                "position": [1344, 0, -7519],
+                "rotation": [0, 201, 0],
+                "scale": [2.31, 2.31, 2.31]
+              },
+              "items": [
+                {
+                  "name": "tree 55 mesh",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/pine-tree-112.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.1,
+                    "shininess": 16
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "tree 55 trunk",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 27.149,
+                    "height": 108.505
+                  },
+                  "transform": {
+                    "position": [0, 54.253, 0]
+                  }
+                },
+                {
+                  "name": "tree 55 crown",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 143.368,
+                    "height": 250.664
+                  },
+                  "transform": {
+                    "position": [-7.258, 199.334, 4.932]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tree 56",
+              "type": "transform",
+              "transform": {
+                "position": [1478, 0, -6277],
+                "rotation": [0, 193, 0],
+                "scale": [2.38, 2.38, 2.38]
+              },
+              "items": [
+                {
+                  "name": "tree 56 mesh",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/pine-tree-115.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.1,
+                    "shininess": 16
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "tree 56 trunk",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 20.911,
+                    "height": 84.488
+                  },
+                  "transform": {
+                    "position": [0, 42.244, 0]
+                  }
+                },
+                {
+                  "name": "tree 56 crown",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 129.368,
+                    "height": 220.01
+                  },
+                  "transform": {
+                    "position": [-5.907, 165.913, 3.199]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tree 57",
+              "type": "transform",
+              "transform": {
+                "position": [919, 0, -3805],
+                "rotation": [0, 175, 0],
+                "scale": [2.43, 2.43, 2.43]
+              },
+              "items": [
+                {
+                  "name": "tree 57 mesh",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/tall-tree-103.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.1,
+                    "shininess": 16
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "tree 57 trunk",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 26.652,
+                    "height": 135.906
+                  },
+                  "transform": {
+                    "position": [0, 67.953, 0]
+                  }
+                },
+                {
+                  "name": "tree 57 crown",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 118.796,
+                    "height": 575.887
+                  },
+                  "transform": {
+                    "position": [-2.962, 423.471, -7.192]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tree 58",
+              "type": "transform",
+              "transform": {
+                "position": [62, 0, -683],
+                "rotation": [0, 44, 0],
+                "scale": [2.14, 2.14, 2.14]
+              },
+              "items": [
+                {
+                  "name": "tree 58 mesh",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/tall-tree-103.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.1,
+                    "shininess": 16
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "tree 58 trunk",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 26.652,
+                    "height": 135.906
+                  },
+                  "transform": {
+                    "position": [0, 67.953, 0]
+                  }
+                },
+                {
+                  "name": "tree 58 crown",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 118.796,
+                    "height": 575.887
+                  },
+                  "transform": {
+                    "position": [-2.962, 423.471, -7.192]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tree 59",
+              "type": "transform",
+              "transform": {
+                "position": [56, 0, 1199],
+                "rotation": [0, 13, 0],
+                "scale": [2.15, 2.15, 2.15]
+              },
+              "items": [
+                {
+                  "name": "tree 59 mesh",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/cloud-tree-111.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.1,
+                    "shininess": 16
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "tree 59 trunk",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 19.955,
+                    "height": 208.327
+                  },
+                  "transform": {
+                    "position": [0, 104.164, 0]
+                  }
+                },
+                {
+                  "name": "tree 59 crown",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 218.223,
+                    "height": 164.42
+                  },
+                  "transform": {
+                    "position": [-22.902, 186.667, -43.488]
+                  }
+                }
+              ]
             }
           ]
         },
@@ -1228,21 +3238,25 @@
             {
               "name": "start gate",
               "type": "static-mesh",
-              "resource": "/resources/obj/race-gate-checker.obj",
+              "resource": "/resources/obj/race-gantry-checker.obj",
               "material": {
                 "color": [0, 0, 0, 1],
                 "reflectiveness": 1,
                 "specular": 0.3,
                 "shininess": 32,
-                "opacity": 0.6
+                "opacity": 1
               },
               "ambient": {
                 "color": [0.4, 0.4, 0.43]
               },
               "transform": {
-                "position": [0, 400, 1200],
+                "position": [2600, 0, 1500],
                 "rotation": [0, 0, 0],
                 "scale": [1, 1, 1]
+              },
+              "gate": {
+                "width": 2000,
+                "height": 800
               }
             },
             {
@@ -1260,8 +3274,8 @@
                 "color": [0.4, 0.4, 0.43]
               },
               "transform": {
-                "position": [600, 550, 2900],
-                "rotation": [0, 44, 0],
+                "position": [3240, 550, 3900],
+                "rotation": [0, 37, 0],
                 "scale": [1, 1, 1]
               }
             },
@@ -1280,8 +3294,8 @@
                 "color": [0.4, 0.4, 0.43]
               },
               "transform": {
-                "position": [2400, 700, 3700],
-                "rotation": [0, 95, 0],
+                "position": [5320, 700, 5100],
+                "rotation": [0, 87, 0],
                 "scale": [1, 1, 1]
               }
             },
@@ -1300,8 +3314,8 @@
                 "color": [0.4, 0.4, 0.43]
               },
               "transform": {
-                "position": [4000, 500, 2600],
-                "rotation": [0, 148, 0],
+                "position": [7880, 500, 4140],
+                "rotation": [0, 140, 0],
                 "scale": [1, 1, 1]
               }
             },
@@ -1320,8 +3334,8 @@
                 "color": [0.4, 0.4, 0.43]
               },
               "transform": {
-                "position": [4300, 650, 600],
-                "rotation": [0, -163, 0],
+                "position": [8360, 650, 1500],
+                "rotation": [0, -177, 0],
                 "scale": [1, 1, 1]
               }
             },
@@ -1340,8 +3354,8 @@
                 "color": [0.4, 0.4, 0.43]
               },
               "transform": {
-                "position": [3000, 450, -700],
-                "rotation": [0, -155, 0],
+                "position": [7560, 450, -1780],
+                "rotation": [0, -161, 0],
                 "scale": [1, 1, 1]
               }
             },
@@ -1360,8 +3374,8 @@
                 "color": [0.4, 0.4, 0.43]
               },
               "transform": {
-                "position": [2700, 600, -2800],
-                "rotation": [0, -144, 0],
+                "position": [6440, 600, -4180],
+                "rotation": [0, -143, 0],
                 "scale": [1, 1, 1]
               }
             },
@@ -1380,8 +3394,8 @@
                 "color": [0.4, 0.4, 0.43]
               },
               "transform": {
-                "position": [1000, 750, -3500],
-                "rotation": [0, -100, 0],
+                "position": [4680, 750, -5540],
+                "rotation": [0, -119, 0],
                 "scale": [1, 1, 1]
               }
             },
@@ -1400,8 +3414,8 @@
                 "color": [0.4, 0.4, 0.43]
               },
               "transform": {
-                "position": [-600, 500, -3400],
-                "rotation": [0, -48, 0],
+                "position": [3080, 500, -6020],
+                "rotation": [0, -79, 0],
                 "scale": [1, 1, 1]
               }
             },
@@ -1420,8 +3434,8 @@
                 "color": [0.4, 0.4, 0.43]
               },
               "transform": {
-                "position": [-1200, 650, -1500],
-                "rotation": [0, 5, 0],
+                "position": [1880, 650, -4980],
+                "rotation": [0, -5, 0],
                 "scale": [1, 1, 1]
               }
             },
@@ -1440,10 +3454,453 @@
                 "color": [0.4, 0.4, 0.43]
               },
               "transform": {
-                "position": [-300, 450, -200],
-                "rotation": [0, 24, 0],
+                "position": [2600, 450, -820],
+                "rotation": [0, 6, 0],
                 "scale": [1, 1, 1]
               }
+            }
+          ]
+        },
+        {
+          "name": "gate signs",
+          "type": "transform",
+          "items": [
+            {
+              "name": "gate 1 sign",
+              "type": "transform",
+              "transform": {
+                "position": [3240, 880, 3900],
+                "rotation": [0, 37, 0],
+                "scale": [1, 1, 1]
+              },
+              "items": [
+                {
+                  "name": "gate 1 sign board",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/race-sign-1.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.3,
+                    "shininess": 32
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "gate 1 sign digit 1",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/race-digit-1-ink.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.3,
+                    "shininess": 32
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  },
+                  "transform": {
+                    "position": [0, 282.5, -8]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "gate 2 sign",
+              "type": "transform",
+              "transform": {
+                "position": [5320, 1030, 5100],
+                "rotation": [0, 87, 0],
+                "scale": [1, 1, 1]
+              },
+              "items": [
+                {
+                  "name": "gate 2 sign board",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/race-sign-1.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.3,
+                    "shininess": 32
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "gate 2 sign digit 1",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/race-digit-2-ink.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.3,
+                    "shininess": 32
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  },
+                  "transform": {
+                    "position": [0, 282.5, -8]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "gate 3 sign",
+              "type": "transform",
+              "transform": {
+                "position": [7880, 830, 4140],
+                "rotation": [0, 140, 0],
+                "scale": [1, 1, 1]
+              },
+              "items": [
+                {
+                  "name": "gate 3 sign board",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/race-sign-1.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.3,
+                    "shininess": 32
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "gate 3 sign digit 1",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/race-digit-3-ink.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.3,
+                    "shininess": 32
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  },
+                  "transform": {
+                    "position": [0, 282.5, -8]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "gate 4 sign",
+              "type": "transform",
+              "transform": {
+                "position": [8360, 980, 1500],
+                "rotation": [0, -177, 0],
+                "scale": [1, 1, 1]
+              },
+              "items": [
+                {
+                  "name": "gate 4 sign board",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/race-sign-1.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.3,
+                    "shininess": 32
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "gate 4 sign digit 1",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/race-digit-4-ink.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.3,
+                    "shininess": 32
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  },
+                  "transform": {
+                    "position": [0, 282.5, -8]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "gate 5 sign",
+              "type": "transform",
+              "transform": {
+                "position": [7560, 780, -1780],
+                "rotation": [0, -161, 0],
+                "scale": [1, 1, 1]
+              },
+              "items": [
+                {
+                  "name": "gate 5 sign board",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/race-sign-1.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.3,
+                    "shininess": 32
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "gate 5 sign digit 1",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/race-digit-5-ink.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.3,
+                    "shininess": 32
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  },
+                  "transform": {
+                    "position": [0, 282.5, -8]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "gate 6 sign",
+              "type": "transform",
+              "transform": {
+                "position": [6440, 930, -4180],
+                "rotation": [0, -143, 0],
+                "scale": [1, 1, 1]
+              },
+              "items": [
+                {
+                  "name": "gate 6 sign board",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/race-sign-1.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.3,
+                    "shininess": 32
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "gate 6 sign digit 1",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/race-digit-6-ink.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.3,
+                    "shininess": 32
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  },
+                  "transform": {
+                    "position": [0, 282.5, -8]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "gate 7 sign",
+              "type": "transform",
+              "transform": {
+                "position": [4680, 1080, -5540],
+                "rotation": [0, -119, 0],
+                "scale": [1, 1, 1]
+              },
+              "items": [
+                {
+                  "name": "gate 7 sign board",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/race-sign-1.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.3,
+                    "shininess": 32
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "gate 7 sign digit 1",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/race-digit-7-ink.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.3,
+                    "shininess": 32
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  },
+                  "transform": {
+                    "position": [0, 282.5, -8]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "gate 8 sign",
+              "type": "transform",
+              "transform": {
+                "position": [3080, 830, -6020],
+                "rotation": [0, -79, 0],
+                "scale": [1, 1, 1]
+              },
+              "items": [
+                {
+                  "name": "gate 8 sign board",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/race-sign-1.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.3,
+                    "shininess": 32
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "gate 8 sign digit 1",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/race-digit-8-ink.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.3,
+                    "shininess": 32
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  },
+                  "transform": {
+                    "position": [0, 282.5, -8]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "gate 9 sign",
+              "type": "transform",
+              "transform": {
+                "position": [1880, 980, -4980],
+                "rotation": [0, -5, 0],
+                "scale": [1, 1, 1]
+              },
+              "items": [
+                {
+                  "name": "gate 9 sign board",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/race-sign-1.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.3,
+                    "shininess": 32
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "gate 9 sign digit 1",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/race-digit-9-ink.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.3,
+                    "shininess": 32
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  },
+                  "transform": {
+                    "position": [0, 282.5, -8]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "gate 10 sign",
+              "type": "transform",
+              "transform": {
+                "position": [2600, 780, -820],
+                "rotation": [0, 6, 0],
+                "scale": [1, 1, 1]
+              },
+              "items": [
+                {
+                  "name": "gate 10 sign board",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/race-sign-2.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.3,
+                    "shininess": 32
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "gate 10 sign digit 1",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/race-digit-1-ink.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.3,
+                    "shininess": 32
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  },
+                  "transform": {
+                    "position": [90, 282.5, -8]
+                  }
+                },
+                {
+                  "name": "gate 10 sign digit 2",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/race-digit-0-ink.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.3,
+                    "shininess": 32
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  },
+                  "transform": {
+                    "position": [-90, 282.5, -8]
+                  }
+                }
+              ]
             }
           ]
         }

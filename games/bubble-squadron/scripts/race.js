@@ -6,21 +6,25 @@
 // start gate after that races again.
 //
 // A gate is flown through when the racer crosses the plane it stands in, its
-// local XY plane, within gateRadius of its center, going the way it faces,
-// along its +Z axis, so a course turns its gates to face along it. Gates
-// flown through backwards or out of turn don't count, so a racer can't skip
-// any. The next gate glows, the ones
+// local XY plane, within its opening, going the way it faces, along its +Z
+// axis, so a course turns its gates to face along it. A gate's opening is a
+// circle gateRadius around its origin, such as a ring's, or the rectangle
+// given by "gate" in its state, {width, height}, from its origin up, such as
+// a start gantry's (see bin/generate-gate.js). Both are in the gate's own
+// units, so they scale with it. Gates flown through backwards or out of turn
+// don't count, so a racer can't skip any. The next gate glows, the ones
 // still ahead this lap are see-through, and the ones already flown through
-// fade further, by setting their material's color and opacity.
+// fade further, by setting their material's color and opacity. The start gate
+// is always solid, so the start and finish stand out.
 //
 // Its settings come from "script.settings" in the node's config, and all are
 // optional:
 // - racer: the ID of the node that races, such as a starfighter flown with
 //   fly.js. "starfighter" by default.
 // - laps: how many laps a race is. 3 by default.
-// - gateRadius: how close to a gate's center the racer has to fly through
-//   it, in the gate's own units, so it scales with the gate. 300 by default,
-//   the radius of a gate from bin/generate-gate.js.
+// - gateRadius: how close to a ring gate's center the racer has to fly
+//   through it. 300 by default, the radius of a ring from
+//   bin/generate-gate.js.
 // - glow: the color added to the next gate. [0.35, 0.3, 0.05] by default.
 // - opacity: the opacity of the gates still ahead. 0.6 by default.
 // - passedOpacity: the opacity of the gates flown through this lap. 0.2 by
@@ -93,22 +97,31 @@ module.exports = function createRaceScript(node) {
       const from = settings.from || to;
 
       // Whether the racer flew through the gate from `from` to `to`: where
-      // that path crosses the gate's plane, if it does, is within the gate.
+      // that path crosses the gate's plane, if it does, is within its
+      // opening. Points are measured along the gate's own axes, which are
+      // divided by their length squared so that the measure is in the gate's
+      // own units.
       const flewThrough = (gate) => {
         const g = gate.worldMatrix.data;
-        const center = [g[3], g[7], g[11]];
-        const zAxis = [g[2], g[6], g[10]];
-        const scale = Math.hypot(g[0], g[4], g[8]);
-        const normal = zAxis.map((v) => v / (Math.hypot(...zAxis) || 1));
-        const side = (p) => p.reduce((sum, v, i) => sum + (v - center[i]) * normal[i], 0);
-        const [before, after] = [side(from), side(to)];
+        const origin = [g[3], g[7], g[11]];
+        const axis = (i) => {
+          const v = [g[i], g[i + 4], g[i + 8]];
+          const lengthSquared = v.reduce((sum, x) => sum + x * x, 0) || 1;
+          return v.map((x) => x / lengthSquared);
+        };
+        const along = (p, a) => p.reduce((sum, v, i) => sum + (v - origin[i]) * a[i], 0);
+        const [xAxis, yAxis, zAxis] = [axis(0), axis(1), axis(2)];
+        const [before, after] = [along(from, zAxis), along(to, zAxis)];
         if (before >= 0 || after < 0) {
           return false;
         }
         const t = before / (before - after);
         const crossing = from.map((v, i) => v + (to[i] - v) * t);
-        const distance = Math.hypot(...crossing.map((v, i) => v - center[i]));
-        return distance <= settings.gateRadius * scale;
+        const [x, y] = [along(crossing, xAxis), along(crossing, yAxis)];
+        const opening = sceneManager.getNodeStateByID(gate.id).gate;
+        return opening
+          ? Math.abs(x) <= opening.width / 2 && y >= 0 && y <= opening.height
+          : Math.hypot(x, y) <= settings.gateRadius;
       };
 
       if (flewThrough(gates[race.gate])) {
@@ -148,7 +161,7 @@ module.exports = function createRaceScript(node) {
         const next = i === race.gate;
         // Heading back to the start gate, every other gate has been passed.
         const passed = !waiting && i !== 0 && (race.gate === 0 || i < race.gate);
-        const opacity = next ? 1 : passed ? settings.passedOpacity : settings.opacity;
+        const opacity = next || i === 0 ? 1 : passed ? settings.passedOpacity : settings.opacity;
         const color = next ? [...settings.glow, 1] : [0, 0, 0, 1];
         sceneManager.updateNodeStateByID(gate.id, {
           material: {...gateState.material, color, opacity},

@@ -23,7 +23,7 @@ const axisGizmoID = "axis gizmo";
 // Helper function for providing the ability to update a scene and to also
 // render it. Nothing in here touches the DOM; the app owns the canvas size and
 // input events and drives the scene through the functions returned here.
-function createSceneUpdater(gl, sceneManager) {
+function createSceneUpdater(gl, sceneManager, startPaused) {
   const getFrameRate = createFrameRateCounter();
 
   // The world viewport's cameras, which the app forwards the player's input to
@@ -40,7 +40,7 @@ function createSceneUpdater(gl, sceneManager) {
   // camera back where the scene config starts it, such as behind what it
   // follows.
   // sceneMs is the scene's own clock, which only runs while it isn't paused.
-  let paused = false;
+  let paused = startPaused;
   let sceneMs = null;
 
   // The keys being held down, by KeyboardEvent.code, which scripts get as
@@ -151,10 +151,19 @@ function createSceneUpdater(gl, sceneManager) {
 // player's input. It is what an app built on the runtime calls to run a
 // scene, and it returns what the app needs to drive it, such as forwarding
 // input or pausing it.
-// sceneURL is where config came from, such as "/games/bubble-squadron/
-// race.json", which the scene's script paths are relative to. It is the
-// app's page by default.
-export const loadScene = async (gl, config, sceneURL = self.location.href) => {
+//
+// Options:
+// - sceneURL: where config came from, such as "/games/bubble-squadron/
+//   race.json", which the scene's script paths are relative to. The app's
+//   page by default.
+// - paused: whether the scene starts paused, so that it doesn't run until
+//   the app resumes it, such as a game waiting for the player to click to
+//   play. true by default.
+export const loadScene = async (
+  gl,
+  config,
+  {sceneURL = self.location.href, paused = true} = {}
+) => {
   const {vendor, renderer, limits, contextAttributes} = webgl.getDebugData(gl);
 
   // eslint-disable-next-line no-console
@@ -195,7 +204,7 @@ export const loadScene = async (gl, config, sceneURL = self.location.href) => {
     addMouseMovement,
     togglePause,
     isPaused,
-  } = createSceneUpdater(gl, sceneManager);
+  } = createSceneUpdater(gl, sceneManager, paused);
 
   // This starts the render loop to render the scene!
   const stopRenderLoop = startRenderLoop(gl, updateScene, renderFrame);

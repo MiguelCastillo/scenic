@@ -34,25 +34,21 @@ const pageScrollKeys = new Set(["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "A
 // the scene's scripts, such as a ship's flight controls. Clicking the canvas
 // locks the pointer to it, and Escape lets it go.
 //
-// The game only plays while the pointer is locked: it starts paused, clicking
-// resumes it, and letting go of the pointer pauses it again, so the race
-// clock doesn't run while the player isn't playing. P pauses and resumes it
-// while playing. onChange is called with {locked, paused} whenever either
-// changes, so the page can tell the player what to do.
+// The game only plays while the pointer is locked: it starts paused, since
+// scenes load paused, clicking resumes it, and letting go of the pointer
+// pauses it again, so the race clock doesn't run while the player isn't
+// playing. P pauses and resumes it while playing. onChange is called with
+// {locked, paused} whenever either changes, so the page can tell the player
+// what to do.
 export function subscribeToSceneInput(canvas, scene, onChange) {
   const isPointerLocked = () => document.pointerLockElement === canvas;
   const heldKeys = new Set();
   const scriptKeys = new Set();
 
-  // Whether letting go of the pointer paused the game, rather than P, so
-  // that locking it again resumes the game but doesn't undo P.
-  let pausedByUnlock = false;
+  // Whether the game is paused for want of the pointer, rather than by P, so
+  // that locking it resumes the game but doesn't undo P. It is, to start.
+  let pausedByUnlock = scene.isPaused();
   const notify = () => onChange({locked: isPointerLocked(), paused: scene.isPaused()});
-
-  if (!scene.isPaused()) {
-    scene.togglePause();
-    pausedByUnlock = true;
-  }
   notify();
 
   function updateCameraMovement() {

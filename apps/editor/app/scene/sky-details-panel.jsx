@@ -9,8 +9,9 @@ import "./scene-node-details.css";
 
 // SkyDetailsPanel shows a sky's settings, such as its colors, clouds, and
 // mountains.
-// Settings in degrees change a degree at a time, and the rest in small steps.
-const skySteps = {sunElevation: 1, sunAzimuth: 1, mountainHeight: 1};
+// Settings in degrees change a degree at a time, so does cloudStyle, which is
+// 0 to 4, and the rest in small steps.
+const skySteps = {sunElevation: 1, sunAzimuth: 1, mountainHeight: 1, cloudStyle: 1};
 
 export const SkyDetailsPanel = (props) => {
   const [selectedView, setSelectedView] = React.useState("info-details");
