@@ -2,5 +2,6 @@
   "name": "Bubble Squadron",
   "description": "Race a bubbly starfighter through gates in a cartoon forest.",
   "scene": "race.json",
-  "scenes": ["race.json", "highway.json", "starfighters.json"]
+  "scenes": ["race.json", "highway.json", "starfighters.json", "menu.json"],
+  "menu": "menu.json"
 }

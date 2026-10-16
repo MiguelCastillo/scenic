@@ -1,0 +1,147 @@
+{
+  "items": [
+    {
+      "name": "showcase",
+      "type": "viewport",
+      "items": [
+        {
+          "name": "menu camera",
+          "type": "camera",
+          "projection": {
+            "type": "orthographic",
+            "far": 4000
+          }
+        },
+        {
+          "name": "key light",
+          "type": "light",
+          "light": {
+            "intensity": 0.9,
+            "color": [1, 0.96, 0.88]
+          },
+          "transform": {
+            "position": [600, 800, 900]
+          }
+        },
+        {
+          "name": "fill light",
+          "type": "light",
+          "light": {
+            "intensity": 0.45,
+            "color": [0.7, 0.82, 1]
+          },
+          "transform": {
+            "position": [-700, 200, 500]
+          }
+        },
+        {
+          "name": "showcase ship",
+          "type": "transform",
+          "transform": {
+            "position": [330, 190, 0],
+            "rotation": [20, 150, 0],
+            "scale": [1.2, 1.2, 1.2]
+          },
+          "script": {
+            "src": "/resources/scripts/hover.js",
+            "settings": {
+              "bob": 8,
+              "roll": 5,
+              "pitch": 3,
+              "period": 5
+            }
+          },
+          "items": [
+            {
+              "name": "starfighter body",
+              "type": "static-mesh",
+              "resource": "/resources/obj/seedpod-starfighter-3.obj",
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.6,
+                "shininess": 64
+              },
+              "ambient": {
+                "color": [0.3, 0.3, 0.35]
+              }
+            },
+            {
+              "name": "starfighter petals",
+              "type": "static-mesh",
+              "resource": "/resources/obj/seedpod-starfighter-3-spinner.obj",
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.6,
+                "shininess": 64,
+                "opacity": 0.55
+              },
+              "ambient": {
+                "color": [0.3, 0.3, 0.35]
+              },
+              "transform": {
+                "position": [0, 0, 0],
+                "rotation": [0, 0, 0],
+                "scale": [1, 1, 1]
+              },
+              "script": {
+                "src": "/resources/scripts/spin.js",
+                "settings": {
+                  "idleSpeed": 60,
+                  "speed": 720
+                }
+              }
+            },
+            {
+              "name": "starfighter flame 1",
+              "type": "static-mesh",
+              "resource": "/resources/obj/flame.obj",
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 0
+              },
+              "ambient": {
+                "color": [1, 1, 1]
+              },
+              "transform": {
+                "position": [0, 0, -93.002],
+                "rotation": [0, 0, 0],
+                "scale": [6.396, 6.396, 6.396]
+              },
+              "script": {
+                "src": "/resources/scripts/flame.js",
+                "settings": {
+                  "flicker": 0.15,
+                  "speed": 1
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "track menu",
+          "type": "transform",
+          "hud": "menu",
+          "script": {
+            "src": "/resources/scripts/menu.js",
+            "settings": {
+              "title": "Bubble Squadron",
+              "choices": [
+                {
+                  "label": "Drone Course",
+                  "goTo": "race.json"
+                },
+                {
+                  "label": "Highway",
+                  "goTo": "highway.json"
+                }
+              ],
+              "hint": "\u2191 \u2193 to choose \u00b7 Enter to race"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

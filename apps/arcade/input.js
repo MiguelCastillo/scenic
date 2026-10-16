@@ -28,27 +28,31 @@ const pauseKey = "KeyP";
 const pageScrollKeys = new Set(["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"]);
 
 // subscribeToSceneInput maps the mouse and keyboard onto a scene through
-// its runner (see SceneRunner), the same way the editor does (see
-// apps/editor/app-main.jsx): the active camera responds as its type says (see
-// CameraSystem in @scenic/camera), and every key held down and how far the
-// mouse moves go to the scene's scripts, such as a ship's flight controls.
-// Clicking the canvas locks the pointer to it, and Escape lets it go.
+// the runner getRunner returns (see SceneRunner), the same way the editor
+// does (see apps/editor/app-main.jsx). It asks getRunner every time, so the
+// game can load another scene, such as another track, and call reset after:
+// the active camera responds as its type says (see CameraSystem in
+// @scenic/camera), and every key held down and how far the mouse moves go to
+// the scene's scripts, such as a ship's flight controls. Clicking the canvas
+// locks the pointer to it, and Escape lets it go.
 //
 // The game only plays while the pointer is locked: it starts paused, since
 // scenes load paused, clicking resumes it, and letting go of the pointer
 // pauses it again, so the race clock doesn't run while the player isn't
-// playing. P pauses and resumes it while playing. onChange is called with
-// {locked, paused} whenever either changes, so the page can tell the player
-// what to do.
-export function subscribeToSceneInput(canvas, runner, onChange) {
+// playing. P pauses and resumes it while playing. Clicking only starts
+// playing when canPlay says so, such as not while a menu is open. onChange is
+// called with {locked, paused} whenever either changes, so the page can tell
+// the player what to do. It returns {reset}, to call when getRunner returns
+// another scene's runner, which starts paused until the player clicks.
+export function subscribeToSceneInput(canvas, getRunner, onChange, canPlay = () => true) {
   const isPointerLocked = () => document.pointerLockElement === canvas;
   const heldKeys = new Set();
   const scriptKeys = new Set();
 
   // Whether the game is paused for want of the pointer, rather than by P, so
   // that locking it resumes the game but doesn't undo P. It is, to start.
-  let pausedByUnlock = runner.isPaused();
-  const notify = () => onChange({locked: isPointerLocked(), paused: runner.isPaused()});
+  let pausedByUnlock = getRunner().isPaused();
+  const notify = () => onChange({locked: isPointerLocked(), paused: getRunner().isPaused()});
   notify();
 
   function updateCameraMovement() {
@@ -58,14 +62,17 @@ export function subscribeToSceneInput(canvas, runner, onChange) {
         movement[direction] += amount;
       }
     }
-    runner.cameras?.setMovement(movement);
+    getRunner().cameras?.setMovement(movement);
   }
 
   domEvents.Subscription.create(canvas)
     .on("click", () => {
-      canvas.requestPointerLock();
+      if (canPlay()) {
+        canvas.requestPointerLock();
+      }
     })
     .on("mousemove", (evt) => {
+      const runner = getRunner();
       if (isPointerLocked()) {
         // While paused the mouse looks around, even with cameras that leave
         // it to the scene.
@@ -82,6 +89,7 @@ export function subscribeToSceneInput(canvas, runner, onChange) {
     .on("wheel", (evt) => {
       // Prevent leaving the page when scrolling left/right with a trackpad
       evt.preventDefault();
+      const runner = getRunner();
       if (isPointerLocked()) {
         runner.cameras?.move(
           -evt.deltaY * cameraScrollDistancePerPixel,
@@ -96,6 +104,7 @@ export function subscribeToSceneInput(canvas, runner, onChange) {
       if (!isPointerLocked()) {
         return;
       }
+      const runner = getRunner();
 
       if (!scriptKeys.has(evt.code)) {
         scriptKeys.add(evt.code);
@@ -129,6 +138,7 @@ export function subscribeToSceneInput(canvas, runner, onChange) {
       }
     })
     .on("keyup", (evt) => {
+      const runner = getRunner();
       if (scriptKeys.delete(evt.code)) {
         runner.setHeldKeys(scriptKeys);
       }
@@ -137,6 +147,7 @@ export function subscribeToSceneInput(canvas, runner, onChange) {
       }
     })
     .on("pointerlockchange", () => {
+      const runner = getRunner();
       if (isPointerLocked()) {
         if (pausedByUnlock) {
           runner.togglePause();
@@ -156,4 +167,11 @@ export function subscribeToSceneInput(canvas, runner, onChange) {
       }
       notify();
     });
+
+  return {
+    reset() {
+      pausedByUnlock = getRunner().isPaused();
+      notify();
+    },
+  };
 }

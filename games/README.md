@@ -8,6 +8,8 @@ and its scenes can be opened in the editor to build and test them.
 games/bubble-squadron/
   game.json          the manifest
   race.json          a scene
+  highway.json       another scene
+  menu.json          the menu, picking a track
   starfighters.json  another scene
   scripts/           the scripts only its scenes run
 ```
@@ -18,6 +20,11 @@ games/bubble-squadron/
 - `description`: a sentence about it.
 - `scene`: the scene the game starts in, relative to the folder.
 - `scenes`: every scene in the game, for apps that list them.
+- `menu`: the game's menu scene, optional. The arcade opens it stacked over
+  the game (see `SceneStack` in `@scenic/runtime`), with the game paused
+  behind it, shows what it publishes on its `menu` channel, and goes to the
+  scene the player picks, such as a track (see `resources/scripts/menu.js`).
+  M opens it again, and Escape closes it.
 
 A game never reads anything from `apps/`: its scenes and scripts use only
 what is in its own folder, what is shared in `resources/`, and the `@scenic`

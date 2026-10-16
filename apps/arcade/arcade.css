@@ -74,3 +74,57 @@ body {
 #message:empty {
   display: none;
 }
+
+/* The game's menu, such as its choice of tracks, from what the menu scene
+   stacked over the game publishes (see arcade-main.js): a title, a list of
+   choices with the selected one marked, and a hint. It sits left of the
+   middle, leaving room for what the menu scene shows beside it. */
+#menu {
+  position: absolute;
+  top: 50%;
+  left: 30%;
+  transform: translate(-50%, -50%);
+  padding: 22px 36px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.55);
+  color: white;
+  font-size: 26px;
+  line-height: 1.5;
+  pointer-events: none;
+}
+
+#menu:empty {
+  display: none;
+}
+
+#menu .menu-title {
+  margin-bottom: 12px;
+  font-weight: bold;
+}
+
+#menu ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+#menu li::before {
+  content: "\25B6";
+  margin-right: 12px;
+  visibility: hidden;
+}
+
+#menu li.selected::before {
+  visibility: visible;
+}
+
+#menu .menu-hint {
+  margin-top: 12px;
+  font-size: 18px;
+  opacity: 0.75;
+}
+
+/* While the menu is open, the game's own HUD is hidden behind it. */
+body.menu-open #hud {
+  display: none;
+}

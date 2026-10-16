@@ -27,6 +27,7 @@ const sceneFiles = [
   "scenes/trees.json",
   "/games/bubble-squadron/race.json",
   "/games/bubble-squadron/highway.json",
+  "/games/bubble-squadron/menu.json",
   "/games/bubble-squadron/starfighters.json",
 ];
 

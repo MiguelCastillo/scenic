@@ -396,6 +396,24 @@ race, and a terrain's counts with what the whole frame cost. Each ignores
 channels it doesn't know. In the editor, the Info tab of a terrain or a node
 with a script sets its `hud` channel.
 
+### Scene stacks and menus
+
+An app can run scenes on top of each other, such as a game's menu over the
+game, with a `SceneStack` from `@scenic/runtime`. Every frame it updates each
+scene's runner from the bottom up, then draws them in the same order; the
+scenes above the bottom one clear only depth, so what is below shows wherever
+they draw nothing. The stack runs them in one render loop of its own, and the
+app that loaded them disposes them. Each scene keeps its own state, scripts,
+resources and `sceneManager.ui`, and none reads another's.
+
+`resources/scripts/menu.js` is a list of choices, `[{label, goTo}]`, that the
+arrow keys move through and Enter picks. It publishes `{title, choices, selected, hint, picked}` on its node's `hud` channel, with `picked` the choice
+picked that frame, and the app shows the menu and goes where a pick says.
+Bubble Squadron's `menu.json` uses it to pick a track, on the `menu` channel,
+with an orthographic camera, which places things in screen pixels from the
+bottom left, for a ship beside the menu. The arcade opens it over the game
+(see `games/README.md`).
+
 ### Collisions
 
 A node with a `collider` in its state takes part in collisions: a simple shape
