@@ -33,8 +33,11 @@ const behaviorsByCameraType = {
 //
 // Its API is the class's public members, grouped by what they are for:
 // - Cameras: viewport, activeCamera, setActiveCamera(name), nextCamera().
-// - Input: turn(rightDegrees, upDegrees), lookAround(rightDegrees, upDegrees),
-//   move(forward, right, up), setMovement({forward, right, up}).
+// - Input: applyInput(intents, {paused}), a frame's camera intents as a
+//   SceneRunner adds them up, and the moves they are made of:
+//   turn(rightDegrees, upDegrees),
+//   lookAround(rightDegrees, upDegrees), move(forward, right, up),
+//   setMovement({forward, right, up}).
 // - Every frame: update(seconds).
 // - Resetting: reset().
 export class CameraSystem {
@@ -61,6 +64,28 @@ export class CameraSystem {
     const {cameras} = this.viewport;
     const next = cameras[(cameras.indexOf(this.activeCamera) + 1) % cameras.length];
     this.setActiveCamera(next.name);
+  }
+
+  // applyInput moves the cameras with a frame's camera intents, {look,
+  // zoom, move, nextCamera}, whatever device they came from (see
+  // input-intents.js in @scenic/dom): it switches to the next camera, keeps
+  // the active one flying the way move says, turns it by look, in degrees,
+  // or looks around while paused, and moves it closer by zoom.
+  applyInput({look, zoom, move, nextCamera}, {paused = false} = {}) {
+    if (nextCamera) {
+      this.nextCamera();
+    }
+    this.setMovement(move);
+    if (look.x || look.y) {
+      if (paused) {
+        this.lookAround(look.x, look.y);
+      } else {
+        this.turn(look.x, look.y);
+      }
+    }
+    if (zoom) {
+      this.move(zoom, 0, 0);
+    }
   }
 
   // turn turns the active camera, such as when the mouse moves, unless its

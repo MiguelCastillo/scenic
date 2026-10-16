@@ -126,3 +126,37 @@ describe("ui", () => {
     expect(messages).toEqual([]);
   });
 });
+
+describe("input", () => {
+  test("keeps every event of a frame, in order, until taken", () => {
+    const sceneManager = new SceneManager(new StateManager([]));
+    sceneManager.input.publish("player", {type: "keydown", code: "Space"});
+    sceneManager.input.publish("player", {type: "keyup", code: "Space"});
+
+    expect(sceneManager.input.take()).toEqual({
+      player: [
+        {type: "keydown", code: "Space"},
+        {type: "keyup", code: "Space"},
+      ],
+    });
+    expect(sceneManager.input.take()).toEqual({});
+  });
+
+  test("gives each script the input of the channel its node names", () => {
+    const seen = {};
+    const createNode = (id) =>
+      new Node({name: id, id}).withScript({update: ({keys}) => (seen[id] = [...keys])});
+    const sceneManager = new SceneManager(
+      new StateManager([{name: "ship 2", id: "ship 2", input: "player 2"}])
+    ).withNodes([createNode("ship 1"), createNode("ship 2")]);
+
+    sceneManager.update(0, {
+      input: {
+        player: {keys: new Set(["ArrowLeft"]), pressed: new Set(), mouse: {x: 0, y: 0}},
+        "player 2": {keys: new Set(["ArrowRight"]), pressed: new Set(), mouse: {x: 0, y: 0}},
+      },
+    });
+
+    expect(seen).toEqual({"ship 1": ["ArrowLeft"], "ship 2": ["ArrowRight"]});
+  });
+});

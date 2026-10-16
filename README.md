@@ -114,10 +114,13 @@ viewport's last camera throws.
 #### Camera types
 
 A camera's `type` says how it moves. A plain `camera` stays where its
-transform puts it, like the axis gizmo's. The others are moved by the editor,
-which runs the input viewport's cameras with a `CameraSystem` from the
-`@scenic/camera` package (`packages/camera/`). Each type has a behavior class
-there, and its settings in a block named for it. The behaviors keep nothing
+transform puts it, like the axis gizmo's. The others are moved by the
+`SceneRunner`, which runs the input viewport's cameras with a `CameraSystem`
+from the `@scenic/camera` package (`packages/camera/`), and gives them the
+player's camera intents every frame, even while paused (see
+[Input intents](#input-intents)): switch to the next camera, fly, look and
+zoom. Each type
+has a behavior class there, and its settings in a block named for it. The behaviors keep nothing
 themselves: everything a camera does as you play, such as its orbit, zoom and
 the way it keeps flying while a key is held, is written back to its settings
 block, so switching cameras and back finds each one as it was left, and a
@@ -243,6 +246,39 @@ above its canopy, banking with it, and a free camera:
 }
 ```
 
+### Input intents
+
+Cameras and menus don't read keys, the mouse or fingers. They read intents:
+what the player means, the same whatever device they used
+(`packages/dom/src/input-intents.js`). For cameras, `look {x, y}` in
+degrees, `zoom` in scene units, `move {forward, right, up}` to keep flying,
+and `nextCamera`. For menus, `navigate {x, y}` a step at a time,
+`choose {index}` to pick an item directly, `select` and `back`.
+
+Each device has an adapter that subscribes to the app's `InputCapture` and
+turns its events into intents for the context the player is in: `camera`
+while the top scene has cameras, and `menu` while it is a menu:
+
+| Intent       | Keyboard and mouse                 | Touch            |
+| ------------ | ---------------------------------- | ---------------- |
+| `look`       | mouse, while the pointer is locked | one-finger drag  |
+| `zoom`       | wheel                              | two-finger pinch |
+| `move`       | W, A, S, D, E, Q held              |                  |
+| `nextCamera` | C                                  | two-finger tap   |
+| `navigate`   | arrows, W, S                       | swipe            |
+| `choose`     | clicking an item                   | tapping an item  |
+| `select`     | Enter, Space                       | tap              |
+| `back`       | Escape                             |                  |
+
+The adapters own their bindings, which can be changed to rebind them,
+their gestures, and their units, so a camera turns as far for a drag as for
+the same move of the mouse. The app publishes intents on the scene's input
+channel, and the `SceneRunner` adds them up per frame as `intents`, for the
+cameras and for scripts such as `menu.js`. The keys and mouse also still
+reach scripts as they are, for scripts that read them, such as a ship's
+flight controls, until those move to intents too. Typing text, such as into
+a name field, is left to the page's own text fields, and isn't an intent.
+
 ### Scripts
 
 A script lets code decide what a node does each frame, such as moving it,
@@ -283,9 +319,22 @@ as needed without moving anything, and a script's `render` must leave the
 state alone too. Another node's world matrix is where that node was last
 drawn. `update`'s `context` has the frame's time in `ms` and the
 `sceneManager`. In the editor
-it also has the player's input: `seconds` since the last frame, the `keys`
-being held, by `KeyboardEvent.code`, and how far the `mouse` moved since the
-last frame, as `{x, y}` in pixels. Input only reaches the scene while the
+it also has `seconds` since the last frame, and the player's input: the `keys`
+being held, by `KeyboardEvent.code`, the keys `pressed` this frame, even if
+they also came up, so a quick tap is never missed, and how far the `mouse`
+moved since the last frame, as `{x, y}` in pixels.
+
+The app publishes the player's input as events on `sceneManager.input`, an
+`EventBus` that keeps every event of a frame in order: `{type: "keydown", code}`, `{type: "keyup", code}`, `{type: "mousemove", x, y}` and `{type: "wheel", x, y}`, on the `"player"` channel. The editor and the arcade get
+them from an `InputCapture` (`@scenic/dom`), the only code that listens to
+the page's input, which hands plain events to small subscribers, each with
+one job: a router that sends them to the right scene, and the app's own
+keys, such as P to pause. The `SceneRunner` adds up each frame's events into
+`keys`, `pressed`, `mouse` and `wheel`, for the cameras (see
+[Camera types](#camera-types)) and the scripts, and a script gets those of the channel named
+by `input` in its node's state, `"player"` without one, so a network game can
+publish other players on channels of their own and have each ship flown by
+its own. Input only reaches the scene while the
 pointer is locked to it, by clicking it. Scenes load paused, and pressing P
 plays and pauses them: while paused, its clock stops, and scripts get no time
 and no input until P is pressed again, while the camera can still look
@@ -359,7 +408,7 @@ settings, and tells the app's UI how it is going, as described next.
 ### Telling the UI: `sceneManager.ui`
 
 A scene tells the app's UI what it knows, such as a race's lap and time for
-the HUD, through `sceneManager.ui`, a small pub/sub (`EventBus` in
+the HUD, through `sceneManager.ui`, a small pub/sub (`BufferedEventBus` in
 `@scenic/scene`). A node or script publishes plain data on a channel, and
 the app, which knows what each channel's messages hold, shows them however
 it likes. The scene never knows about the page, or about other nodes that

@@ -1,6 +1,11 @@
 import React from "react";
 import {createRoot} from "react-dom/client";
-import {ready as domReady, events as domEvents} from "@scenic/dom";
+import {
+  ready as domReady,
+  events as domEvents,
+  InputCapture,
+  registerKeyboardMouseIntents,
+} from "@scenic/dom";
 import {webgl} from "@scenic/renderer";
 import {loadScene, renderStats, SceneRunner, startRenderLoop} from "@scenic/runtime";
 
@@ -116,17 +121,41 @@ domReady.onReady(() => {
     pausedEl.hidden = !paused;
   };
 
-  subscribeToSceneInput(
-    document.getElementById("mousetrap"),
-    () => currentScene?.runner,
-    renderSceneGraph,
-    showPaused
-  );
+  // The page's input goes to the current scene while the pointer is locked
+  // to the mousetrap, by clicking it, so typing in the editor's panels is
+  // left alone: the keyboard and mouse as intents (see input-intents.js in
+  // @scenic/dom), for its cameras or, in a scene without them, its menu, and
+  // as they are, for scripts that read them. Escape lets the pointer go, and
+  // P pauses and resumes the scene.
+  const capture = new InputCapture(document.getElementById("mousetrap"));
+  registerKeyboardMouseIntents(capture, {
+    getContext: () => (currentScene?.runner.cameras ? "camera" : "menu"),
+    onIntent: (intent) => {
+      if (capture.locked) {
+        currentScene?.runner.sceneManager.input.publish("player", intent);
+      }
+    },
+  });
+  registerSceneInputRouting(capture, () => currentScene?.runner);
+  capture.onInput((event) => {
+    const runner = currentScene?.runner;
+    if (event.type === "click") {
+      capture.lock();
+    } else if (
+      runner &&
+      capture.locked &&
+      event.type === "keydown" &&
+      event.code === pauseKey &&
+      !event.repeat
+    ) {
+      showPaused(runner.togglePause());
+    }
+  });
 
   // renderSceneGraph renders the scene graph panel for the current scene. It
   // is rendered again when the active camera changes, so that the panels show
-  // it. Rendering the same SceneGraph again keeps its state,
-  // such as the selected node.
+  // it. Rendering the same SceneGraph again keeps its state, such as the
+  // selected node.
   function renderSceneGraph() {
     const {resourceLoader, sceneManager} = currentScene.scene;
     const {cameras} = currentScene.runner;
@@ -199,6 +228,16 @@ domReady.onReady(() => {
           }
         });
 
+        // The scene graph shows which camera is active, so it is rendered
+        // again when that changes, such as when C switches cameras.
+        let activeCamera = runner.cameras?.activeCamera;
+        scene.sceneManager.ui.onUpdate(() => {
+          if (runner.cameras && runner.cameras.activeCamera !== activeCamera) {
+            activeCamera = runner.cameras.activeCamera;
+            renderSceneGraph();
+          }
+        });
+
         loadingRoot.render(<Loading isLoading={false} />);
       })
       .catch((ex) => {
@@ -215,163 +254,50 @@ domReady.onReady(() => {
   showSceneSelector();
 });
 
-// How far the camera turns, in degrees, per pixel of mouse movement, and how
-// far it flies, in scene units, per pixel of wheel or trackpad scrolling.
-const cameraTurnDegreesPerPixel = 0.1;
-const cameraScrollDistancePerPixel = 0.5;
-
-// Keys that fly the camera while they are held, by KeyboardEvent.code so that
-// they stay in the same place on every keyboard layout.
-const cameraMovementKeys = {
-  KeyW: {forward: 1},
-  KeyS: {forward: -1},
-  KeyD: {right: 1},
-  KeyA: {right: -1},
-  KeyE: {up: 1},
-  KeyQ: {up: -1},
-};
-
-// The key that switches to the next camera, such as from following a rocket
-// to its cockpit.
-const nextCameraKey = "KeyC";
-
 // The key that pauses and resumes the scene.
 const pauseKey = "KeyP";
 
-// Keys that scroll the page, which scenes use instead while they have the
-// pointer, such as to fly a rocket.
-const pageScrollKeys = new Set(["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"]);
+// registerSceneInputRouting gives what capture catches to the runner
+// getRunner returns while the pointer is locked, as its scene's player's
+// input, on the "player" channel of its sceneManager.input (see SceneManager
+// in @scenic/scene), which moves its cameras and its scripts, such as a
+// rocket's flight controls. It asks getRunner every time, so another scene
+// can be opened. The keys held down go up when the pointer is let go, since
+// their keyups never come. It returns a function that stops the routing.
+function registerSceneInputRouting(capture, getRunner) {
+  // The keys held down, with the runner each went down in.
+  const runnersByHeldKey = new Map();
+  const publish = (runner, event) => runner.sceneManager.input.publish("player", event);
 
-// subscribeToSceneInput maps the mouse and keyboard onto the current scene's
-// cameras. How the active camera responds is up to its type (see CameraSystem
-// in the @scenic/camera package). Every key
-// held down is also given to the scene's scripts, such as a rocket's flight
-// controls, and so is how far the mouse moves. Clicking the mousetrap locks the
-// pointer to it, and input only reaches the scene while the pointer is locked,
-// so typing in the editor's panels is left alone. Pressing Escape releases the
-// lock. Pressing P pauses the scene, and onPauseChange is told whether it is
-// now paused. onCameraChange is called when the active camera changes.
-function subscribeToSceneInput(mousetrapEl, getCurrentScene, onCameraChange, onPauseChange) {
-  const isPointerLocked = () => document.pointerLockElement === mousetrapEl;
-  const heldKeys = new Set();
-  const scriptKeys = new Set();
-
-  function updateScriptKeys() {
-    getCurrentScene()?.setHeldKeys(scriptKeys);
-  }
-
-  function updateCameraMovement() {
-    const scene = getCurrentScene();
-    if (!scene) {
-      return;
+  return capture.onInput((event) => {
+    const runner = getRunner();
+    switch (event.type) {
+      case "keydown":
+        if (runner && capture.locked && !runnersByHeldKey.has(event.code)) {
+          runnersByHeldKey.set(event.code, runner);
+          publish(runner, {type: "keydown", code: event.code});
+        }
+        break;
+      case "keyup":
+        if (runnersByHeldKey.has(event.code)) {
+          publish(runnersByHeldKey.get(event.code), {type: "keyup", code: event.code});
+          runnersByHeldKey.delete(event.code);
+        }
+        break;
+      case "mousemove":
+      case "wheel":
+        if (runner && capture.locked) {
+          publish(runner, {type: event.type, x: event.x, y: event.y});
+        }
+        break;
+      case "pointerlock":
+        if (!event.locked) {
+          runnersByHeldKey.forEach((heldRunner, code) =>
+            publish(heldRunner, {type: "keyup", code})
+          );
+          runnersByHeldKey.clear();
+        }
+        break;
     }
-
-    const movement = {forward: 0, right: 0, up: 0};
-    for (const code of heldKeys) {
-      for (const [direction, amount] of Object.entries(cameraMovementKeys[code])) {
-        movement[direction] += amount;
-      }
-    }
-    scene.cameras?.setMovement(movement);
-  }
-
-  domEvents.Subscription.create(mousetrapEl)
-    .on("click", (/*evt*/) => {
-      mousetrapEl.requestPointerLock();
-    })
-    .on("mousemove", (evt) => {
-      const scene = getCurrentScene();
-      if (scene && isPointerLocked()) {
-        // While paused the mouse looks around, even with cameras that leave
-        // it to the scene.
-        const right = evt.movementX * cameraTurnDegreesPerPixel;
-        const up = -evt.movementY * cameraTurnDegreesPerPixel;
-        if (scene.isPaused()) {
-          scene.cameras?.lookAround(right, up);
-        } else {
-          scene.cameras?.turn(right, up);
-        }
-        scene.addMouseMovement(evt.movementX, evt.movementY);
-      }
-    })
-    .on("wheel", (evt) => {
-      // Prevent leaving the page when scrolling left/right with a trackpad
-      evt.preventDefault();
-
-      const scene = getCurrentScene();
-      if (scene && isPointerLocked()) {
-        scene.cameras?.move(
-          -evt.deltaY * cameraScrollDistancePerPixel,
-          evt.deltaX * cameraScrollDistancePerPixel,
-          0
-        );
-      }
-    });
-
-  domEvents.Subscription.create(document)
-    .on("keydown", (evt) => {
-      if (!isPointerLocked()) {
-        return;
-      }
-
-      if (!scriptKeys.has(evt.code)) {
-        scriptKeys.add(evt.code);
-        updateScriptKeys();
-      }
-      if (pageScrollKeys.has(evt.code)) {
-        evt.preventDefault();
-      }
-
-      if (evt.code === pauseKey && !evt.repeat) {
-        evt.preventDefault();
-        const scene = getCurrentScene();
-        if (scene) {
-          onPauseChange(scene.togglePause());
-        }
-        return;
-      }
-
-      if (evt.code === nextCameraKey && !evt.repeat) {
-        evt.preventDefault();
-        const scene = getCurrentScene();
-        if (scene) {
-          scene.cameras?.nextCamera();
-          onCameraChange();
-          // Held movement belongs to each camera, so tell the new one about
-          // keys that are still down.
-          updateCameraMovement();
-        }
-        return;
-      }
-
-      if (!cameraMovementKeys[evt.code]) {
-        return;
-      }
-
-      evt.preventDefault();
-      heldKeys.add(evt.code);
-      updateCameraMovement();
-    })
-    .on("keyup", (evt) => {
-      if (scriptKeys.delete(evt.code)) {
-        updateScriptKeys();
-      }
-
-      if (!cameraMovementKeys[evt.code]) {
-        return;
-      }
-
-      heldKeys.delete(evt.code);
-      updateCameraMovement();
-    })
-    // Keys released while the pointer was unlocked never send keyup here, so
-    // everything is treated as released when the lock is lost.
-    .on("pointerlockchange", () => {
-      if (!isPointerLocked()) {
-        heldKeys.clear();
-        updateCameraMovement();
-        scriptKeys.clear();
-        updateScriptKeys();
-      }
-    });
+  });
 }

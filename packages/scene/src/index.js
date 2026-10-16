@@ -1,7 +1,7 @@
 import {Animation} from "./animation.js";
 import {Camera} from "./camera.js";
 import * as collision from "./collision.js";
-import {EventBus} from "./event-bus.js";
+import {BufferedEventBus, EventBus} from "./event-bus.js";
 import {Geometry} from "./geometry.js";
 import {Light} from "./light.js";
 import {Material} from "./material.js";
@@ -19,6 +19,7 @@ import {Viewport} from "./viewport.js";
 
 export {
   Animation,
+  BufferedEventBus,
   Camera,
   collision,
   EventBus,

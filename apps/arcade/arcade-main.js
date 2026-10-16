@@ -1,8 +1,14 @@
-import {ready as domReady, events as domEvents} from "@scenic/dom";
+import {
+  ready as domReady,
+  events as domEvents,
+  InputCapture,
+  registerKeyboardMouseIntents,
+  registerTouchIntents,
+} from "@scenic/dom";
 import {webgl} from "@scenic/renderer";
 import {loadScene, SceneRunner, SceneStack} from "@scenic/runtime";
 
-import {subscribeToSceneInput} from "./input.js";
+import {PlayWhileLocked, registerSceneInputRouting} from "./input.js";
 
 // The arcade plays one of the games in games/, full screen: the one the page's
 // URL names, such as index.html?game=bubble-squadron, or this one without
@@ -18,9 +24,6 @@ import {subscribeToSceneInput} from "./input.js";
 // game's place, unless it is the one playing, and the menu closes. M opens
 // the menu again, and Escape closes it.
 const defaultGame = "bubble-squadron";
-
-// Keys the menu uses, which the page shouldn't, such as to scroll.
-const menuKeys = new Set(["ArrowUp", "ArrowDown", "Enter", "Space"]);
 
 // clock is seconds as minutes, seconds and tenths, such as 1:05.3.
 const clock = (seconds) =>
@@ -120,15 +123,29 @@ domReady.onReady(async () => {
     let playing = play(await load(gameFile));
     stack.push(playing.runner);
 
-    // The menu scene, while it is open, over the game, the keys held down
-    // in it, and whether it is going to the scene picked in it.
+    // The menu scene, while it is open, over the game, and whether it is
+    // going to the scene picked in it.
     let menu = null;
-    const menuHeld = new Set();
     let going = false;
 
-    const input = subscribeToSceneInput(
-      canvas,
-      () => playing.runner,
+    // The page's input goes to the scenes on the stack. The keyboard, mouse
+    // and touches become intents (see input-intents.js in @scenic/dom), for
+    // the top scene: camera intents while it is the game, and menu intents
+    // while it is a menu, which has no cameras. The keys and mouse also go
+    // to the scenes as they are, for scripts that read them, such as a
+    // ship's flight controls (see input.js), and the game only plays while
+    // it has the pointer.
+    const capture = new InputCapture(canvas);
+    const intentOptions = {
+      getContext: () => (stack.runners.at(-1)?.cameras ? "camera" : "menu"),
+      onIntent: (intent) => stack.runners.at(-1)?.sceneManager.input.publish("player", intent),
+    };
+    registerKeyboardMouseIntents(capture, intentOptions);
+    registerTouchIntents(capture, intentOptions);
+    registerSceneInputRouting(capture, () => stack.runners);
+    const playWhileLocked = new PlayWhileLocked(
+      capture,
+      () => stack.runners,
       ({locked, paused}) => {
         messageEl.textContent = menu
           ? ""
@@ -137,19 +154,17 @@ domReady.onReady(async () => {
           : paused
           ? "Paused\nPress P to play"
           : "";
-      },
-      () => !menu
+      }
     );
 
     const closeMenu = () => {
       stack.pop();
       menu.scene.dispose();
       menu = null;
-      menuHeld.clear();
       going = false;
       menuEl.replaceChildren();
       document.body.classList.remove("menu-open");
-      input.reset();
+      playWhileLocked.reset();
     };
 
     // openMenu stacks the menu over the game, and lets go of the pointer,
@@ -159,12 +174,18 @@ domReady.onReady(async () => {
       if (!manifest.menu || menu) {
         return;
       }
-      document.exitPointerLock();
+      capture.unlock();
       document.body.classList.add("menu-open");
       menu = await load(manifest.menu, {paused: false});
       let shown = null;
       menu.scene.sceneManager.ui.onUpdate(async ({menu: message}) => {
         if (!message || going) {
+          return;
+        }
+
+        // Leaving the menu closes it.
+        if (message.back) {
+          closeMenu();
           return;
         }
 
@@ -210,43 +231,28 @@ domReady.onReady(async () => {
         menuEl.replaceChildren(titleEl, listEl, ...(hint ? [hintEl] : []));
       });
       stack.push(menu.runner);
-      input.reset();
+      playWhileLocked.reset();
     };
 
-    // While the menu is open, the keyboard is the menu's.
-    domEvents.Subscription.create(document)
-      .on("keydown", (evt) => {
-        if (menu) {
-          if (evt.code === "Escape") {
-            if (!going) {
-              closeMenu();
-            }
-            return;
-          }
-          if (menuKeys.has(evt.code)) {
-            evt.preventDefault();
-          }
-          menuHeld.add(evt.code);
-          menu.runner.setHeldKeys(menuHeld);
-        } else if (evt.code === "KeyM" && !evt.repeat) {
-          openMenu();
-        }
-      })
-      .on("keyup", (evt) => {
-        // A quick tap can go down and up between two frames, so a key is let
-        // go of after the next frame is drawn, for the menu to see it.
-        requestAnimationFrame(() =>
-          requestAnimationFrame(() => {
-            menuHeld.delete(evt.code);
-            menu?.runner.setHeldKeys(menuHeld);
-          })
-        );
-      });
+    // M opens the menu. The menu closes itself, when the player leaves it.
+    capture.onInput((event) => {
+      if (event.type === "keydown" && !event.repeat && !menu && event.code === "KeyM") {
+        openMenu();
+      }
+    });
+
+    // Clicking or tapping a choice in the menu picks it.
+    domEvents.Subscription.create(menuEl).on("click", (evt) => {
+      const index = [...menuEl.querySelectorAll("li")].indexOf(evt.target.closest("li"));
+      if (menu && index !== -1) {
+        intentOptions.onIntent({type: "choose", index});
+      }
+    });
 
     if (manifest.menu) {
       await openMenu();
     } else {
-      input.reset();
+      playWhileLocked.reset();
     }
   } catch (ex) {
     messageEl.textContent = `Unable to play "${game}"\n${ex.message}`;

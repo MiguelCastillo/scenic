@@ -1,23 +1,53 @@
 import {bubbleTraversal} from "./traversal.js";
 import {Node} from "./node.js";
 import {Scene} from "./scene.js";
-import {EventBus} from "./event-bus.js";
+import {BufferedEventBus, EventBus} from "./event-bus.js";
 import {Viewport} from "./viewport.js";
+
+// What a script gets for input on a channel nobody has published on.
+const noInput = {
+  keys: new Set(),
+  pressed: new Set(),
+  mouse: {x: 0, y: 0},
+  wheel: {x: 0, y: 0},
+  intents: {
+    look: {x: 0, y: 0},
+    zoom: 0,
+    move: {forward: 0, right: 0, up: 0},
+    nextCamera: false,
+    navigate: {x: 0, y: 0},
+    choose: null,
+    select: false,
+    back: false,
+  },
+};
 
 export class SceneManager {
   constructor(stateManager) {
     this.stateManager = stateManager;
     this.scene = new Scene();
     // ui carries messages from the scene to the app's UI, such as a race's
-    // lap and time for its HUD (see EventBus). Nodes and scripts publish
-    // what they know as plain data on the channel named by "hud" in their
-    // own state, such as {"hud": "race"}, and nothing without one, and the
-    // app, which knows what each channel's messages hold, shows them however
-    // it likes, so the scene never knows about the page. Messages are
-    // output, worked out from the scene's state, so publishing never changes
-    // the scene, and it can happen while drawing. update starts each frame's
-    // messages, and render sends them once the frame is drawn.
-    this.ui = new EventBus();
+    // lap and time for its HUD (see BufferedEventBus). Nodes and scripts
+    // publish what they know as plain data on the channel named by "hud" in
+    // their own state, such as {"hud": "race"}, and nothing without one, and
+    // the app, which knows what each channel's messages hold, shows them
+    // however it likes, so the scene never knows about the page. Messages
+    // are output, worked out from the scene's state, so publishing never
+    // changes the scene, and it can happen while drawing. update starts each
+    // frame's messages, and render sends them once the frame is drawn.
+    this.ui = new BufferedEventBus();
+    // input carries the players' input into the scene, as events in the
+    // order they happened (see EventBus), on a channel for each player: their
+    // intents, such as {type: "look", x, y} (see input-intents.js in
+    // @scenic/dom), and the keys and mouse themselves for scripts that read
+    // them, such as a ship's flight controls: {type: "keydown", code} and
+    // {type: "keyup", code}, by KeyboardEvent.code, {type: "mousemove", x, y}
+    // and {type: "wheel", x, y}, in pixels, with positive y down. The app
+    // publishes the player at its keyboard or screen on "player", and a
+    // network game could publish other players on channels of their own.
+    // Whoever runs the scene, such as a SceneRunner, reads each frame's
+    // events and gives update what they add up to.
+    this.input = new EventBus();
   }
 
   getNodeStateByID(id) {
@@ -83,8 +113,16 @@ export class SceneManager {
   // This is where scripts change the scene's state, such as moving a ship,
   // so update runs once a frame, before render draws it. frame holds anything
   // else the app wants the scripts to see this frame, such as the seconds
-  // since the last frame or the keys being held, and it is added to the
-  // context update gets.
+  // since the last frame, and it is added to the context update gets.
+  //
+  // frame.input is each input channel's input this frame, {channel: {keys,
+  // pressed, mouse, wheel, intents}}: the keys held, the keys that went
+  // down, even if they also came up, how far the mouse moved and the wheel
+  // scrolled, {x, y}, and what the player means, whatever device they used,
+  // such as to move through a menu (see SceneRunner in @scenic/runtime). A script gets the
+  // input of the channel named by "input" in its node's state as keys,
+  // pressed and mouse in its context, and "player" without one, so a ship
+  // can be flown by whichever player its state says.
   //
   // World matrices are only worked out by render, so a script reading
   // another node's world matrix sees where it was last drawn.
@@ -93,10 +131,14 @@ export class SceneManager {
   // render sends.
   update(ms, frame = {}) {
     this.ui.beginFrame();
-    const context = {...frame, ms, sceneManager: this};
+    const {input = {}, ...rest} = frame;
+    const context = {...rest, ms, sceneManager: this};
     const updatePass = bubbleTraversal(
       (node) => {
-        node.script?.update?.(context);
+        if (node.script?.update) {
+          const channel = this.getNodeStateByID(node.id)?.input ?? "player";
+          node.script.update({...context, ...(input[channel] ?? noInput)});
+        }
         return node;
       },
       () => {}

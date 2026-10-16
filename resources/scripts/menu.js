@@ -1,8 +1,9 @@
 // menu is a list of choices, such as a game's tracks, that the player picks
-// from with the keyboard:
-// - Up and down arrows: move to the choice above or below, going around from
-//   one end to the other.
-// - Enter or Space: pick the choice.
+// from with the menu intents in its input, whatever device they used (see
+// input-intents.js in @scenic/dom): navigate moves to the choice above or
+// below, going around from one end to the other, choose picks a choice
+// directly, such as by tapping it, select picks the one it is on, and back
+// leaves the menu.
 //
 // Its settings come from "script.settings" in the node's config:
 // - title: what the menu is, shown above the choices.
@@ -12,42 +13,38 @@
 // - hint: what to tell the player, such as which keys to press. Optional.
 //
 // Which choice is selected is written to its settings every frame, so a
-// saved state picks up where it was, and so are the keys held, to tell when
-// one is pressed rather than held:
+// saved state picks up where it was:
 // - selected: the selected choice, from 0. 0 by default.
-// - held: the keys held down last frame, by KeyboardEvent.code.
 //
 // With "hud" in its node's state, such as {"hud": "menu"}, it tells the
 // app's UI about the menu every frame, on that channel of sceneManager.ui
 // (see SceneManager in @scenic/scene): {title, choices, selected, hint,
-// picked}, with picked the choice picked this frame, {label, goTo}, or null.
-// The app shows the menu and goes where a pick says.
+// picked, back}, with picked the choice picked this frame, {label, goTo}, or
+// null, and back whether the player left the menu this frame. The app shows
+// the menu, goes where a pick says, and closes it on back.
 module.exports = function createMenuScript(node) {
   return {
-    update({keys = new Set(), sceneManager}) {
+    update({intents, sceneManager}) {
       const state = sceneManager.getNodeStateByID(node.id);
       const settings = state.script.settings;
       const {title = "", choices = [], hint = ""} = settings;
-      const held = new Set(settings.held || []);
-      const pressed = (code) => keys.has(code) && !held.has(code);
+      const {navigate, choose, select, back} = intents;
 
       let selected = settings.selected ?? 0;
       if (choices.length) {
-        if (pressed("ArrowDown")) {
-          selected = (selected + 1) % choices.length;
-        }
-        if (pressed("ArrowUp")) {
-          selected = (selected + choices.length - 1) % choices.length;
+        selected = (((selected + navigate.y) % choices.length) + choices.length) % choices.length;
+        if (choose != null && choices[choose]) {
+          selected = choose;
         }
       }
-      const picked = pressed("Enter") || pressed("Space") ? choices[selected] : null;
+      const picked = choose != null || select ? choices[selected] ?? null : null;
 
       sceneManager.updateNodeStateByID(node.id, {
-        script: {...state.script, settings: {...settings, selected, held: [...keys]}},
+        script: {...state.script, settings: {...settings, selected}},
       });
 
       if (state.hud) {
-        sceneManager.ui.publish(state.hud, {title, choices, selected, hint, picked});
+        sceneManager.ui.publish(state.hud, {title, choices, selected, hint, picked, back});
       }
     },
   };

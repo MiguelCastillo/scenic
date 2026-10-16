@@ -42,8 +42,10 @@ import {createFrameRateCounter} from "./fps-counter.js";
 //
 // Its API:
 // - Each frame: updateScene(ms), then renderFrame(), as often as needed.
-// - Input: cameras (see CameraSystem in @scenic/camera), or null without an
-//   input viewport, setHeldKeys(keys) and addMouseMovement(x, y).
+// - Input: the player's keys, mouse and wheel, as events the app publishes
+//   on sceneManager.input (see SceneManager in @scenic/scene), which
+//   updateScene adds up for the cameras and the scripts. cameras (see
+//   CameraSystem in @scenic/camera), or null without an input viewport.
 // - Pausing: togglePause(), which returns whether it is now paused, and
 //   isPaused().
 // - Telling the app: registerRefreshRateUpdater(cb). What the scene shows
@@ -81,14 +83,12 @@ export class SceneRunner {
     this._paused = paused;
     this._sceneMs = null;
 
-    // The keys being held down, by KeyboardEvent.code, which scripts get as
-    // `keys` every frame. The app sets them with setHeldKeys.
-    this._heldKeys = new Set();
-
-    // How far the mouse has moved since the last frame, in pixels, which
-    // scripts get as `mouse`, {x, y}, every frame. Positive y is down. The
-    // app adds to it with addMouseMovement.
-    this._mouseMovement = {x: 0, y: 0};
+    // The keys held down on each input channel, from the keydown and keyup
+    // events published on sceneManager.input so far, and which way each
+    // channel's player wants the camera to keep flying, from the last move
+    // intent.
+    this._heldKeysByChannel = new Map();
+    this._moveByChannel = new Map();
 
     this._lastFps = 0;
     this._refreshRateUpdater = () => {};
@@ -108,17 +108,78 @@ export class SceneRunner {
     const sceneSeconds = paused ? 0 : seconds;
     this._sceneMs = this._sceneMs === null ? ms : this._sceneMs + sceneSeconds * 1000;
 
+    // The input events published since the last frame add up to each
+    // channel's input this frame: the keys held, the keys that went down,
+    // even if they also came up, so a quick tap is never missed, how far the
+    // mouse moved and the wheel scrolled, and the player's intents (see
+    // input-intents.js in @scenic/dom): how far to look and zoom, which way
+    // to fly, how far to move through a menu, and whether to switch cameras,
+    // choose, select or go back.
+    const eventsByChannel = sceneManager.input.take();
+    const input = {};
+    for (const channel of new Set([
+      ...this._heldKeysByChannel.keys(),
+      ...Object.keys(eventsByChannel),
+    ])) {
+      const keys = new Set(this._heldKeysByChannel.get(channel));
+      const pressed = new Set();
+      const mouse = {x: 0, y: 0};
+      const wheel = {x: 0, y: 0};
+      const intents = {
+        look: {x: 0, y: 0},
+        zoom: 0,
+        move: this._moveByChannel.get(channel) ?? {forward: 0, right: 0, up: 0},
+        nextCamera: false,
+        navigate: {x: 0, y: 0},
+        choose: null,
+        select: false,
+        back: false,
+      };
+      for (const event of eventsByChannel[channel] ?? []) {
+        if (event.type === "keydown") {
+          keys.add(event.code);
+          pressed.add(event.code);
+        } else if (event.type === "keyup") {
+          keys.delete(event.code);
+        } else if (event.type === "mousemove") {
+          mouse.x += event.x;
+          mouse.y += event.y;
+        } else if (event.type === "wheel") {
+          wheel.x += event.x;
+          wheel.y += event.y;
+        } else if (event.type === "look") {
+          intents.look.x += event.x;
+          intents.look.y += event.y;
+        } else if (event.type === "zoom") {
+          intents.zoom += event.amount;
+        } else if (event.type === "move") {
+          intents.move = {forward: event.forward, right: event.right, up: event.up};
+        } else if (event.type === "navigate") {
+          intents.navigate.x += event.x;
+          intents.navigate.y += event.y;
+        } else if (event.type === "choose") {
+          intents.choose = event.index;
+        } else if (["nextCamera", "select", "back"].includes(event.type)) {
+          intents[event.type] = true;
+        }
+      }
+      this._heldKeysByChannel.set(channel, keys);
+      this._moveByChannel.set(channel, intents.move);
+      input[channel] = {keys, pressed, mouse, wheel, intents};
+    }
+
+    // The player's input moves the cameras too, even while paused, when the
+    // mouse looks around rather than turns (see CameraSystem in
+    // @scenic/camera).
+    if (input.player) {
+      this.cameras?.applyInput(input.player.intents, {paused});
+    }
     this.cameras?.update(seconds);
 
-    // Scripts get the frame's seconds, the held keys and the mouse's
-    // movement, so that a script such as a flight controller can move at the
-    // same speed at any frame rate and respond to the player.
-    sceneManager.update(this._sceneMs, {
-      seconds: sceneSeconds,
-      keys: paused ? new Set() : this._heldKeys,
-      mouse: paused ? {x: 0, y: 0} : this._mouseMovement,
-    });
-    this._mouseMovement = {x: 0, y: 0};
+    // Scripts get the frame's seconds and input, so that a script such as a
+    // flight controller can move at the same speed at any frame rate and
+    // respond to the player. While paused they get neither.
+    sceneManager.update(this._sceneMs, {seconds: sceneSeconds, input: paused ? {} : input});
 
     // Let's write out the number of frames per second that we are able to
     // run.
@@ -137,14 +198,6 @@ export class SceneRunner {
 
   registerRefreshRateUpdater(cb) {
     this._refreshRateUpdater = cb;
-  }
-
-  setHeldKeys(keys) {
-    this._heldKeys = new Set(keys);
-  }
-
-  addMouseMovement(x, y) {
-    this._mouseMovement = {x: this._mouseMovement.x + x, y: this._mouseMovement.y + y};
   }
 
   togglePause() {

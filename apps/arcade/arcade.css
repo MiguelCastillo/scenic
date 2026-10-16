@@ -108,6 +108,13 @@ body {
   list-style: none;
 }
 
+/* Choices can be clicked or tapped, though the rest of the menu lets
+   clicks through to the canvas. */
+#menu li {
+  pointer-events: auto;
+  cursor: pointer;
+}
+
 #menu li::before {
   content: "\25B6";
   margin-right: 12px;

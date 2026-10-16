@@ -135,6 +135,49 @@ describe("CameraSystem", () => {
     expect(positionOf(scene, "chase")).toEqual(orbited);
   });
 
+  describe("applyInput", () => {
+    const intents = ({
+      look = {x: 0, y: 0},
+      zoom = 0,
+      move = {forward: 0, right: 0, up: 0},
+      nextCamera = false,
+    }) => ({look, zoom, move, nextCamera});
+
+    test("switches cameras", () => {
+      const {cameras} = createScene({chase: freeFly, cockpit: freeFly});
+      cameras.applyInput(intents({nextCamera: true}));
+      expect(cameras.activeCamera.name).toBe("cockpit");
+      cameras.applyInput(intents({}));
+      expect(cameras.activeCamera.name).toBe("cockpit");
+    });
+
+    test("flies the way move says, and stops when it says not to", () => {
+      const scene = createScene({free: freeFly});
+      scene.cameras.applyInput(intents({move: {forward: 0, right: 0, up: 1}}));
+      scene.cameras.update(1);
+      expect(positionOf(scene, "free")[1]).toBeCloseTo(100);
+
+      scene.cameras.applyInput(intents({}));
+      scene.cameras.update(1);
+      expect(positionOf(scene, "free")[1]).toBeCloseTo(100);
+    });
+
+    test("looks, and looks around while paused", () => {
+      const leftToTheScene = {...chase, thirdPerson: {...chase.thirdPerson, mouseOrbit: false}};
+      const scene = createScene({chase: leftToTheScene});
+      scene.cameras.update(0);
+      const behind = positionOf(scene, "chase");
+
+      scene.cameras.applyInput(intents({look: {x: 90, y: 0}}));
+      scene.cameras.update(0);
+      expect(positionOf(scene, "chase")).toEqual(behind);
+
+      scene.cameras.applyInput(intents({look: {x: 90, y: 0}}), {paused: true});
+      scene.cameras.update(0);
+      expect(positionOf(scene, "chase")).not.toEqual(behind);
+    });
+  });
+
   describe("mouseOrbit", () => {
     const leftToTheScene = {...chase, thirdPerson: {...chase.thirdPerson, mouseOrbit: false}};
 
