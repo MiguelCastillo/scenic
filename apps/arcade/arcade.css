@@ -131,6 +131,51 @@ body {
   opacity: 0.75;
 }
 
+/* On a tablet, the menu is big, with choices far enough apart to tap. */
+@media (pointer: coarse) and (min-width: 641px) {
+  #menu {
+    padding: 32px 52px;
+    font-size: 36px;
+  }
+
+  #menu li {
+    padding: 6px 0;
+  }
+
+  #menu .menu-hint {
+    font-size: 24px;
+  }
+}
+
+/* On a phone, the menu takes up the whole screen, its choices in the middle
+   and far enough apart to tap. It keeps taps to itself, so only tapping a
+   choice picks one. */
+@media (max-width: 640px) {
+  #menu {
+    inset: 0;
+    transform: none;
+    pointer-events: auto;
+    padding: 32px;
+    border-radius: 0;
+    background: rgba(0, 0, 0, 0.75);
+    font-size: 30px;
+  }
+
+  #menu:not(:empty) {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  #menu li {
+    padding: 10px 0;
+  }
+
+  #menu .menu-hint {
+    font-size: 20px;
+  }
+}
+
 /* While the menu is open, the game's own HUD is hidden behind it. */
 body.menu-open #hud {
   display: none;
