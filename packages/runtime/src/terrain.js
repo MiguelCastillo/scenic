@@ -63,9 +63,9 @@ import {shaderRegistry} from "./shader-registry.js";
 //
 // With "hud" in its state, such as {"hud": "terrain"}, it tells the app's UI
 // what the ground costs every frame, on that channel of sceneManager.ui (see
-// UiBus in @scenic/scene): {tiles, drawn, triangles, built}, how many tiles
-// it has, and how many it drew, their triangles, and how many it built in
-// the last frame.
+// SceneManager in @scenic/scene): {tiles, drawn, triangles, built}, how many
+// tiles it has, and how many it drew, their triangles, and how many it built
+// in the last frame.
 // Its material and ambient work as a mesh's do; the grass colors are vertex
 // colors, which the material color adds to, so leave it black.
 export class Terrain extends Mesh {

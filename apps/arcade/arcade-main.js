@@ -48,7 +48,8 @@ function raceText({lap, laps, time, gate, gates, best, finished}) {
 }
 
 // What the HUD shows for each channel of the scene's sceneManager.ui (see
-// UiBus in @scenic/scene), from its messages. Channels not here don't show.
+// SceneManager in @scenic/scene), from its messages. Channels not here don't
+// show.
 const hudTexts = {race: raceText};
 
 async function fetchJSON(url) {

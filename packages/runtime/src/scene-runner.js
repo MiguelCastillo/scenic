@@ -47,8 +47,8 @@ import {createFrameRateCounter} from "./fps-counter.js";
 // - Pausing: togglePause(), which returns whether it is now paused, and
 //   isPaused().
 // - Telling the app: registerRefreshRateUpdater(cb). What the scene shows
-//   the player, such as a HUD, comes from sceneManager.ui (see UiBus in
-//   @scenic/scene).
+//   the player, such as a HUD, comes from sceneManager.ui (see SceneManager
+//   in @scenic/scene).
 // - sceneManager, the scene's.
 //
 // Options:

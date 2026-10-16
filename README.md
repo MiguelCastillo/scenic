@@ -359,7 +359,7 @@ settings, and tells the app's UI how it is going, as described next.
 ### Telling the UI: `sceneManager.ui`
 
 A scene tells the app's UI what it knows, such as a race's lap and time for
-the HUD, through `sceneManager.ui`, a small pub/sub (`UiBus` in
+the HUD, through `sceneManager.ui`, a small pub/sub (`EventBus` in
 `@scenic/scene`). A node or script publishes plain data on a channel, and
 the app, which knows what each channel's messages hold, shows them however
 it likes. The scene never knows about the page, or about other nodes that

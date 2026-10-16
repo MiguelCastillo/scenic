@@ -19,9 +19,9 @@
 //
 // With "hud" in its node's state, such as {"hud": "menu"}, it tells the
 // app's UI about the menu every frame, on that channel of sceneManager.ui
-// (see UiBus in @scenic/scene): {title, choices, selected, hint, picked},
-// with picked the choice picked this frame, {label, goTo}, or null. The app
-// shows the menu and goes where a pick says.
+// (see SceneManager in @scenic/scene): {title, choices, selected, hint,
+// picked}, with picked the choice picked this frame, {label, goTo}, or null.
+// The app shows the menu and goes where a pick says.
 module.exports = function createMenuScript(node) {
   return {
     update({keys = new Set(), sceneManager}) {

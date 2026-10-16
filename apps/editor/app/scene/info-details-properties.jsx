@@ -63,7 +63,7 @@ export class InfoDetailsProperties extends WithNodeState {
     const canSelectFile =
       node.type === "static-mesh" || node.type === "skinned-mesh" || node.type === "light";
     // Terrains and nodes with scripts can tell the app's UI what they know,
-    // on the channel named by their "hud" (see UiBus in @scenic/scene).
+    // on the channel named by their "hud" (see SceneManager in @scenic/scene).
     const canPublish = node.type === "terrain" || !!nodeState.script || !!nodeState.hud;
 
     // Cameras the editor runs show whether they are the one being looked

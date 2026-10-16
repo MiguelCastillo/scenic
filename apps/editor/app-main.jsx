@@ -60,7 +60,8 @@ function raceText({lap, laps, time, gate, gates, best, finished}) {
 const thousands = (n) => `${Math.round(n / 1000)}k`;
 
 // What the HUD shows for each channel of the scene's sceneManager.ui (see
-// UiBus in @scenic/scene), from its messages. Channels not here don't show.
+// SceneManager in @scenic/scene), from its messages. Channels not here don't
+// show.
 // A terrain's (see Terrain in @scenic/runtime) also shows what the whole
 // frame cost.
 const hudTexts = {

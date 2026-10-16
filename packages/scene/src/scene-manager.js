@@ -1,16 +1,23 @@
 import {bubbleTraversal} from "./traversal.js";
 import {Node} from "./node.js";
 import {Scene} from "./scene.js";
-import {UiBus} from "./ui-bus.js";
+import {EventBus} from "./event-bus.js";
 import {Viewport} from "./viewport.js";
 
 export class SceneManager {
   constructor(stateManager) {
     this.stateManager = stateManager;
     this.scene = new Scene();
-    // Messages from the scene to the app's UI, such as a race's HUD (see
-    // UiBus).
-    this.ui = new UiBus();
+    // ui carries messages from the scene to the app's UI, such as a race's
+    // lap and time for its HUD (see EventBus). Nodes and scripts publish
+    // what they know as plain data on the channel named by "hud" in their
+    // own state, such as {"hud": "race"}, and nothing without one, and the
+    // app, which knows what each channel's messages hold, shows them however
+    // it likes, so the scene never knows about the page. Messages are
+    // output, worked out from the scene's state, so publishing never changes
+    // the scene, and it can happen while drawing. update starts each frame's
+    // messages, and render sends them once the frame is drawn.
+    this.ui = new EventBus();
   }
 
   getNodeStateByID(id) {
@@ -82,7 +89,7 @@ export class SceneManager {
   // World matrices are only worked out by render, so a script reading
   // another node's world matrix sees where it was last drawn.
   //
-  // It also starts the frame's messages to the app's UI (see UiBus), which
+  // It also starts the frame's messages to the app's UI (see ui), which
   // render sends.
   update(ms, frame = {}) {
     this.ui.beginFrame();
@@ -178,7 +185,7 @@ export class SceneManager {
     }
 
     // Now the frame is drawn, the app's UI hears what the scene published
-    // for it, once (see UiBus).
+    // for it, once (see ui).
     this.ui.flush();
   }
 }

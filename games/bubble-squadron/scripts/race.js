@@ -45,7 +45,7 @@
 //
 // With "hud" in its node's state, such as {"hud": "race"}, it tells the app's
 // UI how the race is going every frame, on that channel of sceneManager.ui
-// (see UiBus in @scenic/scene): {lap, laps, time, gate, gates, best,
+// (see SceneManager in @scenic/scene): {lap, laps, time, gate, gates, best,
 // finished}, as in its settings, with gates the number of gates after the
 // start gate.
 

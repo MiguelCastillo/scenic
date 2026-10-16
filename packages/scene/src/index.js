@@ -1,6 +1,7 @@
 import {Animation} from "./animation.js";
 import {Camera} from "./camera.js";
 import * as collision from "./collision.js";
+import {EventBus} from "./event-bus.js";
 import {Geometry} from "./geometry.js";
 import {Light} from "./light.js";
 import {Material} from "./material.js";
@@ -13,7 +14,6 @@ import {SkinnedMesh} from "./skinned-mesh.js";
 import {StateManager} from "./state-manager.js";
 import {StaticMesh} from "./static-mesh.js";
 import {Texture} from "./texture.js";
-import {UiBus} from "./ui-bus.js";
 import * as traversal from "./traversal.js";
 import {Viewport} from "./viewport.js";
 
@@ -21,6 +21,7 @@ export {
   Animation,
   Camera,
   collision,
+  EventBus,
   Geometry,
   Light,
   Material,
@@ -35,6 +36,5 @@ export {
   StaticMesh,
   Texture,
   traversal,
-  UiBus,
   Viewport,
 };
