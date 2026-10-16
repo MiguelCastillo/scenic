@@ -199,3 +199,20 @@ body.menu-open #hud {
 #pause[hidden] {
   display: none;
 }
+
+/* The room the player is playing in with others, and how many are in it. */
+#room {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.45);
+  color: white;
+  font-size: 14px;
+  pointer-events: none;
+}
+
+#room:empty {
+  display: none;
+}

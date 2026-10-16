@@ -6,7 +6,7 @@
   "scripts": {
     "test": "npm run test --workspaces",
     "lint": "npm run lint --workspaces",
-    "start": "3dub --config .3dub-prod.js",
+    "start": "cd server && go run . -addr :3000 -static ..",
     "start-dev": "pm2 start dev.config.js",
     "stop-dev": "pm2 delete server build-runtime build-runtime-fileformats build-editor-app build-arcade",
     "monit": "pm2 monit",
@@ -21,7 +21,6 @@
     "node": ">=20.18.2"
   },
   "dependencies": {
-    "3dub": "^1.1.0",
     "encoding": "^0.1.13",
     "iconoir-react": "^5.0.0",
     "node-fetch": "^3.2.6",

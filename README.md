@@ -1036,7 +1036,7 @@ some geometry for rendering.
 On a fresh clone, please run `npm install` to get all your dependencies ready.
 
 To start up the dev server you can `npm run start-dev`. That will startup
-the build system, file watching, and your local dev server. To load up the
+the build system, file watching, and the server (see `server/`). To load up the
 editor you can navigate to http://localhost:3000/apps/editor/index.html,
 and to play a game in the arcade, to
 http://localhost:3000/apps/arcade/index.html?game=bubble-squadron.
@@ -1081,12 +1081,22 @@ welcome page, such as Bubble Squadron's, with its sky behind a menu of the
 tracks, and then runs the track picked there, or, for a game without one,
 the scene the game starts in. Each choice goes into the page's URL, such as
 `?game=bubble-squadron&scene=highway.json`, so reloading the page comes back
-to the same track, and the browser's back button goes back a page. The game starts
-paused: clicking it locks the pointer and plays, Escape lets go of the
-pointer and pauses it, P pauses and resumes while playing, and C switches
-cameras. On a touch screen, which has no pointer to lock, tapping the game
-plays it, and a pause button in the corner, or leaving the page, pauses it
-(`PlayOnTap` in `apps/arcade/input.js`).
+to the same track, and the browser's back button goes back a page.
+
+Players who open the arcade with the same `?room=`, such as
+`?room=friday&game=bubble-squadron`, play together through the relay, at
+`/ws` on the same server as the page. The relay doesn't run the game: each
+player's browser runs it and owns its own ship, and the relay passes what
+each one sends to the others in the room, and tells them who joins and
+leaves (see `server/relay.go` and `apps/arcade/room.js`). The arcade shows
+the room and how many are playing in it.
+
+One server serves it all: `server/`, a small Go program that serves the
+pages and every file they load, and the rooms (see `server/main.go`). `npm run start-dev` runs it on port 3000, restarting it when its Go code
+changes, and `npm start` runs it on its own. It listens on every network
+address, so a tablet on the same network can play at
+`http://<host>:3000/apps/arcade/index.html`. `go test ./...` in `server/`
+runs its tests.
 
 The engine itself lives in the `@scenic/*` packages under `packages/`. See
 [`packages/README.md`](packages/README.md).

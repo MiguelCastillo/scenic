@@ -1,11 +1,16 @@
 module.exports = {
   apps: [
     {
+      // The server for the pages, the files they load and the rooms players
+      // play together in (see server/main.go), restarted when its Go code
+      // changes.
       name: "server",
-      script: "npx",
-      args: "3dub --config .3dub.js",
-      watch: [".3dub.js"],
-      ignore_watch: ["node_modules"],
+      script: "go",
+      args: "run . -addr :3000 -static ..",
+      cwd: "server",
+      interpreter: "none",
+      watch: ["server"],
+      ignore_watch: ["server/*_test.go"],
     },
     {
       name: "build-runtime",

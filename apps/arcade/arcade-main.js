@@ -9,6 +9,7 @@ import {webgl} from "@scenic/renderer";
 import {loadScene, SceneRunner, SceneStack} from "@scenic/runtime";
 
 import {PlayOnTap, PlayWhileLocked, registerSceneInputRouting} from "./input.js";
+import {RoomConnection} from "./room.js";
 
 // The arcade plays one of the games in games/, full screen: the one the page's
 // URL names, such as index.html?game=bubble-squadron, or, without one, the one
@@ -71,6 +72,7 @@ domReady.onReady(async () => {
   const menuEl = document.querySelector("#menu");
   const messageEl = document.querySelector("#message");
   const pauseEl = document.querySelector("#pause");
+  const roomEl = document.querySelector("#room");
   const gl = webgl.createContext(canvas);
 
   // Keep the canvas drawing buffer the same size as the canvas is displayed so
@@ -176,6 +178,20 @@ domReady.onReady(async () => {
     history.pushState(null, "", url);
   };
   domEvents.Subscription.create(window).on("popstate", () => location.reload());
+
+  // Players who open the arcade with the same ?room= play together, through
+  // the relay (see room.js). The page shows the room and how many are in it.
+  const roomName = params.get("room");
+  if (roomName) {
+    roomEl.textContent = `Room ${roomName} · joining…`;
+    new RoomConnection(roomName, {
+      onChange: ({connected, players}) => {
+        roomEl.textContent = connected
+          ? `Room ${roomName} · ${players.length + 1} playing`
+          : `Room ${roomName} · not connected`;
+      },
+    });
+  }
 
   let game = params.get("game");
   try {
