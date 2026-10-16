@@ -1,6 +1,6 @@
 import {ready as domReady, events as domEvents} from "@scenic/dom";
 import {webgl} from "@scenic/renderer";
-import {loadScene, runScene, startRenderLoop} from "@scenic/runtime";
+import {loadScene, SceneRunner, startRenderLoop} from "@scenic/runtime";
 
 import {subscribeToSceneInput} from "./input.js";
 
@@ -46,20 +46,20 @@ domReady.onReady(async () => {
     // Scenes run paused, so the game doesn't run until the player clicks to
     // play (see input.js).
     const sceneURL = new URL(manifest.scene, manifestURL);
-    const scene = runScene(
+    const runner = new SceneRunner(
       gl,
       await loadScene(gl, await fetchJSON(sceneURL), {sceneURL: sceneURL.href})
     );
-    startRenderLoop(gl, scene);
+    startRenderLoop(gl, runner);
 
-    scene.registerHudUpdater((text) => {
+    runner.registerHudUpdater((text) => {
       hudEl.textContent = text;
     });
-    scene.registerRefreshRateUpdater((fps) => {
+    runner.registerRefreshRateUpdater((fps) => {
       fpsEl.textContent = fps;
     });
 
-    subscribeToSceneInput(canvas, scene, ({locked, paused}) => {
+    subscribeToSceneInput(canvas, runner, ({locked, paused}) => {
       messageEl.textContent = !locked
         ? `${manifest.name}\nClick to play`
         : paused

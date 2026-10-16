@@ -929,11 +929,11 @@ which keeps things faster and easier to debug in the browser. Use
 
 Scenes are run by `@scenic/runtime` (`packages/runtime`), which apps are built
 on, in three steps: `loadScene` builds a scene from its config and loads its
-models, shaders and scripts; `runScene` runs it a frame at a time, with its
-clock, pausing, cameras, the player's input, its HUD and frame rate; and
-`startRenderLoop` calls it every frame. It is also where most of the logic for
-FBX animation lives while support for it is implemented. It generates two
-bundles:
+models, shaders and scripts; a `SceneRunner` steps it a frame at a time, with
+its clock, pausing, cameras, the player's input, its HUD and frame rate; and
+`startRenderLoop` calls the runner every frame. It is also where most of the
+logic for FBX animation lives while support for it is implemented. It
+generates two bundles:
 
 1. The runtime (`dist/index.js`).
 2. File formats (`dist/file-formats.js`). This is meant to be loaded in a web

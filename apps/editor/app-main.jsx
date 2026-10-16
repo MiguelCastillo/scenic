@@ -2,7 +2,7 @@ import React from "react";
 import {createRoot} from "react-dom/client";
 import {ready as domReady, events as domEvents} from "@scenic/dom";
 import {webgl} from "@scenic/renderer";
-import {loadScene, runScene, startRenderLoop} from "@scenic/runtime";
+import {loadScene, SceneRunner, startRenderLoop} from "@scenic/runtime";
 
 import {SceneGraph} from "./app/app.jsx";
 import {Error} from "./app/error.jsx";
@@ -43,10 +43,10 @@ domReady.onReady(() => {
   const fpsEl = document.querySelector("#fps");
   const hudEl = document.querySelector("#hud");
 
-  // The scene currently rendering: {scene, running, stopRenderLoop}, the
-  // scene loadScene loaded, it running (see runScene), which the input drives,
-  // and what stops its render loop. It is stopped and disposed before another
-  // scene is rendered in its place.
+  // The scene currently rendering: {scene, runner, stopRenderLoop}, the
+  // scene loadScene loaded, its runner (see SceneRunner), which the input
+  // drives, and what stops its render loop. It is stopped and disposed
+  // before another scene is rendered in its place.
   let currentScene = null;
 
   // The page layout and input listeners are shared by every scene, so they are
@@ -75,7 +75,7 @@ domReady.onReady(() => {
 
   subscribeToSceneInput(
     document.getElementById("mousetrap"),
-    () => currentScene?.running,
+    () => currentScene?.runner,
     renderSceneGraph,
     showPaused
   );
@@ -86,7 +86,7 @@ domReady.onReady(() => {
   // such as the selected node.
   function renderSceneGraph() {
     const {resourceLoader, sceneManager} = currentScene.scene;
-    const {cameras} = currentScene.running;
+    const {cameras} = currentScene.runner;
     sceneGraphRoot.render(
       <SceneGraph
         sceneManager={sceneManager}
@@ -134,19 +134,18 @@ domReady.onReady(() => {
       .then((config) => loadScene(gl, config, {sceneURL: sceneFile}))
       .then((scene) => {
         // Scenes run paused, until P is pressed.
-        const running = runScene(gl, scene);
-        currentScene = {scene, running, stopRenderLoop: startRenderLoop(gl, running)};
-        const {registerRefreshRateUpdater, registerHudUpdater} = running;
-        showPaused(running.isPaused());
+        const runner = new SceneRunner(gl, scene);
+        currentScene = {scene, runner, stopRenderLoop: startRenderLoop(gl, runner)};
+        showPaused(runner.isPaused());
 
         renderSceneGraph();
 
-        registerRefreshRateUpdater((fps) => {
+        runner.registerRefreshRateUpdater((fps) => {
           fpsEl.innerHTML = fps;
         });
 
         // The scene's HUD text, such as a race's lap and time, shows over it.
-        registerHudUpdater((text) => {
+        runner.registerHudUpdater((text) => {
           hudEl.textContent = text;
         });
 

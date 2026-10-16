@@ -1,9 +1,9 @@
 import {renderStats} from "@scenic/renderer";
 
-// startRenderLoop runs scene every frame, such as one runScene returns: it
-// sets up and clears the canvas, then calls the scene's updateScene and
-// renderFrame with the frame's time. It returns a function that stops it.
-export function startRenderLoop(gl, scene) {
+// startRenderLoop runs runner every frame, such as a SceneRunner: it sets up
+// and clears the canvas, then calls the runner's updateScene and renderFrame
+// with the frame's time. It returns a function that stops it.
+export function startRenderLoop(gl, runner) {
   const {canvas} = gl;
 
   // requestAnimationFrame will _try_ to run at 60 frames per seconds.
@@ -36,10 +36,10 @@ export function startRenderLoop(gl, scene) {
     renderStats.startFrame();
 
     // Update the scene and states.
-    scene.updateScene(ms);
+    runner.updateScene(ms);
 
     // Render the udpated scene with updated states.
-    scene.renderFrame(ms);
+    runner.renderFrame(ms);
 
     // Queue up next frame.
     frameID = requestAnimationFrame(tick);

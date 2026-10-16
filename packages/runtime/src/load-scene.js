@@ -13,8 +13,8 @@ import {applyShaders} from "./shader-registry.js";
 import {loadScripts} from "./script-loader.js";
 
 // loadScene builds a scene from its config and loads its models, shaders
-// and scripts, ready to run (see runScene). It returns the scene: its
-// sceneManager, its resourceLoader, and dispose, which tears it down.
+// and scripts, ready to run (see SceneRunner). It returns the scene:
+// its sceneManager, its resourceLoader, and dispose, which tears it down.
 //
 // Options:
 // - sceneURL: where config came from, such as "/games/bubble-squadron/
