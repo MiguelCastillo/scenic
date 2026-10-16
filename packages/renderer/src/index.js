@@ -9,6 +9,8 @@ import {ShaderProgram, compileShaderSource, parseVertexShaderAttributes} from ".
 
 import {ShaderRegistry} from "./shader-registry.js";
 
+import {renderStats} from "./render-stats.js";
+
 import * as webgl from "./webgl.js";
 
 export {
@@ -20,5 +22,6 @@ export {
   compileShaderSource,
   parseVertexShaderAttributes,
   ShaderRegistry,
+  renderStats,
   webgl,
 };

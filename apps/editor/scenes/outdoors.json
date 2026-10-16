@@ -136,7 +136,11 @@
             "flatness": 0.3,
             "clearings": [],
             "lowColor": [0.45, 0.62, 0.42],
-            "highColor": [0.62, 0.8, 0.48]
+            "highColor": [0.62, 0.8, 0.48],
+            "showTiles": false,
+            "tileSize": 1000,
+            "detail": 16,
+            "detailDistance": 4000
           },
           "material": {
             "color": [0, 0, 0, 1],

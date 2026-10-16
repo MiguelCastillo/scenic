@@ -12,11 +12,11 @@ const label = (name) => {
 
 // SettingsProperties edits a block of settings in a node's state, such as a
 // sky's "sky" or a grid's "grid", for nodes that read them every frame, so
-// changes show up live. Colors, which are [r, g, b] lists, get color pickers
-// and numbers get number fields. Text is shown but not edited, and so are
-// other lists, such as a terrain's clearings, by how many items they have. It shows the
-// settings in the node's state, so the scene config lists the ones to tune,
-// plus any defaults.
+// changes show up live. Colors, which are [r, g, b] lists, get color pickers,
+// numbers get number fields, and true or false gets a checkbox. Text is shown
+// but not edited, and so are other lists, such as a terrain's clearings, by
+// how many items they have. It shows the settings in the node's state, so the
+// scene config lists the ones to tune, plus any defaults.
 //
 // Props:
 // - settingsKey: the name of the block in the node's state.
@@ -51,7 +51,17 @@ export class SettingsProperties extends WithNodeState {
     if (typeof value === "string") {
       return <span>{value}</span>;
     }
-    if (Array.isArray(value) && !value.every((v) => typeof v === "number")) {
+    if (typeof value === "boolean") {
+      return (
+        <input
+          type="checkbox"
+          onChange={(evt) => this.updateSetting(name, evt.target.checked)}
+          checked={value}
+        />
+      );
+    }
+    const isColor = Array.isArray(value) && value.length === 3 && value.every((v) => typeof v === "number");
+    if (Array.isArray(value) && !isColor) {
       return <span>{value.length} items</span>;
     }
     if (Array.isArray(value)) {

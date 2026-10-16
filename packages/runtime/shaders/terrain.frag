@@ -24,6 +24,7 @@ in vec3 fragmentColor;
 in vec3 fragmentNormal;
 in vec3 fragmentWorldPosition;
 in float fragmentTrack;
+in float fragmentSteps;
 
 uniform sampler2D grassTexture;
 uniform sampler2D dirtTexture;
@@ -32,6 +33,8 @@ uniform float grassSize;
 uniform float dirtSize;
 uniform float blendSize;
 uniform vec3 dirtColor;
+uniform float tileSize;
+uniform bool showTiles;
 
 uniform vec3 ambientColor;
 uniform vec3 ambientGroundColor;
@@ -89,5 +92,20 @@ void main() {
     float fog = smoothstep(fogNear, fogFar, distance(fragmentWorldPosition, cameraPosition));
     color = mix(color, fogColor, fog);
   }
+  // With showTiles, lines where the tiles' edges are, and thinner ones around
+  // the squares of each tile's grid. Their widths are in pixels: how far a
+  // pixel is from a line, in squares, is divided by how many squares a pixel
+  // spans there, so lines stay as wide however near or far they are.
+  if (showTiles) {
+    vec2 squares = ground / (tileSize / fragmentSteps);
+    vec2 fromSquare = abs(fract(squares - 0.5) - 0.5) / fwidth(squares);
+    vec2 tiles = ground / tileSize;
+    vec2 fromTile = abs(fract(tiles - 0.5) - 0.5) / fwidth(tiles);
+    float squareLine = 1.0 - clamp(min(fromSquare.x, fromSquare.y) - 0.5, 0.0, 1.0);
+    float tileLine = 1.0 - clamp(min(fromTile.x, fromTile.y) - 1.5, 0.0, 1.0);
+    color = mix(color, vec3(0.1, 0.12, 0.2), squareLine * 0.6);
+    color = mix(color, vec3(1.0, 0.3, 0.4), tileLine);
+  }
+
   pixelColor = vec4(color, 1.0);
 }

@@ -3,6 +3,7 @@ import {
   VertexBuffer,
   VertexBufferData,
   VertexBufferIndexes,
+  renderStats,
 } from "@scenic/renderer";
 import {Mesh} from "@scenic/scene";
 
@@ -53,7 +54,15 @@ import {shaderRegistry} from "./shader-registry.js";
 // - terrain.blendTexture: where dirt shows through grass, in its alpha,
 //   repeated every blendSize.
 // - terrain.tileSize: how big each tile is.
-// - terrain.detail: how many steps a tile has along each side.
+// - terrain.detail: how many steps a tile has along each side, up close.
+// - terrain.detailDistance: how far from the camera tiles keep all their
+//   detail. Out to twice as far they have half as many steps, and past that
+//   a quarter, since far ground is small on screen and in the fog.
+// - terrain.showTiles: whether to draw lines on the ground where its tiles'
+//   edges are, and thinner ones around every square of their grids, to see
+//   how the ground is cut up, and to show on the HUD how many tiles there
+//   are, how many were drawn and built in the last frame, and how many draw
+//   calls and triangles the whole frame took. Off by default.
 // Its material and ambient work as a mesh's do; the grass colors are vertex
 // colors, which the material color adds to, so leave it black.
 export class Terrain extends Mesh {
@@ -74,8 +83,10 @@ export class Terrain extends Mesh {
     grassSize: 300,
     dirtSize: 300,
     blendSize: 9000,
-    tileSize: 2000,
-    detail: 32,
+    tileSize: 1000,
+    detail: 16,
+    detailDistance: 4000,
+    showTiles: false,
   };
 
   constructor(options) {
@@ -86,9 +97,13 @@ export class Terrain extends Mesh {
     this.builtWith = "";
     // The settings that shape the ground, ready to measure (see withPieces).
     this.ground = null;
-    this.indexes = null;
+    // The index buffers tiles share, by how many steps they have.
+    this.indexes = new Map();
     // The textures loaded so far, by URL.
     this.textures = new Map();
+    // The tiles drawn this frame, and their triangles, counted as they are
+    // drawn (see isVisible), for showTiles.
+    this.drawn = {tiles: 0, triangles: 0};
   }
 
   // getSettings is the terrain's settings, with defaults for those its state
@@ -116,7 +131,7 @@ export class Terrain extends Mesh {
     const builtWith = JSON.stringify(
       [
         ...["seed", "height", "scale", "flatness", "clearings", "paths", "bumps"],
-        ...["lowColor", "highColor", "tileSize", "detail"],
+        ...["lowColor", "highColor", "tileSize", "detail", "detailDistance"],
       ].map((key) => this.settings[key])
     );
     if (builtWith !== this.builtWith) {
@@ -125,18 +140,7 @@ export class Terrain extends Mesh {
       this.ground = withPieces(this.settings);
     }
 
-    const {tileSize, detail} = this.settings;
-    if (!this.indexes) {
-      const indexes = [];
-      const row = detail + 1;
-      for (let i = 0; i < detail; i++) {
-        for (let j = 0; j < detail; j++) {
-          const a = i * row + j;
-          indexes.push(a, a + row, a + 1, a + 1, a + row, a + row + 1);
-        }
-      }
-      this.indexes = new VertexBufferIndexes(gl, indexes);
-    }
+    const {tileSize, detail, detailDistance} = this.settings;
 
     // The tiles that reach within the camera's far plane of it, nearest
     // first. Tiles more than one tile farther away than that are dropped.
@@ -158,38 +162,75 @@ export class Terrain extends Mesh {
       }
     }
 
+    // stepsAt is how many steps a tile has at distance tiles from the
+    // camera: all of detail up close, then half, then a quarter.
+    const stepsAt = (distance) => {
+      const level = Math.min(2, Math.floor((distance * tileSize) / detailDistance));
+      return Math.max(4, detail >> level);
+    };
+
+    // The tiles missing, and the tiles that have moved far enough into
+    // another's distance to change how many steps they have. A quarter of a
+    // tile's margin either side of where that changes keeps a tile from
+    // being built again and again as the camera moves back and forth there.
     const wanted = [];
     for (let column = Math.floor(cx) - reach; column <= Math.floor(cx) + reach; column++) {
       for (let row = Math.floor(cz) - reach; row <= Math.floor(cz) + reach; row++) {
         const distance = Math.hypot(column + 0.5 - cx, row + 0.5 - cz);
-        if (distance <= reach + 0.75 && !this.tiles.has(`${column},${row}`)) {
-          wanted.push({column, row, distance});
+        const tile = this.tiles.get(`${column},${row}`);
+        const steps = stepsAt(distance);
+        const settled = stepsAt(distance - 0.25) === steps && stepsAt(distance + 0.25) === steps;
+        if (distance <= reach + 0.75 && (!tile || (tile.steps !== steps && settled))) {
+          wanted.push({column, row, distance, steps});
         }
       }
     }
 
     // Building tiles for only a few milliseconds a frame keeps flying smooth
-    // while the ground fills in, a tile at least.
+    // while the ground fills in, a tile at least. A tile changing its steps
+    // is drawn as it was until its new one is built.
     wanted.sort((a, b) => a.distance - b.distance);
     const start = performance.now();
-    for (const {column, row} of wanted) {
-      this.tiles.set(`${column},${row}`, this.buildTile(gl, column, row));
+    let built = 0;
+    for (const {column, row, steps} of wanted) {
+      const key = `${column},${row}`;
+      this.tiles.get(key)?.dispose();
+      this.tiles.set(key, this.buildTile(gl, column, row, steps));
+      built++;
       if (performance.now() - start > 4) {
         break;
       }
     }
+
+    // With showTiles, what the ground and the last frame cost, on the HUD.
+    // Tiles are counted as they are drawn, after this, so the counts are the
+    // last frame's.
+    const thousands = (n) => `${Math.round(n / 1000)}k`;
+    const text = this.settings.showTiles
+      ? `Terrain: ${this.tiles.size} tiles, ${this.drawn.tiles} drawn, ` +
+        `${thousands(this.drawn.triangles)} triangles, ${built} built\n` +
+        `Frame: ${renderStats.last.drawCalls} draw calls, ` +
+        `${thousands(renderStats.last.triangles)} triangles`
+      : undefined;
+    if (sceneManager.getNodeStateByID(this.id).hud?.text !== text) {
+      sceneManager.updateNodeStateByID(this.id, {hud: text && {text}});
+    }
+    this.drawn = {tiles: 0, triangles: 0};
 
     for (const tile of this.tiles.values()) {
       this.addVertexBuffer(tile.vertexBuffer);
     }
   }
 
-  // buildTile builds the tile in the given column and row: a grid of detail
-  // steps along each side, its normals from the heights around each point,
-  // its colors from how high each point is, and how much of a dirt track is
-  // at each point, in its texture coordinates.
-  buildTile(gl, column, row) {
-    const {tileSize, detail, lowColor, highColor} = this.settings;
+  // buildTile builds the tile in the given column and row: a grid of steps
+  // along each side, its normals from the heights around each point, its
+  // colors from how high each point is, and in its texture coordinates, how
+  // much of a dirt track is at each point and the tile's steps. A skirt
+  // hangs down from its edges, so that where it meets a tile with more or
+  // fewer steps, whose edge doesn't quite line up with its own, the ground
+  // has no cracks.
+  buildTile(gl, column, row, detail) {
+    const {tileSize, lowColor, highColor} = this.settings;
     const step = tileSize / detail;
     const [x0, z0] = [column * tileSize, row * tileSize];
 
@@ -223,10 +264,30 @@ export class Terrain extends Mesh {
         const normal = [at(0, -1) - at(0, 1), 2 * step, at(-1, 0) - at(1, 0)];
         const length = Math.hypot(...normal);
         normals.push(...normal.map((v) => v / length));
-        const t = Math.min(1, Math.max(0, y / settings.height)) ** 0.7;
+        // Flat ground, with no height, is all meadow.
+        const t = settings.height > 0 ? Math.min(1, Math.max(0, y / settings.height)) ** 0.7 : 0;
         colors.push(...lowColor.map((v, k) => v + (highColor[k] - v) * t));
-        tracks.push(track(settings, x0 + j * step, z0 + i * step), 0);
+        tracks.push(track(settings, x0 + j * step, z0 + i * step), detail);
       }
+    }
+
+    // The skirt is a copy of the edge's points, lowered, around the tile:
+    // along its first row, its last column, its last row and its first
+    // column, in that order (see skirtIndexes).
+    const drop = skirtDepth(this.settings);
+    for (const index of edgeIndexes(detail)) {
+      positions.push(
+        positions[index * 3],
+        positions[index * 3 + 1] - drop,
+        positions[index * 3 + 2]
+      );
+      normals.push(...normals.slice(index * 3, index * 3 + 3));
+      colors.push(...colors.slice(index * 3, index * 3 + 3));
+      tracks.push(...tracks.slice(index * 2, index * 2 + 2));
+    }
+
+    if (!this.indexes.has(detail)) {
+      this.indexes.set(detail, new VertexBufferIndexes(gl, tileIndexes(detail)));
     }
 
     const vertexBuffer = new VertexBuffer({
@@ -234,20 +295,32 @@ export class Terrain extends Mesh {
       normals: new VertexBufferData(gl, normals),
       colors: new VertexBufferData(gl, colors),
       textureCoords: new TextureVertexBufferData(gl, tracks),
-      indexes: this.indexes,
+      indexes: this.indexes.get(detail),
     });
 
-    // The index buffer is shared by every tile, so a tile only deletes its
-    // own buffers.
+    // Index buffers are shared by every tile with as many steps, so a tile
+    // only deletes its own buffers.
     return {
       column,
       row,
+      steps: detail,
       vertexBuffer,
       dispose: () =>
         ["positions", "normals", "colors", "textureCoords"].forEach((b) =>
           vertexBuffer[b].dispose()
         ),
     };
+  }
+
+  // isVisible is whether a tile is in view (see Mesh.isVisible), counting the
+  // tiles that are, and their triangles, for showTiles.
+  isVisible(vertexBuffer) {
+    const visible = super.isVisible(vertexBuffer);
+    if (visible) {
+      this.drawn.tiles++;
+      this.drawn.triangles += vertexBuffer.indexes.data.length / 3;
+    }
+    return visible;
   }
 
   // getMaterialsState gives terrain a dull material when its state has none,
@@ -291,6 +364,8 @@ export class Terrain extends Mesh {
       floatUniform("grassSize", settings.grassSize),
       floatUniform("dirtSize", settings.dirtSize),
       floatUniform("blendSize", settings.blendSize),
+      floatUniform("tileSize", settings.tileSize),
+      {name: "showTiles", update: (gl, {index}) => gl.uniform1i(index, !!settings.showTiles)},
       {name: "dirtColor", update: (gl, {index}) => gl.uniform3fv(index, settings.dirtColor)},
     ]);
 
@@ -346,10 +421,10 @@ export class Terrain extends Mesh {
       tile.dispose();
     }
     this.tiles.clear();
-    if (this.indexes) {
-      this.indexes.dispose();
-      this.indexes = null;
+    for (const indexes of this.indexes.values()) {
+      indexes.dispose();
     }
+    this.indexes.clear();
   }
 
   dispose(gl) {
@@ -360,6 +435,56 @@ export class Terrain extends Mesh {
     this.textures.clear();
     super.dispose(gl);
   }
+}
+
+// edgeIndexes are the points around the edge of a tile with detail steps,
+// once each: along its first row, down its last column, back along its last
+// row and up its first column, in a loop.
+function edgeIndexes(detail) {
+  const row = detail + 1;
+  const edge = [];
+  for (let j = 0; j < detail; j++) {
+    edge.push(j);
+  }
+  for (let i = 0; i < detail; i++) {
+    edge.push(i * row + detail);
+  }
+  for (let j = detail; j > 0; j--) {
+    edge.push(detail * row + j);
+  }
+  for (let i = detail; i > 0; i--) {
+    edge.push(i * row);
+  }
+  return edge;
+}
+
+// tileIndexes are the triangles of a tile with detail steps: two for each
+// square of its grid, and two for each step of its skirt, which follows the
+// grid's points in the order edgeIndexes lists them. The skirt is drawn from
+// both sides, since it is seen from outside the tile wherever it shows.
+function tileIndexes(detail) {
+  const row = detail + 1;
+  const indexes = [];
+  for (let i = 0; i < detail; i++) {
+    for (let j = 0; j < detail; j++) {
+      const a = i * row + j;
+      indexes.push(a, a + row, a + 1, a + 1, a + row, a + row + 1);
+    }
+  }
+  const edge = edgeIndexes(detail);
+  const skirt = row * row;
+  edge.forEach((top, k) => {
+    const next = (k + 1) % edge.length;
+    const [a, b, c, d] = [top, edge[next], skirt + k, skirt + next];
+    indexes.push(a, c, b, b, c, d, a, b, c, b, d, c);
+  });
+  return indexes;
+}
+
+// skirtDepth is how far a tile's skirt hangs below its edge: deeper for
+// taller hills, where tiles with different steps can be further apart.
+function skirtDepth(settings) {
+  return 20 + settings.height * 0.1;
 }
 
 // withPieces is settings with each path's line also as its pieces, the pairs

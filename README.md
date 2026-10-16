@@ -561,7 +561,7 @@ Terrain tab.
 #### Tiles
 
 Ground that goes on forever can't be one mesh, so the terrain is cut into
-square tiles, `tileSize` across (2000 by default), and only the tiles around
+square tiles, `tileSize` across (1000 by default), and only the tiles around
 the camera exist. Seen from above, with the camera at `C`:
 
 ```
@@ -587,14 +587,17 @@ Every frame, the terrain (`preRender` in `terrain.js`):
    something flying away is let go, with its GPU buffers. The one tile of
    slack keeps a tile from being dropped and built again as the camera moves
    back and forth across the edge.
-3. Builds the tiles it is missing, nearest first, for about 4 milliseconds,
-   and always at least one. Building every missing tile at once would stall a
+3. Builds the tiles it is missing, and the tiles whose level of detail has
+   changed (see below), nearest first, for about 4 milliseconds, and always
+   at least one. Building every missing tile at once would stall a
    frame, such as when the scene loads or the camera flies fast; spreading
    them out keeps flying smooth while far tiles fill in, out in the fog.
-4. Draws every tile it has, each its own vertex buffer.
+4. Draws every tile it has, each its own vertex buffer, except the ones out
+   of the camera's view (see `Mesh.isVisible`).
 
-A tile is a grid of `detail` steps along each side (32 by default), so 33 by
-33 points, each a vertex with:
+Up close, a tile is a grid of `detail` steps along each side (16 by default),
+so 17 by 17 points, and 512 triangles, each square of the grid split in two.
+Each point is a vertex with:
 
 - its position, from the height function at that point.
 - its normal, which way the ground faces there, from the heights one step to
@@ -605,8 +608,44 @@ A tile is a grid of `detail` steps along each side (32 by default), so 33 by
   `highColor` on the hilltops.
 - how much of a path's dirt track is there.
 
-All the tiles share one index buffer, the list of triangles that join a grid
-of points, since every tile's grid is the same. Changing a setting that shapes
+Far tiles need far fewer: a 1000 wide tile is about 700 pixels across from
+1000 away, but under 50 from 16000 away, in the fog, where 16 steps would make
+triangles too small to see. So tiles have fewer steps the farther they are
+from the camera, which is their level of detail: all of `detail` within
+`detailDistance` (4000 by default), half as many out to twice that, and a
+quarter past that, so that a step stays about 10 to 20 pixels on screen at any
+distance:
+
+| Distance        | Steps | Triangles |
+| --------------- | ----- | --------- |
+| up to 4000      | 16    | 512       |
+| 4000 to 8000    | 8     | 128       |
+| 8000 and beyond | 4     | 32        |
+
+As the camera moves, a tile that has moved into another's distance is built
+again with its new steps, within the same few milliseconds a frame, and is
+drawn as it was until then. A quarter of a tile either side of each distance
+where the steps change is left alone, so that a tile isn't built again and
+again as the camera moves back and forth there.
+
+Where a tile with more steps meets one with fewer, their edges don't quite
+line up: the finer one has points between the coarser one's, which can be
+higher or lower than the coarser edge's straight line between its points. That
+would leave thin cracks in the ground, with sky showing through. So every
+tile has a skirt, a strip hanging down from its edges, a little deeper the
+taller the hills are, which fills any crack with ground. It is drawn from both
+sides, and adds two triangles for every step around the edge.
+
+Tiles are small so that what is out of view can be left out of a frame in
+small pieces: a tile is drawn whole if any of it is in view (see
+`Mesh.isVisible`), so smaller tiles leave out more of the ground behind and
+beside the camera, at the cost of more tiles to build and draw. With
+`showTiles` on, the terrain draws lines on the ground around every tile and
+every square of its grid, to see how the ground is cut up and where tiles
+change their steps.
+
+Tiles with as many steps share one index buffer, the list of triangles that
+join a grid of points and its skirt, since their grids are the same. Changing a setting that shapes
 the ground, such as `height`, drops every tile, and they are built again with
 the new settings; changing only a texture or the dirt color doesn't, since
 those are only drawn.

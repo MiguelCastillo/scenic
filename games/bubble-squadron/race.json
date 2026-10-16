@@ -373,7 +373,8 @@
             ],
             "lowColor": [0.45, 0.62, 0.42],
             "highColor": [0.62, 0.8, 0.48],
-            "dirtColor": [0.62, 0.48, 0.34]
+            "dirtColor": [0.62, 0.48, 0.34],
+            "showTiles": false
           },
           "material": {
             "color": [0, 0, 0, 1],

@@ -2,6 +2,7 @@
 // https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/Tutorial/Adding_2D_content_to_a_WebGL_context
 
 import {ShaderAttribute} from "./attribute.js";
+import {renderStats} from "./render-stats.js";
 import {ShaderUniform} from "./uniform.js";
 
 export class ShaderProgram {
@@ -165,6 +166,7 @@ export class ShaderProgram {
         gl.UNSIGNED_INT,
         vertexOffset
       );
+      countDraw(gl, primitiveType, data.length);
     } else if (positions) {
       const {data, componentsPerVertex} = positions;
       const vertexOffset = 0;
@@ -172,6 +174,7 @@ export class ShaderProgram {
       positions.bind();
 
       gl.drawArrays(primitiveType, vertexOffset, data.length / componentsPerVertex);
+      countDraw(gl, primitiveType, data.length / componentsPerVertex);
     } else {
       throw new Error(
         "neither indexes or positions that are configured. must provide one to render."
@@ -380,4 +383,13 @@ export function parseVertexShaderAttributes(vertexShaderSource) {
       size,
     };
   });
+}
+
+// countDraw adds a draw of count vertices to renderStats, and the triangles
+// they make when they are triangles.
+function countDraw(gl, primitiveType, count) {
+  renderStats.drawCalls++;
+  if (primitiveType === gl.TRIANGLES) {
+    renderStats.triangles += Math.floor(count / 3);
+  }
 }

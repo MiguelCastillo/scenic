@@ -5,7 +5,7 @@
 //
 
 import {mat4} from "@scenic/math";
-import {webgl} from "@scenic/renderer";
+import {renderStats, webgl} from "@scenic/renderer";
 import {CameraSystem} from "@scenic/camera";
 import {Node} from "@scenic/scene";
 
@@ -95,6 +95,10 @@ function createSceneUpdater(gl, sceneManager, startPaused) {
   };
 
   function renderFrame(ms) {
+    // What the last frame drew is kept for anything that shows it, such as
+    // a terrain with showTiles, and this frame's drawing is counted afresh.
+    renderStats.startFrame();
+
     // Scripts get the frame's seconds, the held keys and the mouse's
     // movement, so that a script such as a flight controller can move at the
     // same speed at any frame rate and respond to the player.
