@@ -68,9 +68,10 @@ export class Node {
   render() {}
 
   // withScript attaches a script to the node: an object with any of the hooks
-  // preRender(context), render(context) and dispose(), which SceneManager and
-  // dispose call along with the node's own. Scripts let code decide what a
-  // node does each frame, such as moving it, without a new node type.
+  // update(context), render(context) and dispose(). SceneManager.update calls
+  // update once a frame, SceneManager.render calls render after the node's,
+  // and dispose calls dispose. Scripts let code decide what a node does each
+  // frame, such as moving it, without a new node type.
   withScript(script) {
     this.script = script;
     return this;

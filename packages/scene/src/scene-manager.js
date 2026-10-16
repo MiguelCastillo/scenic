@@ -67,10 +67,33 @@ export class SceneManager {
     this.scene.dispose(gl);
   }
 
-  // render draws a frame of the scene at ms, the frame's time. frame holds
-  // anything else the app wants every node and script to see this frame, such
-  // as the seconds since the last frame or the keys being held, and it is
-  // added to the context that preRender and render get.
+  // update runs every node's script for a frame of the scene at ms, the
+  // frame's time, parents before children, through the script's update hook.
+  // This is where scripts change the scene's state, such as moving a ship,
+  // so update runs once a frame, before render draws it. frame holds anything
+  // else the app wants the scripts to see this frame, such as the seconds
+  // since the last frame or the keys being held, and it is added to the
+  // context update gets.
+  //
+  // World matrices are only worked out by render, so a script reading
+  // another node's world matrix sees where it was last drawn.
+  update(ms, frame = {}) {
+    const context = {...frame, ms, sceneManager: this};
+    const updatePass = bubbleTraversal(
+      (node) => {
+        node.script?.update?.(context);
+        return node;
+      },
+      () => {}
+    );
+    this.scene.items.forEach(updatePass);
+  }
+
+  // render draws the scene as its state has it, at ms, the frame's time, such
+  // as for animations. It changes nothing in the state, so the same state can
+  // be drawn again, as often as needed (see update for changing it). frame
+  // holds anything else the app wants every node to see while drawing, and it
+  // is added to the context that preRender and render get.
   render(ms, gl, frame = {}) {
     const context = {
       ...frame,
@@ -108,14 +131,12 @@ export class SceneManager {
     // such as the camera or the bones of a skeleton, no matter where in the
     // tree that node is.
     //
-    // A node's script, if it has one, gets the same hooks: its preRender runs
-    // just before the node's, so that changes it makes to the node's state show
-    // up in this frame, and its render runs just after the node's. The hooks
-    // are called here rather than from Node so that every node type gets them,
-    // including types whose preRender does not call super.preRender.
+    // A node's script, if it has one, can also draw: its render runs just
+    // after the node's. It is called here rather than from Node so that every
+    // node type gets it, including types whose render does not call
+    // super.render.
     const preRenderPass = bubbleTraversal(
       (node) => {
-        node.script?.preRender?.(context);
         node.preRender(context);
         return node;
       },

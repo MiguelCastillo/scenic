@@ -9,14 +9,25 @@ function createTrackedNode(name, calls) {
   node.preRender = () => calls.push(`${name}.preRender`);
   node.render = () => calls.push(`${name}.render`);
   return node.withScript({
-    preRender: () => calls.push(`${name}.script.preRender`),
+    update: () => calls.push(`${name}.script.update`),
     render: () => calls.push(`${name}.script.render`),
     dispose: () => calls.push(`${name}.script.dispose`),
   });
 }
 
 describe("scripts", () => {
-  test("run their hooks around their node's, parents first then children first", () => {
+  test("update parents first, and nothing else", () => {
+    const calls = [];
+    const parent = createTrackedNode("parent", calls);
+    parent.add(createTrackedNode("child", calls));
+    const sceneManager = new SceneManager(new StateManager([])).withNodes([parent]);
+
+    sceneManager.update(0);
+
+    expect(calls).toEqual(["parent.script.update", "child.script.update"]);
+  });
+
+  test("render after their node, children first, without updating", () => {
     const calls = [];
     const parent = createTrackedNode("parent", calls);
     parent.add(createTrackedNode("child", calls));
@@ -25,9 +36,7 @@ describe("scripts", () => {
     sceneManager.render(0, null);
 
     expect(calls).toEqual([
-      "parent.script.preRender",
       "parent.preRender",
-      "child.script.preRender",
       "child.preRender",
       "child.render",
       "child.script.render",
@@ -51,6 +60,9 @@ describe("scripts", () => {
     const node = new Node({name: "light", id: "light"}).withScript({});
     const sceneManager = new SceneManager(new StateManager([])).withNodes([node]);
 
-    expect(() => sceneManager.render(0, null)).not.toThrow();
+    expect(() => {
+      sceneManager.update(0);
+      sceneManager.render(0, null);
+    }).not.toThrow();
   });
 });

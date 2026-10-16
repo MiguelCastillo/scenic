@@ -41,7 +41,7 @@ function noise(t, phase, offset) {
 
 module.exports = function createFlameScript(node) {
   return {
-    preRender({seconds = 0, sceneManager}) {
+    update({seconds = 0, sceneManager}) {
       const state = sceneManager.getNodeStateByID(node.id);
       const settings = state.script.settings || {};
       const {

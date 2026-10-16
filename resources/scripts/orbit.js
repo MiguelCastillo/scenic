@@ -13,7 +13,7 @@ const {angles} = require("@scenic/math");
 
 module.exports = function createOrbitScript(node) {
   return {
-    preRender({ms, sceneManager}) {
+    update({ms, sceneManager}) {
       const state = sceneManager.getNodeStateByID(node.id);
       const {center, radius, speed, phase} = state.script.settings;
       const angle = angles.degToRad(phase + (speed * ms) / 1000);

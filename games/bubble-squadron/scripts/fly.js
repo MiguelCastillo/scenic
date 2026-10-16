@@ -135,7 +135,7 @@ function bounce(sceneManager, node, state, position, matrix, flight) {
 
 module.exports = function createFlyScript(node) {
   return {
-    preRender({seconds = 0, keys = new Set(), mouse = {x: 0, y: 0}, sceneManager}) {
+    update({seconds = 0, keys = new Set(), mouse = {x: 0, y: 0}, sceneManager}) {
       const state = sceneManager.getNodeStateByID(node.id);
       const settings = {...defaults, ...state.script.settings};
       const flight = {

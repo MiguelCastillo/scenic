@@ -268,16 +268,21 @@ const {angles} = require("@scenic/math");
 
 module.exports = function createScript(node) {
   return {
-    preRender(context) {}, // just before the node's own preRender
-    render(context) {}, // just after the node's own render
+    update(context) {}, // once a frame, before the scene is drawn
+    render(context) {}, // just after the node's own render, every draw
     dispose() {}, // when the scene is disposed
   };
 };
 ```
 
-Every hook is optional. `SceneManager` calls `preRender` before the node's own,
-so changes the script makes to the node's state show up in the same frame.
-`context` has the frame's time in `ms` and the `sceneManager`. In the editor
+Every hook is optional. `update` is where a script changes the scene's state:
+`SceneManager.update` calls it once a frame, parents before children, and the
+frame is drawn after, so the changes show up in the same frame. Drawing
+(`SceneManager.render`) never runs `update`, so a frame can be drawn as often
+as needed without moving anything, and a script's `render` must leave the
+state alone too. Another node's world matrix is where that node was last
+drawn. `update`'s `context` has the frame's time in `ms` and the
+`sceneManager`. In the editor
 it also has the player's input: `seconds` since the last frame, the `keys`
 being held, by `KeyboardEvent.code`, and how far the `mouse` moved since the
 last frame, as `{x, y}` in pixels. Input only reaches the scene while the
@@ -870,7 +875,9 @@ editor's nodes.
 every node, parents before children, so that every world matrix is up to date,
 including the camera's. The second pass calls `render` on every node, children
 before parents, so by the time a mesh renders its children have already filled
-its draw list:
+its draw list. Scripts have already moved things before this, in
+`SceneManager.update` (see [Scripts](#scripts)), so drawing only reads the
+scene's state:
 
 ```mermaid
 sequenceDiagram

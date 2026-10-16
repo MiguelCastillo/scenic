@@ -15,33 +15,33 @@ import {createFrameRateCounter} from "./fps-counter.js";
 // "input": true in its config, such as its "world" viewport. A scene without
 // one, such as a menu, has no cameras for the player to move.
 //
-// Using it: every frame, call updateScene and then renderFrame, once each,
-// with the same time, after clearing the canvas. startRenderLoop does this
-// for you:
+// Using it: every frame, call updateScene once with the frame's time, then
+// renderFrame to draw it, after clearing the canvas. startRenderLoop does
+// this for you:
 //
 //   const runner = new SceneRunner(gl, await loadScene(gl, config));
 //   requestAnimationFrame(function frame(ms) {
 //     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 //     runner.updateScene(ms);
-//     runner.renderFrame(ms);
+//     runner.renderFrame();
 //     requestAnimationFrame(frame);
 //   });
 //
-// The order matters because each half uses what the other leaves:
-// - updateScene works out the frame's seconds from the last frame, moves the
-//   scene's clock, and moves the cameras.
-// - renderFrame runs the scripts with those seconds and the input given since
-//   the last frame, draws through the cameras where updateScene left them,
-//   then forgets the mouse's movement, and tells the app the HUD and frame
-//   rate.
-// Skipping updateScene runs the scripts with the last frame's seconds again,
-// moving things twice as far, and draws the cameras a frame behind. Calling
-// updateScene twice loses the first frame's time. Input, pausing and
-// registering can happen at any time in between; the next renderFrame picks
-// them up.
+// The two halves do different jobs:
+// - updateScene moves the scene a frame forward: it works out the frame's
+//   seconds since the last one, moves the scene's clock and the cameras,
+//   runs the scripts with those seconds and the input given since the last
+//   frame, and tells the app the HUD and frame rate. Call it once a frame:
+//   calling it again moves the scene again.
+// - renderFrame draws the scene as updateScene left it, and changes nothing,
+//   so it can be called as often as needed, such as to draw it again after
+//   the canvas is resized, or to draw the same frame into more than one
+//   place.
+// Input, pausing and registering can happen at any time; the next
+// updateScene picks them up.
 //
 // Its API:
-// - Each frame: updateScene(ms), then renderFrame(ms).
+// - Each frame: updateScene(ms), then renderFrame(), as often as needed.
 // - Input: cameras (see CameraSystem in @scenic/camera), or null without an
 //   input viewport, setHeldKeys(keys) and addMouseMovement(x, y).
 // - Pausing: togglePause(), which returns whether it is now paused, and
@@ -68,7 +68,6 @@ export class SceneRunner {
 
     this._getFrameRate = createFrameRateCounter();
     this._lastFrameMs = null;
-    this._frameSeconds = 0;
 
     // While the scene is paused its clock stops: scripts get no time and no
     // input, and animations hold still. The cameras keep responding, and the
@@ -100,28 +99,27 @@ export class SceneRunner {
     this._hudUpdater = () => {};
   }
 
-  // This is the logic for updating the scene state and the scene graph with
-  // the new scene state. This is the logic for the game itself.
+  // updateScene moves the scene a frame forward, to ms, the frame's time:
+  // its clock, its cameras and, through its scripts, everything else. This is
+  // the logic for the game itself.
   updateScene(ms) {
+    const {sceneManager} = this;
+    const paused = this._paused;
+
     // Seconds since the last frame, capped so that the camera does not jump
     // after the page has been in the background and frames were paused.
     const seconds = this._lastFrameMs === null ? 0 : Math.min((ms - this._lastFrameMs) / 1000, 0.1);
     this._lastFrameMs = ms;
-    this._frameSeconds = this._paused ? 0 : seconds;
-    this._sceneMs = this._sceneMs === null ? ms : this._sceneMs + this._frameSeconds * 1000;
+    const sceneSeconds = paused ? 0 : seconds;
+    this._sceneMs = this._sceneMs === null ? ms : this._sceneMs + sceneSeconds * 1000;
 
     this.cameras?.update(seconds);
-  }
-
-  renderFrame(ms) {
-    const {sceneManager} = this;
-    const paused = this._paused;
 
     // Scripts get the frame's seconds, the held keys and the mouse's
     // movement, so that a script such as a flight controller can move at the
     // same speed at any frame rate and respond to the player.
-    sceneManager.render(this._sceneMs ?? ms, this._gl, {
-      seconds: this._frameSeconds,
+    sceneManager.update(this._sceneMs, {
+      seconds: sceneSeconds,
       keys: paused ? new Set() : this._heldKeys,
       mouse: paused ? {x: 0, y: 0} : this._mouseMovement,
     });
@@ -137,12 +135,18 @@ export class SceneRunner {
     }
 
     // Let's write out the number of frames per second that we are able to
-    // render.
+    // run.
     const {frameRate, elapsedMs} = this._getFrameRate(ms);
     if (elapsedMs > 1000 && this._lastFps !== frameRate) {
       this._lastFps = frameRate;
       this._refreshRateUpdater(frameRate);
     }
+  }
+
+  // renderFrame draws the scene as the last updateScene left it. It changes
+  // nothing, so it can draw the same frame as often as needed.
+  renderFrame() {
+    this.sceneManager.render(this._sceneMs ?? 0, this._gl);
   }
 
   registerRefreshRateUpdater(cb) {

@@ -69,7 +69,7 @@ function clock(seconds) {
 
 module.exports = function createRaceScript(node) {
   return {
-    preRender({seconds = 0, sceneManager}) {
+    update({seconds = 0, sceneManager}) {
       const state = sceneManager.getNodeStateByID(node.id);
       const settings = {...defaults, ...state.script.settings};
       const gates = node.items;

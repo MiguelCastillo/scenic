@@ -20,7 +20,7 @@
 
 module.exports = function createSpinScript(node) {
   return {
-    preRender({seconds = 0, sceneManager}) {
+    update({seconds = 0, sceneManager}) {
       const state = sceneManager.getNodeStateByID(node.id);
       const settings = state.script.settings || {};
       const {idleSpeed = 60, speed = 720, angle = 0} = settings;

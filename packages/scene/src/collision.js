@@ -70,7 +70,7 @@ export function collide(a, b) {
 // far to push node to get it out of each one. worldMatrix places node's
 // collider; it is node's world matrix by default, and a script that has just
 // moved its node can pass where the node is now, since the node's world
-// matrix is only updated after the script's preRender. A node never collides
+// matrix is only updated when the scene is next drawn. A node never collides
 // with itself or its own children.
 export function findCollisions(sceneManager, node, worldMatrix = node.worldMatrix) {
   const collider = sceneManager.getNodeStateByID(node.id)?.collider;

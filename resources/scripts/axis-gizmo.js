@@ -13,7 +13,7 @@ const {mat4} = require("@scenic/math");
 
 module.exports = function createAxisGizmoScript(node) {
   return {
-    preRender({sceneManager}) {
+    update({sceneManager}) {
       const state = sceneManager.getNodeStateByID(node.id);
       const {viewport = "world"} = state.script.settings ?? {};
       const camera = sceneManager

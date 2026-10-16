@@ -18,7 +18,7 @@ const {angles} = require("@scenic/math");
 
 module.exports = function createHoverScript(node) {
   return {
-    preRender({ms, sceneManager}) {
+    update({ms, sceneManager}) {
       const state = sceneManager.getNodeStateByID(node.id);
       const {settings} = state.script;
       const {
