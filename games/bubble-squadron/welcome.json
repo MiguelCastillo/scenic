@@ -1,0 +1,221 @@
+{
+  "items": [
+    {
+      "name": "backdrop",
+      "type": "viewport",
+      "items": [
+        {
+          "name": "backdrop camera",
+          "type": "camera",
+          "projection": {
+            "type": "perspective",
+            "near": 1,
+            "far": 16000,
+            "fov": 60
+          },
+          "transform": {
+            "position": [0, 200, 0],
+            "rotation": [6, 0, 0]
+          }
+        },
+        {
+          "name": "sky",
+          "type": "sky",
+          "sky": {
+            "zenithColor": [0.25, 0.5, 0.95],
+            "horizonColor": [0.75, 0.88, 1],
+            "groundColor": [0.45, 0.62, 0.42],
+            "sunColor": [1, 0.95, 0.8],
+            "cloudStyle": 1,
+            "cloudCover": 0.72,
+            "cloudScale": 1,
+            "cloudSpeed": 1,
+            "cloudColor": [1, 1, 1],
+            "cloudShadeColor": [0.72, 0.78, 0.92],
+            "mountainHeight": 7,
+            "farMountainColor": [0.58, 0.68, 0.88],
+            "nearMountainColor": [0.38, 0.48, 0.66]
+          },
+          "items": [
+            {
+              "name": "sun",
+              "type": "light",
+              "resource": "/resources/obj/sphere.obj",
+              "light": {
+                "sun": true,
+                "intensity": 0.8,
+                "color": [1, 0.96, 0.88]
+              },
+              "material": {
+                "color": [1, 0.96, 0.88, 1],
+                "reflectiveness": 1
+              },
+              "transform": {
+                "position": [1229, 1721, 2128]
+              }
+            },
+            {
+              "name": "fill",
+              "type": "light",
+              "resource": "/resources/obj/sphere.obj",
+              "light": {
+                "intensity": 0.55,
+                "color": [0.7, 0.82, 1]
+              },
+              "material": {
+                "color": [0.7, 0.82, 1, 1],
+                "reflectiveness": 1
+              },
+              "transform": {
+                "position": [-1229, 1200, -2128]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "showcase",
+      "type": "viewport",
+      "items": [
+        {
+          "name": "menu camera",
+          "type": "camera",
+          "projection": {
+            "type": "orthographic",
+            "far": 4000
+          }
+        },
+        {
+          "name": "key light",
+          "type": "light",
+          "light": {
+            "intensity": 0.9,
+            "color": [1, 0.96, 0.88]
+          },
+          "transform": {
+            "position": [600, 800, 900]
+          }
+        },
+        {
+          "name": "fill light",
+          "type": "light",
+          "light": {
+            "intensity": 0.45,
+            "color": [0.7, 0.82, 1]
+          },
+          "transform": {
+            "position": [-700, 200, 500]
+          }
+        },
+        {
+          "name": "showcase ship",
+          "type": "transform",
+          "transform": {
+            "position": [330, 190, 0],
+            "rotation": [20, 150, 0],
+            "scale": [1.2, 1.2, 1.2]
+          },
+          "script": {
+            "src": "/resources/scripts/hover.js",
+            "settings": {
+              "bob": 8,
+              "roll": 5,
+              "pitch": 3,
+              "period": 5
+            }
+          },
+          "items": [
+            {
+              "name": "starfighter body",
+              "type": "static-mesh",
+              "resource": "/resources/obj/seedpod-starfighter-3.obj",
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.6,
+                "shininess": 64
+              },
+              "ambient": {
+                "color": [0.3, 0.3, 0.35]
+              }
+            },
+            {
+              "name": "starfighter petals",
+              "type": "static-mesh",
+              "resource": "/resources/obj/seedpod-starfighter-3-spinner.obj",
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.6,
+                "shininess": 64,
+                "opacity": 0.55
+              },
+              "ambient": {
+                "color": [0.3, 0.3, 0.35]
+              },
+              "transform": {
+                "position": [0, 0, 0],
+                "rotation": [0, 0, 0],
+                "scale": [1, 1, 1]
+              },
+              "script": {
+                "src": "/resources/scripts/spin.js",
+                "settings": {
+                  "idleSpeed": 60,
+                  "speed": 720
+                }
+              }
+            },
+            {
+              "name": "starfighter flame 1",
+              "type": "static-mesh",
+              "resource": "/resources/obj/flame.obj",
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 0
+              },
+              "ambient": {
+                "color": [1, 1, 1]
+              },
+              "transform": {
+                "position": [0, 0, -93.002],
+                "rotation": [0, 0, 0],
+                "scale": [6.396, 6.396, 6.396]
+              },
+              "script": {
+                "src": "/resources/scripts/flame.js",
+                "settings": {
+                  "flicker": 0.15,
+                  "speed": 1
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "track list",
+          "type": "transform",
+          "hud": "menu",
+          "script": {
+            "src": "/resources/scripts/menu.js",
+            "settings": {
+              "title": "Bubble Squadron",
+              "choices": [
+                {
+                  "label": "Drone Course",
+                  "goTo": "race.json"
+                },
+                {
+                  "label": "Highway",
+                  "goTo": "highway.json"
+                }
+              ],
+              "hint": "Choose a track"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

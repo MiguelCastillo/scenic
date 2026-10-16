@@ -11,9 +11,11 @@ import {loadScene, SceneRunner, SceneStack} from "@scenic/runtime";
 import {PlayOnTap, PlayWhileLocked, registerSceneInputRouting} from "./input.js";
 
 // The arcade plays one of the games in games/, full screen: the one the page's
-// URL names, such as index.html?game=bubble-squadron, or this one without
-// one. It reads the game's game.json (see games/README.md) and runs the scene
-// the game starts in, with the game's HUD over it.
+// URL names, such as index.html?game=bubble-squadron, or, without one, the one
+// the player chooses on its welcome screen, a scene of the arcade's own
+// (welcome.json) with a menu of the games. It reads the game's game.json (see
+// games/README.md) and runs the scene the game starts in, with the game's
+// HUD over it.
 //
 // A game with a menu (game.json's "menu") opens with its menu scene stacked
 // over the game, on a scene stack (see SceneStack in @scenic/runtime): the
@@ -23,7 +25,6 @@ import {PlayOnTap, PlayWhileLocked, registerSceneInputRouting} from "./input.js"
 // goes to the scene it names, such as another track: it is loaded in the
 // game's place, unless it is the one playing, and the menu closes. M opens
 // the menu again, and Escape closes it.
-const defaultGame = "bubble-squadron";
 
 // clock is seconds as minutes, seconds and tenths, such as 1:05.3.
 const clock = (seconds) =>
@@ -83,8 +84,105 @@ domReady.onReady(async () => {
   domEvents.Subscription.create(window).on("resize", resizeCanvas);
 
   const stack = new SceneStack(gl);
-  const game = new URLSearchParams(location.search).get("game") || defaultGame;
+
+  // The page's input goes to the scenes on the stack. The keyboard, mouse
+  // and touches become intents (see input-intents.js in @scenic/dom), for
+  // the top scene: camera intents while it is the game, and menu intents
+  // while it is a menu, which has no cameras. The keys and mouse also go to
+  // the scenes as they are, for scripts that read them, such as a ship's
+  // flight controls (see input.js).
+  const capture = new InputCapture(canvas);
+  const intentOptions = {
+    getContext: () => (stack.runners.at(-1)?.cameras ? "camera" : "menu"),
+    onIntent: (intent) => stack.runners.at(-1)?.sceneManager.input.publish("player", intent),
+  };
+  registerKeyboardMouseIntents(capture, intentOptions);
+  registerTouchIntents(capture, intentOptions);
+  registerSceneInputRouting(capture, () => stack.runners);
+
+  // Clicking or tapping a choice in a menu picks it.
+  domEvents.Subscription.create(menuEl).on("click", (evt) => {
+    const index = [...menuEl.querySelectorAll("li")].indexOf(evt.target.closest("li"));
+    if (index !== -1) {
+      intentOptions.onIntent({type: "choose", index});
+    }
+  });
+
+  // showMenu shows a menu's message (see menu.js in resources/scripts): its
+  // title, its choices, with the selected one marked, and its hint, redrawn
+  // only when they change.
+  let shownMenu = null;
+  const showMenu = (message) => {
+    const key = JSON.stringify(message);
+    if (key === shownMenu) {
+      return;
+    }
+    shownMenu = key;
+    const {title, choices, selected, hint} = message;
+    const titleEl = document.createElement("div");
+    titleEl.className = "menu-title";
+    titleEl.textContent = title;
+    const listEl = document.createElement("ul");
+    choices.forEach(({label}, i) => {
+      const choiceEl = document.createElement("li");
+      choiceEl.textContent = label;
+      choiceEl.classList.toggle("selected", i === selected);
+      listEl.appendChild(choiceEl);
+    });
+    const hintEl = document.createElement("div");
+    hintEl.className = "menu-hint";
+    hintEl.textContent = hint;
+    menuEl.replaceChildren(titleEl, listEl, ...(hint ? [hintEl] : []));
+  };
+  const hideMenu = () => {
+    shownMenu = null;
+    menuEl.replaceChildren();
+  };
+
+  // showWelcome shows the welcome scene at url, such as the arcade's, to
+  // choose a game, or a game's, to choose a track, until the player picks a
+  // choice in its menu, and resolves with where the choice goes: a game's
+  // folder in games/, or a track's scene file, relative to the game's folder.
+  const showWelcome = async (url) => {
+    const scene = await loadScene(gl, await fetchJSON(url), {sceneURL: url.href});
+    stack.push(new SceneRunner(gl, scene, {paused: false}));
+    document.body.classList.add("menu-open");
+    messageEl.textContent = "";
+    const chosen = await new Promise((resolve) => {
+      scene.sceneManager.ui.onUpdate(({menu: message}) => {
+        if (message?.picked) {
+          resolve(message.picked.goTo);
+        } else if (message) {
+          showMenu(message);
+        }
+      });
+    });
+    stack.pop();
+    scene.dispose();
+    hideMenu();
+    document.body.classList.remove("menu-open");
+    return chosen;
+  };
+
+  // Where the player is goes in the page's URL as they go, the game and the
+  // scene playing, such as ?game=bubble-squadron&scene=highway.json, so that
+  // reloading the page comes back to it, and each step is a page in the
+  // browser's history. Going back or forward loads the page again from the
+  // URL it goes to.
+  const params = new URLSearchParams(location.search);
+  const pushToURL = (name, value) => {
+    const url = new URL(location.href);
+    url.searchParams.set(name, value);
+    history.pushState(null, "", url);
+  };
+  domEvents.Subscription.create(window).on("popstate", () => location.reload());
+
+  let game = params.get("game");
   try {
+    if (!game) {
+      game = await showWelcome(new URL("welcome.json", location.href));
+      pushToURL("game", game);
+    }
     const manifestURL = new URL(`/games/${game}/game.json`, location.href);
     const manifest = await fetchJSON(manifestURL);
     document.title = manifest.name;
@@ -120,7 +218,16 @@ domReady.onReady(async () => {
       });
       return loaded;
     };
-    let gameFile = manifest.scene;
+    // A game opens on the scene the URL names, or, without one, on its
+    // welcome scene, to choose the track to play, or on the scene it starts
+    // in.
+    let gameFile = params.get("scene");
+    if (!gameFile && manifest.welcome) {
+      gameFile = await showWelcome(new URL(manifest.welcome, manifestURL));
+      pushToURL("scene", gameFile);
+    }
+    gameFile = gameFile || manifest.scene;
+    messageEl.textContent = `Loading ${manifest.name}…`;
     let playing = play(await load(gameFile));
     stack.push(playing.runner);
 
@@ -129,21 +236,6 @@ domReady.onReady(async () => {
     let menu = null;
     let going = false;
 
-    // The page's input goes to the scenes on the stack. The keyboard, mouse
-    // and touches become intents (see input-intents.js in @scenic/dom), for
-    // the top scene: camera intents while it is the game, and menu intents
-    // while it is a menu, which has no cameras. The keys and mouse also go
-    // to the scenes as they are, for scripts that read them, such as a
-    // ship's flight controls (see input.js), and the game only plays while
-    // it has the pointer.
-    const capture = new InputCapture(canvas);
-    const intentOptions = {
-      getContext: () => (stack.runners.at(-1)?.cameras ? "camera" : "menu"),
-      onIntent: (intent) => stack.runners.at(-1)?.sceneManager.input.publish("player", intent),
-    };
-    registerKeyboardMouseIntents(capture, intentOptions);
-    registerTouchIntents(capture, intentOptions);
-    registerSceneInputRouting(capture, () => stack.runners);
     // The game plays while the player has it: on a touch screen, from a tap
     // until the pause button, and otherwise while the pointer is locked to
     // it. The page tells the player what to do.
@@ -177,7 +269,7 @@ domReady.onReady(async () => {
       menu.scene.dispose();
       menu = null;
       going = false;
-      menuEl.replaceChildren();
+      hideMenu();
       document.body.classList.remove("menu-open");
       playPolicy.reset();
     };
@@ -192,7 +284,6 @@ domReady.onReady(async () => {
       capture.unlock();
       document.body.classList.add("menu-open");
       menu = await load(manifest.menu, {paused: false});
-      let shown = null;
       menu.scene.sceneManager.ui.onUpdate(async ({menu: message}) => {
         if (!message || going) {
           return;
@@ -210,40 +301,20 @@ domReady.onReady(async () => {
           going = true;
           const file = message.picked.goTo;
           if (file !== gameFile) {
-            menuEl.replaceChildren();
+            hideMenu();
             messageEl.textContent = "Loading…";
             const next = play(await load(file));
             stack.replace(0, next.runner);
             playing.scene.dispose();
             playing = next;
             gameFile = file;
+            pushToURL("scene", file);
           }
           closeMenu();
           return;
         }
 
-        // The menu shows its title, its choices, with the selected one
-        // marked, and its hint, redrawn only when they change.
-        const key = JSON.stringify(message);
-        if (key === shown) {
-          return;
-        }
-        shown = key;
-        const {title, choices, selected, hint} = message;
-        const titleEl = document.createElement("div");
-        titleEl.className = "menu-title";
-        titleEl.textContent = title;
-        const listEl = document.createElement("ul");
-        choices.forEach(({label}, i) => {
-          const choiceEl = document.createElement("li");
-          choiceEl.textContent = label;
-          choiceEl.classList.toggle("selected", i === selected);
-          listEl.appendChild(choiceEl);
-        });
-        const hintEl = document.createElement("div");
-        hintEl.className = "menu-hint";
-        hintEl.textContent = hint;
-        menuEl.replaceChildren(titleEl, listEl, ...(hint ? [hintEl] : []));
+        showMenu(message);
       });
       stack.push(menu.runner);
       playPolicy.reset();
@@ -256,15 +327,9 @@ domReady.onReady(async () => {
       }
     });
 
-    // Clicking or tapping a choice in the menu picks it.
-    domEvents.Subscription.create(menuEl).on("click", (evt) => {
-      const index = [...menuEl.querySelectorAll("li")].indexOf(evt.target.closest("li"));
-      if (menu && index !== -1) {
-        intentOptions.onIntent({type: "choose", index});
-      }
-    });
-
-    if (manifest.menu) {
+    // Without a welcome scene to choose the track on, or a scene in the URL,
+    // the game opens with its menu over it.
+    if (manifest.menu && !manifest.welcome && !params.get("scene")) {
       await openMenu();
     } else {
       playPolicy.reset();

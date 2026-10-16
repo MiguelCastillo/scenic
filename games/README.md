@@ -9,7 +9,8 @@ games/bubble-squadron/
   game.json          the manifest
   race.json          a scene
   highway.json       another scene
-  menu.json          the menu, picking a track
+  welcome.json       the welcome page, choosing a track
+  menu.json          the menu, picking a track during a game
   starfighters.json  another scene
   scripts/           the scripts only its scenes run
 ```
@@ -20,6 +21,10 @@ games/bubble-squadron/
 - `description`: a sentence about it.
 - `scene`: the scene the game starts in, relative to the folder.
 - `scenes`: every scene in the game, for apps that list them.
+- `welcome`: the game's welcome scene, optional. The arcade opens the game
+  on it, alone, to choose the track to play: picking a choice in its menu
+  (see `resources/scripts/menu.js`) loads that scene as the game. Without
+  one, the game opens on `scene`, with its menu over it.
 - `menu`: the game's menu scene, optional. The arcade opens it stacked over
   the game (see `SceneStack` in `@scenic/runtime`), with the game paused
   behind it, shows what it publishes on its `menu` channel, and goes to the

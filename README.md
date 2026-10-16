@@ -1072,9 +1072,16 @@ in it. This is the UI: the scene selector, the scene graph panel, and the
 canvas and input handling.
 
 The arcade (`apps/arcade`) generates one too, `dist/arcade.js`, with the
-runtime in it. The arcade plays one game from `games/` full screen, the one its URL
-names with `?game=`, with nothing but the game's HUD over it. It reads the
-game's `game.json` and runs the scene the game starts in. The game starts
+runtime in it. The arcade plays one game from `games/` full screen, with
+nothing but the game's HUD over it: the one its URL names with `?game=`, or,
+without one, the one the player chooses on its welcome screen, a scene of
+the arcade's own (`apps/arcade/welcome.json`) with a menu of the games and a
+showcase ship. It reads the game's `game.json` and opens the game on its own
+welcome page, such as Bubble Squadron's, with its sky behind a menu of the
+tracks, and then runs the track picked there, or, for a game without one,
+the scene the game starts in. Each choice goes into the page's URL, such as
+`?game=bubble-squadron&scene=highway.json`, so reloading the page comes back
+to the same track, and the browser's back button goes back a page. The game starts
 paused: clicking it locks the pointer and plays, Escape lets go of the
 pointer and pauses it, P pauses and resumes while playing, and C switches
 cameras. On a touch screen, which has no pointer to lock, tapping the game
