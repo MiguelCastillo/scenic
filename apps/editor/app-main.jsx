@@ -2,7 +2,7 @@ import React from "react";
 import {createRoot} from "react-dom/client";
 import {ready as domReady, events as domEvents} from "@scenic/dom";
 import {webgl} from "@scenic/renderer";
-import {loadScene} from "@scenic/runtime";
+import {loadScene, runScene, startRenderLoop} from "@scenic/runtime";
 
 import {SceneGraph} from "./app/app.jsx";
 import {Error} from "./app/error.jsx";
@@ -43,8 +43,10 @@ domReady.onReady(() => {
   const fpsEl = document.querySelector("#fps");
   const hudEl = document.querySelector("#hud");
 
-  // The scene currently rendering, as returned by loadScene. It is disposed
-  // before another scene is rendered in its place.
+  // The scene currently rendering: {scene, running, stopRenderLoop}, the
+  // scene loadScene loaded, it running (see runScene), which the input drives,
+  // and what stops its render loop. It is stopped and disposed before another
+  // scene is rendered in its place.
   let currentScene = null;
 
   // The page layout and input listeners are shared by every scene, so they are
@@ -73,7 +75,7 @@ domReady.onReady(() => {
 
   subscribeToSceneInput(
     document.getElementById("mousetrap"),
-    () => currentScene,
+    () => currentScene?.running,
     renderSceneGraph,
     showPaused
   );
@@ -83,7 +85,8 @@ domReady.onReady(() => {
   // it. Rendering the same SceneGraph again keeps its state,
   // such as the selected node.
   function renderSceneGraph() {
-    const {resourceLoader, sceneManager, cameras} = currentScene;
+    const {resourceLoader, sceneManager} = currentScene.scene;
+    const {cameras} = currentScene.running;
     sceneGraphRoot.render(
       <SceneGraph
         sceneManager={sceneManager}
@@ -113,7 +116,8 @@ domReady.onReady(() => {
     hideSceneSelector();
 
     if (currentScene) {
-      currentScene.dispose();
+      currentScene.stopRenderLoop();
+      currentScene.scene.dispose();
       currentScene = null;
     }
 
@@ -129,11 +133,11 @@ domReady.onReady(() => {
       .then((response) => response.json())
       .then((config) => loadScene(gl, config, {sceneURL: sceneFile}))
       .then((scene) => {
-        currentScene = scene;
-        const {registerRefreshRateUpdater, registerHudUpdater} = scene;
-
-        // Scenes load paused, until P is pressed.
-        showPaused(scene.isPaused());
+        // Scenes run paused, until P is pressed.
+        const running = runScene(gl, scene);
+        currentScene = {scene, running, stopRenderLoop: startRenderLoop(gl, running)};
+        const {registerRefreshRateUpdater, registerHudUpdater} = running;
+        showPaused(running.isPaused());
 
         renderSceneGraph();
 

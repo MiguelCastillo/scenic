@@ -28,7 +28,7 @@ const pauseKey = "KeyP";
 const pageScrollKeys = new Set(["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"]);
 
 // subscribeToSceneInput maps the mouse and keyboard onto scene, as returned
-// by loadScene, the same way the editor does (see apps/editor/app-main.jsx):
+// by runScene, the same way the editor does (see apps/editor/app-main.jsx):
 // the active camera responds as its type says (see CameraSystem in
 // @scenic/camera), and every key held down and how far the mouse moves go to
 // the scene's scripts, such as a ship's flight controls. Clicking the canvas

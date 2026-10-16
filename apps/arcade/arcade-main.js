@@ -1,6 +1,6 @@
 import {ready as domReady, events as domEvents} from "@scenic/dom";
 import {webgl} from "@scenic/renderer";
-import {loadScene} from "@scenic/runtime";
+import {loadScene, runScene, startRenderLoop} from "@scenic/runtime";
 
 import {subscribeToSceneInput} from "./input.js";
 
@@ -43,10 +43,14 @@ domReady.onReady(async () => {
     messageEl.textContent = `Loading ${manifest.name}…`;
 
     // The game's scene, and the scripts in it, are relative to its folder.
+    // Scenes run paused, so the game doesn't run until the player clicks to
+    // play (see input.js).
     const sceneURL = new URL(manifest.scene, manifestURL);
-    // Scenes load paused, so the game doesn't run until the player clicks
-    // to play (see input.js).
-    const scene = await loadScene(gl, await fetchJSON(sceneURL), {sceneURL: sceneURL.href});
+    const scene = runScene(
+      gl,
+      await loadScene(gl, await fetchJSON(sceneURL), {sceneURL: sceneURL.href})
+    );
+    startRenderLoop(gl, scene);
 
     scene.registerHudUpdater((text) => {
       hudEl.textContent = text;

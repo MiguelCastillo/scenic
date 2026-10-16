@@ -1,5 +1,9 @@
-// startRenderLoop returns a function that stops the render loop.
-export function startRenderLoop(gl, updateScene, renderFrame) {
+import {renderStats} from "@scenic/renderer";
+
+// startRenderLoop runs scene every frame, such as one runScene returns: it
+// sets up and clears the canvas, then calls the scene's updateScene and
+// renderFrame with the frame's time. It returns a function that stops it.
+export function startRenderLoop(gl, scene) {
   const {canvas} = gl;
 
   // requestAnimationFrame will _try_ to run at 60 frames per seconds.
@@ -27,11 +31,15 @@ export function startRenderLoop(gl, updateScene, renderFrame) {
     // https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/frontFace
     // gl.frontFace(gl.CW);
 
+    // What the last frame drew is kept for anything that shows it, such as
+    // a terrain with showTiles, and this frame's drawing is counted afresh.
+    renderStats.startFrame();
+
     // Update the scene and states.
-    updateScene(ms);
+    scene.updateScene(ms);
 
     // Render the udpated scene with updated states.
-    renderFrame(ms);
+    scene.renderFrame(ms);
 
     // Queue up next frame.
     frameID = requestAnimationFrame(tick);

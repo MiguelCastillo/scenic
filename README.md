@@ -889,10 +889,10 @@ texture uniforms to the parent's shader program when it renders.
 
 ### Disposing a scene
 
-`loadScene` returns a `dispose` function, and the editor calls it before
-rendering another scene. It stops the render loop, stops loading resources,
-and calls `SceneManager.dispose(gl)`, which walks the tree so that every node
-deletes the GPU resources it owns.
+The scene `loadScene` returns has a `dispose` function, and the editor calls
+it before rendering another scene, once it has stopped the scene's render
+loop. It stops loading resources and calls `SceneManager.dispose(gl)`, which
+walks the tree so that every node deletes the GPU resources it owns.
 
 ## File formats
 
@@ -928,8 +928,10 @@ which keeps things faster and easier to debug in the browser. Use
 `npm run build:prod` for minified bundles.
 
 Scenes are run by `@scenic/runtime` (`packages/runtime`), which apps are built
-on: `loadScene` builds a scene from its config and starts rendering it,
-loading its models, shaders and scripts, and it is where most of the logic for
+on, in three steps: `loadScene` builds a scene from its config and loads its
+models, shaders and scripts; `runScene` runs it a frame at a time, with its
+clock, pausing, cameras, the player's input, its HUD and frame rate; and
+`startRenderLoop` calls it every frame. It is also where most of the logic for
 FBX animation lives while support for it is implemented. It generates two
 bundles:
 
