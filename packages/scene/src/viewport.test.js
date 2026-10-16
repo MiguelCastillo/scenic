@@ -55,6 +55,45 @@ describe("Viewport.viewProjectionMatrix", () => {
   });
 });
 
+describe("Viewport.canSee", () => {
+  // The camera is at z 300 looking down -Z, seeing 90 degrees across, from 1
+  // to 1000 away.
+  const viewport = () => new Viewport({name: "world"}).add(createCamera("camera", [0, 0, 300]));
+
+  test("sees what is in front of the camera", () => {
+    expect(viewport().canSee([0, 0, 0], 1)).toBe(true);
+  });
+
+  test("does not see what is behind the camera", () => {
+    expect(viewport().canSee([0, 0, 500], 10)).toBe(false);
+  });
+
+  test("does not see what is past the far plane", () => {
+    // 1050 away, past the far plane at 1000.
+    expect(viewport().canSee([0, 0, -750], 10)).toBe(false);
+    expect(viewport().canSee([0, 0, -650], 10)).toBe(true);
+  });
+
+  test("does not see what is off to the side", () => {
+    // 200 to the right at 100 away is past the 45 degrees to each side.
+    expect(viewport().canSee([200, 0, 200], 10)).toBe(false);
+  });
+
+  test("sees a sphere that only reaches into view", () => {
+    // The right side of the view is 100 out at 100 away, and this sphere's
+    // center is 50 past it, but its radius reaches back in.
+    expect(viewport().canSee([150, 0, 200], 60)).toBe(true);
+  });
+
+  test("follows the camera when it is turned", () => {
+    // Turned to look down -X, it sees what is to its left and not what was
+    // in front of it.
+    const turned = new Viewport({name: "world"}).add(createCamera("camera", [0, 0, 0], [0, 90, 0]));
+    expect(turned.canSee([-300, 0, 0], 1)).toBe(true);
+    expect(turned.canSee([0, 0, -300], 1)).toBe(false);
+  });
+});
+
 describe("Viewport.activeCamera", () => {
   test("is the first camera added", () => {
     const front = createCamera("front");

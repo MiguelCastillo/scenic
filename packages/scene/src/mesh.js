@@ -243,6 +243,30 @@ export class Mesh extends Renderable {
     return uniforms;
   }
 
+  // isVisible is whether any of vertexBuffer, drawn where this mesh is, can
+  // be in view of its viewport's camera, by the sphere around the buffer's
+  // positions. The sphere is worked out the first time it is needed.
+  isVisible(vertexBuffer) {
+    const viewport = this.getViewport();
+    if (!viewport || !vertexBuffer.positions) {
+      return true;
+    }
+    if (!vertexBuffer.bounds) {
+      vertexBuffer.bounds = boundingSphere(vertexBuffer.positions.data);
+    }
+
+    // Matrix4 data is row-major: each row is an axis of the world matrix
+    // applied to the center, and the longest column is how much it scales.
+    const {center, radius} = vertexBuffer.bounds;
+    const m = this.worldMatrix.data;
+    const world = [0, 1, 2].map(
+      (r) =>
+        m[r * 4] * center[0] + m[r * 4 + 1] * center[1] + m[r * 4 + 2] * center[2] + m[r * 4 + 3]
+    );
+    const scale = Math.max(...[0, 1, 2].map((c) => Math.hypot(m[c], m[4 + c], m[8 + c])));
+    return viewport.canSee(world, radius * scale);
+  }
+
   static render(node) {
     const {shaderProgram, worldMatrix, vertexBuffers} = node;
     const projectionMatrix = node.getViewProjectionMatrix();
@@ -263,8 +287,36 @@ export class Mesh extends Renderable {
       ...node.getViewUniforms(),
     ];
 
-    // Configure shader program with its current state.
+    // Configure shader program with its current state. Buffers out of view
+    // are skipped, such as the trees behind a camera.
     const program = shaderProgram.addUniforms(uniforms);
-    vertexBuffers.forEach((vb) => program.render(vb));
+    vertexBuffers.filter((vb) => node.isVisible(vb)).forEach((vb) => program.render(vb));
   }
+}
+
+// boundingSphere is a sphere around positions, a flat list of x, y and z: its
+// center is the middle of their bounding box, and its radius reaches the
+// farthest of them.
+export function boundingSphere(positions) {
+  const low = [Infinity, Infinity, Infinity];
+  const high = [-Infinity, -Infinity, -Infinity];
+  for (let i = 0; i < positions.length; i += 3) {
+    for (let k = 0; k < 3; k++) {
+      low[k] = Math.min(low[k], positions[i + k]);
+      high[k] = Math.max(high[k], positions[i + k]);
+    }
+  }
+  const center = low.map((v, k) => (v + high[k]) / 2);
+  let radius = 0;
+  for (let i = 0; i < positions.length; i += 3) {
+    radius = Math.max(
+      radius,
+      Math.hypot(
+        positions[i] - center[0],
+        positions[i + 1] - center[1],
+        positions[i + 2] - center[2]
+      )
+    );
+  }
+  return {center, radius};
 }

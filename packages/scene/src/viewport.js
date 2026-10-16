@@ -76,6 +76,7 @@ export class Viewport extends Node {
     // preRender before any render, so the camera's matrices are current by
     // then.
     this._viewProjectionMatrix = null;
+    this._frustumPlanes = null;
     this._viewUniforms = null;
     const fog = context.sceneManager.getNodeStateByID(this.id)?.fog;
     this._fog = fog && fog.enabled !== false ? fog : null;
@@ -96,6 +97,42 @@ export class Viewport extends Node {
     }
 
     return this._viewProjectionMatrix;
+  }
+
+  // frustumPlanes are the six planes that bound what the active camera sees:
+  // its left, right, bottom, top, near and far sides, from the
+  // view-projection. Each is [a, b, c, d], facing inward with (a, b, c) a unit
+  // length, so a point (x, y, z) is a x + b y + c z + d inside the plane, or
+  // outside it when that is negative.
+  get frustumPlanes() {
+    if (!this._frustumPlanes) {
+      // The view-projection's data is column-major, so its rows are every
+      // fourth number.
+      const m = this.viewProjectionMatrix.data;
+      const [x, y, z, w] = [0, 1, 2, 3].map((r) => [m[r], m[4 + r], m[8 + r], m[12 + r]]);
+      const plus = (a, b) => a.map((v, i) => v + b[i]);
+      const minus = (a, b) => a.map((v, i) => v - b[i]);
+      this._frustumPlanes = [
+        plus(w, x),
+        minus(w, x),
+        plus(w, y),
+        minus(w, y),
+        plus(w, z),
+        minus(w, z),
+      ].map((plane) => {
+        const length = Math.hypot(plane[0], plane[1], plane[2]);
+        return plane.map((v) => v / length);
+      });
+    }
+
+    return this._frustumPlanes;
+  }
+
+  // canSee is whether any of the sphere around center, a world position,
+  // with radius is in view of the active camera: whether it is not wholly
+  // outside any side of what the camera sees.
+  canSee([x, y, z], radius) {
+    return this.frustumPlanes.every(([a, b, c, d]) => a * x + b * y + c * z + d >= -radius);
   }
 
   // viewUniforms are the shader uniforms that describe how this viewport is

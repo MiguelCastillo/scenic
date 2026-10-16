@@ -81,7 +81,7 @@
           "projection": {
             "type": "perspective",
             "near": 1,
-            "far": 10000,
+            "far": 12000,
             "fov": 30
           },
           "transform": {

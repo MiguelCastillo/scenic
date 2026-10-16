@@ -26,6 +26,10 @@ export class OrthographicProjectionMatrix extends Matrix4 {
 
 // Creates a matrix that projects to clip space with perspective. Items that
 // are further away appear smaller, and items that are closer appear bigger.
+// It is column-major, the way it is uploaded. A point's clip w is its
+// distance in front of the camera, so what is near away is at the front of
+// clip space and what is far away at the back, and nothing nearer or farther
+// is drawn.
 export function buildPerspectiveProjection(fovInDegres, width, height, near, far) {
   const aspect = width / height;
   const f = 1 / Math.tan(degToRad(fovInDegres) / 2);
@@ -36,7 +40,7 @@ export function buildPerspectiveProjection(fovInDegres, width, height, near, far
     f/aspect, 0,                         0,  0,
     0,        f,                         0,  0,
     0,        0,   (near + far) * rangeInv, -1,
-    0,        0, near * far * rangeInv * 2,  1,
+    0,        0, near * far * rangeInv * 2,  0,
   ];
 }
 
