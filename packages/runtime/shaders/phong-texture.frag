@@ -59,6 +59,10 @@ in vec3 lightPosition5;
 uniform Texture normalmap;
 uniform bool bumpLighting;
 uniform vec3 ambientColor;
+// The ambient light from below, which ambientColor blends into as surfaces
+// turn from facing up to facing down, like light from the sky above and
+// bounced off the ground below. It is ambientColor for flat ambient light.
+uniform vec3 ambientGroundColor;
 uniform vec4 materialColor;
 // How opaque the surface is, 0 to 1, which is its alpha: below 1 it is drawn
 // blended over what is behind it (see Mesh).
@@ -154,7 +158,11 @@ void main() {
     pixelColor = fragmentColor + materialColor;
   }
 
-  pixelColor.rgb *= ambientColor + calculatedLightColor;
+  // Ambient light comes from above and below in the world, so it goes by the
+  // surface's world normal, even when a normal map bumps the lighting.
+  float up = normalize(fragmentNormal.xyz).y;
+  vec3 ambient = mix(ambientGroundColor, ambientColor, up * 0.5 + 0.5);
+  pixelColor.rgb *= ambient + calculatedLightColor;
 
   // Highlights are the light's color reflected off the surface, so they are
   // added rather than tinted by the surface color.

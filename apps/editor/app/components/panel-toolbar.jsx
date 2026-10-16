@@ -10,6 +10,7 @@ import {
   Fog,
   InfoEmpty,
   Keyframes,
+  Map as MapIcon,
   PerspectiveView,
   SunLight,
   Svg3DSelectFace,
@@ -46,6 +47,8 @@ function getTabDetails(tab) {
       return {icon: DashboardDots, label: "Grid"};
     case "sky":
       return {icon: Cloud, label: "Sky"};
+    case "terrain":
+      return {icon: MapIcon, label: "Terrain"};
     case "fog":
       return {icon: Fog, label: "Fog"};
   }

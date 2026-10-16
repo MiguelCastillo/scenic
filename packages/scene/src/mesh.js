@@ -199,6 +199,17 @@ export class Mesh extends Renderable {
             gl.uniform3fv(index, color);
           },
         });
+
+        // Ambient light from below is groundColor, which blends with color
+        // by which way surfaces face, or the same as color for flat ambient
+        // light. It is always set with color, since programs keep uniform
+        // values between meshes.
+        uniforms.push({
+          name: "ambientGroundColor",
+          update: (gl, {index}) => {
+            gl.uniform3fv(index, ambient.groundColor || ambient.color);
+          },
+        });
       }
     }
 

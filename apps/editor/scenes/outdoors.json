@@ -76,15 +76,15 @@
           "projection": {
             "type": "perspective",
             "near": 1,
-            "far": 10000,
+            "far": 15000,
             "fov": 60
           },
           "transform": {
-            "position": [0, 200, 0],
+            "position": [0, 900, 0],
             "rotation": [10, 0, 0]
           },
           "freeFly": {
-            "speed": 200,
+            "speed": 400,
             "maxPitch": 89
           }
         },
@@ -125,8 +125,36 @@
               }
             }
           ]
+        },
+        {
+          "name": "terrain",
+          "type": "terrain",
+          "terrain": {
+            "seed": 1,
+            "height": 700,
+            "scale": 3000,
+            "flatness": 0.3,
+            "clearings": [],
+            "lowColor": [0.45, 0.62, 0.42],
+            "highColor": [0.62, 0.8, 0.48]
+          },
+          "material": {
+            "color": [0, 0, 0, 1],
+            "reflectiveness": 1,
+            "specular": 0.05,
+            "shininess": 8
+          },
+          "ambient": {
+            "color": [0.42, 0.45, 0.55],
+            "groundColor": [0.2, 0.22, 0.18]
+          }
         }
-      ]
+      ],
+      "fog": {
+        "color": [0.75, 0.88, 1],
+        "near": 3000,
+        "far": 15000
+      }
     }
   ]
 }

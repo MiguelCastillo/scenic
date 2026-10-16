@@ -402,7 +402,7 @@ The lines are drawn by a shader rather than as geometry (`grid.js` and
 how close it is to a line. Lines stay crisp up close and fade out in the
 distance instead of shimmering. A finite grid is a square its transform
 places. An infinite grid's square follows the camera, as far as it can see, so
-the floor never ends; Bubble Squadron uses one, filled green. Its
+the floor never ends; Bubble Squadron's highway race uses one, filled green. Its
 settings can be tuned live from its Grid tab.
 
 The grid is part of the editor rather than the engine packages, like the axis
@@ -499,6 +499,12 @@ the lights of their nearest ancestor that has any, counting the lights inside
 its sky, so a building with lamps of its own keeps the sky's lights out.
 Without a sun, the sky places its sun with `sunElevation` and `sunAzimuth`.
 
+Lit meshes get ambient light, the light that reaches every side, from their
+`ambient.color`. With an `ambient.groundColor` as well, it comes from the sky
+above and the ground below instead: surfaces facing up get `color`, surfaces
+facing down get `groundColor`, and the ones in between a mix, which gives
+hills and round shapes more depth. Both are on a mesh's Material tab.
+
 The sky is a shader rather than images or a mesh (`sky.js` and
 `shaders/sky.frag` in `packages/runtime`): one triangle covering the screen at the far plane, where
 each pixel is painted from the direction it looks in. So it is infinitely far
@@ -508,6 +514,127 @@ height 0, fogged by how far away each pixel's point on it is, the same as the
 floor. Making the viewport's fog the horizon color then fades the floor and
 the sky's ground into the horizon together, so they meet. Its settings
 can be tuned live from its Sky tab; every setting is listed in `sky.js`.
+
+### Terrain
+
+A `terrain` node is ground that goes on forever: rolling hills grown from a
+seeded noise, grassy with patches of dirt. Bubble Squadron's drone race flies
+through it, and the editor's outdoors scene shows it on its own:
+
+```json
+{
+  "name": "terrain",
+  "type": "terrain",
+  "terrain": {
+    "seed": 3,
+    "height": 900,
+    "scale": 4500,
+    "flatness": 0.35,
+    "clearings": [[0, -4500, 1300]],
+    "paths": [
+      {
+        "points": [
+          [0, -4500],
+          [4344, -4091]
+        ],
+        "width": 1400,
+        "dirtWidth": 500
+      }
+    ],
+    "bumps": [[8000, 2462, 900, 300, 2500, -24]]
+  },
+  "ambient": {"color": [0.42, 0.45, 0.55], "groundColor": [0.2, 0.22, 0.18]}
+}
+```
+
+The ground's height anywhere comes from a function of its settings, so the
+same settings always grow the same hills, everywhere, without storing any of
+them. `seed`, `height`, `scale` and `flatness` shape the hills, and then a
+scene can reshape the ground where it needs to: `clearings` flatten it around
+points, `paths` carve flat valleys along lines, and `bumps` raise small hills
+on top, such as under a race's gates. Scripts ask for the ground's height with
+the node's `heightAt(x, z)`; the drone race's ship flies above it, through its
+`ground` setting (see `fly.js`), and its trees were placed on it the same way.
+Every setting is listed in `terrain.js`, and they can be tuned live from its
+Terrain tab.
+
+#### Tiles
+
+Ground that goes on forever can't be one mesh, so the terrain is cut into
+square tiles, `tileSize` across (2000 by default), and only the tiles around
+the camera exist. Seen from above, with the camera at `C`:
+
+```
+          tiles within the camera's far plane, built nearest first
+    ┌────┬────┬────┬────┬────┬────┬────┐
+    │    │    │ ▒▒ │ ▒▒ │ ▒▒ │    │    │   ▒▒  built
+    ├────┼────┼────┼────┼────┼────┼────┤
+    │    │ ▒▒ │ ▒▒ │ ▒▒ │ ▒▒ │ ▒▒ │    │   ░░  still to build,
+    ├────┼────┼────┼────┼────┼────┼────┤       a few each frame
+    │ ░░ │ ▒▒ │ ▒▒ │ C  │ ▒▒ │ ▒▒ │ ░░ │
+    ├────┼────┼────┼────┼────┼────┼────┤       past the far plane,
+    │    │ ▒▒ │ ▒▒ │ ▒▒ │ ▒▒ │ ▒▒ │    │       nothing
+    ├────┼────┼────┼────┼────┼────┼────┤
+    │    │    │ ░░ │ ▒▒ │ ░░ │    │    │
+    └────┴────┴────┴────┴────┴────┴────┘
+```
+
+Every frame, the terrain (`preRender` in `terrain.js`):
+
+1. Works out which tiles reach within the active camera's far plane of it:
+   the tiles in a circle around the camera's tile, `far / tileSize` tiles out.
+2. Drops tiles more than one tile past that circle, so the ground behind
+   something flying away is let go, with its GPU buffers. The one tile of
+   slack keeps a tile from being dropped and built again as the camera moves
+   back and forth across the edge.
+3. Builds the tiles it is missing, nearest first, for about 4 milliseconds,
+   and always at least one. Building every missing tile at once would stall a
+   frame, such as when the scene loads or the camera flies fast; spreading
+   them out keeps flying smooth while far tiles fill in, out in the fog.
+4. Draws every tile it has, each its own vertex buffer.
+
+A tile is a grid of `detail` steps along each side (32 by default), so 33 by
+33 points, each a vertex with:
+
+- its position, from the height function at that point.
+- its normal, which way the ground faces there, from the heights one step to
+  each side of it. The heights are worked out one step past the tile's edges
+  too, so tiles next to each other get the same normals along their shared
+  edge and meet without a seam in their shading.
+- its grass color, from how high it is: `lowColor` in the meadows to
+  `highColor` on the hilltops.
+- how much of a path's dirt track is there.
+
+All the tiles share one index buffer, the list of triangles that join a grid
+of points, since every tile's grid is the same. Changing a setting that shapes
+the ground, such as `height`, drops every tile, and they are built again with
+the new settings; changing only a texture or the dirt color doesn't, since
+those are only drawn.
+
+Measuring the paths is the costly part of building a tile: every point
+measures how far it is from a path, which for a winding course is a line of
+over a hundred short pieces. Before building a tile, the terrain keeps only the
+pieces close enough to change anything inside it (`withPieces`): most tiles
+keep none, and tiles along a course a dozen or so. Pieces farther away can't
+flatten the ground or lay dirt there, so the tile comes out the same either
+way, and so do the ship's `heightAt` and the trees, which measure the whole
+path.
+
+#### Grass and dirt
+
+The terrain draws with its own shader (`shaders/terrain.frag`), lit like other
+meshes, with fog and sky and ground ambient. It mixes two textures, grass and
+dirt, by a third, the blend texture, whose alpha says where dirt shows
+through, and dirt also shows along a path's `dirtWidth`. Grass and dirt are
+grey detail textures, mottling, tufts and pebbles, tinted by the grass colors
+and `dirtColor`, so colors stay tunable live. All three are placed by world
+position, repeating every `grassSize`, `dirtSize` and `blendSize`, and they
+tile without seams, so they repeat across the ground forever.
+`bin/generate-texture.js` paints them:
+
+```bash
+node bin/generate-texture.js --kind blend --cover 0.08
+```
 
 ### Renderable, Mesh and Geometry
 

@@ -12,6 +12,7 @@ import {
 
 import {Grid} from "./grid.js";
 import {Sky} from "./sky.js";
+import {Terrain} from "./terrain.js";
 
 export function createScene(config) {
   // The state manager is the first thing we create. This is built from all
@@ -51,6 +52,8 @@ export function createScene(config) {
       return new Grid(nodeConfig);
     } else if (isSky(nodeConfig)) {
       return new Sky(nodeConfig);
+    } else if (isTerrain(nodeConfig)) {
+      return new Terrain(nodeConfig);
     }
 
     return new SceneNode(nodeConfig);
@@ -71,6 +74,10 @@ export function isGrid(nodeConfig) {
 
 export function isSky(nodeConfig) {
   return nodeConfig.type === "sky";
+}
+
+export function isTerrain(nodeConfig) {
+  return nodeConfig.type === "terrain";
 }
 
 const cameraTypes = new Set([

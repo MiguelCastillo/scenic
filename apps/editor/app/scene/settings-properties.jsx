@@ -13,7 +13,8 @@ const label = (name) => {
 // SettingsProperties edits a block of settings in a node's state, such as a
 // sky's "sky" or a grid's "grid", for nodes that read them every frame, so
 // changes show up live. Colors, which are [r, g, b] lists, get color pickers
-// and numbers get number fields. Text is shown but not edited. It shows the
+// and numbers get number fields. Text is shown but not edited, and so are
+// other lists, such as a terrain's clearings, by how many items they have. It shows the
 // settings in the node's state, so the scene config lists the ones to tune,
 // plus any defaults.
 //
@@ -49,6 +50,9 @@ export class SettingsProperties extends WithNodeState {
     const {steps = {}, defaultStep = 0.05} = this.props;
     if (typeof value === "string") {
       return <span>{value}</span>;
+    }
+    if (Array.isArray(value) && !value.every((v) => typeof v === "number")) {
+      return <span>{value.length} items</span>;
     }
     if (Array.isArray(value)) {
       return <ColorChannels onChange={(rgb) => this.updateSetting(name, [...rgb])} data={value} />;

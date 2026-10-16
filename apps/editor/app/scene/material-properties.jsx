@@ -23,13 +23,13 @@ export class MaterialProperties extends WithNodeState {
     });
   };
 
-  handleChangeAmbientColor = (value) => {
+  handleChangeAmbientColor = (which, value) => {
     const nodeState = this.getNodeState();
     this.updateNodeState({
       ...nodeState,
       ambient: {
         ...nodeState.ambient,
-        color: [...value],
+        [which]: [...value],
       },
     });
   }
@@ -133,7 +133,17 @@ export class MaterialProperties extends WithNodeState {
         {ambient?.color != null ?
           <div className="color">
           <label>Ambient Color</label>
-          <ColorChannels onChange={this.handleChangeAmbientColor} data={ambient.color} />
+          <ColorChannels onChange={(value) => this.handleChangeAmbientColor("color", value)} data={ambient.color} />
+        </div> : null}
+        {/* Ambient light from below is the same as from above until it is
+            changed, which makes ambient light flat. */}
+        {ambient?.color != null ?
+          <div className="color">
+          <label>Ambient Ground Color</label>
+          <ColorChannels
+            onChange={(value) => this.handleChangeAmbientColor("groundColor", value)}
+            data={ambient.groundColor ?? ambient.color}
+          />
         </div> : null}
       </div>
     );

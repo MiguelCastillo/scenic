@@ -27,8 +27,11 @@
 //   seconds. 0.3 by default.
 // - levelTime: how quickly it levels out after climbing or diving, in
 //   seconds. 1.5 by default.
-// - minHeight: the lowest it flies, so it skims the ground rather than going
-//   through it. 80 by default.
+// - minHeight: the lowest it flies above the ground, so it skims the ground
+//   rather than going through it. 80 by default.
+// - ground: the ID of a terrain node to fly over (see Terrain in
+//   @scenic/runtime), so the ground rises and falls with its hills. Without
+//   one, the ground is flat at 0.
 // - pullUpHeight: how far above minHeight it starts pulling out of a dive.
 //   The closer it gets to minHeight, the less steeply it can dive, so it
 //   eases down onto minHeight and levels out there, however steep the dive.
@@ -177,11 +180,16 @@ module.exports = function createFlyScript(node) {
       }
       flight.climb = Math.max(-settings.maxClimb, Math.min(settings.maxClimb, flight.climb));
 
+      // groundAt is the ground's height under (x, z).
+      const terrain = settings.ground && sceneManager.getNodeByID(settings.ground);
+      const groundAt = (x, z) => (terrain ? terrain.heightAt(x, z) : 0);
+
       // Near the ground, the steepest dive allowed shrinks to level at
       // minHeight. It shrinks gently at first, so a full dive bends into the
       // pull-up rather than snapping, and in proportion to height at the end,
       // so the rocket eases onto minHeight rather than landing on it.
-      const above = state.transform.position[1] - settings.minHeight;
+      const [x, y, z] = state.transform.position;
+      const above = y - groundAt(x, z) - settings.minHeight;
       const t = Math.max(0, Math.min(1, above / (settings.pullUpHeight || 1)));
       flight.climb = Math.max(flight.climb, -settings.maxClimb * t * (2 - t));
 
@@ -198,9 +206,10 @@ module.exports = function createFlyScript(node) {
       const position = state.transform.position.map((v, i) => v + nose[i] * speed * seconds);
 
       // Never go below minHeight, such as when the rocket is moved below it
-      // in the editor.
-      if (position[1] < settings.minHeight) {
-        position[1] = settings.minHeight;
+      // in the editor, or the ground rises under it.
+      const lowest = groundAt(position[0], position[2]) + settings.minHeight;
+      if (position[1] < lowest) {
+        position[1] = lowest;
         flight.climb = Math.max(flight.climb, 0);
       }
 

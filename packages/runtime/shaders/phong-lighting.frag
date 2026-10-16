@@ -17,6 +17,10 @@ in vec4 fragmentNormal;
 in vec3 fragmentWorldPosition;
 
 uniform vec3 ambientColor;
+// The ambient light from below, which ambientColor blends into as surfaces
+// turn from facing up to facing down, like light from the sky above and
+// bounced off the ground below. It is ambientColor for flat ambient light.
+uniform vec3 ambientGroundColor;
 uniform vec4 materialColor;
 // How opaque the surface is, 0 to 1, which is its alpha: below 1 it is drawn
 // blended over what is behind it (see Mesh).
@@ -80,7 +84,8 @@ void main() {
   specularLightColor *= materialReflectiveness;
 
   pixelColor = fragmentColor + materialColor;
-  pixelColor.rgb *= ambientColor + calculatedLightColor.rgb;
+  vec3 ambient = mix(ambientGroundColor, ambientColor, normal.y * 0.5 + 0.5);
+  pixelColor.rgb *= ambient + calculatedLightColor.rgb;
 
   // Highlights are the light's color reflected off the surface, so they are
   // added rather than tinted by the surface color.
