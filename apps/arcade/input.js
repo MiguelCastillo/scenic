@@ -91,7 +91,9 @@ export class PlayWhileLocked {
         return;
       }
 
-      if (event.type === "click" && focused === game) {
+      // Touches tap to play instead (see PlayOnTap), and tablets have no
+      // pointer to lock.
+      if (event.type === "click" && event.kind !== "touch" && focused === game) {
         capture.lock();
       } else if (event.type === "pointerlock") {
         if (event.locked && this._pausedByUnlock) {
@@ -123,5 +125,72 @@ export class PlayWhileLocked {
 
   _notify() {
     this._onChange({locked: this._capture.locked, paused: !!this._getGame()?.isPaused()});
+  }
+}
+
+// PlayOnTap plays the game on a touch screen, which has no pointer to lock:
+// it starts paused, since scenes load paused, tapping the game with one
+// finger while it is on top and paused plays it, and it pauses when the page
+// is hidden, such as when switching apps, or when pause is called, such as
+// from a pause button. onChange is called with {paused} whenever that
+// changes, so the page can tell the player what to do.
+//
+// Its API: pause(), and reset(), to call when the scenes change, such as
+// another track replacing the game.
+export class PlayOnTap {
+  constructor(capture, getRunners, onChange, {tapMs = 250, tapPixels = 10} = {}) {
+    this._getGame = () => getRunners().findLast((runner) => runner.cameras);
+    this._onChange = onChange;
+    this.reset();
+
+    // The fingers touching, by pointer id, with where and when each touched
+    // down, and whether more than one touched in the current gesture.
+    const touchesByID = new Map();
+    let manyFingers = false;
+
+    capture.onInput((event) => {
+      const game = this._getGame();
+      if (!game) {
+        return;
+      }
+
+      if (event.type === "visibility" && event.hidden) {
+        this.pause();
+      } else if (event.kind === "touch" && event.type === "pointerdown") {
+        manyFingers = manyFingers || touchesByID.size > 0;
+        touchesByID.set(event.id, {x: event.x, y: event.y, ms: performance.now()});
+      } else if (event.kind === "touch" && event.type === "pointerup") {
+        const touch = touchesByID.get(event.id);
+        touchesByID.delete(event.id);
+        const tapped =
+          touch &&
+          !manyFingers &&
+          performance.now() - touch.ms < tapMs &&
+          Math.hypot(event.x - touch.x, event.y - touch.y) < tapPixels;
+        if (!touchesByID.size) {
+          manyFingers = false;
+        }
+        if (tapped && getRunners().at(-1) === game && game.isPaused()) {
+          game.togglePause();
+          this._notify();
+        }
+      }
+    });
+  }
+
+  pause() {
+    const game = this._getGame();
+    if (game && !game.isPaused()) {
+      game.togglePause();
+      this._notify();
+    }
+  }
+
+  reset() {
+    this._notify();
+  }
+
+  _notify() {
+    this._onChange({paused: !!this._getGame()?.isPaused()});
   }
 }

@@ -1077,7 +1077,9 @@ names with `?game=`, with nothing but the game's HUD over it. It reads the
 game's `game.json` and runs the scene the game starts in. The game starts
 paused: clicking it locks the pointer and plays, Escape lets go of the
 pointer and pauses it, P pauses and resumes while playing, and C switches
-cameras.
+cameras. On a touch screen, which has no pointer to lock, tapping the game
+plays it, and a pause button in the corner, or leaving the page, pauses it
+(`PlayOnTap` in `apps/arcade/input.js`).
 
 The engine itself lives in the `@scenic/*` packages under `packages/`. See
 [`packages/README.md`](packages/README.md).

@@ -15,9 +15,12 @@ import {Subscription} from "./events.js";
 //   it is on the page in pixels. id tells pointers apart, such as two
 //   fingers, and kind is "touch", "mouse" or "pen". A pointer the browser
 //   takes over, such as for a system gesture, is lifted too.
-// - {type: "click"}.
+// - {type: "click", kind}: element clicked or tapped, with the kind of
+//   pointer that did it.
 // - {type: "pointerlock", locked}, when the pointer is locked to element or
 //   let go, such as with Escape.
+// - {type: "visibility", hidden}, when the page is hidden or shown again,
+//   such as when switching apps on a tablet.
 //
 // While the pointer is locked, keys that would scroll the page, scrollKeys,
 // don't, since the scene uses them, and scrolling over element never leaves
@@ -40,9 +43,14 @@ export class InputCapture {
     // Touches drive the scene, not the page, so they don't scroll or zoom it.
     element.style.touchAction = "none";
 
+    // The kind of pointer that last touched element, for clicks, which not
+    // every browser says.
+    let lastPointerKind = "mouse";
+
     Subscription.create(element)
-      .on("click", () => send({type: "click"}))
+      .on("click", (evt) => send({type: "click", kind: evt.pointerType || lastPointerKind}))
       .on("pointerdown", (evt) => {
+        lastPointerKind = evt.pointerType;
         // A pointer keeps telling element where it is until it lifts, even
         // when it moves off element.
         element.setPointerCapture(evt.pointerId);
@@ -65,7 +73,8 @@ export class InputCapture {
         send({type: "keydown", code: evt.code, key: evt.key, repeat: evt.repeat});
       })
       .on("keyup", (evt) => send({type: "keyup", code: evt.code, key: evt.key}))
-      .on("pointerlockchange", () => send({type: "pointerlock", locked: this.locked}));
+      .on("pointerlockchange", () => send({type: "pointerlock", locked: this.locked}))
+      .on("visibilitychange", () => send({type: "visibility", hidden: document.hidden}));
   }
 
   get locked() {

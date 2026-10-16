@@ -8,7 +8,7 @@ import {
 import {webgl} from "@scenic/renderer";
 import {loadScene, SceneRunner, SceneStack} from "@scenic/runtime";
 
-import {PlayWhileLocked, registerSceneInputRouting} from "./input.js";
+import {PlayOnTap, PlayWhileLocked, registerSceneInputRouting} from "./input.js";
 
 // The arcade plays one of the games in games/, full screen: the one the page's
 // URL names, such as index.html?game=bubble-squadron, or this one without
@@ -69,6 +69,7 @@ domReady.onReady(async () => {
   const fpsEl = document.querySelector("#fps");
   const menuEl = document.querySelector("#menu");
   const messageEl = document.querySelector("#message");
+  const pauseEl = document.querySelector("#pause");
   const gl = webgl.createContext(canvas);
 
   // Keep the canvas drawing buffer the same size as the canvas is displayed so
@@ -143,19 +144,33 @@ domReady.onReady(async () => {
     registerKeyboardMouseIntents(capture, intentOptions);
     registerTouchIntents(capture, intentOptions);
     registerSceneInputRouting(capture, () => stack.runners);
-    const playWhileLocked = new PlayWhileLocked(
-      capture,
-      () => stack.runners,
-      ({locked, paused}) => {
-        messageEl.textContent = menu
-          ? ""
-          : !locked
-          ? `${manifest.name}\nClick to play`
-          : paused
-          ? "Paused\nPress P to play"
-          : "";
-      }
-    );
+    // The game plays while the player has it: on a touch screen, from a tap
+    // until the pause button, and otherwise while the pointer is locked to
+    // it. The page tells the player what to do.
+    const touchScreen = matchMedia("(pointer: coarse)").matches;
+    const playPolicy = touchScreen
+      ? new PlayOnTap(
+          capture,
+          () => stack.runners,
+          ({paused}) => {
+            messageEl.textContent = menu ? "" : paused ? `${manifest.name}\nTap to play` : "";
+            pauseEl.hidden = !!menu || paused;
+          }
+        )
+      : new PlayWhileLocked(
+          capture,
+          () => stack.runners,
+          ({locked, paused}) => {
+            messageEl.textContent = menu
+              ? ""
+              : !locked
+              ? `${manifest.name}\nClick to play`
+              : paused
+              ? "Paused\nPress P to play"
+              : "";
+          }
+        );
+    domEvents.Subscription.create(pauseEl).on("click", () => playPolicy.pause());
 
     const closeMenu = () => {
       stack.pop();
@@ -164,7 +179,7 @@ domReady.onReady(async () => {
       going = false;
       menuEl.replaceChildren();
       document.body.classList.remove("menu-open");
-      playWhileLocked.reset();
+      playPolicy.reset();
     };
 
     // openMenu stacks the menu over the game, and lets go of the pointer,
@@ -231,7 +246,7 @@ domReady.onReady(async () => {
         menuEl.replaceChildren(titleEl, listEl, ...(hint ? [hintEl] : []));
       });
       stack.push(menu.runner);
-      playWhileLocked.reset();
+      playPolicy.reset();
     };
 
     // M opens the menu. The menu closes itself, when the player leaves it.
@@ -252,7 +267,7 @@ domReady.onReady(async () => {
     if (manifest.menu) {
       await openMenu();
     } else {
-      playWhileLocked.reset();
+      playPolicy.reset();
     }
   } catch (ex) {
     messageEl.textContent = `Unable to play "${game}"\n${ex.message}`;

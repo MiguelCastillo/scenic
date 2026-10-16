@@ -135,3 +135,22 @@ body {
 body.menu-open #hud {
   display: none;
 }
+
+/* On a touch screen, which has no pointer to let go of, this pauses the
+   game while it plays (see PlayOnTap in input.js). */
+#pause {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 48px;
+  height: 48px;
+  border: none;
+  border-radius: 24px;
+  background: rgba(0, 0, 0, 0.45);
+  color: white;
+  font-size: 18px;
+}
+
+#pause[hidden] {
+  display: none;
+}
