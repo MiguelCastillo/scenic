@@ -229,6 +229,7 @@
             {
               "name": "starfighter",
               "network": "player",
+              "hud": "booster",
               "collider": {
                 "shape": "sphere",
                 "radius": 95,
@@ -241,19 +242,23 @@
                 "scale": [1, 1, 1]
               },
               "script": {
-                "src": "scripts/glide.js",
+                "src": "scripts/fly.js",
                 "settings": {
-                  "road": "track",
-                  "height": 70,
-                  "cruiseSpeed": 700,
-                  "boostSpeed": 1600,
-                  "brakeSpeed": 200,
-                  "response": 0.4,
-                  "turnRate": 90,
-                  "bank": 25,
-                  "offRoad": 0.45,
-                  "edge": 400,
-                  "push": 4
+                  "cruiseSpeed": 310,
+                  "boostSpeed": 1500,
+                  "cruiseThrottle": 0.3,
+                  "turnRate": 75,
+                  "climbRate": 45,
+                  "maxClimb": 60,
+                  "bank": 40,
+                  "response": 0.3,
+                  "levelTime": 1.5,
+                  "minHeight": 50,
+                  "pullUpHeight": 400,
+                  "upArrowDives": false,
+                  "mouseSteering": false,
+                  "mouseSensitivity": 0.15,
+                  "throttle": 0.3
                 }
               },
               "items": [
