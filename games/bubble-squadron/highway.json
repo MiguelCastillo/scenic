@@ -327,6 +327,93 @@
           ]
         },
         {
+          "name": "grandstands",
+          "type": "transform",
+          "transform": {
+            "position": [0, 0, 0],
+            "rotation": [0, 0, 0],
+            "scale": [1, 1, 1]
+          },
+          "items": [
+            {
+              "name": "grandstand start straight",
+              "type": "static-mesh",
+              "resource": "/resources/obj/grandstand.obj",
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.2,
+                "shininess": 16
+              },
+              "ambient": {
+                "color": [0.4, 0.4, 0.43]
+              },
+              "transform": {
+                "position": [1760, 0, -4093],
+                "rotation": [0, 0, 0],
+                "scale": [1, 1, 1]
+              }
+            },
+            {
+              "name": "grandstand east bend",
+              "type": "static-mesh",
+              "resource": "/resources/obj/grandstand.obj",
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.2,
+                "shininess": 16
+              },
+              "ambient": {
+                "color": [0.4, 0.4, 0.43]
+              },
+              "transform": {
+                "position": [8681, 0, 363],
+                "rotation": [0, 63, 0],
+                "scale": [1, 1, 1]
+              }
+            },
+            {
+              "name": "grandstand north bend",
+              "type": "static-mesh",
+              "resource": "/resources/obj/grandstand.obj",
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.2,
+                "shininess": 16
+              },
+              "ambient": {
+                "color": [0.4, 0.4, 0.43]
+              },
+              "transform": {
+                "position": [1301, 0, 8355],
+                "rotation": [0, 21, 0],
+                "scale": [1, 1, 1]
+              }
+            },
+            {
+              "name": "grandstand west bend",
+              "type": "static-mesh",
+              "resource": "/resources/obj/grandstand.obj",
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.2,
+                "shininess": 16
+              },
+              "ambient": {
+                "color": [0.4, 0.4, 0.43]
+              },
+              "transform": {
+                "position": [-7672, 0, 449],
+                "rotation": [0, -60, 0],
+                "scale": [1, 1, 1]
+              }
+            }
+          ]
+        },
+        {
           "name": "track",
           "type": "static-mesh",
           "resource": "/resources/obj/highway-track-winding.obj",

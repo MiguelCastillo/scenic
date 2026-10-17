@@ -63,7 +63,7 @@
 const fs = require("fs");
 const path = require("path");
 
-const {Mesh, add, parseArgs} = require("./lib/mesh.js");
+const {Mesh, add, box, parseArgs} = require("./lib/mesh.js");
 
 const defaults = {
   radius: 300,
@@ -153,7 +153,7 @@ function buildGantry({width, height, thickness, block}, colors) {
     for (let i = 0; i < bands; i++) {
       const band = height / bands;
       const y = band * (i + 0.5);
-      slab(mesh, [side * postX, y, 0], [depth, band, depth], colors[i % colors.length]);
+      box(mesh, [side * postX, y, 0], [depth, band, depth], colors[i % colors.length]);
     }
   }
 
@@ -163,7 +163,7 @@ function buildGantry({width, height, thickness, block}, colors) {
     for (let i = 0; i < across; i++) {
       const x = -postX - depth / 2 + cell * (i + 0.5);
       const y = height + block * (row + 0.5);
-      slab(mesh, [x, y, 0], [cell, block, depth], colors[(i + row) % colors.length]);
+      box(mesh, [x, y, 0], [cell, block, depth], colors[(i + row) % colors.length]);
     }
   }
   return mesh;
@@ -184,30 +184,6 @@ const digits = {
   9: ["111", "101", "111", "001", "111"],
 };
 
-// slab adds a flat-sided box centered on center, size wide, tall and deep.
-function slab(mesh, center, size, color) {
-  for (let axis = 0; axis < 3; axis++) {
-    for (const side of [-1, 1]) {
-      const normal = [0, 0, 0];
-      normal[axis] = side;
-      const [u, v] = [(axis + 1) % 3, (axis + 2) % 3];
-      const corners = [
-        [-1, -1],
-        [1, -1],
-        [1, 1],
-        [-1, 1],
-      ].map(([a, b]) => {
-        const p = [...center];
-        p[axis] += (side * size[axis]) / 2;
-        p[u] += (a * size[u]) / 2;
-        p[v] += (b * size[v]) / 2;
-        return mesh.vertex(p, normal, color);
-      });
-      mesh.quad(...corners);
-    }
-  }
-}
-
 // signSize is the width and height of a sign's board for a number of
 // digits, each 3 dots wide with a dot between them, with room around them.
 function signSize({digits, dot}) {
@@ -223,12 +199,12 @@ function buildSign({digits, dot, post}) {
   const border = 24;
   const center = [0, post + height / 2, 0];
 
-  slab(mesh, center, [width, height, 16], board);
-  slab(mesh, add(center, [0, (height - border) / 2, 0]), [width, border, 24], frame);
-  slab(mesh, add(center, [0, -(height - border) / 2, 0]), [width, border, 24], frame);
-  slab(mesh, add(center, [(width - border) / 2, 0, 0]), [border, height, 24], frame);
-  slab(mesh, add(center, [-(width - border) / 2, 0, 0]), [border, height, 24], frame);
-  slab(mesh, [0, post / 2, 0], [32, post, 16], frame);
+  box(mesh, center, [width, height, 16], board);
+  box(mesh, add(center, [0, (height - border) / 2, 0]), [width, border, 24], frame);
+  box(mesh, add(center, [0, -(height - border) / 2, 0]), [width, border, 24], frame);
+  box(mesh, add(center, [(width - border) / 2, 0, 0]), [border, height, 24], frame);
+  box(mesh, add(center, [-(width - border) / 2, 0, 0]), [border, height, 24], frame);
+  box(mesh, [0, post / 2, 0], [32, post, 16], frame);
   return mesh;
 }
 
@@ -245,7 +221,7 @@ function buildDigit({number, dot}, colors) {
   digits[digit].forEach((row, r) => {
     [...row].forEach((on, c) => {
       if (on === "1") {
-        slab(mesh, [-(c - 1) * dot, (2 - r) * dot, -4], [dot + 1, dot + 1, 8], colors[0]);
+        box(mesh, [-(c - 1) * dot, (2 - r) * dot, -4], [dot + 1, dot + 1, 8], colors[0]);
       }
     });
   });

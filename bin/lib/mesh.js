@@ -141,6 +141,30 @@ function sphere(mesh, center, radius, color, segments = 10) {
   mesh.translate(start, center);
 }
 
+// box adds a flat-sided box centered on center, size wide, tall and deep.
+function box(mesh, center, size, color) {
+  for (let axis = 0; axis < 3; axis++) {
+    for (const side of [-1, 1]) {
+      const normal = [0, 0, 0];
+      normal[axis] = side;
+      const [u, v] = [(axis + 1) % 3, (axis + 2) % 3];
+      const corners = [
+        [-1, -1],
+        [1, -1],
+        [1, 1],
+        [-1, 1],
+      ].map(([a, b]) => {
+        const p = [...center];
+        p[axis] += (side * size[axis]) / 2;
+        p[u] += (a * size[u]) / 2;
+        p[v] += (b * size[v]) / 2;
+        return mesh.vertex(p, normal, color);
+      });
+      mesh.quad(...corners);
+    }
+  }
+}
+
 // bezier is a point on a quadratic Bézier curve of [radius, z] points.
 const bezier = (p0, p1, p2, t) =>
   add(add(scale(p0, (1 - t) ** 2), scale(p1, 2 * (1 - t) * t)), scale(p2, t * t));
@@ -173,6 +197,7 @@ module.exports = {
   lathe,
   disk,
   sphere,
+  box,
   bezier,
   parseArgs,
 };
