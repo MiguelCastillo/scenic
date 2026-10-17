@@ -96,7 +96,6 @@
 //
 
 import {degToRad, radToDeg} from "./angles.js";
-import {matrixFloatPrecision} from "./float.js";
 import {
   generateRotationMatrix,
   generateRotationFunctionWithDest,
@@ -118,8 +117,18 @@ export class Matrix4 {
     }
   }
 
+  // data is the matrix's 16 numbers, row-major. It is the matrix's own
+  // array, not a copy, so don't change it: matrices never change, and
+  // every method returns a new one.
+  //
+  // Performance: it is read for every mesh, every copy of one, and every
+  // tile, every frame, such as to check it against the view and to send
+  // it to a shader, so it must not copy or round the numbers, which would
+  // make a new array and strings each time. Tests that compare matrices
+  // round them themselves. See "Best practices for the hot path" in the
+  // README.
   get data() {
-    return this._data.map((v) => _fixZeros(matrixFloatPrecision(v)));
+    return this._data;
   }
 
   static identity() {
@@ -618,10 +627,6 @@ const _30 = 12;
 const _31 = 13;
 const _32 = 14;
 const _33 = 15;
-
-function _fixZeros(v) {
-  return Object.is(v, -0) ? 0 : v;
-}
 
 // Auto generate rotation functions.
 export const rotateZYX = generateRotationFunctionWithDest(
