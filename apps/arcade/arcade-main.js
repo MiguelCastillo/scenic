@@ -146,7 +146,10 @@ domReady.onReady(async () => {
   // stage, on the right, under what is being chosen, such as a ship, with
   // its name and how many there are between arrows to the choices beside
   // it.
+  // A menu that is new, rather than one with another choice selected, is
+  // marked "opening", so that it pops in (see arcade.css).
   let shownMenu = null;
+  let shownChoices = null;
   const showMenu = (message) => {
     const key = JSON.stringify(message);
     if (key === shownMenu) {
@@ -154,6 +157,9 @@ domReady.onReady(async () => {
     }
     shownMenu = key;
     const {title, choices, selected, hint, layout, actions, action} = message;
+    const choicesKey = JSON.stringify({title, choices, layout, actions});
+    menuEl.classList.toggle("opening", choicesKey !== shownChoices);
+    shownChoices = choicesKey;
     const titleEl = document.createElement("div");
     titleEl.className = "menu-title";
     titleEl.textContent = title;
@@ -165,6 +171,7 @@ domReady.onReady(async () => {
       actions.forEach(({label, back}, i) => {
         const actionEl = document.createElement("li");
         actionEl.textContent = label;
+        actionEl.style.setProperty("--i", i);
         actionEl.classList.toggle("selected", i === action);
         actionEl.dataset.intent = JSON.stringify(
           back ? {type: "back"} : {type: "choose", index: selected}
@@ -207,6 +214,7 @@ domReady.onReady(async () => {
     choices.forEach(({label}, i) => {
       const choiceEl = document.createElement("li");
       choiceEl.textContent = label;
+      choiceEl.style.setProperty("--i", i);
       choiceEl.classList.toggle("selected", i === selected);
       listEl.appendChild(choiceEl);
     });
@@ -218,6 +226,7 @@ domReady.onReady(async () => {
   };
   const hideMenu = () => {
     shownMenu = null;
+    shownChoices = null;
     menuEl.classList.remove("carousel");
     menuEl.replaceChildren();
   };

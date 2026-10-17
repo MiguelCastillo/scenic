@@ -1,10 +1,56 @@
+/* The arcade's look, a sporty one for teens: a dark, sleek glass with thin
+   diagonal lines, cyan accents, and choices as slanted bars, the selected
+   one a hot orange that slides out. The colors are here, so that a game can
+   have its own later. */
+:root {
+  --font: "Rubik", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --display-font: "Russo One", var(--font);
+  --ink: #0b0f2a;
+  --text: #ffffff;
+  --accent: #29e0ff;
+  --accent-glow: rgba(41, 224, 255, 0.45);
+  --panel: rgba(10, 14, 40, 0.8);
+  --panel-rim: rgba(41, 224, 255, 0.35);
+  --choice: rgba(255, 255, 255, 0.07);
+  --choice-rim: rgba(255, 255, 255, 0.14);
+  --choice-hover: rgba(255, 255, 255, 0.14);
+  --selected-top: #ffd23f;
+  --selected-bottom: #ff6a00;
+  --selected-glow: rgba(255, 130, 30, 0.5);
+  /* Menus are a column down the left of the screen, a third of it wide,
+     dark at the screen's edge and fading into the scene, with thin
+     diagonal lines over it. */
+  --column-width: clamp(340px, 38vw, 540px);
+  --column: linear-gradient(
+    to right,
+    rgba(8, 11, 32, 0.95) 0%,
+    rgba(8, 11, 32, 0.86) 62%,
+    rgba(8, 11, 32, 0) 100%
+  );
+  --column-phone: linear-gradient(rgba(8, 11, 32, 0.7), rgba(8, 11, 32, 0.95));
+  --column-lines: repeating-linear-gradient(
+    -60deg,
+    rgba(255, 255, 255, 0.035) 0 2px,
+    transparent 2px 16px
+  );
+  /* Choices lean forward, like they are moving. */
+  --slant: skewX(-12deg);
+  /* Menus' text grows with the screen, from a phone's to a big desktop's. */
+  --menu-font-size: clamp(18px, 1.2vw + 8px, 30px);
+  --shadow: 0 3px 0 rgba(0, 0, 0, 0.35), 0 6px 18px rgba(0, 0, 0, 0.45);
+}
+
 html,
 body {
   margin: 0;
   height: 100%;
   overflow: hidden;
   background: #000;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: var(--font);
+}
+
+button {
+  font-family: inherit;
 }
 
 #canvas {
@@ -38,11 +84,13 @@ body {
   top: 16px;
   left: 50%;
   transform: translateX(-50%);
-  padding: 10px 24px;
-  border-radius: 8px;
-  background: rgba(0, 0, 0, 0.45);
-  color: white;
+  padding: 10px 26px;
+  border: 2px solid var(--panel-rim);
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--text);
   font-size: 20px;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
   text-align: center;
   white-space: pre-line;
@@ -54,60 +102,105 @@ body {
 }
 
 /* What the player needs to know to play, such as "Click to play" or that
-   the game is paused, in the middle of the screen. Clicks go through it to
-   the canvas. */
+   the game is paused, in the middle of the screen, gently pulsing so it
+   draws the eye. Clicks go through it to the canvas. */
 #message {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  padding: 14px 32px;
-  border-radius: 10px;
-  background: rgba(0, 0, 0, 0.55);
-  color: white;
+  padding: 16px 36px;
+  border: 2px solid var(--panel-rim);
+  border-radius: 12px;
+  background: var(--panel);
+  box-shadow: 0 0 24px var(--accent-glow);
+  color: var(--text);
+  font-family: var(--display-font);
   font-size: 26px;
+  line-height: 1.3;
   text-align: center;
+  text-transform: uppercase;
+  text-shadow: var(--shadow);
   white-space: pre-line;
   pointer-events: none;
+  animation: pulse 1.6s ease-in-out infinite;
 }
 
 #message:empty {
   display: none;
 }
 
+@keyframes pulse {
+  50% {
+    transform: translate(-50%, -50%) scale(1.04);
+  }
+}
+
 /* The game's menu, such as its choice of tracks, from what the menu scene
    stacked over the game publishes (see arcade-main.js): a title, a list of
-   choices with the selected one marked, and a hint. It sits left of the
-   middle, leaving room for what the menu scene shows beside it. */
+   choices with the selected one marked, and a hint. It is a column down the
+   left of the screen, as is a carousel's panel, leaving the rest for what
+   the menu scene shows. */
 #menu {
-  position: absolute;
-  top: 50%;
-  left: 30%;
-  transform: translate(-50%, -50%);
-  padding: 22px 36px;
-  border-radius: 12px;
-  background: rgba(0, 0, 0, 0.55);
-  color: white;
-  font-size: 26px;
-  line-height: 1.5;
+  color: var(--text);
+  font-size: var(--menu-font-size);
   pointer-events: none;
+}
+
+#menu:not(.carousel),
+#menu .carousel-panel {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: var(--column-width);
+  /* The right side is left clear for the fade into the scene. */
+  padding: 6vh calc(var(--column-width) * 0.2) 6vh 48px;
+  background: var(--column-lines), var(--column);
 }
 
 #menu:empty {
   display: none;
 }
 
+/* The title is big, uppercase and leaning, with a cyan bar under it. */
 #menu .menu-title {
-  margin-bottom: 12px;
-  font-weight: bold;
+  margin: 0 0 4vh;
+  font-family: var(--display-font);
+  font-size: 1.7em;
+  line-height: 1.05;
+  text-transform: uppercase;
+  text-shadow: var(--shadow);
+  transform: skewX(-6deg);
+  transform-origin: left bottom;
 }
 
-/* A long list, such as a hangar's ships, scrolls, and takes the wheel and
-   fingers to scroll it. */
+#menu .menu-title::after {
+  content: "";
+  display: block;
+  width: 72px;
+  height: 5px;
+  margin-top: 14px;
+  background: var(--accent);
+  box-shadow: 0 0 12px var(--accent-glow);
+  transform: var(--slant);
+}
+
+/* The choices are slanted bars, one above the other. A long list, such as
+   a hangar's ships, scrolls, and takes the wheel and fingers to scroll
+   it. */
 #menu ul {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
   max-height: 60vh;
   margin: 0;
-  padding: 0;
+  padding: 8px 28px 8px 10px;
+  overflow-x: hidden;
   overflow-y: auto;
   list-style: none;
   pointer-events: auto;
@@ -116,39 +209,103 @@ body {
 /* Choices can be clicked or tapped, though the rest of the menu lets
    clicks through to the canvas. */
 #menu li {
-  pointer-events: auto;
+  position: relative;
+  overflow: hidden;
+  padding: 12px 24px;
+  border: 2px solid var(--choice-rim);
+  border-radius: 6px;
+  background: var(--choice);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   cursor: pointer;
+  pointer-events: auto;
+  transform: var(--slant);
+  transition: transform 0.15s ease-out, background 0.15s, border-color 0.15s;
 }
 
-#menu li::before {
-  content: "\25B6";
-  margin-right: 12px;
-  visibility: hidden;
+#menu li:hover {
+  border-color: var(--accent);
+  background: var(--choice-hover);
 }
 
-#menu li.selected::before {
-  visibility: visible;
+/* The selected one is hot orange, glowing, and slides out, with a shine
+   sweeping across it now and then. */
+#menu li.selected {
+  border-color: #fff;
+  background: linear-gradient(100deg, var(--selected-top), var(--selected-bottom));
+  box-shadow: 0 0 24px var(--selected-glow);
+  color: var(--ink);
+  transform: var(--slant) translateX(14px);
 }
 
+#menu li.selected::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -40%;
+  width: 30%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+  animation: shine 2.6s ease-in-out infinite;
+}
+
+@keyframes shine {
+  0% {
+    left: -40%;
+  }
+  40%,
+  100% {
+    left: 120%;
+  }
+}
+
+/* When a menu opens, its title and choices slide in from the left, one
+   after the other (see the "opening" class in arcade-main.js). */
+#menu.opening .menu-title {
+  animation: slide-in 0.35s ease-out both;
+}
+
+#menu.opening li {
+  animation: slide-in 0.3s calc(0.08s + var(--i, 0) * 0.05s) ease-out both;
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: var(--slant) translateX(-48px);
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* The title and the choices are in the middle of the column, top to bottom,
+   and the hint at its bottom, out of their way. */
 #menu .menu-hint {
-  margin-top: 12px;
-  font-size: 18px;
-  opacity: 0.75;
+  position: absolute;
+  bottom: 6vh;
+  left: 48px;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.8;
 }
 
 /* On a tablet, the menu is big, with choices far enough apart to tap. */
 @media (pointer: coarse) and (min-width: 641px) {
   #menu {
-    padding: 32px 52px;
-    font-size: 36px;
+    font-size: 28px;
   }
 
-  #menu li {
-    padding: 6px 0;
+  #menu ul {
+    gap: 16px;
   }
 
   #menu .menu-hint {
-    font-size: 24px;
+    font-size: 18px;
   }
 }
 
@@ -157,27 +314,59 @@ body {
    choice picks one. */
 @media (max-width: 640px) {
   #menu {
-    inset: 0;
-    transform: none;
-    pointer-events: auto;
+    font-size: 22px;
+  }
+
+  #menu:not(.carousel) {
+    right: 0;
+    width: auto;
     padding: 32px;
-    border-radius: 0;
-    background: rgba(0, 0, 0, 0.75);
-    font-size: 30px;
+    background: var(--column-lines), var(--column-phone);
+    pointer-events: auto;
   }
 
-  #menu:not(:empty) {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
+  #menu:not(.carousel) .menu-title,
+  #menu:not(.carousel) li {
+    text-align: center;
   }
 
-  #menu li {
-    padding: 10px 0;
+  #menu:not(.carousel) .menu-title {
+    transform-origin: center;
+  }
+
+  #menu:not(.carousel) .menu-title::after {
+    margin: 14px auto 0;
+  }
+
+  #menu:not(.carousel) ul {
+    padding: 8px 20px;
+  }
+
+  #menu:not(.carousel) li.selected {
+    transform: var(--slant) scale(1.04);
+  }
+
+  #menu:not(.carousel) .menu-hint {
+    position: static;
+    margin-top: 20px;
+    text-align: center;
+  }
+
+  #menu ul {
+    gap: 14px;
   }
 
   #menu .menu-hint {
-    font-size: 20px;
+    font-size: 14px;
+  }
+}
+
+/* Players who would rather things kept still get a menu that does. */
+@media (prefers-reduced-motion: reduce) {
+  #menu *,
+  #menu *::after {
+    animation: none !important;
+    transition: none !important;
   }
 }
 
@@ -193,13 +382,14 @@ body.menu-open #hud {
   position: absolute;
   top: 16px;
   right: 16px;
-  width: 48px;
-  height: 48px;
-  border: none;
-  border-radius: 24px;
-  background: rgba(0, 0, 0, 0.45);
-  color: white;
+  width: 52px;
+  height: 52px;
+  border: 2px solid var(--panel-rim);
+  border-radius: 12px;
+  background: var(--panel);
+  color: var(--text);
   font-size: 18px;
+  font-weight: 700;
 }
 
 #pause[hidden] {
@@ -213,11 +403,13 @@ body.menu-open #hud {
   position: absolute;
   right: 16px;
   bottom: 16px;
-  padding: 6px 12px;
-  border-radius: 6px;
-  background: rgba(0, 0, 0, 0.45);
-  color: white;
+  padding: 6px 14px;
+  border: 2px solid var(--panel-rim);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--text);
   font-size: 14px;
+  font-weight: 500;
   pointer-events: none;
 }
 
@@ -228,12 +420,15 @@ body.menu-open #hud {
 
 #room-connect {
   margin-left: 8px;
-  padding: 2px 10px;
-  border: none;
-  border-radius: 4px;
-  background: white;
-  color: black;
-  font-size: 14px;
+  padding: 2px 12px;
+  border: 2px solid #fff;
+  border-radius: 6px;
+  background: linear-gradient(100deg, var(--selected-top), var(--selected-bottom));
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   pointer-events: auto;
 }
 
@@ -244,55 +439,51 @@ body.menu-open #hud {
    the choice's name between arrows. The rest of the screen lets clicks
    through. */
 #menu.carousel {
-  inset: 0;
-  transform: none;
-  padding: 0;
-  border-radius: 0;
-  background: none;
-  pointer-events: none;
-}
-
-#menu.carousel:not(:empty) {
-  display: block;
-}
-
-#menu .carousel-panel {
   position: absolute;
-  top: 50%;
-  left: 22%;
-  transform: translate(-50%, -50%);
-  padding: 22px 36px;
-  border-radius: 12px;
-  background: rgba(0, 0, 0, 0.55);
+  inset: 0;
 }
 
-/* The stage is just under what the scene shows: centered 68% across, and
-   below a ship 48% down that reaches 130 pixels from there at most (see
-   the hangar's showcase anchor, and its fit). */
+/* The stage is just under what the scene shows: centered 69% across, in the
+   middle of the screen right of the column, and below a ship 44% down that
+   reaches 28% of the screen's smaller side from there at most (see the
+   hangar's showcase anchor, and its fit). */
 #menu .carousel-stage {
   position: absolute;
-  top: calc(48% + 150px);
-  left: 68%;
+  top: calc(44% + min(28vw, 28vh) + 8px);
+  left: 69%;
   transform: translateX(-50%);
   display: flex;
   align-items: center;
   gap: 20px;
+  font-size: var(--menu-font-size);
   text-align: center;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
 }
 
 #menu .carousel-arrow {
   flex: none;
-  width: 48px;
-  height: 48px;
-  border: none;
-  border-radius: 24px;
-  background: rgba(0, 0, 0, 0.45);
-  color: white;
+  width: 52px;
+  height: 52px;
+  border: 2px solid var(--accent);
+  border-radius: 10px;
+  background: var(--panel);
+  box-shadow: 0 0 14px var(--accent-glow);
+  color: var(--accent);
   font-size: 30px;
+  font-weight: 700;
   line-height: 1;
   cursor: pointer;
   pointer-events: auto;
+  transform: var(--slant);
+  transition: transform 0.1s ease-out, background 0.1s, color 0.1s;
+}
+
+#menu .carousel-arrow:hover {
+  background: var(--accent);
+  color: var(--ink);
+}
+
+#menu .carousel-arrow:active {
+  transform: var(--slant) scale(0.92);
 }
 
 #menu .carousel-caption {
@@ -300,32 +491,69 @@ body.menu-open #hud {
 }
 
 #menu .carousel-label {
-  font-weight: bold;
+  font-family: var(--display-font);
+  font-size: 1.4em;
+  line-height: 1.1;
+  text-transform: uppercase;
+  text-shadow: var(--shadow);
 }
 
 #menu .carousel-count {
-  font-size: 16px;
-  opacity: 0.85;
+  display: inline-block;
+  margin-top: 8px;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
 }
 
-/* On a phone, the ship is at the top, smaller, with the stage under it,
-   and the panel across the bottom: the ship 40% down, reaching 90 pixels
-   from there at most (see the hangar's showcase anchor). */
+/* On a phone, the ship is at the top, with the stage under it, and the
+   panel across the bottom: the ship 38% down, reaching 34% of the screen's
+   width from there at most (see the hangar's showcase anchor). */
 @media (max-width: 640px) {
   #menu .carousel-panel {
     top: auto;
+    right: 16px;
     bottom: 4%;
-    left: 50%;
-    transform: translateX(-50%);
-    width: calc(100% - 32px);
-    box-sizing: border-box;
+    left: 16px;
+    width: auto;
+    padding: 24px 24px 28px;
+    border: 2px solid var(--panel-rim);
+    border-radius: 14px;
+    background: var(--column-lines), var(--panel);
+  }
+
+  #menu .carousel-panel .menu-title {
+    margin-bottom: 14px;
+    font-size: 1.2em;
+    text-align: center;
+    transform-origin: center;
+  }
+
+  #menu .carousel-panel .menu-title::after {
+    margin: 12px auto 0;
+  }
+
+  #menu .carousel-panel li {
+    text-align: center;
+  }
+
+  #menu .carousel-panel li.selected {
+    transform: var(--slant) scale(1.04);
   }
 
   #menu .carousel-stage {
-    top: calc(40% + 105px);
+    top: calc(38% + 34vw + 8px);
     left: 50%;
     gap: 12px;
-    font-size: 24px;
+    font-size: 20px;
+  }
+
+  #menu .carousel-arrow {
+    width: 46px;
+    height: 46px;
   }
 
   #menu .carousel-caption {
