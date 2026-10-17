@@ -44,10 +44,16 @@ export class Forest extends Node {
   constructor(options) {
     super({...options, type: "forest"});
     // The tiles planted so far, by "column,row", each a list of its trees,
-    // {kind, matrix}, and the settings and ground they were planted for, to
-    // plant them all again when either changes.
+    // {kind, matrix}.
     this.tiles = new Map();
-    this.plantedFor = "";
+    // The forest's settings, with defaults for those its state leaves out,
+    // and what the tiles were planted for: the state the settings were
+    // worked out from, the terrain's ground, and how many kinds of tree
+    // there were (see prepareForView).
+    this.settings = null;
+    this.settingsFrom = null;
+    this.plantedOn = null;
+    this.plantedKinds = 0;
   }
 
   // prepareForView plants the tiles that have come within the forest's
@@ -55,7 +61,13 @@ export class Forest extends Node {
   // it, and has each kind of tree draw at the trees of the tiles it keeps.
   prepareForView(context) {
     const {sceneManager} = context;
-    const settings = {...Forest.defaults, ...sceneManager.getNodeStateByID(this.id).forest};
+    // The settings are only worked out again when the forest's state
+    // changed, which also plants every tile again (see below).
+    const state = sceneManager.getNodeStateByID(this.id);
+    if (state !== this.settingsFrom) {
+      this.settings = {...Forest.defaults, ...state.forest};
+    }
+    const {settings} = this;
     const kinds = this.items.filter((child) => child instanceof Mesh);
     const terrain = sceneManager.getNodeByID(settings.terrain);
     const camera = Node.findParentByType(this, Viewport)?.activeCamera;
@@ -67,10 +79,31 @@ export class Forest extends Node {
       return;
     }
 
-    const plantedFor = JSON.stringify([settings, kinds.length, terrain.builtWith]);
-    if (plantedFor !== this.plantedFor) {
+    // The trees are kept from frame to frame, planted for the forest's
+    // settings, on the terrain's ground, out of its kinds of tree. Any of
+    // them can change on any frame, and nothing tells the forest, so it
+    // checks every frame, and plants every tile again when one changed. They
+    // change, for example, when:
+    // - a setting is tuned live on the editor's Forest tab, such as how
+    //   dense the trees are;
+    // - the terrain builds its ground again, such as for taller hills or
+    //   other paths, which the trees have to stand on and keep clear of;
+    // - a kind of tree is added or removed.
+    //
+    // Any change to a node's state replaces its state object (see
+    // updateItemByID in StateManager), and the terrain replaces its ground
+    // only when it builds it again (see prepareForView in Terrain), so
+    // comparing the objects tells whether anything changed, at the cost of
+    // a few comparisons a frame.
+    if (
+      state !== this.settingsFrom ||
+      terrain.ground !== this.plantedOn ||
+      kinds.length !== this.plantedKinds
+    ) {
       this.tiles.clear();
-      this.plantedFor = plantedFor;
+      this.settingsFrom = state;
+      this.plantedOn = terrain.ground;
+      this.plantedKinds = kinds.length;
     }
 
     // Matrix4 data is row-major, so positions are the last column of world

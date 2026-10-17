@@ -92,12 +92,22 @@ export class Terrain extends Mesh {
     showTiles: false,
   };
 
+  // The settings that shape the ground, and its grass: changing any of them
+  // changes every tile, so they are all built again. The others, such as the
+  // textures and the dirt color, are only drawn.
+  static shapedBy = [
+    ...["seed", "height", "scale", "flatness", "clearings", "paths", "bumps"],
+    ...["lowColor", "highColor", "tileSize", "detail", "detailDistance"],
+  ];
+
   constructor(options) {
     super({...options, type: "terrain"});
-    // The tiles built so far, by "column,row", and the settings they were
-    // built with, to start over when they change.
+    // The tiles built so far, by "column,row".
     this.tiles = new Map();
-    this.builtWith = "";
+    // The terrain's settings, with defaults for those its state leaves out,
+    // and the state they were worked out from (see prepareForView).
+    this.settings = null;
+    this.settingsFrom = null;
     // The settings that shape the ground, ready to measure (see withPieces).
     this.ground = null;
     // The index buffers tiles share, by how many steps they have.
@@ -106,12 +116,6 @@ export class Terrain extends Mesh {
     this.textures = new Map();
     // The tiles in view this frame, chosen by prepareForView.
     this.tilesToRender = [];
-  }
-
-  // getSettings is the terrain's settings, with defaults for those its state
-  // leaves out.
-  getSettings(sceneManager) {
-    return {...Terrain.defaults, ...sceneManager.getNodeStateByID(this.id).terrain};
   }
 
   // heightAt is the height of the ground in the world under the world's
@@ -152,22 +156,35 @@ export class Terrain extends Mesh {
   // children, and are checked against the view one by one (see below).
   prepareForView(context) {
     const {gl, sceneManager} = context;
-    this.settings = this.getSettings(sceneManager);
     // Nothing is drawn until there is a camera to choose tiles for.
     this.tilesToRender = [];
 
-    // Changing the shape of the ground or its grass changes every tile, so
-    // they are all built again. Textures and the dirt color are only drawn.
-    const builtWith = JSON.stringify(
-      [
-        ...["seed", "height", "scale", "flatness", "clearings", "paths", "bumps"],
-        ...["lowColor", "highColor", "tileSize", "detail", "detailDistance"],
-      ].map((key) => this.settings[key])
-    );
-    if (builtWith !== this.builtWith) {
-      this.disposeTiles();
-      this.builtWith = builtWith;
-      this.ground = withPieces(this.settings);
+    // The tiles are kept from frame to frame, built from the terrain's
+    // settings, which live in its state. Its state can change on any frame,
+    // and nothing tells the terrain, so it checks every frame. Its state
+    // changes, for example, when:
+    // - a setting is tuned live on the editor's Terrain tab, such as the
+    //   height of the hills, or showTiles turned on;
+    // - a script reshapes the ground, such as a game moving on to a level
+    //   with other paths;
+    // - the terrain is moved, which changes its state but not its settings.
+    //
+    // Any change to a node's state replaces its state object, keeping the
+    // values that didn't change (see updateItemByID in StateManager), so
+    // comparing the object tells whether anything changed, at the cost of
+    // one comparison a frame. Only then are the settings worked out again,
+    // and the tiles built again if one of the settings that shape the ground
+    // changed (see shapedBy), and not for one that is only drawn, such as
+    // showTiles.
+    const state = sceneManager.getNodeStateByID(this.id);
+    if (state !== this.settingsFrom) {
+      const settings = {...Terrain.defaults, ...state.terrain};
+      if (!this.settings || Terrain.shapedBy.some((key) => settings[key] !== this.settings[key])) {
+        this.disposeTiles();
+        this.ground = withPieces(settings);
+      }
+      this.settings = settings;
+      this.settingsFrom = state;
     }
 
     const {tileSize, detail, detailDistance} = this.settings;
