@@ -13,7 +13,9 @@
 // cruises then, to turn tighter. A gate it misses it comes back around for,
 // from in front. A pilot's skill sets how well it flies: how closely it
 // steers, how quickly it reacts, and how fine it cuts its turns before it
-// eases off.
+// eases off. It fires its rocket booster once a lap (see fly.js), on a
+// straight: lined up with the next gate, at least two seconds away at the
+// booster's speed, and not too tight a turn at that speed.
 //
 // It enters its ship in the race, so that the race places it (see race.js),
 // holds it until the race starts, the way race.js holds the player's (see
@@ -180,18 +182,39 @@ module.exports = function createPilotScript(node) {
         // circle's chord to it, twice its radius times the angle's sine. The
         // less skilled, the wider the margin it leaves. It revs up for the
         // start.
-        const {boostSpeed = 1200, turnRate = 75} = shipSettings;
-        const boostRadius = boostSpeed / ((turnRate * Math.PI) / 180);
+        const {
+          boostSpeed = 1200,
+          turnRate = 75,
+          boosterSpeedUp = 0.4,
+          boosterLap = null,
+          boosterLeft = 0,
+        } = shipSettings;
+        const boosterSpeed = boostSpeed * (1 + boosterSpeedUp);
+        const radius = (speed) => speed / ((turnRate * Math.PI) / 180);
         const angle = (Math.min(90, Math.abs(turning)) * Math.PI) / 180;
         const margin = 1.05 + (1 - skill) * 0.8;
+        const distance = Math.hypot(dx, dy, dz);
+        const reachable = (speed) => distance >= margin * 2 * radius(speed) * Math.sin(angle);
         const boosting = held
           ? race.countdown != null && race.countdown < 1
-          : !finished && Math.hypot(dx, dy, dz) >= margin * 2 * boostRadius * Math.sin(angle);
+          : !finished && reachable(boosterLeft > 0 ? boosterSpeed : boostSpeed);
+
+        // The booster, once a lap, on a straight.
+        const lap = shipState.lap ?? 0;
+        const firing =
+          boosting &&
+          !held &&
+          lap > 0 &&
+          boosterLap !== lap &&
+          Math.abs(turning) < 15 &&
+          distance >= 2 * boosterSpeed &&
+          reachable(boosterSpeed);
 
         keys = [
           ...(turning > slack ? ["ArrowLeft"] : turning < -slack ? ["ArrowRight"] : []),
           ...(wantClimb - climb > 4 ? [climbKey] : wantClimb - climb < -4 ? [diveKey] : []),
           ...(boosting ? ["Space"] : []),
+          ...(firing ? ["KeyB"] : []),
         ];
       }
 

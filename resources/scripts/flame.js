@@ -13,6 +13,10 @@
 //   Without a throttle of its own, a flame follows the throttle in the script
 //   settings of the nearest node above it that has one, so all of a rocket's
 //   flames can follow one throttle on the rocket. Without either, it is 1.
+// - boost: how far past full throttle it burns, 0 to 1, such as while a
+//   rocket's booster fires: at 1 it roars like a giant booster, three times
+//   as long, twice as wide, white-hot, and flickering harder and faster. It comes from the same place as the throttle: its own
+//   settings, or the node above it whose throttle it follows. 0 by default.
 // - flicker: how much it flickers, as a fraction of its size. 0.15 by default.
 // - speed: how fast it flickers. 1 by default.
 //
@@ -53,11 +57,13 @@ module.exports = function createFlameScript(node) {
 
       // Without a throttle of its own, the flame follows the nearest node
       // above it that has one.
-      let found = settings.throttle;
-      for (let parent = node.parent; found == null && parent; parent = parent.parent) {
-        found = sceneManager.getNodeStateByID(parent.id)?.script?.settings?.throttle;
+      // Its boost comes from the same settings.
+      let source = settings;
+      for (let parent = node.parent; source.throttle == null && parent; parent = parent.parent) {
+        source = sceneManager.getNodeStateByID(parent.id)?.script?.settings ?? {};
       }
-      const throttle = Math.min(Math.max(found ?? 1, 0), 1);
+      const throttle = Math.min(Math.max(source.throttle ?? 1, 0), 1);
+      const boost = Math.min(Math.max(source.boost ?? 0, 0), 1);
 
       // A phase from the node's id, so that every flame is out of step with
       // the others.
@@ -67,16 +73,20 @@ module.exports = function createFlameScript(node) {
       }
 
       // A harder burning flame flickers faster and harder.
-      const t = (settings.time ?? 0) + seconds * speed * (1 + throttle);
-      const shake = flicker * (0.6 + 0.6 * throttle);
+      const t = (settings.time ?? 0) + seconds * speed * (1 + throttle + boost);
+      const shake = flicker * (0.6 + 0.6 * throttle + 0.6 * boost);
 
       // It is also much longer, growing faster near full throttle, and wider.
-      const length = (0.35 + 1.85 * Math.pow(throttle, 1.3)) * (1 + shake * noise(t, phase, 0));
-      const width = (0.8 + 0.45 * throttle) * (1 + shake * 0.4 * noise(t, phase, 2));
+      // A boost makes it bigger still.
+      const length =
+        (0.35 + 1.85 * Math.pow(throttle, 1.3)) *
+        (1 + 2 * boost) *
+        (1 + shake * noise(t, phase, 0));
+      const width = (0.8 + 0.45 * throttle) * (1 + boost) * (1 + shake * 0.4 * noise(t, phase, 2));
 
       // And it burns hotter: the material color adds to the flame's vertex
       // colors, so adding warm white pushes it toward white-hot.
-      const heat = throttle * throttle;
+      const heat = throttle * throttle + 1.5 * boost;
       const [r, g, b, a] = color;
 
       sceneManager.updateNodeStateByID(node.id, {

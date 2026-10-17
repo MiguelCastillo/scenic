@@ -403,6 +403,7 @@
             {
               "name": "starfighter",
               "network": "player",
+              "hud": "booster",
               "collider": {
                 "shape": "sphere",
                 "radius": 95

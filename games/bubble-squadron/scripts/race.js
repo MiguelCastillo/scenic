@@ -8,7 +8,10 @@
 // scene is paused, such as until the player joins the race by clicking.
 //
 // The racer is held by setting "held" in its node's state, which the
-// scripts that fly it heed (see fly.js and glide.js).
+// scripts that fly it heed (see fly.js and glide.js). Every racer, the
+// others too, has the lap it is on set as "lap" in its node's state, or 0
+// before the start and after it finishes, for its rocket booster, which it
+// can fire once a lap (see fly.js).
 //
 // Others can race too, such as NPCs flown by pilot.js: each enters the race
 // by adding itself to the race's entrants, and the race follows them through
@@ -140,6 +143,14 @@ module.exports = function createRaceScript(node) {
         sceneManager.updateNodeStateByID(racer.id, {held});
       }
 
+      // setLap sets the lap a racer is on in its node's state, when it
+      // changed.
+      const setLap = (id, lap) => {
+        if ((sceneManager.getNodeStateByID(id).lap ?? 0) !== lap) {
+          sceneManager.updateNodeStateByID(id, {lap});
+        }
+      };
+
       const to = position(racer);
       const from = settings.from || to;
 
@@ -188,6 +199,8 @@ module.exports = function createRaceScript(node) {
         }
       }
 
+      setLap(racer.id, race.finished ? 0 : race.lap);
+
       // The others go through the gates the same way, from the start.
       const rivals = {};
       for (const {id} of settings.entrants) {
@@ -214,6 +227,7 @@ module.exports = function createRaceScript(node) {
           }
         }
         rivals[id] = rival;
+        setLap(id, rival.finishedAt == null ? rival.lap : 0);
       }
 
       // Everyone's place: whoever has finished, by when, then whoever is on

@@ -2,6 +2,8 @@
 // forward, along its node's +Z axis, and the keys steer it.
 // - Space: boost. The throttle climbs to full and the rocket speeds up, and
 //   it settles back to cruising when Space is let go.
+// - B: the rocket booster, once a lap in a race: it flies boosterSpeedUp
+//   faster for boosterSeconds, on top of Space (see "lap" below).
 // - Left and right arrows: turn, banking into the turn.
 // - Up and down arrows: dive and climb, like pushing a flight stick forward
 //   and pulling it back. Letting go levels the rocket out. The upArrowDives
@@ -41,6 +43,9 @@
 // - mouseSteering: whether the mouse steers. false by default.
 // - mouseSensitivity: how far the mouse turns and pitches the rocket, in
 //   degrees per pixel. 0.15 by default.
+// - boosterSpeedUp: how much faster the booster makes it fly, as a part of
+//   its speed. 0.4 by default, 40% faster.
+// - boosterSeconds: how long the booster lasts, in seconds. 6 by default.
 //
 // How it is flying is written to this script's settings every frame, so a
 // saved state flies on from where it was, and flames under the node that
@@ -51,18 +56,30 @@
 //   default.
 // - roll: how far it is banked, in degrees. 0 by default.
 // - throttle: how hard the engine burns, 0 to 1. cruiseThrottle by default.
+// - boosterLap: the lap the booster was fired on, or null.
+// - boosterLeft: how many seconds of the booster are left, 0 when it is off.
+// - boost: how hard the booster burns, 0 to 1, which the flames follow to
+//   burn bigger (see flame.js). It eases up when the booster fires and back
+//   down when it runs out, as quickly as the throttle does.
 // They are kept rather than read back from the node's rotation, since the
 // same rotation can come from different angles.
 //
 // In a network game, the other players see it when its node names a channel
 // of sceneManager.network in its state, such as {"network": "player"}: every
-// frame it publishes {position, rotation, throttle} there, for the copies of
-// it on the other players' screens (see remote-ship.js).
+// frame it publishes {position, rotation, throttle, boost} there, for the
+// copies of it on the other players' screens (see remote-ship.js).
 //
 // It flies from wherever the node's state puts it, so moving the node, such
 // as in the editor, moves the rocket. While its node's state has "held" set,
 // such as before a race starts (see race.js), it stays where it is, though
 // its engine still follows Space, so it can rev up for the start.
+//
+// The booster can be fired once each lap of a race, while the node's state
+// has "lap" set, the lap it is on, which race.js sets for every racer; 0 or
+// none means it isn't racing, and it has no booster. With "hud" in the
+// node's state, such as {"hud": "booster"}, it tells the app's UI about the
+// booster every frame, on that channel of sceneManager.ui: {ready, left},
+// whether it can be fired, and how many seconds of it are left.
 //
 // When the node has a collider (see collision in @scenic/scene), the rocket
 // bounces off anything else with one, such as trees: it is pushed back out
@@ -86,6 +103,11 @@ const defaults = {
   upArrowDives: true,
   mouseSteering: false,
   mouseSensitivity: 0.15,
+  boosterSpeedUp: 0.4,
+  boosterSeconds: 6,
+  boosterLap: null,
+  boosterLeft: 0,
+  boost: 0,
 };
 
 // rotation is the rotation matrix for a rocket heading degrees around the
@@ -150,6 +172,9 @@ module.exports = function createFlyScript(node) {
         climb: settings.climb ?? 0,
         roll: settings.roll ?? 0,
         throttle: settings.throttle ?? settings.cruiseThrottle,
+        boosterLap: settings.boosterLap,
+        boosterLeft: Math.max(0, settings.boosterLeft - seconds),
+        boost: settings.boost,
       };
 
       const held = (code) => (keys.has(code) ? 1 : 0);
@@ -171,9 +196,26 @@ module.exports = function createFlyScript(node) {
             position,
             rotation,
             throttle: flight.throttle,
+            boost: flight.boost,
           });
         }
       };
+
+      // B fires the booster, once a lap, and not while held at the start.
+      const lap = state.lap ?? 0;
+      const racing = lap > 0 && !state.held;
+      if (racing && flight.boosterLap !== lap && keys.has("KeyB")) {
+        flight.boosterLap = lap;
+        flight.boosterLeft = settings.boosterSeconds;
+      }
+      const targetBoost = flight.boosterLeft > 0 ? 1 : 0;
+      flight.boost += (targetBoost - flight.boost) * ease(settings.response);
+      if (state.hud) {
+        sceneManager.ui.publish(state.hud, {
+          ready: racing && flight.boosterLap !== lap,
+          left: flight.boosterLeft,
+        });
+      }
 
       if (state.held) {
         sceneManager.updateNodeStateByID(node.id, {
@@ -220,10 +262,12 @@ module.exports = function createFlyScript(node) {
       flight.climb = Math.max(flight.climb, -settings.maxClimb * t * (2 - t));
 
       // Speed follows throttle: cruising speed at the cruising throttle, up to
-      // boost speed at full throttle.
+      // boost speed at full throttle, and boosterSpeedUp faster while the
+      // booster burns.
       const {cruiseSpeed, boostSpeed, cruiseThrottle} = settings;
       const boost = Math.max(0, (flight.throttle - cruiseThrottle) / (1 - cruiseThrottle || 1));
-      const speed = cruiseSpeed + (boostSpeed - cruiseSpeed) * boost;
+      const booster = flight.boosterLeft > 0 ? 1 + settings.boosterSpeedUp : 1;
+      const speed = (cruiseSpeed + (boostSpeed - cruiseSpeed) * boost) * booster;
 
       // The rocket's nose, its local +Z axis, is the third column of its
       // rotation, since Matrix4 data is row-major.

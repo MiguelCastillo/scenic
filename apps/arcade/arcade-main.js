@@ -82,10 +82,18 @@ function countdownText({countdown, lap, time}) {
   return lap === 0 ? String(Math.ceil(countdown)) : lap === 1 && time < 1 ? "GO!" : "";
 }
 
+// boosterText is a ship's booster message (see
+// games/bubble-squadron/scripts/fly.js) as the HUD shows it: that it is
+// ready, and the key that fires it, while it can be fired, and that it is
+// burning while it does.
+function boosterText({ready, left}) {
+  return left > 0 ? "BOOSTER!" : ready ? "Booster ready: press B" : "";
+}
+
 // What the HUD shows for each channel of the scene's sceneManager.ui (see
 // SceneManager in @scenic/scene), from its messages. Channels not here don't
 // show.
-const hudTexts = {race: raceText};
+const hudTexts = {race: raceText, booster: boosterText};
 
 async function fetchJSON(url) {
   const response = await fetch(url);

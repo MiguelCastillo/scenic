@@ -1,7 +1,7 @@
 // remote-ship flies another player's ship in a network game: a copy of this
 // player's ship, moved by what the other player's browser says about theirs,
 // a few times a second (see fly.js and glide.js, which publish it). It gets
-// the player's messages, {position, rotation, throttle}, as the frame's
+// the player's messages, {position, rotation, throttle, boost}, as the frame's
 // `messages`, from the input channel its node's "input" names, and glides
 // the node to where the last one says, every frame, so that it moves
 // smoothly between messages rather than jumping at each one, at any frame
@@ -15,8 +15,8 @@
 //   0.1 by default.
 //
 // What it is gliding to is written to its settings, as target, and the
-// throttle it has reached as throttle, which the flames and spinners under it
-// follow (see flame.js and spin.js).
+// throttle it has reached as throttle, and its booster's boost, which the
+// flames and spinners under it follow (see flame.js and spin.js).
 
 const {mat4} = require("@scenic/math");
 
@@ -69,7 +69,12 @@ module.exports = function createRemoteShipScript(node) {
         },
         script: {
           ...state.script,
-          settings: {...settings, target, throttle: throttle + (target.throttle - throttle) * ease},
+          settings: {
+            ...settings,
+            target,
+            throttle: throttle + (target.throttle - throttle) * ease,
+            boost: target.boost ?? 0,
+          },
         },
       });
     },
