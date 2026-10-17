@@ -119,14 +119,14 @@
           "script": {
             "src": "/resources/scripts/anchor.js",
             "settings": {
-              "x": 0.68,
-              "y": 0.52,
-              "fit": 130,
+              "x": 0.69,
+              "y": 0.56,
+              "fit": 0.28,
               "narrow": {
                 "width": 640,
                 "x": 0.5,
-                "y": 0.6,
-                "fit": 90
+                "y": 0.62,
+                "fit": 0.34
               }
             }
           },
