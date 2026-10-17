@@ -299,7 +299,9 @@ export class Mesh extends Renderable {
   // render draws node where it is, or, when it has instances, a list of
   // world matrices, at each of them instead, such as the trees of a forest
   // (see Forest in @scenic/runtime). Each place gets its own level of detail,
-  // and places out of view are skipped.
+  // and places out of view are skipped. The program is set up once, its
+  // lights, material and view, and each place after the first only sends
+  // its world matrix, and draws.
   static render(node) {
     const {shaderProgram, vertexBuffers} = node;
     const projectionMatrix = node.getViewProjectionMatrix();
@@ -317,6 +319,7 @@ export class Mesh extends Renderable {
 
     // Buffers out of view are skipped, such as the trees behind a camera,
     // and so are the levels of detail the mesh is too near or too far for.
+    let inUse = false;
     for (const worldMatrix of node.instances || [node.worldMatrix]) {
       const lod = node.levelOfDetail(worldMatrix);
       const buffers = vertexBuffers
@@ -331,8 +334,17 @@ export class Mesh extends Renderable {
             },
           },
         ]);
-        buffers.forEach((vb) => program.render(vb));
+        if (inUse) {
+          program.sendUniforms(["worldMatrix"]);
+        } else {
+          program.use();
+          inUse = true;
+        }
+        buffers.forEach((vb) => program.draw(vb));
       }
+    }
+    if (inUse) {
+      program.release();
     }
   }
 }

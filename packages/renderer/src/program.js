@@ -5,6 +5,99 @@ import {ShaderAttribute} from "./attribute.js";
 import {renderStats} from "./render-stats.js";
 import {ShaderUniform} from "./uniform.js";
 
+// The program each WebGL context draws with now, so that a program already
+// in use isn't made the one in use again, which costs as much as a draw.
+const programsInUse = new WeakMap();
+
+// Each WebGL program's uniforms' names, by their locations, and the values
+// they were last sent, by name, so that a value a program already has isn't
+// sent again, such as the lights for every mesh drawn with the same program.
+// Values are kept by name rather than location because programs cloned from
+// one another share a WebGL program but look up locations of their own.
+const uniformNames = new WeakMap();
+const uniformValuesByProgram = new WeakMap();
+
+// sameValues is whether last, an array, holds the same numbers as values,
+// numbers or arrays of them.
+function sameValues(last, values) {
+  let i = 0;
+  for (const value of values) {
+    if (typeof value === "object") {
+      for (let j = 0; j < value.length; j++, i++) {
+        if (last[i] !== value[j]) {
+          return false;
+        }
+      }
+    } else if (last[i++] !== Number(value)) {
+      return false;
+    }
+  }
+  return i === last.length;
+}
+
+// storeValues writes values, numbers or arrays of them, into last, an array,
+// reusing it, and returns it.
+function storeValues(last, values) {
+  let i = 0;
+  for (const value of values) {
+    if (typeof value === "object") {
+      for (let j = 0; j < value.length; j++) {
+        last[i++] = value[j];
+      }
+    } else {
+      last[i++] = Number(value);
+    }
+  }
+  last.length = i;
+  return last;
+}
+
+// The stand-ins for WebGL contexts that uniforms' updates get, by context:
+// the context, except that its uniform calls skip values the program in use
+// already has.
+const uniformSenders = new WeakMap();
+
+function uniformSender(gl) {
+  let sender = uniformSenders.get(gl);
+  if (!sender) {
+    const methods = new Map();
+    sender = new Proxy(gl, {
+      get(target, property) {
+        if (!methods.has(property)) {
+          const value = target[property];
+          if (typeof value !== "function") {
+            return value;
+          }
+          const send = value.bind(target);
+          methods.set(
+            property,
+            typeof property === "string" && property.startsWith("uniform")
+              ? (location, ...values) => {
+                  const program = programsInUse.get(target);
+                  const name = location && uniformNames.get(program)?.get(location);
+                  if (name == null) {
+                    send(location, ...values);
+                    return;
+                  }
+                  const valuesByName = uniformValuesByProgram.get(program);
+                  const last = valuesByName.get(name);
+                  if (last && sameValues(last, values)) {
+                    return;
+                  }
+                  valuesByName.set(name, storeValues(last ?? [], values));
+                  send(location, ...values);
+                }
+              : send
+          );
+        }
+        return methods.get(property);
+      },
+    });
+    uniformSenders.set(gl, sender);
+  }
+  return sender;
+}
+
 export class ShaderProgram {
   constructor(gl, program) {
     if (!gl || !program) {
@@ -16,6 +109,10 @@ export class ShaderProgram {
     this._attributes = [];
     this._uniformsByName = {};
     this._uniformsUpdates = {};
+    // The buffers the last draw drew, and the vertex attributes it enabled
+    // for them, until the program is released (see draw and release).
+    this._boundVertexBuffers = null;
+    this._enabledAttributeIndexes = [];
   }
 
   setUniforms(uniforms) {
@@ -29,7 +126,7 @@ export class ShaderProgram {
     // perhaps implement LRU.
     const newUniforms = uniforms
       .filter((uniform) => !this._uniformsByName[uniform.name])
-      .map((uniform) => new ShaderUniform(uniform, this));
+      .map((uniform) => this._createUniform(uniform));
 
     for (const uniform of newUniforms) {
       this._uniformsByName[uniform.name] = uniform;
@@ -45,7 +142,7 @@ export class ShaderProgram {
 
     const newUniforms = uniforms
       .filter((uniform) => !this._uniformsByName[uniform.name])
-      .map((uniform) => new ShaderUniform(uniform, this));
+      .map((uniform) => this._createUniform(uniform));
 
     if (newUniforms.length) {
       for (const uniform of newUniforms) {
@@ -114,38 +211,80 @@ export class ShaderProgram {
     return shaderProgram;
   }
 
+  // _createUniform makes the uniform for options, and keeps its name by its
+  // location, for sending only values the program doesn't have yet.
+  _createUniform(options) {
+    const uniform = new ShaderUniform(options, this);
+    if (uniform.index) {
+      if (!uniformNames.has(this.program)) {
+        uniformNames.set(this.program, new WeakMap());
+        uniformValuesByProgram.set(this.program, new Map());
+      }
+      uniformNames.get(this.program).set(uniform.index, uniform.name);
+    }
+    return uniform;
+  }
+
+  // render draws vertexBuffers with the program: it uses it, draws, and
+  // releases it. To draw many times with the same uniforms, such as a forest's
+  // trees, use, draw and release instead, sending only the uniforms that
+  // change in between, such as each tree's world matrix.
   render(vertexBuffers, primitiveType = this.gl.TRIANGLES) {
+    this.use();
+    this.draw(vertexBuffers, primitiveType);
+    this.release();
+  }
+
+  // use makes the program the one WebGL draws with, unless it already is,
+  // and sends it its uniforms' values, those it doesn't have yet.
+  use() {
     const gl = this.gl;
-    gl.useProgram(this.program);
+    if (programsInUse.get(gl) !== this.program) {
+      gl.useProgram(this.program);
+      programsInUse.set(gl, this.program);
+    }
+    this.sendUniforms(Object.keys(this._uniformsUpdates));
+    return this;
+  }
 
-    Object.keys(this._uniformsUpdates).forEach((key) => {
-      this._uniformsUpdates[key](gl, this._uniformsByName[key]);
-    });
+  // sendUniforms sends the program, which must be in use, the values of the
+  // uniforms with names, those it doesn't have yet.
+  sendUniforms(names) {
+    const sender = uniformSender(this.gl);
+    for (const name of names) {
+      this._uniformsUpdates[name](sender, this._uniformsByName[name]);
+    }
+    return this;
+  }
 
-    // Vertex attributes enabled for this draw, which are disabled again once
-    // it is done. Enabled attributes are global WebGL state, and an attribute
-    // left enabled after its buffer is deleted makes every later draw fail
-    // with INVALID_OPERATION, even draws whose shaders never read it.
-    const enabledAttributeIndexes = [];
+  // draw draws vertexBuffers with the program, which must be in use. Their
+  // vertex attributes stay enabled until the program is released, or draws
+  // other buffers, so drawing the same buffers again, such as a forest's
+  // trees, doesn't set them up again.
+  draw(vertexBuffers, primitiveType = this.gl.TRIANGLES) {
+    const gl = this.gl;
+    if (this._boundVertexBuffers !== vertexBuffers) {
+      this.release();
+      this._boundVertexBuffers = vertexBuffers;
+      for (const attr of this._attributes) {
+        // We add `s` because the attribure in the shader is singular and the
+        // buffer is plurar.  E.g. the vertex shader has `position` and the
+        // buffer has `positions`.
+        const ubo = vertexBuffers[`${attr.name}s`];
+        if (ubo) {
+          const {index, size, type, normalized, stride, offset} = attr;
 
-    for (const attr of this._attributes) {
-      // We add `s` because the attribure in the shader is singular and the
-      // buffer is plurar.  E.g. the vertex shader has `position` and the
-      // buffer has `positions`.
-      const ubo = vertexBuffers[`${attr.name}s`];
-      if (ubo) {
-        const {index, size, type, normalized, stride, offset} = attr;
+          ubo.bind(gl);
 
-        ubo.bind(gl);
+          // Enable this shader attribute.
+          gl.enableVertexAttribArray(index);
+          this._enabledAttributeIndexes.push(index);
 
-        // Enable this shader attribute.
-        gl.enableVertexAttribArray(index);
-        enabledAttributeIndexes.push(index);
-
-        // enableVertexAttribArray binds this shader attribute and the currently
-        // bound ARRAY_BUFFER we are rendering. So before calling enable on an
-        // attribute, you must have called bindBuffer.
-        gl.vertexAttribPointer(index, size, type, normalized, stride, offset);
+          // enableVertexAttribArray binds this shader attribute and the
+          // currently bound ARRAY_BUFFER we are rendering. So before calling
+          // enable on an attribute, you must have called bindBuffer.
+          gl.vertexAttribPointer(index, size, type, normalized, stride, offset);
+        }
       }
     }
 
@@ -171,8 +310,6 @@ export class ShaderProgram {
       const {data, componentsPerVertex} = positions;
       const vertexOffset = 0;
 
-      positions.bind();
-
       gl.drawArrays(primitiveType, vertexOffset, data.length / componentsPerVertex);
       countDraw(gl, primitiveType, data.length / componentsPerVertex);
     } else {
@@ -180,10 +317,20 @@ export class ShaderProgram {
         "neither indexes or positions that are configured. must provide one to render."
       );
     }
+    return this;
+  }
 
-    for (const index of enabledAttributeIndexes) {
-      gl.disableVertexAttribArray(index);
+  // release disables the vertex attributes the program's draws enabled.
+  // Enabled attributes are global WebGL state, and an attribute left enabled
+  // after its buffer is deleted makes every later draw fail with
+  // INVALID_OPERATION, even draws whose shaders never read it.
+  release() {
+    for (const index of this._enabledAttributeIndexes) {
+      this.gl.disableVertexAttribArray(index);
     }
+    this._enabledAttributeIndexes = [];
+    this._boundVertexBuffers = null;
+    return this;
   }
 
   // createWithCompiledShaders creates a shader program using the already
