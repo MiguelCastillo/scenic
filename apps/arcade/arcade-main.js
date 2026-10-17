@@ -220,12 +220,12 @@ domReady.onReady(async () => {
           : `Room ${roomName} · not connected`;
         remotePlayers?.keep(players);
       },
-      onState: (player, state) => remotePlayers?.publish(player, state),
+      onMessage: (player, message) => remotePlayers?.publishToScene(player, message),
     });
     setInterval(() => {
       const message = networkSource?.scene.sceneManager.network.latest(networkSource.channel);
       if (message !== undefined) {
-        room.sendState({scene: networkSource.file, message});
+        room.send({scene: networkSource.file, message});
       }
     }, 50);
   }

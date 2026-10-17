@@ -1,17 +1,17 @@
 // RoomConnection joins a room on the relay, at /ws on the server the page
 // came from (see server/relay.go), so that players who open the arcade with
 // the same ?room= play together. Each player's browser runs the game and
-// owns its own ship, sends what it is doing with sendState, and hears what
-// the others' are doing.
+// owns its own player, sends the others messages about it with send, and
+// hears theirs. What the messages hold is the game's business.
 //
 // onChange is called with {connected, you, players} whenever any of them
 // changes: whether it is connected, this player's id, and the ids of the
-// others in the room. onState is called with (player, state) for every state
-// another player sends.
+// others in the room. onMessage is called with (player, message) for every
+// message another player sends.
 //
-// Its API: sendState(state), close(), connected, you and players.
+// Its API: send(message), close(), connected, you and players.
 export class RoomConnection {
-  constructor(room, {onChange = () => {}, onState = () => {}} = {}) {
+  constructor(room, {onChange = () => {}, onMessage = () => {}} = {}) {
     this.connected = false;
     this.you = null;
     this.players = new Set();
@@ -46,16 +46,16 @@ export class RoomConnection {
           this.players.delete(message.player);
           changed();
           break;
-        case "state":
-          onState(message.player, message.state);
+        case "message":
+          onMessage(message.player, message.message);
           break;
       }
     });
   }
 
-  sendState(state) {
+  send(message) {
     if (this.connected) {
-      this._socket.send(JSON.stringify({type: "state", state}));
+      this._socket.send(JSON.stringify({type: "message", message}));
     }
   }
 

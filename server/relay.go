@@ -12,24 +12,26 @@ import (
 )
 
 // Relay passes messages between the players of a room. It doesn't run the
-// game: each player's browser runs it and owns its own ship, and sends what
-// its ship is doing as a "state" message, which the relay forwards to the
-// other players in the room, so that each browser can show everyone's ships.
+// game: each player's browser runs it and owns its own player, such as a
+// ship, and sends the others whatever the game wants them to know about it,
+// such as where its ship is, which the relay forwards to the other players
+// in the room without looking inside, so that each browser can show
+// everyone.
 //
 // A player joins a room by connecting to /ws?room=name with a WebSocket.
 // Every message is JSON:
 //
 // From a player:
-//   - {"type": "state", "state": {...}}: what the player's ship is doing,
-//     forwarded as is to the others in the room.
+//   - {"type": "message", "message": {...}}: a message for the others in
+//     the room, forwarded to them as is.
 //
 // To a player:
 //   - {"type": "welcome", "you": "p1", "players": ["p2"]}: the player's id,
 //     and who else is in the room, when the player joins.
 //   - {"type": "joined", "player": "p3"}: someone joined the room.
 //   - {"type": "left", "player": "p2"}: someone left the room.
-//   - {"type": "state", "player": "p2", "state": {...}}: another player's
-//     ship.
+//   - {"type": "message", "player": "p2", "message": {...}}: a message
+//     another player sent.
 //
 // A room exists while it has players in it. A player that can't keep up with
 // the messages to it misses some, rather than holding up the room.
@@ -61,7 +63,7 @@ type message struct {
 	You     string          `json:"you,omitempty"`
 	Player  string          `json:"player,omitempty"`
 	Players []string        `json:"players,omitempty"`
-	State   json.RawMessage `json:"state,omitempty"`
+	Message json.RawMessage `json:"message,omitempty"`
 }
 
 const (
@@ -124,10 +126,10 @@ func (relay *Relay) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		var m message
-		if json.Unmarshal(data, &m) != nil || m.Type != "state" {
+		if json.Unmarshal(data, &m) != nil || m.Type != "message" {
 			continue
 		}
-		relay.broadcast(name, p, message{Type: "state", Player: p.id, State: m.State})
+		relay.broadcast(name, p, message{Type: "message", Player: p.id, Message: m.Message})
 	}
 }
 

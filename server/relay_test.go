@@ -65,11 +65,11 @@ func (c *client) nothing() {
 	}
 }
 
-func (c *client) sendState(state string) {
+func (c *client) send(message string) {
 	c.t.Helper()
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	m := map[string]any{"type": "state", "state": json.RawMessage(state)}
+	m := map[string]any{"type": "message", "message": json.RawMessage(message)}
 	if err := wsjson.Write(ctx, c.conn, m); err != nil {
 		c.t.Fatalf("sending: %v", err)
 	}
@@ -103,18 +103,18 @@ func TestTellsPlayersWhoJoinsAndLeaves(t *testing.T) {
 	}
 }
 
-func TestRelaysStateToTheOthersInTheRoom(t *testing.T) {
+func TestRelaysMessagesToTheOthersInTheRoom(t *testing.T) {
 	url := newServer(t)
 	a, aWelcome := join(t, url, "race")
 	b, _ := join(t, url, "race")
 	c, _ := join(t, url, "other race")
 	a.next() // b joined
 
-	a.sendState(`{"position":[1,2,3]}`)
+	a.send(`{"position":[1,2,3]}`)
 
 	m := b.next()
-	if m.Type != "state" || m.Player != aWelcome.You || string(m.State) != `{"position":[1,2,3]}` {
-		t.Fatalf("got %+v, want a's state", m)
+	if m.Type != "message" || m.Player != aWelcome.You || string(m.Message) != `{"position":[1,2,3]}` {
+		t.Fatalf("got %+v, want a's message", m)
 	}
 	a.nothing()
 	c.nothing()

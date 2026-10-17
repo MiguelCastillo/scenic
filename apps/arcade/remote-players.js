@@ -21,7 +21,8 @@ const maxMessages = 256;
 // only so many messages until the scene pulls them, and drops the oldest,
 // so that they don't pile up while the page is in the background.
 //
-// Its API: publish(player, {scene, message}), keep(players) and dispose().
+// Its API: publishToScene(player, {scene, message}), keep(players) and
+// dispose().
 export class RemotePlayers {
   // scene is the loaded scene playing (see loadScene), sceneFile its file,
   // such as "race.json", and multiplayer the manifest's.
@@ -36,9 +37,9 @@ export class RemotePlayers {
     this._copiesByPlayer = new Map();
   }
 
-  // publish publishes a message another player sent from scene to their
-  // copy, adding the copy if it is their first in the scene playing.
-  publish(player, {scene, message}) {
+  // publishToScene publishes a message another player sent from scene to
+  // their copy in the scene playing, adding the copy if it is their first.
+  publishToScene(player, {scene, message}) {
     if (scene !== this._sceneFile) {
       this._remove(player);
       return;
