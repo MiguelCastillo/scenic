@@ -142,8 +142,9 @@ describe("Mesh levelOfDetail", () => {
 
 describe("Mesh render with instances", () => {
   // A mesh in a viewport whose camera is at z 300 looking down -Z, with one
-  // buffer around its origin, and a program that counts what it draws.
-  const drawsAt = (instances) => {
+  // buffer around its origin, and a program that keeps what it was asked to
+  // do: [use], [send, names], [draw] and [release].
+  const callsAt = (instances) => {
     const camera = new Camera({name: "camera"})
       .withWorldMatrix(mat4.Matrix4.trs([0, 0, 300], [0, 0, 0], [1, 1, 1]))
       .updateProjection({type: "perspective", fov: 90, near: 1, far: 1000}, 100, 100);
@@ -153,11 +154,18 @@ describe("Mesh render with instances", () => {
     new Viewport({name: "world"}).add(camera).add(mesh);
     mesh.addVertexBuffer({positions: {data: new Float32Array([-5, -5, -5, 5, 5, 5])}});
     mesh.instances = instances && instances.map((p) => mat4.Matrix4.trs(p, [0, 0, 0], [1, 1, 1]));
-    let draws = 0;
-    mesh.shaderProgram = {addUniforms: () => mesh.shaderProgram, render: () => draws++};
+    const calls = [];
+    mesh.shaderProgram = {
+      addUniforms: () => mesh.shaderProgram,
+      use: () => calls.push(["use"]),
+      sendUniforms: (names) => calls.push(["send", names]),
+      draw: () => calls.push(["draw"]),
+      release: () => calls.push(["release"]),
+    };
     Mesh.render(mesh);
-    return draws;
+    return calls;
   };
+  const drawsAt = (instances) => callsAt(instances).filter(([call]) => call === "draw").length;
 
   test("draws once where the mesh is without instances", () => {
     expect(drawsAt(null)).toBe(1);
@@ -176,5 +184,18 @@ describe("Mesh render with instances", () => {
 
   test("draws nothing with no instances", () => {
     expect(drawsAt([])).toBe(0);
+  });
+
+  test("sets the program up once, and sends only the world matrix after", () => {
+    expect(
+      callsAt([
+        [0, 0, 0],
+        [50, 0, -100],
+      ])
+    ).toEqual([["use"], ["draw"], ["send", ["worldMatrix"]], ["draw"], ["release"]]);
+  });
+
+  test("leaves the program alone when nothing is in view", () => {
+    expect(callsAt([[0, 0, 600]])).toEqual([]);
   });
 });
