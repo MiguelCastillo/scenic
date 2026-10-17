@@ -495,10 +495,14 @@ resources and `sceneManager.ui`, and none reads another's.
 `resources/scripts/menu.js` is a list of choices, `[{label, goTo}]`, that the
 arrow keys move through and Enter picks. It publishes `{title, choices, selected, hint, picked}` on its node's `hud` channel, with `picked` the choice
 picked that frame, and the app shows the menu and goes where a pick says.
-Bubble Squadron's `menu.json` uses it to pick a track, on the `menu` channel,
-with an orthographic camera, which places things in screen pixels from the
-bottom left, for a ship beside the menu. The arcade opens it over the game
-(see `games/README.md`).
+A choice can say something else the app understands instead of `goTo`.
+Bubble Squadron's `menu.json` uses it as a pause menu, on the `menu` channel,
+with `{"label": "Resume", "resume": true}` and
+`{"label": "Leave race", "leave": true}`, and an orthographic camera, which
+places things in screen pixels from the bottom left, for a ship beside the
+menu. The arcade opens it over the game, on M or the pause button on a touch
+screen, closes it on Resume, and goes back to the game's welcome page, to
+choose a track, on Leave race (see `games/README.md`).
 
 ### Collisions
 

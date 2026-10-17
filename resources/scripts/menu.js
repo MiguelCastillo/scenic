@@ -9,7 +9,9 @@
 // - title: what the menu is, shown above the choices.
 // - choices: the choices, as [{label, goTo}]: what the player sees, and
 //   where picking it goes, such as the scene of a track, relative to the
-//   menu's scene file.
+//   menu's scene file. A choice can say anything else the app understands
+//   instead of goTo, such as {"label": "Resume", "resume": true}, which the
+//   arcade gets as is when it is picked.
 // - hint: what to tell the player, such as which keys to press. Optional.
 //
 // Which choice is selected is written to its settings every frame, so a

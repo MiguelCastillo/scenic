@@ -120,24 +120,23 @@
           ]
         },
         {
-          "name": "track menu",
+          "name": "pause menu",
           "type": "transform",
           "hud": "menu",
           "script": {
             "src": "/resources/scripts/menu.js",
             "settings": {
-              "title": "Bubble Squadron",
+              "title": "Paused",
               "choices": [
                 {
-                  "label": "Drone Course",
-                  "goTo": "race.json"
+                  "label": "Resume",
+                  "resume": true
                 },
                 {
-                  "label": "Highway",
-                  "goTo": "highway.json"
+                  "label": "Leave race",
+                  "leave": true
                 }
-              ],
-              "hint": "\u2191 \u2193 to choose \u00b7 Enter to race"
+              ]
             }
           }
         }

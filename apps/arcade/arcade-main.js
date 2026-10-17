@@ -23,10 +23,13 @@ import {RemotePlayers} from "./remote-players.js";
 // over the game, on a scene stack (see SceneStack in @scenic/runtime): the
 // game shows paused behind it, and the menu has the keyboard. The menu scene
 // publishes the menu on its "menu" channel (see menu.js in
-// resources/scripts), which the arcade shows as a list, and picking a choice
+// resources/scripts), which the arcade shows as a list. Picking a choice
 // goes to the scene it names, such as another track: it is loaded in the
-// game's place, unless it is the one playing, and the menu closes. M opens
-// the menu again, and Escape closes it.
+// game's place, unless it is the one playing, and the menu closes. A choice
+// can instead resume, which closes the menu, or leave, which goes back to
+// the game's welcome page, such as Bubble Squadron's pause menu. M opens the
+// menu again, as does the pause button on a touch screen, and Escape closes
+// it.
 
 // clock is seconds as minutes, seconds and tenths, such as 1:05.3.
 const clock = (seconds) =>
@@ -309,9 +312,10 @@ domReady.onReady(async () => {
     let playing = play(await load(gameFile), gameFile);
     stack.push(playing.runner);
 
-    // The menu scene, while it is open, over the game, and whether it is
-    // going to the scene picked in it.
+    // The menu scene, while it is open, over the game, while it loads, and
+    // whether it is going to the scene picked in it.
     let menu = null;
+    let menuLoading = null;
     let going = false;
 
     // The game plays while the player has it: on a touch screen, from a tap
@@ -340,7 +344,6 @@ domReady.onReady(async () => {
               : "";
           }
         );
-    domEvents.Subscription.create(pauseEl).on("click", () => playPolicy.pause());
 
     const closeMenu = () => {
       menu.stopReceiving();
@@ -357,21 +360,33 @@ domReady.onReady(async () => {
     // which pauses the game. The menu shows what its scene publishes on its
     // "menu" channel, and goes where a pick says.
     const openMenu = async () => {
-      if (!manifest.menu || menu) {
+      if (!manifest.menu || menu || menuLoading) {
         return;
       }
       capture.unlock();
       document.body.classList.add("menu-open");
-      menu = await load(manifest.menu, {paused: false});
+      menuLoading = load(manifest.menu, {paused: false});
+      menu = await menuLoading;
+      menuLoading = null;
       menu.stopReceiving = receiveEveryFrame(async () => {
         const message = menu.scene.sceneManager.ui.latest("menu");
         if (!message || going) {
           return;
         }
 
-        // Leaving the menu closes it.
-        if (message.back) {
+        // Leaving the menu, or resuming the race, closes it.
+        if (message.back || message.picked?.resume) {
           closeMenu();
+          return;
+        }
+
+        // Leaving the race goes back to the game's welcome page, to choose
+        // again, by loading the page without the scene playing in its URL.
+        if (message.picked?.leave) {
+          going = true;
+          const url = new URL(location.href);
+          url.searchParams.delete("scene");
+          location.assign(url);
           return;
         }
 
@@ -405,6 +420,13 @@ domReady.onReady(async () => {
       if (event.type === "keydown" && !event.repeat && !menu && event.code === "KeyM") {
         openMenu();
       }
+    });
+
+    // On a touch screen, which has no keys, the pause button pauses the
+    // game and opens the menu, as a pause menu.
+    domEvents.Subscription.create(pauseEl).on("click", () => {
+      playPolicy.pause();
+      openMenu();
     });
 
     // Without a welcome scene to choose the track on, or a scene in the URL,

@@ -10,9 +10,9 @@ games/bubble-squadron/
   race.json          a scene
   highway.json       another scene
   welcome.json       the welcome page, choosing a track
-  menu.json          the menu, picking a track during a game
+  menu.json          the pause menu, to resume or leave a race
   starfighters.json  another scene
-  scripts/           the scripts only its scenes run
+  scripts/           the scripts only its scenes run, such as remote-ship.js
 ```
 
 `game.json` describes the game:
@@ -27,9 +27,17 @@ games/bubble-squadron/
   one, the game opens on `scene`, with its menu over it.
 - `menu`: the game's menu scene, optional. The arcade opens it stacked over
   the game (see `SceneStack` in `@scenic/runtime`), with the game paused
-  behind it, shows what it publishes on its `menu` channel, and goes to the
-  scene the player picks, such as a track (see `resources/scripts/menu.js`).
-  M opens it again, and Escape closes it.
+  behind it, on M, or the pause button on a touch screen, and Escape closes
+  it. It shows what the menu publishes on its `menu` channel, and does what
+  the picked choice says (see `resources/scripts/menu.js`): `goTo` loads that
+  scene in the game's place, such as another track, `resume` closes the
+  menu, and `leave` goes back to the welcome scene.
+- `multiplayer`: how the game is played together in a room, optional, as
+  `{"player": "starfighter", "remote": "scripts/remote-ship.js"}`: the node
+  that is the player in its scenes, whose script publishes what the others
+  need to know on the channel its `network` names, and the script the
+  copies of the other players run, which gets their messages (see
+  `RemotePlayers` in `apps/arcade`).
 
 A game never reads anything from `apps/`: its scenes and scripts use only
 what is in its own folder, what is shared in `resources/`, and the `@scenic`

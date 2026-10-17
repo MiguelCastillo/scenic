@@ -182,7 +182,8 @@ body.menu-open #hud {
 }
 
 /* On a touch screen, which has no pointer to let go of, this pauses the
-   game while it plays (see PlayOnTap in input.js). */
+   game while it plays (see PlayOnTap in input.js), and opens its menu, if it
+   has one, to resume, go to another track or leave the race. */
 #pause {
   position: absolute;
   top: 16px;
