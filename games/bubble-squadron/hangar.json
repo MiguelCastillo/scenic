@@ -119,29 +119,52 @@
           "script": {
             "src": "/resources/scripts/anchor.js",
             "settings": {
-              "x": 0.75,
-              "y": 0.45
+              "x": 0.68,
+              "y": 0.52,
+              "narrow": {
+                "width": 640,
+                "x": 0.5,
+                "y": 0.6,
+                "scale": 0.65
+              }
             }
           },
           "items": [
             {
-              "name": "showcase ship",
+              "name": "showcase turntable",
               "type": "transform",
               "transform": {
                 "position": [0, 0, 0],
-                "rotation": [20, 150, 0],
-                "scale": [1.2, 1.2, 1.2]
+                "rotation": [0, 0, 0],
+                "scale": [1, 1, 1]
               },
               "script": {
-                "src": "/resources/scripts/hover.js",
+                "src": "/resources/scripts/turntable.js",
                 "settings": {
-                  "bob": 8,
-                  "roll": 5,
-                  "pitch": 3,
-                  "period": 5
+                  "speed": 20
                 }
               },
-              "items": []
+              "items": [
+                {
+                  "name": "showcase ship",
+                  "type": "transform",
+                  "transform": {
+                    "position": [0, 0, 0],
+                    "rotation": [20, 150, 0],
+                    "scale": [1.2, 1.2, 1.2]
+                  },
+                  "script": {
+                    "src": "/resources/scripts/hover.js",
+                    "settings": {
+                      "bob": 8,
+                      "roll": 5,
+                      "pitch": 3,
+                      "period": 5
+                    }
+                  },
+                  "items": []
+                }
+              ]
             }
           ]
         },
@@ -153,7 +176,18 @@
             "src": "/resources/scripts/menu.js",
             "settings": {
               "title": "Choose a ship",
-              "choices": []
+              "choices": [],
+              "layout": "carousel",
+              "actions": [
+                {
+                  "label": "Race",
+                  "pick": true
+                },
+                {
+                  "label": "Back",
+                  "back": true
+                }
+              ]
             }
           }
         }

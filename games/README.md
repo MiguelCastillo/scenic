@@ -42,8 +42,10 @@ games/bubble-squadron/
   id, such as `"saucer"`, what players see, and its file, with the ship's
   parts, such as its body and flames, under a node of their own. After the
   track, the arcade opens the hangar, fills its menu with the ships, and
-  shows the selected ship on its `showcase ship` node, with a Back choice,
-  back to the tracks. The chosen ship then replaces the parts of the
+  shows the selected ship on its `showcase ship` node. Bubble Squadron's
+  is a carousel, one ship at a time, turning slowly, changed with left and
+  right, beside a list of its actions, Race and Back, chosen with up and
+  down. Back, or Escape, goes back to the tracks. The chosen ship then replaces the parts of the
   `player` node in the track, and leaving the race comes back to the
   hangar.
 - `multiplayer`: how the game is played together in a room, optional, as

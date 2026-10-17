@@ -124,8 +124,15 @@ domReady.onReady(async () => {
   registerTouchIntents(capture, intentOptions);
   registerSceneInputRouting(capture, () => stack.runners);
 
-  // Clicking or tapping a choice in a menu picks it.
+  // Clicking or tapping a choice in a menu picks it, and a carousel's
+  // buttons send the intents their keys would, such as the arrows moving to
+  // the next choice.
   domEvents.Subscription.create(menuEl).on("click", (evt) => {
+    const button = evt.target.closest("[data-intent]");
+    if (button) {
+      intentOptions.onIntent(JSON.parse(button.dataset.intent));
+      return;
+    }
     const index = [...menuEl.querySelectorAll("li")].indexOf(evt.target.closest("li"));
     if (index !== -1) {
       intentOptions.onIntent({type: "choose", index});
@@ -134,7 +141,10 @@ domReady.onReady(async () => {
 
   // showMenu shows a menu's message (see menu.js in resources/scripts): its
   // title, its choices, with the selected one marked, and its hint, redrawn
-  // only when they change.
+  // only when they change. A carousel is in two parts: a panel, on the
+  // left, with its title and its actions, such as Race and Back, and the
+  // stage, on the right, around what is being chosen, such as a ship, with
+  // arrows to the choices beside it, and its name and how many there are.
   let shownMenu = null;
   const showMenu = (message) => {
     const key = JSON.stringify(message);
@@ -142,10 +152,56 @@ domReady.onReady(async () => {
       return;
     }
     shownMenu = key;
-    const {title, choices, selected, hint} = message;
+    const {title, choices, selected, hint, layout, actions, action} = message;
     const titleEl = document.createElement("div");
     titleEl.className = "menu-title";
     titleEl.textContent = title;
+    menuEl.classList.toggle("carousel", layout === "carousel");
+    if (layout === "carousel") {
+      // The panel lists the actions, each sending the intent that takes it
+      // when clicked, whichever is selected.
+      const actionsEl = document.createElement("ul");
+      actions.forEach(({label, back}, i) => {
+        const actionEl = document.createElement("li");
+        actionEl.textContent = label;
+        actionEl.classList.toggle("selected", i === action);
+        actionEl.dataset.intent = JSON.stringify(
+          back ? {type: "back"} : {type: "choose", index: selected}
+        );
+        actionsEl.appendChild(actionEl);
+      });
+      const panelEl = document.createElement("div");
+      panelEl.className = "carousel-panel";
+      panelEl.append(titleEl, actionsEl);
+
+      // The stage is around what is being chosen, with arrows on either
+      // side, and its name and how many there are under it.
+      const arrow = (label, x, className) => {
+        const arrowEl = document.createElement("button");
+        arrowEl.textContent = label;
+        arrowEl.className = `carousel-arrow ${className}`;
+        arrowEl.dataset.intent = JSON.stringify({type: "navigate", x, y: 0});
+        return arrowEl;
+      };
+      const labelEl = document.createElement("div");
+      labelEl.className = "carousel-label";
+      labelEl.textContent = choices[selected]?.label ?? "";
+      const countEl = document.createElement("div");
+      countEl.className = "carousel-count";
+      countEl.textContent = `${selected + 1} of ${choices.length}`;
+      const captionEl = document.createElement("div");
+      captionEl.className = "carousel-caption";
+      captionEl.append(labelEl, countEl);
+      const stageEl = document.createElement("div");
+      stageEl.className = "carousel-stage";
+      stageEl.append(
+        arrow("‹", -1, "carousel-previous"),
+        arrow("›", 1, "carousel-next"),
+        captionEl
+      );
+      menuEl.replaceChildren(panelEl, stageEl);
+      return;
+    }
     const listEl = document.createElement("ul");
     choices.forEach(({label}, i) => {
       const choiceEl = document.createElement("li");
@@ -161,6 +217,7 @@ domReady.onReady(async () => {
   };
   const hideMenu = () => {
     shownMenu = null;
+    menuEl.classList.remove("carousel");
     menuEl.replaceChildren();
   };
 
@@ -175,7 +232,9 @@ domReady.onReady(async () => {
   //   such as the game's ships.
   // - onSelect: called with the selected choice whenever another one is
   //   selected, such as to show the ship it is.
-  const showWelcome = async (url, {choices, onSelect} = {}) => {
+  // - allowBack: whether the player can leave the menu, such as with Escape
+  //   or a Back button, which resolves with {back: true}. false by default.
+  const showWelcome = async (url, {choices, onSelect, allowBack = false} = {}) => {
     const scene = await loadScene(gl, await fetchJSON(url), {sceneURL: url.href});
     if (choices) {
       const {stateManager} = scene.sceneManager;
@@ -197,6 +256,9 @@ domReady.onReady(async () => {
         if (message?.picked) {
           stopReceiving();
           resolve(message.picked);
+        } else if (message?.back && allowBack) {
+          stopReceiving();
+          resolve({back: true});
         } else if (message) {
           showMenu(message);
           if (message.selected !== selected) {
@@ -374,10 +436,8 @@ domReady.onReady(async () => {
         showing = false;
       };
       const picked = await showWelcome(new URL(manifest.hangar, manifestURL), {
-        choices: [
-          ...ships.list.map(({id, label}) => ({label, ship: id})),
-          {label: "Back", back: true},
-        ],
+        choices: ships.list.map(({id, label}) => ({label, ship: id})),
+        allowBack: true,
         onSelect: (choice, scene) => {
           if (choice.ship) {
             shipToShow = choice.ship;

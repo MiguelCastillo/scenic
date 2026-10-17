@@ -236,3 +236,106 @@ body.menu-open #hud {
   font-size: 14px;
   pointer-events: auto;
 }
+
+/* A carousel, such as a hangar's ships, is in two parts over the whole
+   screen: its panel on the left, where a list menu would be, listing its
+   title and actions the way a list menu does, and its stage on the right,
+   a box centered on what it is choosing, such as a ship the scene shows
+   there, with arrows on either side of it and its name under it. The rest
+   of the screen lets clicks through. */
+#menu.carousel {
+  inset: 0;
+  transform: none;
+  padding: 0;
+  border-radius: 0;
+  background: none;
+  pointer-events: none;
+}
+
+#menu.carousel:not(:empty) {
+  display: block;
+}
+
+#menu .carousel-panel {
+  position: absolute;
+  top: 50%;
+  left: 22%;
+  transform: translate(-50%, -50%);
+  padding: 22px 36px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+/* The stage is centered where the scene puts what is being chosen: 68%
+   across and 48% down (see the hangar's showcase anchor). */
+#menu .carousel-stage {
+  position: absolute;
+  top: 48%;
+  left: 68%;
+  transform: translate(-50%, -50%);
+  width: min(520px, 56%);
+  height: 280px;
+  text-align: center;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+}
+
+#menu .carousel-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 48px;
+  height: 48px;
+  border: none;
+  border-radius: 24px;
+  background: rgba(0, 0, 0, 0.45);
+  color: white;
+  font-size: 30px;
+  line-height: 1;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+#menu .carousel-previous {
+  left: 0;
+}
+
+#menu .carousel-next {
+  right: 0;
+}
+
+#menu .carousel-caption {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+}
+
+#menu .carousel-label {
+  font-weight: bold;
+}
+
+#menu .carousel-count {
+  font-size: 16px;
+  opacity: 0.85;
+}
+
+/* On a phone, the stage is at the top, around the ship, and the panel
+   across the bottom: 50% across and 40% down for the ship (see the hangar's
+   showcase anchor). */
+@media (max-width: 640px) {
+  #menu .carousel-panel {
+    top: auto;
+    bottom: 4%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% - 32px);
+    box-sizing: border-box;
+  }
+
+  #menu .carousel-stage {
+    top: 40%;
+    left: 50%;
+    width: calc(100% - 32px);
+    height: 300px;
+  }
+}
