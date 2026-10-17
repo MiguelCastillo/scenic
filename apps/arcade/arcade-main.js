@@ -416,6 +416,10 @@ domReady.onReady(async () => {
     // apart, and its frame rate shows too. In a room, the other players show
     // in it, if the game can be played together.
     let stopReceivingHud = null;
+    // Whether the game playing is under way, rather than waiting to start,
+    // such as a race before its countdown ends, as its scene said last
+    // frame. A game without a race is under way once it has run a frame.
+    let underWay = false;
     const play = (loaded, file) => {
       remotePlayers?.dispose();
       remotePlayers = null;
@@ -434,9 +438,11 @@ domReady.onReady(async () => {
         };
       }
       hudEl.textContent = "";
+      underWay = false;
       stopReceivingHud?.();
       stopReceivingHud = receiveEveryFrame(() => {
         const messages = loaded.scene.sceneManager.ui.messages();
+        underWay = (messages.race?.lap ?? 1) > 0;
         const text = Object.entries(messages)
           .map(([channel, message]) => hudTexts[channel]?.(message))
           .filter(Boolean)
@@ -536,11 +542,6 @@ domReady.onReady(async () => {
     let menuLoading = null;
     let going = false;
 
-    // underWay is whether the game is under way, rather than waiting to
-    // start, such as a race before its countdown ends. A game without a race
-    // is under way as soon as it plays.
-    const underWay = () => (playing.scene.sceneManager.ui.latest("race")?.lap ?? 1) > 0;
-
     // The game plays while the player has it: on a touch screen, from a tap
     // until the pause button, and otherwise while the pointer is locked to
     // it. When it stops playing once it is under way, its menu opens, if it
@@ -554,7 +555,7 @@ domReady.onReady(async () => {
     let pausedNow = false;
     const tellPlayer = () => {
       const menuShows = !!(menu || menuLoading);
-      const join = underWay() ? "play" : "join race";
+      const join = underWay ? "play" : "join race";
       messageEl.textContent = menuShows
         ? ""
         : !playingNow
@@ -565,7 +566,7 @@ domReady.onReady(async () => {
       pauseEl.hidden = !touchScreen || menuShows || !playingNow;
     };
     const onPlayChange = (playsNow, pausedByP = false) => {
-      if (playingNow && !playsNow && underWay()) {
+      if (playingNow && !playsNow && underWay) {
         openMenu();
       }
       playingNow = playsNow;
@@ -585,8 +586,8 @@ domReady.onReady(async () => {
         );
     let wasUnderWay = null;
     receiveEveryFrame(() => {
-      if (underWay() !== wasUnderWay) {
-        wasUnderWay = underWay();
+      if (underWay !== wasUnderWay) {
+        wasUnderWay = underWay;
         tellPlayer();
       }
     });
