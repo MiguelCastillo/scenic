@@ -11,7 +11,7 @@
 // scripts that fly it heed (see fly.js and glide.js). Every racer, the
 // others too, has the lap it is on set as "lap" in its node's state, or 0
 // before the start and after it finishes, for its rocket booster, which it
-// can fire once a lap (see fly.js).
+// can fire once a lap (see fly.js and glide.js).
 //
 // Others can race too, such as NPCs flown by pilot.js: each enters the race
 // by adding itself to the race's entrants, and the race follows them through

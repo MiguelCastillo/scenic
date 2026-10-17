@@ -3,6 +3,8 @@
 // ground, and the keys steer it.
 // - Space: boost. It speeds up to boostSpeed, and settles back to cruising
 //   when Space is let go.
+// - B: the rocket booster, once a lap in a race: it glides boosterSpeedUp
+//   faster for boosterSeconds, on top of Space (see "lap" below).
 // - Left and right arrows: steer, leaning into the turn.
 // - Down arrow: brake, slowing to brakeSpeed.
 //
@@ -17,6 +19,14 @@
 // While its node's state has "held" set, such as before a race starts (see
 // race.js), it stays where it is, though its speed still follows Space, so
 // it can rev up for the start.
+//
+// The booster can be fired once each lap of a race, while the node's state
+// has "lap" set, the lap it is on, which race.js sets for every racer; 0 or
+// none means it isn't racing, and it has no booster. With "hud" in the
+// node's state, such as {"hud": "booster"}, it tells the app's UI about the
+// booster every frame, on that channel of sceneManager.ui: {ready, left},
+// whether it can be fired, and how many seconds of it are left. It works
+// the same as fly.js's booster.
 //
 // Keys come from the frame's `keys` and time from its `seconds`, so it glides
 // at the same speed at any frame rate. Its settings come from
@@ -39,6 +49,9 @@
 //   400 by default.
 // - push: how hard the edge pushes it back, in scene units per second for
 //   each unit past the edge. 4 by default.
+// - boosterSpeedUp: how much faster the booster makes it glide, as a part of
+//   its speed. 0.4 by default, 40% faster.
+// - boosterSeconds: how long the booster lasts, in seconds. 6 by default.
 //
 // How it is gliding is written to this script's settings every frame, so a
 // saved state glides on from where it was, and flames under the node that
@@ -49,11 +62,16 @@
 // - speed: how fast it is going. cruiseSpeed by default.
 // - throttle: how hard its engine burns, from its speed: 0 braking, 0.3
 //   cruising and 1 at full boost.
+// - boosterLap: the lap the booster was fired on, or null.
+// - boosterLeft: how many seconds of the booster are left, 0 when it is off.
+// - boost: how hard the booster burns, 0 to 1, which the flames follow to
+//   burn bigger (see flame.js). It eases up when the booster fires and back
+//   down when it runs out.
 //
 // In a network game, the other players see it when its node names a channel
 // of sceneManager.network in its state, such as {"network": "player"}: every
-// frame it publishes {position, rotation, throttle} there, for the copies of
-// it on the other players' screens (see remote-ship.js).
+// frame it publishes {position, rotation, throttle, boost} there, for the
+// copies of it on the other players' screens (see remote-ship.js).
 const {mat4} = require("@scenic/math");
 
 const defaults = {
@@ -68,6 +86,11 @@ const defaults = {
   offRoad: 0.45,
   edge: 400,
   push: 4,
+  boosterSpeedUp: 0.4,
+  boosterSeconds: 6,
+  boosterLap: null,
+  boosterLeft: 0,
+  boost: 0,
 };
 
 // nearest is the point on the road's middle line nearest (x, z), its
@@ -103,6 +126,9 @@ module.exports = function createGlideScript(node) {
         heading: settings.heading ?? state.transform.rotation[1],
         roll: settings.roll ?? 0,
         speed: settings.speed ?? settings.cruiseSpeed,
+        boosterLap: settings.boosterLap,
+        boosterLeft: Math.max(0, settings.boosterLeft - seconds),
+        boost: settings.boost,
       };
 
       const held = (code) => (keys.has(code) ? 1 : 0);
@@ -113,11 +139,29 @@ module.exports = function createGlideScript(node) {
       // rate.
       const ease = (time) => (time > 0 ? 1 - Math.exp(-seconds / time) : 1);
 
-      let target = held("ArrowDown")
-        ? settings.brakeSpeed
-        : held("Space")
-        ? settings.boostSpeed
-        : settings.cruiseSpeed;
+      // B fires the booster, once a lap, and not while held at the start.
+      const lap = state.lap ?? 0;
+      const racing = lap > 0 && !state.held;
+      if (racing && glide.boosterLap !== lap && keys.has("KeyB")) {
+        glide.boosterLap = lap;
+        glide.boosterLeft = settings.boosterSeconds;
+      }
+      const targetBoost = glide.boosterLeft > 0 ? 1 : 0;
+      glide.boost += (targetBoost - glide.boost) * ease(settings.response);
+      if (state.hud) {
+        sceneManager.ui.publish(state.hud, {
+          ready: racing && glide.boosterLap !== lap,
+          left: glide.boosterLeft,
+        });
+      }
+
+      // While the booster burns, every speed is boosterSpeedUp faster.
+      let target =
+        (held("ArrowDown")
+          ? settings.brakeSpeed
+          : held("Space")
+          ? settings.boostSpeed
+          : settings.cruiseSpeed) * (glide.boosterLeft > 0 ? 1 + settings.boosterSpeedUp : 1);
 
       // throttle is how hard its engine burns, 0 to 1, for its flames and
       // its copies on the other players' screens: 0.3 at cruising speed,
@@ -135,6 +179,7 @@ module.exports = function createGlideScript(node) {
             position,
             rotation,
             throttle: throttleAt(glide.speed),
+            boost: glide.boost,
           });
         }
       };
