@@ -143,8 +143,9 @@ domReady.onReady(async () => {
   // title, its choices, with the selected one marked, and its hint, redrawn
   // only when they change. A carousel is in two parts: a panel, on the
   // left, with its title and its actions, such as Race and Back, and the
-  // stage, on the right, around what is being chosen, such as a ship, with
-  // arrows to the choices beside it, and its name and how many there are.
+  // stage, on the right, under what is being chosen, such as a ship, with
+  // its name and how many there are between arrows to the choices beside
+  // it.
   let shownMenu = null;
   const showMenu = (message) => {
     const key = JSON.stringify(message);
@@ -174,8 +175,8 @@ domReady.onReady(async () => {
       panelEl.className = "carousel-panel";
       panelEl.append(titleEl, actionsEl);
 
-      // The stage is around what is being chosen, with arrows on either
-      // side, and its name and how many there are under it.
+      // The stage is under what is being chosen, with its name and how many
+      // there are between arrows to the choices beside it.
       const arrow = (label, x, className) => {
         const arrowEl = document.createElement("button");
         arrowEl.textContent = label;
@@ -196,8 +197,8 @@ domReady.onReady(async () => {
       stageEl.className = "carousel-stage";
       stageEl.append(
         arrow("‹", -1, "carousel-previous"),
-        arrow("›", 1, "carousel-next"),
-        captionEl
+        captionEl,
+        arrow("›", 1, "carousel-next")
       );
       menuEl.replaceChildren(panelEl, stageEl);
       return;
@@ -417,8 +418,9 @@ domReady.onReady(async () => {
 
     // A game with a hangar then opens on it, to choose the ship to race,
     // unless the URL names one. Its showcase ship shows the selected ship,
-    // and Back goes back to choosing the track, by loading the page without
-    // the track in its URL.
+    // which starts facing the player, by turning its showcase turntable, if
+    // it has one, back to the front, and Back goes back to choosing the
+    // track, by loading the page without the track in its URL.
     if (manifest.hangar && !ships.find(shipID)) {
       // The ship to show, and whether it is being shown, so that selecting
       // ships quickly shows the last one selected, once.
@@ -432,6 +434,14 @@ domReady.onReady(async () => {
         for (let shown = null; shown !== shipToShow; ) {
           shown = shipToShow;
           await replaceShip(scene, "showcase ship", await ships.shipConfig(shown));
+          const {sceneManager} = scene;
+          const turntable = sceneManager.getNodeStateByID("showcase turntable");
+          if (turntable) {
+            sceneManager.updateNodeStateByID("showcase turntable", {
+              transform: {...turntable.transform, rotation: [0, 0, 0]},
+              script: {...turntable.script, settings: {...turntable.script.settings, angle: 0}},
+            });
+          }
         }
         showing = false;
       };

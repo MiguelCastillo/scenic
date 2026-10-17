@@ -121,11 +121,12 @@
             "settings": {
               "x": 0.68,
               "y": 0.52,
+              "fit": 130,
               "narrow": {
                 "width": 640,
                 "x": 0.5,
                 "y": 0.6,
-                "scale": 0.65
+                "fit": 90
               }
             }
           },
@@ -150,8 +151,8 @@
                   "type": "transform",
                   "transform": {
                     "position": [0, 0, 0],
-                    "rotation": [20, 150, 0],
-                    "scale": [1.2, 1.2, 1.2]
+                    "rotation": [20, 0, 0],
+                    "scale": [1, 1, 1]
                   },
                   "script": {
                     "src": "/resources/scripts/hover.js",
