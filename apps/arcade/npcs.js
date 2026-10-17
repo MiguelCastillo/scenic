@@ -15,7 +15,7 @@ import {replaceShip} from "./ships.js";
 // pilot's settings say which node it flies, as ship, and how well, as
 // skill, from 0 to 1, which the NPCs spread from fair to very good. In a
 // game with ships to choose from, each NPC flies one at random, other than
-// the player's.
+// the player's, and no two the same while there are enough.
 //
 // NPCs line up in pairs beside and behind the player, across and back from
 // where the player faces.
@@ -41,7 +41,11 @@ export async function addNPCs(scene, {playerNodeID, npcs, ships = null, playerSh
   const across = [turned[0], turned[4], turned[8]];
   const ahead = [turned[2], turned[6], turned[10]];
 
-  const otherShips = ships?.list.filter((ship) => ship.id !== playerShip) ?? [];
+  // The other ships, shuffled, to deal out.
+  const otherShips = (ships?.list.filter((ship) => ship.id !== playerShip) ?? [])
+    .map((ship) => ({ship, order: Math.random()}))
+    .sort((a, b) => a.order - b.order)
+    .map(({ship}) => ship);
   await Promise.all(
     Array.from({length: count}, async (_, i) => {
       const name = `npc ${i + 1}`;
@@ -49,9 +53,7 @@ export async function addNPCs(scene, {playerNodeID, npcs, ships = null, playerSh
       const row = Math.floor(i / 2);
       const side = i % 2 ? -1 : 1;
       const [x, back] = [side * (row ? 225 : 450), row * 500];
-      const ship = otherShips.length
-        ? otherShips[Math.floor(Math.random() * otherShips.length)]
-        : null;
+      const ship = otherShips.length ? otherShips[i % otherShips.length] : null;
 
       const nodeID = await scene.add(
         {
