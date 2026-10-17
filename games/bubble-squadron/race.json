@@ -416,8 +416,8 @@
               "script": {
                 "src": "scripts/fly.js",
                 "settings": {
-                  "cruiseSpeed": 250,
-                  "boostSpeed": 1200,
+                  "cruiseSpeed": 310,
+                  "boostSpeed": 1500,
                   "cruiseThrottle": 0.3,
                   "turnRate": 75,
                   "climbRate": 45,
