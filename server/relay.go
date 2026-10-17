@@ -19,18 +19,20 @@ import (
 // everyone.
 //
 // A player joins a room by connecting to /ws?room=name with a WebSocket.
-// Every message is JSON:
+// Every message is JSON. A player only ever sends messages for the others,
+// and everything about who is in the room comes from the relay:
 //
-// From a player:
+// From a player (see messageFromPlayer):
 //   - {"type": "message", "message": {...}}: a message for the others in
 //     the room, forwarded to them as is.
 //
-// To a player:
-//   - {"type": "welcome", "you": "p1", "players": ["p2"]}: the player's id,
-//     and who else is in the room, when the player joins.
-//   - {"type": "joined", "player": "p3"}: someone joined the room.
-//   - {"type": "left", "player": "p2"}: someone left the room.
-//   - {"type": "message", "player": "p2", "message": {...}}: a message
+// To a player (see messageToPlayer):
+//   - {"type": "welcome", "yourID": "p1", "otherPlayerIDs": ["p2"]}: the
+//     player's id, and the ids of the others already in the room, when the
+//     player joins.
+//   - {"type": "joined", "playerID": "p3"}: someone joined the room.
+//   - {"type": "left", "playerID": "p2"}: someone left the room.
+//   - {"type": "message", "playerID": "p2", "message": {...}}: a message
 //     another player sent.
 //
 // A room exists while it has players in it. A player that can't keep up with
@@ -57,12 +59,42 @@ type player struct {
 	out chan []byte
 }
 
-// message is every message there is, from a player or to one.
-type message struct {
-	Type    string          `json:"type"`
-	You     string          `json:"you,omitempty"`
-	Player  string          `json:"player,omitempty"`
-	Players []string        `json:"players,omitempty"`
+// messageFromPlayer is what a player sends, as JSON: only messages for the
+// others in the room. Anything else in it is ignored, such as an id, so that
+// a player can't speak for another.
+type messageFromPlayer struct {
+	// Type is "message".
+	Type string `json:"type"`
+
+	// Message is what the player has to say to the others, which the relay
+	// forwards as is, without looking inside, since what it holds is the
+	// game's business.
+	Message json.RawMessage `json:"message"`
+}
+
+// messageToPlayer is what the relay sends a player, as JSON. Which fields it
+// has depends on its type (see Relay for every type), and the others are left
+// out. Every id in it comes from the relay.
+type messageToPlayer struct {
+	// Type is what the message is: "welcome", "joined", "left" or
+	// "message".
+	Type string `json:"type"`
+
+	// YourID is the id the relay gave the player, such as "p1", in their
+	// "welcome".
+	YourID string `json:"yourID,omitempty"`
+
+	// OtherPlayerIDs are the ids of the others already in the room, in a
+	// player's "welcome".
+	OtherPlayerIDs []string `json:"otherPlayerIDs,omitempty"`
+
+	// PlayerID is the id of the player the message is about: who joined or
+	// left, or who sent a "message". It is how a player's browser tells the
+	// others apart, such as which copy of a ship in its scene a message
+	// moves, since what they send has no id in it.
+	PlayerID string `json:"playerID,omitempty"`
+
+	// Message is what another player sent, in a "message", as they sent it.
 	Message json.RawMessage `json:"message,omitempty"`
 }
 
@@ -118,18 +150,18 @@ func (relay *Relay) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	// The player's ship goes to the others in the room until the player
+	// The player's messages go to the others in the room until the player
 	// leaves.
 	for {
 		_, data, err := conn.Read(ctx)
 		if err != nil {
 			return
 		}
-		var m message
+		var m messageFromPlayer
 		if json.Unmarshal(data, &m) != nil || m.Type != "message" {
 			continue
 		}
-		relay.broadcast(name, p, message{Type: "message", Player: p.id, Message: m.Message})
+		relay.broadcast(name, p, messageToPlayer{Type: "message", PlayerID: p.id, Message: m.Message})
 	}
 }
 
@@ -155,9 +187,9 @@ func (relay *Relay) join(name string) *player {
 	others := []string{}
 	for id, other := range r.playersByID {
 		others = append(others, id)
-		other.send(message{Type: "joined", Player: p.id})
+		other.send(messageToPlayer{Type: "joined", PlayerID: p.id})
 	}
-	p.send(message{Type: "welcome", You: p.id, Players: others})
+	p.send(messageToPlayer{Type: "welcome", YourID: p.id, OtherPlayerIDs: others})
 	r.playersByID[p.id] = p
 	return p
 }
@@ -175,12 +207,12 @@ func (relay *Relay) leave(name string, p *player) {
 		return
 	}
 	for _, other := range r.playersByID {
-		other.send(message{Type: "left", Player: p.id})
+		other.send(messageToPlayer{Type: "left", PlayerID: p.id})
 	}
 }
 
 // broadcast sends m to everyone in the room but from.
-func (relay *Relay) broadcast(name string, from *player, m message) {
+func (relay *Relay) broadcast(name string, from *player, m messageToPlayer) {
 	relay.mu.Lock()
 	defer relay.mu.Unlock()
 
@@ -193,7 +225,7 @@ func (relay *Relay) broadcast(name string, from *player, m message) {
 
 // send queues m to be written to the player, or drops it if the player is
 // too far behind.
-func (p *player) send(m message) {
+func (p *player) send(m messageToPlayer) {
 	data, err := json.Marshal(m)
 	if err != nil {
 		return

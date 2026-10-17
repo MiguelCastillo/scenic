@@ -4,17 +4,18 @@
 // owns its own player, sends the others messages about it with send, and
 // hears theirs. What the messages hold is the game's business.
 //
-// onChange is called with {connected, you, players} whenever any of them
+// Players are known by the ids the relay gives them, such as "p2". onChange
+// is called with {connected, yourID, otherPlayerIDs} whenever any of them
 // changes: whether it is connected, this player's id, and the ids of the
-// others in the room. onMessage is called with (player, message) for every
+// others in the room. onMessage is called with (playerID, message) for every
 // message another player sends.
 //
-// Its API: send(message), close(), connected, you and players.
+// Its API: send(message), close(), connected, yourID and otherPlayerIDs.
 export class RoomConnection {
   constructor(room, {onChange = () => {}, onMessage = () => {}} = {}) {
     this.connected = false;
-    this.you = null;
-    this.players = new Set();
+    this.yourID = null;
+    this.otherPlayerIDs = new Set();
 
     const url = new URL("/ws", location.href);
     url.protocol = location.protocol === "https:" ? "wss:" : "ws:";
@@ -22,11 +23,15 @@ export class RoomConnection {
     this._socket = new WebSocket(url);
 
     const changed = () =>
-      onChange({connected: this.connected, you: this.you, players: [...this.players]});
+      onChange({
+        connected: this.connected,
+        yourID: this.yourID,
+        otherPlayerIDs: [...this.otherPlayerIDs],
+      });
 
     this._socket.addEventListener("close", () => {
       this.connected = false;
-      this.players.clear();
+      this.otherPlayerIDs.clear();
       changed();
     });
     this._socket.addEventListener("message", (evt) => {
@@ -34,20 +39,20 @@ export class RoomConnection {
       switch (message.type) {
         case "welcome":
           this.connected = true;
-          this.you = message.you;
-          this.players = new Set(message.players);
+          this.yourID = message.yourID;
+          this.otherPlayerIDs = new Set(message.otherPlayerIDs);
           changed();
           break;
         case "joined":
-          this.players.add(message.player);
+          this.otherPlayerIDs.add(message.playerID);
           changed();
           break;
         case "left":
-          this.players.delete(message.player);
+          this.otherPlayerIDs.delete(message.playerID);
           changed();
           break;
         case "message":
-          onMessage(message.player, message.message);
+          onMessage(message.playerID, message.message);
           break;
       }
     });

@@ -29,7 +29,7 @@ type client struct {
 }
 
 // join connects a player to the room, and returns it with its welcome.
-func join(t *testing.T, serverURL, room string) (*client, message) {
+func join(t *testing.T, serverURL, room string) (*client, messageToPlayer) {
 	t.Helper()
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
@@ -43,11 +43,11 @@ func join(t *testing.T, serverURL, room string) (*client, message) {
 }
 
 // next is the next message to the player.
-func (c *client) next() message {
+func (c *client) next() messageToPlayer {
 	c.t.Helper()
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	var m message
+	var m messageToPlayer
 	if err := wsjson.Read(ctx, c.conn, &m); err != nil {
 		c.t.Fatalf("reading: %v", err)
 	}
@@ -59,7 +59,7 @@ func (c *client) nothing() {
 	c.t.Helper()
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	defer cancel()
-	var m message
+	var m messageToPlayer
 	if err := wsjson.Read(ctx, c.conn, &m); err == nil {
 		c.t.Fatalf("got %+v, want nothing", m)
 	}
@@ -78,13 +78,13 @@ func (c *client) send(message string) {
 func TestWelcomesPlayersWithWhoIsThere(t *testing.T) {
 	url := newServer(t)
 	_, first := join(t, url, "race")
-	if first.Type != "welcome" || first.You == "" || len(first.Players) != 0 {
+	if first.Type != "welcome" || first.YourID == "" || len(first.OtherPlayerIDs) != 0 {
 		t.Fatalf("first player's welcome is %+v", first)
 	}
 
 	_, second := join(t, url, "race")
-	if second.Type != "welcome" || len(second.Players) != 1 || second.Players[0] != first.You {
-		t.Fatalf("second player's welcome is %+v, want it to list %s", second, first.You)
+	if second.Type != "welcome" || len(second.OtherPlayerIDs) != 1 || second.OtherPlayerIDs[0] != first.YourID {
+		t.Fatalf("second player's welcome is %+v, want it to list %s", second, first.YourID)
 	}
 }
 
@@ -93,13 +93,13 @@ func TestTellsPlayersWhoJoinsAndLeaves(t *testing.T) {
 	a, _ := join(t, url, "race")
 	b, welcome := join(t, url, "race")
 
-	if m := a.next(); m.Type != "joined" || m.Player != welcome.You {
-		t.Fatalf("got %+v, want %s joined", m, welcome.You)
+	if m := a.next(); m.Type != "joined" || m.PlayerID != welcome.YourID {
+		t.Fatalf("got %+v, want %s joined", m, welcome.YourID)
 	}
 
 	b.conn.Close(websocket.StatusNormalClosure, "")
-	if m := a.next(); m.Type != "left" || m.Player != welcome.You {
-		t.Fatalf("got %+v, want %s left", m, welcome.You)
+	if m := a.next(); m.Type != "left" || m.PlayerID != welcome.YourID {
+		t.Fatalf("got %+v, want %s left", m, welcome.YourID)
 	}
 }
 
@@ -113,11 +113,29 @@ func TestRelaysMessagesToTheOthersInTheRoom(t *testing.T) {
 	a.send(`{"position":[1,2,3]}`)
 
 	m := b.next()
-	if m.Type != "message" || m.Player != aWelcome.You || string(m.Message) != `{"position":[1,2,3]}` {
+	if m.Type != "message" || m.PlayerID != aWelcome.YourID || string(m.Message) != `{"position":[1,2,3]}` {
 		t.Fatalf("got %+v, want a's message", m)
 	}
 	a.nothing()
 	c.nothing()
+}
+
+func TestSaysWhoSentAMessageWhateverTheSenderClaims(t *testing.T) {
+	url := newServer(t)
+	a, aWelcome := join(t, url, "race")
+	b, _ := join(t, url, "race")
+	a.next() // b joined
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	claim := map[string]any{"type": "message", "playerID": "p99", "message": json.RawMessage(`{}`)}
+	if err := wsjson.Write(ctx, a.conn, claim); err != nil {
+		t.Fatalf("sending: %v", err)
+	}
+
+	if m := b.next(); m.PlayerID != aWelcome.YourID {
+		t.Fatalf("got a message from %q, want it from %s", m.PlayerID, aWelcome.YourID)
+	}
 }
 
 func TestRefusesRoomsWithoutAName(t *testing.T) {

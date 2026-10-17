@@ -214,13 +214,13 @@ domReady.onReady(async () => {
   if (roomName) {
     roomEl.textContent = `Room ${roomName} · joining…`;
     const room = new RoomConnection(roomName, {
-      onChange: ({connected, players}) => {
+      onChange: ({connected, otherPlayerIDs}) => {
         roomEl.textContent = connected
-          ? `Room ${roomName} · ${players.length + 1} playing`
+          ? `Room ${roomName} · ${otherPlayerIDs.length + 1} playing`
           : `Room ${roomName} · not connected`;
-        remotePlayers?.keep(players);
+        remotePlayers?.keep(otherPlayerIDs);
       },
-      onMessage: (player, message) => remotePlayers?.publishToScene(player, message),
+      onMessage: (playerID, message) => remotePlayers?.publishToScene(playerID, message),
     });
     setInterval(() => {
       const message = networkSource?.scene.sceneManager.network.latest(networkSource.channel);
