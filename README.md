@@ -496,9 +496,9 @@ rules as the player:
 ```
 
 Bubble Squadron's `pilot.js` steers for the middle of the next gate, boosts
-while heading close to it, and comes back around for a gate it misses. A
-pilot's `skill`, from 0 to 1, sets how closely it steers, how quickly it
-reacts and how much it boosts. It holds its ship until the race starts, like
+all the way unless the gate is inside the circle it turns at full speed, and
+comes back around for a gate it misses. A pilot's `skill`, from 0 to 1, sets
+how closely it steers, how quickly it reacts and how fine it cuts its turns. It holds its ship until the race starts, like
 the player's, and revs up for the start.
 
 ### Scene stacks and menus
