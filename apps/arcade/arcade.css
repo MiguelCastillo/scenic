@@ -102,10 +102,15 @@ body {
   font-weight: bold;
 }
 
+/* A long list, such as a hangar's ships, scrolls, and takes the wheel and
+   fingers to scroll it. */
 #menu ul {
+  max-height: 60vh;
   margin: 0;
   padding: 0;
+  overflow-y: auto;
   list-style: none;
+  pointer-events: auto;
 }
 
 /* Choices can be clicked or tapped, though the rest of the menu lets

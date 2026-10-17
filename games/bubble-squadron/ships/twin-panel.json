@@ -1,0 +1,68 @@
+{
+  "name": "ship",
+  "type": "transform",
+  "items": [
+    {
+      "name": "body",
+      "type": "static-mesh",
+      "resource": "/resources/obj/twin-panel-starfighter.obj",
+      "material": {
+        "color": [0, 0, 0, 1],
+        "reflectiveness": 1,
+        "specular": 0.5,
+        "shininess": 48
+      },
+      "ambient": {
+        "color": [0.35, 0.35, 0.4]
+      }
+    },
+    {
+      "name": "flame 1",
+      "type": "static-mesh",
+      "resource": "/resources/obj/flame.obj",
+      "material": {
+        "color": [0, 0, 0, 1],
+        "reflectiveness": 0
+      },
+      "ambient": {
+        "color": [1, 1, 1]
+      },
+      "transform": {
+        "position": [14, 0, -48],
+        "rotation": [0, 0, 0],
+        "scale": [5, 5, 5]
+      },
+      "script": {
+        "src": "/resources/scripts/flame.js",
+        "settings": {
+          "flicker": 0.15,
+          "speed": 1
+        }
+      }
+    },
+    {
+      "name": "flame 2",
+      "type": "static-mesh",
+      "resource": "/resources/obj/flame.obj",
+      "material": {
+        "color": [0, 0, 0, 1],
+        "reflectiveness": 0
+      },
+      "ambient": {
+        "color": [1, 1, 1]
+      },
+      "transform": {
+        "position": [-14, 0, -48],
+        "rotation": [0, 0, 0],
+        "scale": [5, 5, 5]
+      },
+      "script": {
+        "src": "/resources/scripts/flame.js",
+        "settings": {
+          "flicker": 0.15,
+          "speed": 1
+        }
+      }
+    }
+  ]
+}

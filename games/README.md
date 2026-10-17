@@ -10,6 +10,9 @@ games/bubble-squadron/
   race.json          a scene
   highway.json       another scene
   welcome.json       the welcome page, choosing a track
+  hangar.json        the hangar, choosing a ship
+  ships.json         the ships to choose from
+  ships/             each ship's parts, such as saucer.json
   menu.json          the pause menu, to resume or leave a race
   starfighters.json  another scene
   scripts/           the scripts only its scenes run, such as remote-ship.js
@@ -32,12 +35,23 @@ games/bubble-squadron/
   the picked choice says (see `resources/scripts/menu.js`): `goTo` loads that
   scene in the game's place, such as another track, `resume` closes the
   menu, and `leave` goes back to the welcome scene.
+- `player`: the node that is the player in the game's scenes, such as
+  `"starfighter"`, for choosing a ship and playing together.
+- `ships` and `hangar`: the ships to choose from, and the scene to choose
+  one in, optional. `ships` names a list of `{id, label, src}`: each ship's
+  id, such as `"saucer"`, what players see, and its file, with the ship's
+  parts, such as its body and flames, under a node of their own. After the
+  track, the arcade opens the hangar, fills its menu with the ships, and
+  shows the selected ship on its `showcase ship` node, with a Back choice,
+  back to the tracks. The chosen ship then replaces the parts of the
+  `player` node in the track, and leaving the race comes back to the
+  hangar.
 - `multiplayer`: how the game is played together in a room, optional, as
-  `{"player": "starfighter", "remote": "scripts/remote-ship.js"}`: the node
-  that is the player in its scenes, whose script publishes what the others
-  need to know on the channel its `network` names, and the script the
-  copies of the other players run, which gets their messages (see
-  `RemotePlayers` in `apps/arcade`).
+  `{"remote": "scripts/remote-ship.js"}`: the script the copies of the
+  other players run, which gets their messages. The `player` node's script
+  publishes what the others need to know on the channel its `network` names
+  (see `RemotePlayers` in `apps/arcade`), and each copy flies its player's
+  ship.
 
 A game never reads anything from `apps/`: its scenes and scripts use only
 what is in its own folder, what is shared in `resources/`, and the `@scenic`

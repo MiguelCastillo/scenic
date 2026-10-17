@@ -11,6 +11,7 @@ import {loadScene, SceneRunner, SceneStack} from "@scenic/runtime";
 import {PlayOnTap, PlayWhileLocked, registerSceneInputRouting} from "./input.js";
 import {RoomConnection, connecting, connected, disconnected} from "./room.js";
 import {RemotePlayers} from "./remote-players.js";
+import {Ships, replaceShip} from "./ships.js";
 
 // The arcade plays one of the games in games/, full screen: the one the page's
 // URL names, such as index.html?game=bubble-squadron, or, without one, the one
@@ -156,6 +157,7 @@ domReady.onReady(async () => {
     hintEl.className = "menu-hint";
     hintEl.textContent = hint;
     menuEl.replaceChildren(titleEl, listEl, ...(hint ? [hintEl] : []));
+    listEl.children[selected]?.scrollIntoView({block: "nearest"});
   };
   const hideMenu = () => {
     shownMenu = null;
@@ -163,22 +165,44 @@ domReady.onReady(async () => {
   };
 
   // showWelcome shows the welcome scene at url, such as the arcade's, to
-  // choose a game, or a game's, to choose a track, until the player picks a
-  // choice in its menu, and resolves with where the choice goes: a game's
-  // folder in games/, or a track's scene file, relative to the game's folder.
-  const showWelcome = async (url) => {
+  // choose a game, a game's, to choose a track, or its hangar, to choose a
+  // ship, until the player picks a choice in its menu, and resolves with the
+  // choice, such as {label, goTo}, with where it goes: a game's folder in
+  // games/, or a track's scene file, relative to the game's folder.
+  //
+  // Options:
+  // - choices: the menu's choices, in place of the ones in the scene file,
+  //   such as the game's ships.
+  // - onSelect: called with the selected choice whenever another one is
+  //   selected, such as to show the ship it is.
+  const showWelcome = async (url, {choices, onSelect} = {}) => {
     const scene = await loadScene(gl, await fetchJSON(url), {sceneURL: url.href});
+    if (choices) {
+      const {stateManager} = scene.sceneManager;
+      Object.values(stateManager.getAllItemsByName())
+        .filter(({hud}) => hud === "menu")
+        .forEach(({id, script}) =>
+          stateManager.updateItemByID(id, {
+            script: {...script, settings: {...script.settings, choices}},
+          })
+        );
+    }
     stack.push(new SceneRunner(gl, scene, {paused: false}));
     document.body.classList.add("menu-open");
     messageEl.textContent = "";
+    let selected = null;
     const chosen = await new Promise((resolve) => {
       const stopReceiving = receiveEveryFrame(() => {
         const message = scene.sceneManager.ui.latest("menu");
         if (message?.picked) {
           stopReceiving();
-          resolve(message.picked.goTo);
+          resolve(message.picked);
         } else if (message) {
           showMenu(message);
+          if (message.selected !== selected) {
+            selected = message.selected;
+            onSelect?.(message.choices[selected], scene);
+          }
         }
       });
     });
@@ -215,8 +239,9 @@ domReady.onReady(async () => {
   // messages hold is the game's business.
   const roomName = params.get("room");
   // Where the page receives its player's messages from, while a game is
-  // playing that can be played together: the scene playing, its file and the
-  // channel, as {scene, file, channel}.
+  // playing that can be played together: the scene playing, its file, the
+  // channel, and the ship the player flies, if they chose one, as {scene,
+  // file, channel, ship}.
   let networkSource = null;
   let remotePlayers = null;
   if (roomName) {
@@ -237,7 +262,7 @@ domReady.onReady(async () => {
     setInterval(() => {
       const message = networkSource?.scene.sceneManager.network.latest(networkSource.channel);
       if (message !== undefined) {
-        room.send({scene: networkSource.file, message});
+        room.send({scene: networkSource.file, ship: networkSource.ship, message});
       }
     }, 50);
   }
@@ -245,7 +270,7 @@ domReady.onReady(async () => {
   let game = params.get("game");
   try {
     if (!game) {
-      game = await showWelcome(new URL("welcome.json", location.href));
+      game = (await showWelcome(new URL("welcome.json", location.href))).goTo;
       pushToURL("game", game);
     }
     const manifestURL = new URL(`/games/${game}/game.json`, location.href);
@@ -263,6 +288,22 @@ domReady.onReady(async () => {
       return {scene, runner: new SceneRunner(gl, scene, options)};
     };
 
+    // The ships the player can choose from, for a game with a hangar, and the
+    // one they chose, from the URL, such as &ship=saucer.
+    const ships = manifest.ships ? await Ships.load(new URL(manifest.ships, manifestURL)) : null;
+    let shipID = params.get("ship");
+
+    // loadGame loads one of the game's scenes to play, by its file, with the
+    // player's node, the one the manifest names in "player", flying the ship
+    // they chose, if they chose one.
+    const loadGame = async (file) => {
+      const loaded = await load(file);
+      if (shipID) {
+        await replaceShip(loaded.scene, manifest.player, await ships.shipConfig(shipID));
+      }
+      return loaded;
+    };
+
     // play makes loaded, from the game's scene file, the game's scene, at the
     // bottom of the stack. Its HUD shows what it published last frame on the
     // channels the arcade knows, such as a race's lap and time, a blank line
@@ -274,13 +315,16 @@ domReady.onReady(async () => {
       remotePlayers = null;
       networkSource = null;
       if (roomName && manifest.multiplayer) {
-        const {sceneManager} = loaded.scene;
-        const {player} = manifest.multiplayer;
-        remotePlayers = new RemotePlayers(loaded.scene, file, manifest.multiplayer);
+        remotePlayers = new RemotePlayers(loaded.scene, file, {
+          playerNodeID: manifest.player,
+          remoteScript: manifest.multiplayer.remote,
+          ships,
+        });
         networkSource = {
           scene: loaded.scene,
           file,
-          channel: sceneManager.getNodeStateByID(player)?.network,
+          channel: loaded.scene.sceneManager.getNodeStateByID(manifest.player)?.network,
+          ship: shipID,
         };
       }
       hudEl.textContent = "";
@@ -304,12 +348,54 @@ domReady.onReady(async () => {
     // in.
     let gameFile = params.get("scene");
     if (!gameFile && manifest.welcome) {
-      gameFile = await showWelcome(new URL(manifest.welcome, manifestURL));
+      gameFile = (await showWelcome(new URL(manifest.welcome, manifestURL))).goTo;
       pushToURL("scene", gameFile);
     }
     gameFile = gameFile || manifest.scene;
+
+    // A game with a hangar then opens on it, to choose the ship to race,
+    // unless the URL names one. Its showcase ship shows the selected ship,
+    // and Back goes back to choosing the track, by loading the page without
+    // the track in its URL.
+    if (manifest.hangar && !ships.find(shipID)) {
+      // The ship to show, and whether it is being shown, so that selecting
+      // ships quickly shows the last one selected, once.
+      let shipToShow = null;
+      let showing = false;
+      const showShip = async (scene) => {
+        if (showing) {
+          return;
+        }
+        showing = true;
+        for (let shown = null; shown !== shipToShow; ) {
+          shown = shipToShow;
+          await replaceShip(scene, "showcase ship", await ships.shipConfig(shown));
+        }
+        showing = false;
+      };
+      const picked = await showWelcome(new URL(manifest.hangar, manifestURL), {
+        choices: [
+          ...ships.list.map(({id, label}) => ({label, ship: id})),
+          {label: "Back", back: true},
+        ],
+        onSelect: (choice, scene) => {
+          if (choice.ship) {
+            shipToShow = choice.ship;
+            showShip(scene);
+          }
+        },
+      });
+      if (picked.back) {
+        const url = new URL(location.href);
+        url.searchParams.delete("scene");
+        location.assign(url);
+        return;
+      }
+      shipID = picked.ship;
+      pushToURL("ship", shipID);
+    }
     messageEl.textContent = `Loading ${manifest.name}…`;
-    let playing = play(await load(gameFile), gameFile);
+    let playing = play(await loadGame(gameFile), gameFile);
     stack.push(playing.runner);
 
     // The menu scene, while it is open, over the game, while it loads, and
@@ -380,12 +466,13 @@ domReady.onReady(async () => {
           return;
         }
 
-        // Leaving the race goes back to the game's welcome page, to choose
-        // again, by loading the page without the scene playing in its URL.
+        // Leaving the race goes back to choosing a ship in the hangar, or,
+        // in a game without one, a track on its welcome page, by loading the
+        // page without the one chosen in its URL.
         if (message.picked?.leave) {
           going = true;
           const url = new URL(location.href);
-          url.searchParams.delete("scene");
+          url.searchParams.delete(manifest.hangar ? "ship" : "scene");
           location.assign(url);
           return;
         }
@@ -398,7 +485,7 @@ domReady.onReady(async () => {
           if (file !== gameFile) {
             hideMenu();
             messageEl.textContent = "Loading…";
-            const next = play(await load(file), file);
+            const next = play(await loadGame(file), file);
             stack.replace(0, next.runner);
             playing.scene.dispose();
             playing = next;

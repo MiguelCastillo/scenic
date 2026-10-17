@@ -112,10 +112,15 @@ export const loadScene = async (gl, config, {sceneURL = self.location.href} = {}
 
   // remove takes the node id, and the nodes under it, out of the scene and
   // its state, and frees their GPU resources, such as when a player leaves.
-  // Only remove a node add added once add has resolved.
+  // The nodes under it are the ones in the scene now, including any added
+  // under it since, such as a ship's parts. Only remove a node add added once
+  // add has resolved.
   function remove(id) {
     const node = sceneManager.getNodeByID(id);
     if (node) {
+      [node, ...Node.findChildrenByType(node, Node)].forEach((removed) =>
+        sceneManager.stateManager.removeItemByID(removed.id)
+      );
       node.parent.remove(node);
       node.dispose(gl);
     }

@@ -1,0 +1,92 @@
+{
+  "name": "ship",
+  "type": "transform",
+  "items": [
+    {
+      "name": "body",
+      "type": "static-mesh",
+      "resource": "/resources/obj/battle-cruiser-starfighter.obj",
+      "material": {
+        "color": [0, 0, 0, 1],
+        "reflectiveness": 1,
+        "specular": 0.5,
+        "shininess": 48
+      },
+      "ambient": {
+        "color": [0.35, 0.35, 0.4]
+      }
+    },
+    {
+      "name": "flame 1",
+      "type": "static-mesh",
+      "resource": "/resources/obj/flame.obj",
+      "material": {
+        "color": [0, 0, 0, 1],
+        "reflectiveness": 0
+      },
+      "ambient": {
+        "color": [1, 1, 1]
+      },
+      "transform": {
+        "position": [0, 0, -86],
+        "rotation": [0, 0, 0],
+        "scale": [9, 9, 9]
+      },
+      "script": {
+        "src": "/resources/scripts/flame.js",
+        "settings": {
+          "flicker": 0.15,
+          "speed": 1
+        }
+      }
+    },
+    {
+      "name": "flame 2",
+      "type": "static-mesh",
+      "resource": "/resources/obj/flame.obj",
+      "material": {
+        "color": [0, 0, 0, 1],
+        "reflectiveness": 0
+      },
+      "ambient": {
+        "color": [1, 1, 1]
+      },
+      "transform": {
+        "position": [114.639, -24.367, -125.5],
+        "rotation": [0, 0, 0],
+        "scale": [6.6, 6.6, 6.6]
+      },
+      "script": {
+        "src": "/resources/scripts/flame.js",
+        "settings": {
+          "flicker": 0.15,
+          "speed": 1
+        }
+      }
+    },
+    {
+      "name": "flame 3",
+      "type": "static-mesh",
+      "resource": "/resources/obj/flame.obj",
+      "material": {
+        "color": [0, 0, 0, 1],
+        "reflectiveness": 0
+      },
+      "ambient": {
+        "color": [1, 1, 1]
+      },
+      "transform": {
+        "position": [-114.639, -24.367, -125.5],
+        "rotation": [0, 0, 0],
+        "scale": [6.6, 6.6, 6.6]
+      },
+      "script": {
+        "src": "/resources/scripts/flame.js",
+        "settings": {
+          "flicker": 0.15,
+          "speed": 1
+        }
+      }
+    }
+  ]
+}

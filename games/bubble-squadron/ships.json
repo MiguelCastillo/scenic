@@ -1,0 +1,67 @@
+[
+  {
+    "id": "seedpod",
+    "label": "Seedpod",
+    "src": "ships/seedpod.json"
+  },
+  {
+    "id": "cross-wing",
+    "label": "Cross Wing",
+    "src": "ships/cross-wing.json"
+  },
+  {
+    "id": "twin-panel",
+    "label": "Twin Panel",
+    "src": "ships/twin-panel.json"
+  },
+  {
+    "id": "saucer",
+    "label": "Saucer",
+    "src": "ships/saucer.json"
+  },
+  {
+    "id": "dart",
+    "label": "Dart",
+    "src": "ships/dart.json"
+  },
+  {
+    "id": "longwing",
+    "label": "Longwing",
+    "src": "ships/longwing.json"
+  },
+  {
+    "id": "atomic-saucer",
+    "label": "Atomic Saucer",
+    "src": "ships/atomic-saucer.json"
+  },
+  {
+    "id": "streamliner",
+    "label": "Streamliner",
+    "src": "ships/streamliner.json"
+  },
+  {
+    "id": "starcruiser",
+    "label": "Starcruiser",
+    "src": "ships/starcruiser.json"
+  },
+  {
+    "id": "bird-of-prey",
+    "label": "Bird of Prey",
+    "src": "ships/bird-of-prey.json"
+  },
+  {
+    "id": "battle-cruiser",
+    "label": "Battle Cruiser",
+    "src": "ships/battle-cruiser.json"
+  },
+  {
+    "id": "bumblebee",
+    "label": "Bumblebee",
+    "src": "ships/bumblebee.json"
+  },
+  {
+    "id": "teapot",
+    "label": "Teapot",
+    "src": "ships/teapot.json"
+  }
+]

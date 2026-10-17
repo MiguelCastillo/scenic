@@ -2,8 +2,18 @@
   "name": "Bubble Squadron",
   "description": "Race a bubbly starfighter through gates in a cartoon forest.",
   "scene": "race.json",
-  "scenes": ["race.json", "highway.json", "starfighters.json", "welcome.json", "menu.json"],
+  "scenes": [
+    "race.json",
+    "highway.json",
+    "starfighters.json",
+    "welcome.json",
+    "hangar.json",
+    "menu.json"
+  ],
   "welcome": "welcome.json",
+  "hangar": "hangar.json",
+  "ships": "ships.json",
+  "player": "starfighter",
   "menu": "menu.json",
-  "multiplayer": {"player": "starfighter", "remote": "scripts/remote-ship.js"}
+  "multiplayer": {"remote": "scripts/remote-ship.js"}
 }

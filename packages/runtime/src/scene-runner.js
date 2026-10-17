@@ -185,8 +185,13 @@ export class SceneRunner {
     // flight controller can move at the same speed at any frame rate and
     // respond to the player. While paused they get neither, except for the
     // messages other players in a network game sent, who play on, so that
-    // what shows them knows where they are.
+    // what shows them knows where they are. They also get the size of the
+    // screen the scene is drawn on, {width, height}, in pixels, such as to
+    // place things on it for an orthographic camera, which measures in
+    // pixels.
+    const {width, height} = this._gl.canvas;
     sceneManager.update(this._sceneMs, {
+      screen: {width, height},
       seconds: sceneSeconds,
       input: paused
         ? Object.fromEntries(
