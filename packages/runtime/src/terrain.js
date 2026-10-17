@@ -171,11 +171,15 @@ export class Terrain extends Mesh {
     //
     // Any change to a node's state replaces its state object, keeping the
     // values that didn't change (see updateItemByID in StateManager), so
-    // comparing the object tells whether anything changed, at the cost of
-    // one comparison a frame. Only then are the settings worked out again,
-    // and the tiles built again if one of the settings that shape the ground
-    // changed (see shapedBy), and not for one that is only drawn, such as
-    // showTiles.
+    // comparing the object tells whether anything changed. Only then are
+    // the settings worked out again, and the tiles built again if one of the
+    // settings that shape the ground changed (see shapedBy), and not for one
+    // that is only drawn, such as showTiles.
+    //
+    // Performance: that is one comparison a frame. Don't compare the
+    // settings themselves every frame, such as with JSON.stringify, which
+    // makes a string each time (see "Best practices for the hot path" in
+    // the README).
     const state = sceneManager.getNodeStateByID(this.id);
     if (state !== this.settingsFrom) {
       const settings = {...Terrain.defaults, ...state.terrain};

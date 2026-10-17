@@ -67,9 +67,10 @@ export class Mesh extends Renderable {
   // buffers. Its viewport calls it, when the mesh is in view (see render in
   // Viewport).
   //
-  // The program is set up once, with the mesh's lights, material and view,
-  // and each copy after the first only sends its world matrix before
-  // drawing.
+  // Performance: the program is set up once, with the mesh's lights,
+  // material and view, and each copy after the first only sends its world
+  // matrix before drawing, since every WebGL call costs about as much as a
+  // draw, and a forest draws hundreds of copies.
   render(context) {
     const {shaderProgram} = this;
     const lightsState = this.getLightsState(context);

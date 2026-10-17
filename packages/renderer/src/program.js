@@ -5,13 +5,16 @@ import {ShaderAttribute} from "./attribute.js";
 import {renderStats} from "./render-stats.js";
 import {ShaderUniform} from "./uniform.js";
 
-// The program each WebGL context draws with now, so that a program already
-// in use isn't made the one in use again, which costs as much as a draw.
+// Performance: the program each WebGL context draws with now, so that a
+// program already in use isn't made the one in use again, which costs as
+// much as a draw. Keep checking it before every useProgram.
 const programsInUse = new WeakMap();
 
-// Each WebGL program's uniforms' names, by their locations, and the values
-// they were last sent, by name, so that a value a program already has isn't
-// sent again, such as the lights for every mesh drawn with the same program.
+// Performance: each WebGL program's uniforms' names, by their locations, and
+// the values they were last sent, by name, so that a value a program already
+// has isn't sent again, such as the lights for every mesh drawn with the
+// same program. Each WebGL call costs about as much as a draw, so keep
+// sending uniforms through uniformSender, which skips them.
 // Values are kept by name rather than location because programs cloned from
 // one another share a WebGL program but look up locations of their own.
 const uniformNames = new WeakMap();

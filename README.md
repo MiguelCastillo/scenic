@@ -356,6 +356,38 @@ ES modules, mark the `@scenic` packages as external, and output CommonJS. A
 bundled `export default` works too. Errors in a script show the script's name,
 because the editor names its code with `//# sourceURL`.
 
+#### Scripts run every frame
+
+Scripts are how games and users customize what scenes do, so they are also
+where a game most easily loses its frame rate: `update` runs every frame, for
+every node using the script, so a cost in it is paid hundreds of times a
+second, and once more for every node that uses it. The engine keeps its own
+code that runs every frame free of garbage and extra WebGL calls (see
+[Best practices for the hot path](#best-practices-for-the-hot-path)), and
+scripts should too. For a script, that means:
+
+- **Find things once.** Look up what the script only reads, such as another
+  node by the id in its state, once, rather than every frame, and look it up
+  again only when that id changes. That is a cache of what is in the state,
+  so it can live in the script; anything the script changes still belongs in
+  the node's state, so that loading a saved state starts the game exactly
+  where it was.
+- **Use plain numbers** for positions, directions and angles, such as
+  `const dx = x - cx`, rather than small arrays made with `map`.
+- **Don't make arrays, objects, closures or strings every frame**, such as
+  filtering a node's children, spreading a list, or building a key with a
+  template string; loop by index instead.
+- **Change state only when something changed.** Every
+  `updateNodeStateByID` makes a new state object for the node, which is how
+  the rest of the scene notices the change (see the terrain's
+  `prepareForView`), so it is worth it when something moved, and wasted when
+  nothing did. Change only what changed, and spread only the objects it is
+  in.
+
+A script written this way for speed should say so, in a comment starting
+with "Performance:", the way the engine's code does, and can be checked the
+same way, with Chrome's DevTools.
+
 The dancing character's three lights each run `resources/scripts/orbit.js`,
 with phases of 0, 120 and 240 degrees, so they circle the dancer evenly spaced.
 
@@ -1180,6 +1212,50 @@ terrain, the sky or a light, adds itself to the viewport's
   material within a program, or solid meshes nearest first so that what is
   hidden fails the depth test early. A pass that draws the same meshes
   again, such as shadows, can reuse the list rather than walk the scene.
+
+#### Best practices for the hot path
+
+The hot path is the code that runs every frame: `preRender`,
+`prepareForView`, `render`, and scripts' `update`, most of all in loops that
+run for every mesh, every copy of one, such as each tree of a forest, or
+every tile of the terrain. At 120 frames a second, a frame has about 8
+milliseconds for all of it, and two things eat into them: garbage, and
+WebGL calls.
+
+**Make no garbage.** Every array, object, closure or string made in a frame
+is garbage that JavaScript has to collect later, and collecting it pauses the
+game. Before this was watched for, a race made about 920 KB of garbage a
+frame, collected about ten times a second.
+
+- **Work things out once, when they change**, rather than every frame, such
+  as a mesh's bounding volume, measured when its geometry is built, or the
+  terrain's settings, worked out again only when its state changes.
+- **Use plain numbers**, rather than small arrays for points and vectors.
+- **Read arrays by index**, with `for (let i = 0; ...)` loops, rather than
+  with array destructuring, `map`, `filter`, `reduce` or `forEach` with a new
+  closure, which each make something new.
+- **Keep arrays on the object and refill them** (`list.length = 0`), rather
+  than making a new one each frame.
+- **No spreads** (`[...list]`, `{...object}`), and no strings, such as
+  `JSON.stringify` or `toFixed`, made to compare or round numbers.
+
+**Make few WebGL calls.** Each call costs about as much as a draw.
+
+- **Draw from the viewport's draw list**, which groups renderables by shader
+  program, so each program is set up once a frame (see
+  [The draw list](#the-draw-list)).
+- **Send uniforms through the shader program**, which skips values it
+  already has, and makes a program the one in use only when it isn't
+  already (see `program.js`).
+- **Draw copies of a mesh with `worldMatrices`**, which sends only each
+  copy's world matrix, rather than a scene node for each.
+
+**Mark it, and measure it.** Code written this way for speed says so in its
+comment, starting with "Performance:", and says what it must not do, so that
+it isn't undone by accident: search for it before changing hot code. To check
+a change, record the game in Chrome's DevTools, in the Memory tab's
+"Allocations on timeline", before and after: its Allocation view shows what
+made garbage, and how much.
 
 ### Disposing a scene
 

@@ -63,30 +63,51 @@ export class BoundingBox {
   // corner of the view, outside two sides at once but not wholly outside
   // either. That only draws a mesh that wasn't needed. It never says a box
   // that is in view is outside it.
+  //
+  // Performance: this runs for every mesh, and every copy of one, such as
+  // each tree of a forest, every frame. It must not allocate: it works with
+  // plain numbers, and reads arrays by index, with no new arrays, objects or
+  // closures, which would each be garbage to collect. See "Best practices
+  // for the hot path" in the README.
   isOutsideView(planes, matrix) {
-    // The box placed with matrix: its center, where the matrix puts the
-    // middle of min and max, and its three half-sizes, as the matrix turns
-    // and stretches them. Matrix4 data is row-major, so the matrix's columns
-    // are the box's own x, y and z axes in the world.
+    // The middle of the box, and half its size along each of its own axes.
     const {min, max} = this;
+    const mx = (min[0] + max[0]) / 2;
+    const my = (min[1] + max[1]) / 2;
+    const mz = (min[2] + max[2]) / 2;
+    const hx = (max[0] - min[0]) / 2;
+    const hy = (max[1] - min[1]) / 2;
+    const hz = (max[2] - min[2]) / 2;
+
+    // Where the matrix puts the middle: the box's center in the world.
+    // Matrix4 data is row-major, so the matrix's columns are the box's own
+    // x, y and z axes in the world.
     const m = matrix.data;
-    const middle = [0, 1, 2].map((k) => (min[k] + max[k]) / 2);
-    const half = [0, 1, 2].map((k) => (max[k] - min[k]) / 2);
-    const center = [0, 1, 2].map(
-      (r) =>
-        m[r * 4] * middle[0] + m[r * 4 + 1] * middle[1] + m[r * 4 + 2] * middle[2] + m[r * 4 + 3]
-    );
-    const axes = [0, 1, 2].map((c) => [m[c] * half[c], m[4 + c] * half[c], m[8 + c] * half[c]]);
+    const x = m[0] * mx + m[1] * my + m[2] * mz + m[3];
+    const y = m[4] * mx + m[5] * my + m[6] * mz + m[7];
+    const z = m[8] * mx + m[9] * my + m[10] * mz + m[11];
 
     // For each side: distance is how far the box's center is inside it,
-    // and reach is how far the box spreads from its center toward it, its
-    // half-sizes measured along the side's normal. The box is wholly
-    // outside the side when its center is farther outside than that reach.
-    return planes.some(([a, b, c, d]) => {
-      const distance = a * center[0] + b * center[1] + c * center[2] + d;
-      const reach = axes.reduce((sum, [x, y, z]) => sum + Math.abs(a * x + b * y + c * z), 0);
-      return distance < -reach;
-    });
+    // and reach is how far the box spreads from its center toward it: each
+    // of its half-sizes, along its axis in the world, measured along the
+    // side's normal. The box is wholly outside the side when its center is
+    // farther outside than that reach.
+    for (let i = 0; i < planes.length; i++) {
+      const plane = planes[i];
+      const a = plane[0];
+      const b = plane[1];
+      const c = plane[2];
+      const d = plane[3];
+      const distance = a * x + b * y + c * z + d;
+      const reach =
+        Math.abs(a * m[0] + b * m[4] + c * m[8]) * hx +
+        Math.abs(a * m[1] + b * m[5] + c * m[9]) * hy +
+        Math.abs(a * m[2] + b * m[6] + c * m[10]) * hz;
+      if (distance < -reach) {
+        return true;
+      }
+    }
+    return false;
   }
 }
 

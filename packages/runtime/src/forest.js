@@ -93,8 +93,12 @@ export class Forest extends Node {
     // Any change to a node's state replaces its state object (see
     // updateItemByID in StateManager), and the terrain replaces its ground
     // only when it builds it again (see prepareForView in Terrain), so
-    // comparing the objects tells whether anything changed, at the cost of
-    // a few comparisons a frame.
+    // comparing the objects tells whether anything changed.
+    //
+    // Performance: that is a few comparisons a frame. Don't compare the
+    // settings themselves every frame, such as with JSON.stringify, which
+    // makes a string each time (see "Best practices for the hot path" in
+    // the README).
     if (
       state !== this.settingsFrom ||
       terrain.ground !== this.plantedOn ||
