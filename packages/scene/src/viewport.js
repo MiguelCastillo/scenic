@@ -1,6 +1,22 @@
 import {Camera} from "./camera.js";
 import {Node} from "./node.js";
 
+// RenderOrder is when a viewport renders a renderable in view, by what it
+// needs from what is rendered before it (see render in Viewport). A
+// renderable's renderOrder is solid unless it says otherwise.
+export const RenderOrder = {
+  // Background, such as the sky, first: it only fills where nothing else
+  // is drawn, and hides nothing.
+  BACKGROUND: "background",
+  // Solid, most renderables: they hide what is behind them.
+  SOLID: "solid",
+  // Translucent, such as a mesh whose material's opacity is below 1: after
+  // everything solid, so it is blended over what is behind it.
+  TRANSLUCENT: "translucent",
+  // Overlay, such as an fbx skeleton: last, drawn over everything.
+  OVERLAY: "overlay",
+};
+
 // Viewport is a part of the scene seen through a camera. Its items are what it
 // draws, and its cameras are the different angles it can draw them from. It
 // draws through one camera at a time: the camera named by `activeCamera` in
@@ -13,18 +29,19 @@ export class Viewport extends Node {
     this.cameras = [];
     this.activeCamera = null;
     this._warnedActiveCameraName = null;
-    // meshesToRender is the viewport's draw list: the meshes in view this
-    // frame, which add themselves in their prepareForView, for the viewport
-    // to draw once everything under it has rendered (see render). Drawing
-    // from a list rather than as the scene is walked lets the viewport:
-    // - draw in the order cheapest for WebGL, grouped by program, rather
+    // renderablesInView is the viewport's draw list: the renderables in
+    // view this frame, which add themselves in their prepareForView, for
+    // the viewport to render (see render). Rendering from a list lets the
+    // viewport:
+    // - render in the order cheapest for WebGL, grouped by program, rather
     //   than in the order the scene was laid out;
-    // - draw translucent meshes last, farthest first, with a split and a
+    // - render each renderable when it needs to be, such as translucent
+    //   ones after everything solid, farthest first, with a split and a
     //   sort;
-    // - keep choosing what to draw apart from drawing it, so the list is
-    //   exactly what a frame draws.
+    // - keep choosing what to render apart from rendering it, so the list
+    //   is exactly what a frame draws.
     // See "The draw list" in the README for more.
-    this.meshesToRender = [];
+    this.renderablesInView = [];
   }
 
   // Cameras are still added as regular children so that they are part of the
@@ -94,41 +111,47 @@ export class Viewport extends Node {
     this._fog = fog && fog.enabled !== false ? fog : null;
   }
 
-  // prepareForView empties meshesToRender, before the meshes under the
-  // viewport add themselves to it in their own prepareForView.
+  // prepareForView empties renderablesInView, before the renderables under
+  // the viewport add themselves to it in their own prepareForView.
   prepareForView() {
-    this.meshesToRender = [];
+    this.renderablesInView = [];
   }
 
-  // render draws meshesToRender, after everything else under the viewport
-  // has rendered, since children render before their parents:
-  // 1. Solid meshes first, grouped by WebGL program, so each program is
-  //    made the one in use once, and the meshes drawn with it after the
-  //    first only send the uniforms they don't share, such as their
-  //    material.
-  // 2. Translucent meshes, whose material's opacity is below 1, last, once
-  //    everything solid is in the depth buffer, and farthest first, so
-  //    that each is blended over what is behind it. They don't write
-  //    depth, so they never hide each other.
+  // render renders renderablesInView, by their renderOrder (see
+  // RenderOrder):
+  // 1. Background first, in the order they were added.
+  // 2. Solid, grouped by WebGL program, so each program is made the one in
+  //    use once, and the renderables rendered with it after the first only
+  //    send the uniforms they don't share, such as their material.
+  // 3. Translucent, once everything solid is in the depth buffer, farthest
+  //    first, so that each is blended over what is behind it. They don't
+  //    write depth, so they never hide each other.
+  // 4. Overlay last, in the order they were added.
   render(context) {
     const {gl} = context;
+    const background = [];
     const solidByProgram = new Map();
     const translucent = [];
-    for (const mesh of this.meshesToRender) {
-      const opacity = mesh.getMaterialsState(context)?.material?.opacity ?? 1;
-      if (opacity < 1) {
-        translucent.push(mesh);
+    const overlay = [];
+    for (const renderable of this.renderablesInView) {
+      if (renderable.renderOrder === RenderOrder.BACKGROUND) {
+        background.push(renderable);
+      } else if (renderable.renderOrder === RenderOrder.TRANSLUCENT) {
+        translucent.push(renderable);
+      } else if (renderable.renderOrder === RenderOrder.OVERLAY) {
+        overlay.push(renderable);
       } else {
-        const program = mesh.shaderProgram.program;
+        const program = renderable.shaderProgram.program;
         if (!solidByProgram.has(program)) {
           solidByProgram.set(program, []);
         }
-        solidByProgram.get(program).push(mesh);
+        solidByProgram.get(program).push(renderable);
       }
     }
 
-    for (const meshes of solidByProgram.values()) {
-      meshes.forEach((mesh) => mesh.draw(context));
+    background.forEach((renderable) => renderable.render(context));
+    for (const renderables of solidByProgram.values()) {
+      renderables.forEach((renderable) => renderable.render(context));
     }
 
     if (translucent.length) {
@@ -143,10 +166,12 @@ export class Viewport extends Node {
       // the page never shows through it.
       gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ZERO, gl.ONE);
       gl.depthMask(false);
-      translucent.forEach((mesh) => mesh.draw(context));
+      translucent.forEach((renderable) => renderable.render(context));
       gl.depthMask(true);
       gl.disable(gl.BLEND);
     }
+
+    overlay.forEach((renderable) => renderable.render(context));
   }
 
   // viewProjectionMatrix takes renderables in this viewport from world space

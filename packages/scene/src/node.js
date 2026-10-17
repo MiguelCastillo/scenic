@@ -73,12 +73,14 @@ export class Node {
   // nothing to prepare.
   prepareForView() {}
 
+  // render draws the node. Only renderables draw: one in view adds itself to
+  // its viewport's renderablesInView in prepareForView, and its viewport
+  // calls its render (see render in Viewport).
   render() {}
 
   // withScript attaches a script to the node: an object with any of the hooks
-  // update(context), render(context) and dispose(). SceneManager.runScripts
-  // calls update once a frame, SceneManager.render calls render after the
-  // node's, and dispose calls dispose. Scripts let code decide what a node
+  // update(context) and dispose(). SceneManager.runScripts calls update once
+  // a frame, and dispose calls dispose. Scripts let code decide what a node
   // does each frame, such as moving it, without a new node type.
   withScript(script) {
     this.script = script;

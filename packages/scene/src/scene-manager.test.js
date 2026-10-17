@@ -1,6 +1,8 @@
+import {Camera} from "./camera.js";
 import {Node} from "./node.js";
 import {SceneManager} from "./scene-manager.js";
 import {StateManager} from "./state-manager.js";
+import {Viewport} from "./viewport.js";
 
 // createTrackedNode returns a node that records its own hooks and its
 // script's hooks, in the order they run, into calls.
@@ -11,7 +13,6 @@ function createTrackedNode(name, calls) {
   node.render = () => calls.push(`${name}.render`);
   return node.withScript({
     update: () => calls.push(`${name}.script.update`),
-    render: () => calls.push(`${name}.script.render`),
     dispose: () => calls.push(`${name}.script.dispose`),
   });
 }
@@ -63,20 +64,20 @@ describe("scripts", () => {
     expect(calls).toEqual(["parent.prepareForView", "child.prepareForView"]);
   });
 
-  test("render after their node, children first, without updating", () => {
+  test("aren't run by render, which only asks each viewport to render", () => {
     const calls = [];
-    const parent = createTrackedNode("parent", calls);
-    parent.add(createTrackedNode("child", calls));
-    const sceneManager = new SceneManager(new StateManager([])).withNodes([parent]);
+    const viewport = new Viewport({name: "world", id: "world"}).add(
+      new Camera({name: "camera", id: "camera"})
+    );
+    viewport.render = () => calls.push("world.render");
+    viewport.add(createTrackedNode("ship", calls));
+    const sceneManager = new SceneManager(
+      new StateManager([{id: "camera", projection: {type: "perspective"}}])
+    ).withNodes([viewport]);
 
     sceneManager.render(0, null);
 
-    expect(calls).toEqual([
-      "child.render",
-      "child.script.render",
-      "parent.render",
-      "parent.script.render",
-    ]);
+    expect(calls).toEqual(["world.render"]);
   });
 
   test("are disposed with their node", () => {

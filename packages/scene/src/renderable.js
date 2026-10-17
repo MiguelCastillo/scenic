@@ -1,19 +1,22 @@
 import {mat4} from "@scenic/math";
 
 import {Node} from "./node.js";
-import {Viewport} from "./viewport.js";
+import {RenderOrder, Viewport} from "./viewport.js";
 
 const _identity = mat4.Matrix4.identity();
 
-// Renderable is a node type that provides an interface for specifying shader
-// program, vertex buffers, and projection matrices. This is gives us all the
-// usually parts needed to render a node. If your node needs to be able to
-// render children nodes then you will needs these things, so very likely you
-// will want to use this interface.
+// Renderable is a node that draws: it has a shader program, and the view
+// and projection of its viewport to draw with. One in view adds itself to
+// its viewport's renderablesInView in its prepareForView, and its viewport
+// calls its render to draw it, in its renderOrder (see render in
+// Viewport).
 export const RenderableInterface = (superclass) =>
   class extends superclass {
     constructor(options) {
       super(options);
+      // renderOrder is when its viewport renders it, among the other
+      // renderables in view (see RenderOrder in viewport.js).
+      this.renderOrder = RenderOrder.SOLID;
       // boundingVolume is around everything the renderable's geometries
       // draw, in its own space, or null before it has any (see bounds.js).
       // Each geometry measures its own when it is built; the renderable

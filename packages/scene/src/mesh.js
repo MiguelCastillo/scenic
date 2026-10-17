@@ -1,6 +1,7 @@
 import {vec3} from "@scenic/math";
 
 import {Renderable} from "./renderable.js";
+import {RenderOrder} from "./viewport.js";
 
 // findLights returns the lights that shine on a node. It walks up from the
 // node to the first ancestor (or the node itself) that has lights among its
@@ -62,15 +63,14 @@ export class Mesh extends Renderable {
     return this;
   }
 
-  // draw draws copiesToRender, each copy of the mesh in view with its
-  // buffers. Its viewport calls it, for the meshes in view (see render in
-  // Viewport), rather than the mesh drawing itself as the scene is walked,
-  // so that meshes can be drawn in the order that is cheapest for WebGL.
+  // render draws copiesToRender, each copy of the mesh in view with its
+  // buffers. Its viewport calls it, when the mesh is in view (see render in
+  // Viewport).
   //
   // The program is set up once, with the mesh's lights, material and view,
   // and each copy after the first only sends its world matrix before
   // drawing.
-  draw(context) {
+  render(context) {
     const {shaderProgram} = this;
     const lightsState = this.getLightsState(context);
     if (lightsState) {
@@ -290,7 +290,7 @@ export class Mesh extends Renderable {
   //    of detail.
   //
   // The buffers are its Geometry children's.
-  prepareForView() {
+  prepareForView(context) {
     const vertexBuffers = this.items
       .filter((child) => child.vertexBuffer)
       .map((child) => child.vertexBuffer);
@@ -319,9 +319,12 @@ export class Mesh extends Renderable {
     }
 
     // A mesh with copies in view, and a program to draw them with, is drawn
-    // by its viewport (see render in Viewport).
+    // by its viewport (see render in Viewport), after everything solid when
+    // its material's opacity is below 1.
     if (this.copiesToRender.length && this.shaderProgram) {
-      this.getViewport()?.meshesToRender.push(this);
+      const opacity = this.getMaterialsState(context)?.material?.opacity ?? 1;
+      this.renderOrder = opacity < 1 ? RenderOrder.TRANSLUCENT : RenderOrder.SOLID;
+      this.getViewport()?.renderablesInView.push(this);
     }
   }
 

@@ -43,11 +43,14 @@ export class Grid extends Renderable {
     }
   }
 
-  render(context) {
-    if (!this.square || !this.shaderProgram) {
-      return;
+  // prepareForView adds the grid to its viewport's renderablesInView.
+  prepareForView() {
+    if (this.square && this.shaderProgram) {
+      this.getViewport()?.renderablesInView.push(this);
     }
+  }
 
+  render(context) {
     const {gl, sceneManager} = context;
     const state = sceneManager.getNodeStateByID(this.id);
     const {size, spacing, lineWidth = 1, fillColor} = state.grid;

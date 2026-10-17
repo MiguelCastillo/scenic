@@ -9,6 +9,7 @@ import {
   Node as SceneNode,
   Mesh as MeshSceneNode,
   Renderable as RenderableSceneNode,
+  RenderOrder,
   Animation as AnimationSceneNode,
   Geometry as GeometrySceneNode,
   Texture as TextureSceneNode,
@@ -224,6 +225,9 @@ export class Armature extends AnimatableInterface(RenderableSceneNode) {
     this._bonesByID = null;
     this._renderEnabled = false;
     this.renderables = [];
+    // The skeleton is drawn over everything, so that it can be seen inside
+    // its model.
+    this.renderOrder = RenderOrder.OVERLAY;
   }
 
   get bonesByID() {
@@ -261,16 +265,16 @@ export class Armature extends AnimatableInterface(RenderableSceneNode) {
   }
 
   // prepareForView empties renderables, before its bones add to it in their
-  // own prepareForView.
+  // own prepareForView, and adds the armature to its viewport's
+  // renderablesInView when its skeleton is shown.
   prepareForView() {
     this.renderables = [];
+    if (this.renderEnabled) {
+      this.getViewport()?.renderablesInView.push(this);
+    }
   }
 
   render() {
-    if (!this.renderEnabled) {
-      return;
-    }
-
     const shaderProgram = this.shaderProgram;
     const gl = shaderProgram.gl;
     const projectionMatrix = this.getViewProjectionMatrix();

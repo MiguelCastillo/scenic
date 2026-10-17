@@ -4,7 +4,7 @@ import {BoundingBox} from "./bounds.js";
 import {Camera} from "./camera.js";
 import {SceneManager} from "./scene-manager.js";
 import {StateManager} from "./state-manager.js";
-import {Viewport} from "./viewport.js";
+import {RenderOrder, Viewport} from "./viewport.js";
 
 // clipPosition applies a view-projection the way the vertex shaders do. Its
 // data is column-major because it is uploaded without transposing.
@@ -103,24 +103,26 @@ describe("Viewport.canSeeBoundingVolume", () => {
 });
 
 describe("Viewport.render", () => {
-  // A viewport whose camera is at the origin, and meshes in view, each a
-  // stand-in with a program, an opacity, and a z, which keeps the order it
-  // is drawn in.
-  const drawOrder = (meshes) => {
+  // A viewport whose camera is at the origin, and renderables in view, each
+  // a stand-in with a program, a renderOrder, and a z, which keeps the
+  // order it is rendered in.
+  const drawOrder = (renderables) => {
     const viewport = new Viewport({name: "world"}).add(createCamera("camera"));
     const drawn = [];
-    viewport.meshesToRender = meshes.map(({name, program, opacity = 1, z = 0}) => ({
-      shaderProgram: {program},
-      worldMatrix: mat4.Matrix4.trs([0, 0, z], [0, 0, 0], [1, 1, 1]),
-      getMaterialsState: () => ({material: {opacity}}),
-      draw: () => drawn.push(name),
-    }));
+    viewport.renderablesInView = renderables.map(
+      ({name, program, renderOrder = RenderOrder.SOLID, z = 0}) => ({
+        shaderProgram: {program},
+        renderOrder,
+        worldMatrix: mat4.Matrix4.trs([0, 0, z], [0, 0, 0], [1, 1, 1]),
+        render: () => drawn.push(name),
+      })
+    );
     const gl = {enable() {}, disable() {}, blendFuncSeparate() {}, depthMask() {}};
     viewport.render({gl});
     return drawn;
   };
 
-  test("draws solid meshes grouped by program, in the order each program is first seen", () => {
+  test("renders solid ones grouped by program, in the order each program is first seen", () => {
     expect(
       drawOrder([
         {name: "tree", program: "leaves"},
@@ -130,14 +132,26 @@ describe("Viewport.render", () => {
     ).toEqual(["tree", "bush", "ship"]);
   });
 
-  test("draws translucent meshes after solid ones, farthest first", () => {
+  test("renders translucent ones after solid ones, farthest first", () => {
+    const translucent = RenderOrder.TRANSLUCENT;
     expect(
       drawOrder([
-        {name: "near glass", program: "glass", opacity: 0.5, z: -10},
-        {name: "far glass", program: "glass", opacity: 0.5, z: -100},
+        {name: "near glass", program: "glass", renderOrder: translucent, z: -10},
+        {name: "far glass", program: "glass", renderOrder: translucent, z: -100},
         {name: "ship", program: "metal"},
       ])
     ).toEqual(["ship", "far glass", "near glass"]);
+  });
+
+  test("renders the background first and overlays last", () => {
+    expect(
+      drawOrder([
+        {name: "skeleton", program: "lines", renderOrder: RenderOrder.OVERLAY},
+        {name: "glass", program: "glass", renderOrder: RenderOrder.TRANSLUCENT},
+        {name: "ship", program: "metal"},
+        {name: "sky", program: "sky", renderOrder: RenderOrder.BACKGROUND},
+      ])
+    ).toEqual(["sky", "ship", "glass", "skeleton"]);
   });
 });
 
