@@ -1,5 +1,6 @@
 import {vec3} from "@scenic/math";
 
+import {boundingSphere} from "./bounds.js";
 import {Renderable} from "./renderable.js";
 
 // findLights returns the lights that shine on a node. It walks up from the
@@ -347,31 +348,4 @@ export class Mesh extends Renderable {
       program.release();
     }
   }
-}
-
-// boundingSphere is a sphere around positions, a flat list of x, y and z: its
-// center is the middle of their bounding box, and its radius reaches the
-// farthest of them.
-export function boundingSphere(positions) {
-  const low = [Infinity, Infinity, Infinity];
-  const high = [-Infinity, -Infinity, -Infinity];
-  for (let i = 0; i < positions.length; i += 3) {
-    for (let k = 0; k < 3; k++) {
-      low[k] = Math.min(low[k], positions[i + k]);
-      high[k] = Math.max(high[k], positions[i + k]);
-    }
-  }
-  const center = low.map((v, k) => (v + high[k]) / 2);
-  let radius = 0;
-  for (let i = 0; i < positions.length; i += 3) {
-    radius = Math.max(
-      radius,
-      Math.hypot(
-        positions[i] - center[0],
-        positions[i + 1] - center[1],
-        positions[i + 2] - center[2]
-      )
-    );
-  }
-  return {center, radius};
 }

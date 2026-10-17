@@ -1,11 +1,12 @@
 import {Animation} from "./animation.js";
+import {boundingBox, boundingSphere, encloseBoxes} from "./bounds.js";
 import {Camera} from "./camera.js";
 import * as collision from "./collision.js";
 import {BufferedEventBus, EventBus} from "./event-bus.js";
 import {Geometry} from "./geometry.js";
 import {Light} from "./light.js";
 import {Material} from "./material.js";
-import {Mesh, specularDefaults, boundingSphere} from "./mesh.js";
+import {Mesh, specularDefaults} from "./mesh.js";
 import {Node} from "./node.js";
 import {Renderable} from "./renderable.js";
 import {Scene} from "./scene.js";
@@ -19,7 +20,9 @@ import {Viewport} from "./viewport.js";
 
 export {
   Animation,
+  boundingBox,
   boundingSphere,
+  encloseBoxes,
   BufferedEventBus,
   Camera,
   collision,

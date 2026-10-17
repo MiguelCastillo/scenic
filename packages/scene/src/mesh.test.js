@@ -1,7 +1,7 @@
 import {mat4} from "@scenic/math";
 
 import {Camera} from "./camera.js";
-import {Mesh, boundingSphere} from "./mesh.js";
+import {Mesh} from "./mesh.js";
 import {Node} from "./node.js";
 import {Viewport} from "./viewport.js";
 
@@ -64,14 +64,6 @@ describe("Mesh getLightsState", () => {
 
   test("no lights", () => {
     expect(lightsOf(tree(["viewport", "w", [["static-mesh", "m"]]]), "m")).toEqual([]);
-  });
-});
-
-describe("boundingSphere", () => {
-  test("is centered on the middle of the positions and reaches the farthest", () => {
-    const {center, radius} = boundingSphere([0, 0, 0, 10, 0, 0, 0, 4, 0]);
-    expect(center).toEqual([5, 2, 0]);
-    expect(radius).toBeCloseTo(Math.hypot(5, 2), 5);
   });
 });
 
