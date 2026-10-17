@@ -903,23 +903,23 @@ tuned live from its Forest tab.
 
 Drawing is split across three kinds of nodes:
 
-- A **`Renderable`** is a node that can draw. It owns a shader program and has
-  a per-frame _draw list_ (`vertexBuffers`) of buffers to draw.
+- A **`Renderable`** is a node that can draw. It owns a shader program, and
+  keeps the bounding volume around its geometries.
 - A **`Mesh`** is a `Renderable` that draws lit, shaded surfaces. It reads its
   material and the scene's lights from the state manager and sets them as
   shader uniforms. `StaticMesh` and `SkinnedMesh` are the two kinds of mesh.
 - A **`Geometry`** is the shape: it owns a `VertexBuffer` (positions, normals,
-  UVs, indexes, ...). It is _not_ a renderable. Every frame it adds its buffer
-  to the draw list of its closest parent `Renderable`.
+  UVs, indexes, ...). It is _not_ a renderable: its parent renderable reads
+  the buffers of its `Geometry` children when it gets ready to draw.
 
-`Light` is also a `Renderable`. It draws its marker shape unlit, from the same
-kind of `Geometry`-filled draw list.
+`Light` is also a `Renderable`. It draws its marker shape unlit, from its
+`Geometry` children's buffers the same way.
 
 #### What extends what
 
 ```text
 Node                    every node in the scene graph
-├── Renderable          has a shader program and a per-frame draw list
+├── Renderable          has a shader program
 │   ├── Mesh            draws lit, shaded surfaces
 │   │   ├── StaticMesh
 │   │   └── SkinnedMesh
@@ -965,7 +965,7 @@ The resulting scene graph:
 
 ```text
 Viewport "world"
-└── StaticMesh "donut"       ← Renderable: shader program + draw list
+└── StaticMesh "donut"       ← Renderable: shader program
     └── Geometry "geometry"  ← owns the VertexBuffer
 ```
 
@@ -1071,8 +1071,9 @@ it on the screen.
 
 `SceneRunner.renderFrame` then calls `SceneManager.render`, which calls
 `render` on every node, children before parents. Children such as a
-`Material` or `Texture` set up their mesh's shader program as they render,
-and each viewport renders after everything under it, drawing its draw list.
+`Material` or `Texture` have already set up their mesh's shader program, in
+`prepareForView`, and each viewport renders after everything under it,
+drawing its draw list.
 Drawing only reads the scene's state:
 
 ```mermaid
@@ -1089,10 +1090,10 @@ sequenceDiagram
   SM->>Mesh: prepareForView()
   Mesh->>Mesh: choose copiesToRender
   Mesh->>VP: add itself to meshesToRender
+  SM->>Mat: prepareForView()
+  Mat->>SP: set material uniforms
 
   Note over SM,SP: render, children first
-  SM->>Mat: render()
-  Mat->>SP: set material uniforms
   SM->>VP: render()
   VP->>Mesh: draw(), solid meshes by program, then translucent
   Mesh->>SP: set lighting and matrix uniforms, draw each copy

@@ -289,9 +289,7 @@ export class Mesh extends Renderable {
   //    distance from the camera, along with the buffers that aren't a level
   //    of detail.
   //
-  // The buffers are read from its Geometry children, not from
-  // vertexBuffers: geometries only add their buffers to vertexBuffers when
-  // they render, which is after this.
+  // The buffers are its Geometry children's.
   prepareForView() {
     const vertexBuffers = this.items
       .filter((child) => child.vertexBuffer)
@@ -345,10 +343,8 @@ export class Mesh extends Renderable {
   // buffers with a lodDistance takes over from that distance from the
   // camera, so it is the one with the farthest lodDistance the mesh is past.
   // It is undefined for a mesh without levels of detail. vertexBuffers are
-  // the buffers to choose from, the mesh's draw list by default;
-  // prepareForView passes its geometries' buffers, since the draw list is
-  // still empty when it runs.
-  levelOfDetail(worldMatrix = this.worldMatrix, vertexBuffers = this.vertexBuffers) {
+  // the buffers to choose from, its geometries' buffers.
+  levelOfDetail(worldMatrix, vertexBuffers) {
     const levels = vertexBuffers.filter((vb) => vb.lodDistance != null);
     const camera = this.getViewport()?.activeCamera;
     if (!levels.length || !camera) {
