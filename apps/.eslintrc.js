@@ -2,6 +2,8 @@ module.exports = {
   parser: "@babel/eslint-parser",
   parserOptions: {
     sourceType: "module",
+    // Babel's config is the project's, at the root (babel.config.json).
+    babelOptions: {rootMode: "upward"},
   },
   env: {
     browser: true,

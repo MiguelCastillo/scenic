@@ -17,23 +17,22 @@ export the exact package name.
 TODO(miguel): improve the bundler to allow us to export the actual package name
 rather than the cleaned up string version.
 
-Configuration files like babelrc and eslistrc are symlinked to the files in the
-packages directory. If you need a custom configuration file then feel free to
-create separate non symlinked files in the module that needs it. To symlink
-configuration files you can run a command like below from the root folder; be
-sure to switch out `math` in the paths for the specific module you want to
-configure.
+Each module's eslintrc is symlinked to the one in the packages directory. If
+you need a custom one then feel free to create a separate non symlinked file
+in the module that needs it. To symlink it you can run a command like below
+from the root folder; be sure to switch out `math` in the path for the
+specific module you want to configure.
 
 ```
 $ ln -sf ../.eslintrc.js packages/math/.eslintrc.js
-$ ln -sf ../.babelrc.json packages/math/.babelrc.json
 ```
 
-To build all the modules in packages you can run `npm run build --workspaces`
-in the root directory. That will go through each module with a package.json
-file and build any artifacts as defined in the each of the modules own
-package.json file. You can run `npm run build` in each module to build any
-particular one as needed.
+Babel is only used by the tests, with the project's config at the root
+(`babel.config.json`), which each module's jest config points to.
+
+Modules aren't built on their own: each one's `main` is its source, and the
+apps bundle them from it (see `bin/build.js`, which `npm run build` runs from
+the root directory).
 
 Each module also has tests that you can run with `npm run test --workspaces`,
 and `npm run test` in each module if you want to run the tests for a particular

@@ -1210,10 +1210,11 @@ http://localhost:3000/apps/arcade/index.html?game=bubble-squadron.
 To stop the dev server you can use `npm run stop-dev`.
 To see the build processes you can use `npm run monit`. Or if you want an aggregated logs for the build and dev server you can use `npm run logs`.
 
-The dev watchers rebuild `@scenic/runtime`, the editor and the arcade, and
-the editor and the arcade are rebuilt whenever the runtime is. If you change
-any other package under `packages/`, run `npm run build` to rebuild the
-packages too.
+The build (`bin/build.js`, with esbuild) bundles each app with everything
+it imports. The apps import the `@scenic` packages from their source (each
+package's `main` is its `src`), so the dev watcher builds the apps again
+whenever anything they import changes, in any package, with nothing to
+build first.
 
 Each app's page is written by the build: edit its `index.template.html`, and
 `bin/fingerprint.js` writes `index.html` from it, loading the app's bundle
@@ -1226,22 +1227,21 @@ current before using it (see `server/files.go`).
 
 The usual `npm run test` will run all the tests.
 
-`npm run build` builds every package and the editor without minification,
-which keeps things faster and easier to debug in the browser. Use
-`npm run build:prod` for minified bundles.
+`npm run build` builds the bundles without minification, which keeps things
+faster and easier to debug in the browser. Use `npm run build:prod` for
+minified bundles. Bundles are built for browsers with WebGL2, which all run
+modern JavaScript as it is (see `target` in `bin/build.js`).
 
 Scenes are run by `@scenic/runtime` (`packages/runtime`), which apps are built
 on, in three steps: `loadScene` builds a scene from its config and loads its
 models, shaders and scripts; a `SceneRunner` steps it a frame at a time, with
 its clock, pausing, cameras, the player's input and frame rate; and
 `startRenderLoop` calls the runner every frame. It is also where most of the
-logic for FBX animation lives while support for it is implemented. It
-generates two bundles:
-
-1. The runtime (`dist/index.js`).
-2. File formats (`dist/file-formats.js`). This is meant to be loaded in a web
-   worker for parsing OBJ files. This can be easily extended to support
-   parsing other file formats if needed.
+logic for FBX animation lives while support for it is implemented. The apps
+bundle it from its source, and the build makes one bundle of its own, the
+file formats (`dist/file-formats.js`), which the resource loader's web worker
+loads to parse OBJ files. It can be extended to parse other file formats if
+needed.
 
 The editor (`apps/editor`) generates one, `dist/editor.js`, with the runtime
 in it. This is the UI: the scene selector, the scene graph panel, and the

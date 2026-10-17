@@ -77,9 +77,6 @@ typings/
 # FuseBox cache
 .fusebox/
 
-# Cache and build artifacts from pakit
-.pakit
-
 # Apps' pages, written from their index.template.html by bin/fingerprint.js
 # to load their fingerprinted bundles
 apps/*/index.html

@@ -2,16 +2,14 @@
   "name": "@scenic/utils",
   "version": "0.0.0",
   "description": "scenic utility library",
-  "main": "dist/index.js",
+  "main": "src/index.js",
   "dependencies": {
     "@scenic/math": "*"
   },
   "devDependencies": {},
   "scripts": {
     "test": "echo no tests",
-    "lint": "eslint ./src",
-    "build": "pakit src/index.js --out dist/index.js --minify false --eslint false --umd @scenic/utils",
-    "build:prod": "pakit src/index.js --out dist/index.js --minify true --eslint false --umd @scenic/utils"
+    "lint": "eslint ./src"
   },
   "repository": {
     "type": "git",

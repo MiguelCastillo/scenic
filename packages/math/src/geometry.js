@@ -194,5 +194,5 @@ export function getIndexedComponents(coordinates, indexes, componentsPerVertex) 
 }
 
 function _fixZeros(v) {
-  return v === -0 ? 0 : v;
+  return Object.is(v, -0) ? 0 : v;
 }

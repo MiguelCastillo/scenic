@@ -620,7 +620,7 @@ const _32 = 14;
 const _33 = 15;
 
 function _fixZeros(v) {
-  return v === -0 ? 0 : v;
+  return Object.is(v, -0) ? 0 : v;
 }
 
 // Auto generate rotation functions.

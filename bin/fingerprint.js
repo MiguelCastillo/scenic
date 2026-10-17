@@ -7,7 +7,8 @@
 //
 //   bin/fingerprint.js [--watch] apps/arcade/dist/arcade.js [...]
 //
-// For each bundle, such as apps/arcade/dist/arcade.js, built by pakit, it:
+// For each bundle, such as apps/arcade/dist/arcade.js, built by bin/build.js,
+// it:
 // - copies the bundle to its fingerprinted name, next to it,
 // - deletes the bundle's older fingerprinted copies,
 // - writes the app's index.html, from its index.template.html, two folders
@@ -15,7 +16,7 @@
 //   "dist/arcade.js", naming the fingerprinted copy instead.
 //
 // With --watch, it does it again whenever a bundle or a template changes,
-// such as when pakit rebuilds a bundle in its own watch mode, and keeps
+// such as when bin/build.js builds a bundle again in its watch mode, and keeps
 // running.
 
 const crypto = require("crypto");

@@ -1,32 +1,38 @@
 {
-    "name": "@scene/editor",
-    "version": "0.0.0",
-    "description": "Editor for scenic",
-    "dependencies": {
-        "@scenic/math": "*",
-        "@scenic/dom": "*",
-        "@scenic/renderer": "*",
-        "@scenic/runtime": "*",
-        "@scenic/scene": "*",
-        "@scenic/utils": "*"
-    },
-    "devDependencies": {},
-    "scripts": {
-        "test": "jest ./",
-        "lint": "eslint --ext .js --ext .jsx ./",
-        "build:editor": "pakit --config .pakit-editor.js",
-        "build": "npm run build:editor -- --minify false && npm run fingerprint",
-        "build:prod": "npm run build:editor -- --minify && npm run fingerprint",
-        "fingerprint": "node ../../bin/fingerprint.js dist/editor.js"
-    },
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/MiguelCastillo/scenic.git"
-    },
-    "author": "Miguel Castillo <manchagnu@gmail.com>",
-    "license": "MIT",
-    "bugs": {
-        "url": "https://github.com/MiguelCastillo/scenic/issues"
-    },
-    "homepage": "https://github.com/MiguelCastillo/scenic#readme"
+  "name": "@scene/editor",
+  "version": "0.0.0",
+  "description": "Editor for scenic",
+  "dependencies": {
+    "@scenic/math": "*",
+    "@scenic/dom": "*",
+    "@scenic/renderer": "*",
+    "@scenic/runtime": "*",
+    "@scenic/scene": "*",
+    "@scenic/utils": "*"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "jest ./",
+    "lint": "eslint --ext .js --ext .jsx ./"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MiguelCastillo/scenic.git"
+  },
+  "author": "Miguel Castillo <manchagnu@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/MiguelCastillo/scenic/issues"
+  },
+  "homepage": "https://github.com/MiguelCastillo/scenic#readme",
+  "jest": {
+    "transform": {
+      "\\.jsx?$": [
+        "babel-jest",
+        {
+          "rootMode": "upward"
+        }
+      ]
+    }
+  }
 }

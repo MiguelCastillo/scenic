@@ -1,30 +1,26 @@
 {
-    "name": "@scenic/arcade",
-    "version": "0.0.0",
-    "description": "Arcade for scenic: plays the games in games/",
-    "dependencies": {
-        "@scenic/dom": "*",
-        "@scenic/math": "*",
-        "@scenic/renderer": "*",
-        "@scenic/runtime": "*"
-    },
-    "devDependencies": {},
-    "scripts": {
-        "test": "echo no tests",
-        "lint": "eslint ./",
-        "build:bundle": "pakit --config .pakit-arcade.js",
-        "build": "npm run build:bundle -- --minify false && npm run fingerprint",
-        "build:prod": "npm run build:bundle -- --minify && npm run fingerprint",
-        "fingerprint": "node ../../bin/fingerprint.js dist/arcade.js"
-    },
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/MiguelCastillo/scenic.git"
-    },
-    "author": "Miguel Castillo <manchagnu@gmail.com>",
-    "license": "MIT",
-    "bugs": {
-        "url": "https://github.com/MiguelCastillo/scenic/issues"
-    },
-    "homepage": "https://github.com/MiguelCastillo/scenic#readme"
+  "name": "@scenic/arcade",
+  "version": "0.0.0",
+  "description": "Arcade for scenic: plays the games in games/",
+  "dependencies": {
+    "@scenic/dom": "*",
+    "@scenic/math": "*",
+    "@scenic/renderer": "*",
+    "@scenic/runtime": "*"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo no tests",
+    "lint": "eslint ./"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MiguelCastillo/scenic.git"
+  },
+  "author": "Miguel Castillo <manchagnu@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/MiguelCastillo/scenic/issues"
+  },
+  "homepage": "https://github.com/MiguelCastillo/scenic#readme"
 }

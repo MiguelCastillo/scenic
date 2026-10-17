@@ -2,16 +2,14 @@
   "name": "@scenic/animation",
   "version": "0.0.0",
   "description": "scenic animation library",
-  "main": "dist/index.js",
+  "main": "src/index.js",
   "dependencies": {
     "@scenic/math": "*"
   },
   "devDependencies": {},
   "scripts": {
     "test": "jest",
-    "lint": "eslint ./src",
-    "build": "pakit src/index.js --out dist/index.js --minify false --eslint false --umd @scenic/animation",
-    "build:prod": "pakit src/index.js --out dist/index.js --minify true --eslint false --umd @scenic/animation"
+    "lint": "eslint ./src"
   },
   "repository": {
     "type": "git",
@@ -22,5 +20,15 @@
   "bugs": {
     "url": "https://github.com/MiguelCastillo/scenic/issues"
   },
-  "homepage": "https://github.com/MiguelCastillo/scenic#readme"
+  "homepage": "https://github.com/MiguelCastillo/scenic#readme",
+  "jest": {
+    "transform": {
+      "\\.jsx?$": [
+        "babel-jest",
+        {
+          "rootMode": "upward"
+        }
+      ]
+    }
+  }
 }

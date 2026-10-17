@@ -110,7 +110,7 @@ export function getTBNVectorsFromTriangles(vertices, uvs, renderIndexes, normalS
 }
 
 function _fixZeros(a) {
-  return a === -0 ? 0 : a;
+  return Object.is(a, -0) ? 0 : a;
 }
 
 export function smoothTBN(vertices, tangents, bitangents, normals) {
