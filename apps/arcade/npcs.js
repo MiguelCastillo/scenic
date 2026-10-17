@@ -12,10 +12,11 @@ import {replaceShip} from "./ships.js";
 // playing on an input channel of its own, such as "npc 1", which its
 // "input" names. Beside it, a node of its own runs the pilot, which plays
 // it by pressing keys on that channel, the way a player's keyboard would. A
-// pilot's settings say which node it flies, as ship, and how well, as
-// skill, from 0 to 1, which the NPCs spread from fair to very good. In a
-// game with ships to choose from, each NPC flies one at random, other than
-// the player's, and no two the same while there are enough.
+// pilot's settings say which node it flies, as ship, what it is called, as
+// name, its ship's name or "NPC 1", and how well it flies, as skill, from 0
+// to 1, which the NPCs spread from fair to very good. In a game with ships
+// to choose from, each NPC flies one at random, other than the player's,
+// and no two the same while there are enough.
 //
 // NPCs line up in pairs beside and behind the player, across and back from
 // where the player faces.
@@ -76,7 +77,11 @@ export async function addNPCs(scene, {playerNodeID, npcs, ships = null, playerSh
           type: "transform",
           script: {
             src: pilot,
-            settings: {ship: nodeID, skill: count > 1 ? 0.5 + (0.45 * i) / (count - 1) : 0.7},
+            settings: {
+              ship: nodeID,
+              name: ship?.label ?? `NPC ${i + 1}`,
+              skill: count > 1 ? 0.5 + (0.45 * i) / (count - 1) : 0.7,
+            },
           },
         },
         {parentID, idPrefix: `${name} `}
