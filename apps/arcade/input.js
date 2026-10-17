@@ -71,8 +71,10 @@ export function registerSceneInputRouting(capture, getRunners) {
 // resumes it while playing. onChange is called with {locked, paused}
 // whenever either changes, so the page can tell the player what to do.
 //
-// Its API: reset(), to call when the scenes change, such as another track
-// replacing the game, which starts paused until the player clicks.
+// Its API: play(), which locks the pointer, and so resumes the game, such as
+// when the player picks Resume in a menu, and reset(), to call when the
+// scenes change, such as another track replacing the game, which starts
+// paused until the player clicks.
 export class PlayWhileLocked {
   constructor(capture, getRunners, onChange) {
     this._capture = capture;
@@ -118,6 +120,10 @@ export class PlayWhileLocked {
     });
   }
 
+  play() {
+    this._capture.lock();
+  }
+
   reset() {
     this._pausedByUnlock = !!this._getGame()?.isPaused();
     this._notify();
@@ -135,8 +141,9 @@ export class PlayWhileLocked {
 // from a pause button. onChange is called with {paused} whenever that
 // changes, so the page can tell the player what to do.
 //
-// Its API: pause(), and reset(), to call when the scenes change, such as
-// another track replacing the game.
+// Its API: play(), such as when the player picks Resume in a menu, pause(),
+// and reset(), to call when the scenes change, such as another track
+// replacing the game.
 export class PlayOnTap {
   constructor(capture, getRunners, onChange, {tapMs = 250, tapPixels = 10} = {}) {
     this._getGame = () => getRunners().findLast((runner) => runner.cameras);
@@ -176,6 +183,14 @@ export class PlayOnTap {
         }
       }
     });
+  }
+
+  play() {
+    const game = this._getGame();
+    if (game?.isPaused()) {
+      game.togglePause();
+      this._notify();
+    }
   }
 
   pause() {

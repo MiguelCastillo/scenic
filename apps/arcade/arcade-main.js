@@ -22,27 +22,33 @@ import {Ships, replaceShip} from "./ships.js";
 //
 // A game with a menu (game.json's "menu") opens with its menu scene stacked
 // over the game, on a scene stack (see SceneStack in @scenic/runtime): the
-// game shows paused behind it, and the menu has the keyboard. The menu scene
+// game shows paused behind it, and the menu has the keyboard. A race opens
+// waiting for the player to join it, by clicking, which starts its
+// countdown, and once it is under way the menu opens whenever it stops
+// playing, such as when the player lets go of the pointer with Escape,
+// presses M, or taps the pause button on a touch screen. The menu scene
 // publishes the menu on its "menu" channel (see menu.js in
 // resources/scripts), which the arcade shows as a list. Picking a choice
 // goes to the scene it names, such as another track: it is loaded in the
 // game's place, unless it is the one playing, and the menu closes. A choice
-// can instead resume, which closes the menu, or leave, which goes back to
-// the game's welcome page, such as Bubble Squadron's pause menu. M opens the
-// menu again, as does the pause button on a touch screen, and Escape closes
-// it.
+// can instead resume, which closes the menu and plays the game, restart,
+// which loads the game's scene again and plays it, or leave, which goes
+// back to choosing a ship or a track, such as Bubble Squadron's pause menu.
+// A choice with solo shows only while the player plays alone, not in a
+// room.
 
 // clock is seconds as minutes, seconds and tenths, such as 1:05.3.
 const clock = (seconds) =>
   `${Math.floor(seconds / 60)}:${(seconds % 60).toFixed(1).padStart(4, "0")}`;
 
 // raceText is a race's message (see games/bubble-squadron/scripts/race.js)
-// as the HUD shows it: the lap, time and next gate, and the best time.
+// as the HUD shows it: the lap, time and next gate, and the best time, once
+// the race has started.
 function raceText({lap, laps, time, gate, gates, best, finished}) {
   const lines = finished
-    ? [`Finished in ${clock(time)}`, "Fly through the start gate to race again"]
+    ? [`Finished in ${clock(time)}`]
     : lap === 0
-    ? ["Fly through the start gate to race"]
+    ? []
     : [
         `Lap ${lap}/${laps}   ${clock(time)}`,
         gate === 0
@@ -55,6 +61,13 @@ function raceText({lap, laps, time, gate, gates, best, finished}) {
     lines.push(`Best ${clock(best)}`);
   }
   return lines.join("\n");
+}
+
+// countdownText is what a race's message shows in big in the middle of the
+// screen: the seconds left before the start, then GO! for the first second
+// of the race.
+function countdownText({countdown, lap, time}) {
+  return lap === 0 ? String(Math.ceil(countdown)) : lap === 1 && time < 1 ? "GO!" : "";
 }
 
 // What the HUD shows for each channel of the scene's sceneManager.ui (see
@@ -76,6 +89,7 @@ domReady.onReady(async () => {
   const fpsEl = document.querySelector("#fps");
   const menuEl = document.querySelector("#menu");
   const messageEl = document.querySelector("#message");
+  const countdownEl = document.querySelector("#countdown");
   const pauseEl = document.querySelector("#pause");
   const roomEl = document.querySelector("#room");
   const roomStatusEl = document.querySelector("#room-status");
@@ -242,6 +256,22 @@ domReady.onReady(async () => {
     menuEl.replaceChildren();
   };
 
+  // setMenuChoices sets the choices of the menus in scene, the nodes with
+  // {"hud": "menu"}, to what choose returns for their own.
+  const setMenuChoices = (scene, choose) => {
+    const {stateManager} = scene.sceneManager;
+    Object.values(stateManager.getAllItemsByName())
+      .filter(({hud}) => hud === "menu")
+      .forEach(({id, script}) =>
+        stateManager.updateItemByID(id, {
+          script: {
+            ...script,
+            settings: {...script.settings, choices: choose(script.settings.choices ?? [])},
+          },
+        })
+      );
+  };
+
   // showWelcome shows the welcome scene at url, such as the arcade's, to
   // choose a game, a game's, to choose a track, or its hangar, to choose a
   // ship, until the player picks a choice in its menu, and resolves with the
@@ -258,14 +288,7 @@ domReady.onReady(async () => {
   const showWelcome = async (url, {choices, onSelect, allowBack = false} = {}) => {
     const scene = await loadScene(gl, await fetchJSON(url), {sceneURL: url.href});
     if (choices) {
-      const {stateManager} = scene.sceneManager;
-      Object.values(stateManager.getAllItemsByName())
-        .filter(({hud}) => hud === "menu")
-        .forEach(({id, script}) =>
-          stateManager.updateItemByID(id, {
-            script: {...script, settings: {...script.settings, choices}},
-          })
-        );
+      setMenuChoices(scene, () => choices);
     }
     stack.push(new SceneRunner(gl, scene, {paused: false}));
     document.body.classList.add("menu-open");
@@ -413,12 +436,23 @@ domReady.onReady(async () => {
       hudEl.textContent = "";
       stopReceivingHud?.();
       stopReceivingHud = receiveEveryFrame(() => {
-        const text = Object.entries(loaded.scene.sceneManager.ui.messages())
+        const messages = loaded.scene.sceneManager.ui.messages();
+        const text = Object.entries(messages)
           .map(([channel, message]) => hudTexts[channel]?.(message))
           .filter(Boolean)
           .join("\n\n");
         if (hudEl.textContent !== text) {
           hudEl.textContent = text;
+        }
+
+        // A race's countdown shows while it runs, each second popping in.
+        const countdown =
+          messages.race && !loaded.runner.isPaused() ? countdownText(messages.race) : "";
+        if (countdownEl.textContent !== countdown) {
+          countdownEl.textContent = countdown;
+          countdownEl.classList.remove("tick");
+          void countdownEl.offsetWidth;
+          countdownEl.classList.add("tick");
         }
       });
       loaded.runner.registerRefreshRateUpdater((fps) => {
@@ -502,32 +536,75 @@ domReady.onReady(async () => {
     let menuLoading = null;
     let going = false;
 
+    // underWay is whether the game is under way, rather than waiting to
+    // start, such as a race before its countdown ends. A game without a race
+    // is under way as soon as it plays.
+    const underWay = () => (playing.scene.sceneManager.ui.latest("race")?.lap ?? 1) > 0;
+
     // The game plays while the player has it: on a touch screen, from a tap
     // until the pause button, and otherwise while the pointer is locked to
-    // it. The page tells the player what to do.
+    // it. When it stops playing once it is under way, its menu opens, if it
+    // has one, and otherwise the page tells the player what to do, such as
+    // to click to join a race. It tells them again when the game gets under
+    // way, which its scene says only once it runs.
     const touchScreen = matchMedia("(pointer: coarse)").matches;
+    // Whether the game plays, and whether it was paused with P, as the play
+    // policy last said.
+    let playingNow = false;
+    let pausedNow = false;
+    const tellPlayer = () => {
+      const menuShows = !!(menu || menuLoading);
+      const join = underWay() ? "play" : "join race";
+      messageEl.textContent = menuShows
+        ? ""
+        : !playingNow
+        ? `${manifest.name}\n${touchScreen ? "Tap" : "Click"} to ${join}`
+        : pausedNow
+        ? "Paused\nPress P to play"
+        : "";
+      pauseEl.hidden = !touchScreen || menuShows || !playingNow;
+    };
+    const onPlayChange = (playsNow, pausedByP = false) => {
+      if (playingNow && !playsNow && underWay()) {
+        openMenu();
+      }
+      playingNow = playsNow;
+      pausedNow = pausedByP;
+      tellPlayer();
+    };
     const playPolicy = touchScreen
       ? new PlayOnTap(
           capture,
           () => stack.runners,
-          ({paused}) => {
-            messageEl.textContent = menu ? "" : paused ? `${manifest.name}\nTap to play` : "";
-            pauseEl.hidden = !!menu || paused;
-          }
+          ({paused}) => onPlayChange(!paused)
         )
       : new PlayWhileLocked(
           capture,
           () => stack.runners,
-          ({locked, paused}) => {
-            messageEl.textContent = menu
-              ? ""
-              : !locked
-              ? `${manifest.name}\nClick to play`
-              : paused
-              ? "Paused\nPress P to play"
-              : "";
-          }
+          ({locked, paused}) => onPlayChange(locked, paused)
         );
+    let wasUnderWay = null;
+    receiveEveryFrame(() => {
+      if (underWay() !== wasUnderWay) {
+        wasUnderWay = underWay();
+        tellPlayer();
+      }
+    });
+
+    // replaceGame loads file, one of the game's scenes, in the game's place,
+    // such as another track, or the same one again to restart it.
+    const replaceGame = async (file) => {
+      hideMenu();
+      messageEl.textContent = "Loading…";
+      const next = play(await loadGame(file), file);
+      stack.replace(0, next.runner);
+      playing.scene.dispose();
+      playing = next;
+      if (file !== gameFile) {
+        gameFile = file;
+        pushToURL("scene", file);
+      }
+    };
 
     const closeMenu = () => {
       menu.stopReceiving();
@@ -542,25 +619,41 @@ domReady.onReady(async () => {
 
     // openMenu stacks the menu over the game, and lets go of the pointer,
     // which pauses the game. The menu shows what its scene publishes on its
-    // "menu" channel, and goes where a pick says.
+    // "menu" channel, and goes where a pick says. Its solo choices, such as
+    // restarting the race, show only while the player plays alone.
     const openMenu = async () => {
       if (!manifest.menu || menu || menuLoading) {
         return;
       }
       capture.unlock();
       document.body.classList.add("menu-open");
+      messageEl.textContent = "";
       menuLoading = load(manifest.menu, {paused: false});
       menu = await menuLoading;
       menuLoading = null;
+      if (roomName) {
+        setMenuChoices(menu.scene, (choices) => choices.filter(({solo}) => !solo));
+      }
       menu.stopReceiving = receiveEveryFrame(async () => {
         const message = menu.scene.sceneManager.ui.latest("menu");
         if (!message || going) {
           return;
         }
 
-        // Leaving the menu, or resuming the race, closes it.
+        // Leaving the menu, or resuming the race, closes it and plays the
+        // game.
         if (message.back || message.picked?.resume) {
           closeMenu();
+          playPolicy.play();
+          return;
+        }
+
+        // Restarting loads the game's scene again, and plays it.
+        if (message.picked?.restart) {
+          going = true;
+          await replaceGame(gameFile);
+          closeMenu();
+          playPolicy.play();
           return;
         }
 
@@ -581,14 +674,7 @@ domReady.onReady(async () => {
           going = true;
           const file = message.picked.goTo;
           if (file !== gameFile) {
-            hideMenu();
-            messageEl.textContent = "Loading…";
-            const next = play(await loadGame(file), file);
-            stack.replace(0, next.runner);
-            playing.scene.dispose();
-            playing = next;
-            gameFile = file;
-            pushToURL("scene", file);
+            await replaceGame(file);
           }
           closeMenu();
           return;
@@ -608,14 +694,11 @@ domReady.onReady(async () => {
     });
 
     // On a touch screen, which has no keys, the pause button pauses the
-    // game and opens the menu, as a pause menu.
-    domEvents.Subscription.create(pauseEl).on("click", () => {
-      playPolicy.pause();
-      openMenu();
-    });
+    // game, which opens the menu.
+    domEvents.Subscription.create(pauseEl).on("click", () => playPolicy.pause());
 
     // Without a welcome scene to choose the track on, or a scene in the URL,
-    // the game opens with its menu over it.
+    // the game opens with its menu over it, to choose one.
     if (manifest.menu && !manifest.welcome && !params.get("scene")) {
       await openMenu();
     } else {
