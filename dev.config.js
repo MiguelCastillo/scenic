@@ -9,8 +9,9 @@ module.exports = {
       args: "run . -addr :3000 -static ..",
       cwd: "server",
       interpreter: "none",
-      watch: ["server"],
-      ignore_watch: ["server/*_test.go"],
+      // Watched paths are relative to cwd.
+      watch: ["."],
+      ignore_watch: ["*_test.go"],
     },
     {
       name: "build-runtime",
