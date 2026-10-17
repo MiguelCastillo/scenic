@@ -15,5 +15,6 @@
   "ships": "ships.json",
   "player": "starfighter",
   "menu": "menu.json",
-  "multiplayer": {"remote": "scripts/remote-ship.js"}
+  "multiplayer": {"remote": "scripts/remote-ship.js"},
+  "npcs": {"count": 3, "pilot": "scripts/pilot.js", "scenes": ["race.json"]}
 }

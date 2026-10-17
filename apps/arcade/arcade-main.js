@@ -12,6 +12,7 @@ import {PlayOnTap, PlayWhileLocked, registerSceneInputRouting} from "./input.js"
 import {RoomConnection, connecting, connected, disconnected} from "./room.js";
 import {RemotePlayers} from "./remote-players.js";
 import {Ships, replaceShip} from "./ships.js";
+import {addNPCs} from "./npcs.js";
 
 // The arcade plays one of the games in games/, full screen: the one the page's
 // URL names, such as index.html?game=bubble-squadron, or, without one, the one
@@ -401,11 +402,20 @@ domReady.onReady(async () => {
 
     // loadGame loads one of the game's scenes to play, by its file, with the
     // player's node, the one the manifest names in "player", flying the ship
-    // they chose, if they chose one.
+    // they chose, if they chose one, and, when they play alone, the NPCs the
+    // manifest has for the scene, if any (see addNPCs).
     const loadGame = async (file) => {
       const loaded = await load(file);
       if (shipID) {
         await replaceShip(loaded.scene, manifest.player, await ships.shipConfig(shipID));
+      }
+      if (!roomName && manifest.npcs?.scenes?.includes(file)) {
+        await addNPCs(loaded.scene, {
+          playerNodeID: manifest.player,
+          npcs: manifest.npcs,
+          ships,
+          playerShip: shipID,
+        });
       }
       return loaded;
     };
