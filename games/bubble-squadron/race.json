@@ -1286,7 +1286,7 @@
             "src": "scripts/race.js",
             "settings": {
               "racer": "starfighter",
-              "laps": 3,
+              "laps": 2,
               "gateRadius": 300,
               "opacity": 0.6,
               "passedOpacity": 0.2
