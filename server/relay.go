@@ -34,15 +34,28 @@ import (
 //   - {"type": "left", "playerID": "p2"}: someone left the room.
 //   - {"type": "message", "playerID": "p2", "message": {...}}: a message
 //     another player sent.
+//   - {"type": "full"}: the room already has MaxPlayers players, so the
+//     player can't join it, and the connection closes.
 //
-// A room exists while it has players in it. A player that can't keep up with
-// the messages to it misses some, rather than holding up the room.
+// A room exists while it has players in it, and for EmptyRoomTime after the
+// last one leaves, so that a room made for a race (see ServeRooms) is still
+// there for its players to come back to, such as when they reload the page.
+// A player that can't keep up with the messages to it misses some, rather
+// than holding up the room.
 type Relay struct {
 	// OriginPatterns are the hosts of the pages allowed to connect, such as
 	// "localhost:*", or "*" for any host (see websocket.AcceptOptions).
 	// The relay holds nothing private, so letting pages anywhere connect,
 	// such as on a tablet on the same network, only lets them join rooms.
 	OriginPatterns []string
+
+	// MaxPlayers is the most players a room can have at once, or 0 for no
+	// limit.
+	MaxPlayers int
+
+	// EmptyRoomTime is how long a room is kept after the last player leaves
+	// it, or before the first one joins. 2 minutes when 0.
+	EmptyRoomTime time.Duration
 
 	mu          sync.Mutex
 	roomsByName map[string]*room
@@ -51,6 +64,19 @@ type Relay struct {
 
 type room struct {
 	playersByID map[string]*player
+
+	// Game and Scene are what the room's players play, such as
+	// "bubble-squadron" and "race.json", for a room made for a race (see
+	// ServeRooms), and empty for one made by joining it.
+	game, scene string
+
+	// public is whether anyone can be put in the room by auto join (see
+	// ServeRooms), rather than only those who know its code.
+	public bool
+
+	// emptySince is when the room was last left empty, or made without
+	// anyone in it, to forget it once it has been empty for EmptyRoomTime.
+	emptySince time.Time
 }
 
 type player struct {
@@ -106,6 +132,8 @@ const (
 	maxMessageSize = 64 * 1024
 	// The longest room name, in bytes.
 	maxRoomNameSize = 64
+	// How long a room is kept empty when Relay.EmptyRoomTime isn't set.
+	defaultEmptyRoomTime = 2 * time.Minute
 	// How long writing a message to a player can take before the player is
 	// dropped.
 	writeTimeout = 5 * time.Second
@@ -127,6 +155,14 @@ func (relay *Relay) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	conn.SetReadLimit(maxMessageSize)
 
 	p := relay.join(name)
+	if p == nil {
+		ctx, cancel := context.WithTimeout(r.Context(), writeTimeout)
+		defer cancel()
+		data, _ := json.Marshal(messageToPlayer{Type: "full"})
+		conn.Write(ctx, websocket.MessageText, data)
+		conn.Close(websocket.StatusPolicyViolation, "the room is full")
+		return
+	}
 	defer relay.leave(name, p)
 
 	ctx, cancel := context.WithCancel(r.Context())
@@ -166,20 +202,20 @@ func (relay *Relay) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 // join adds a new player to the room, making the room if it is new, and
-// returns the player. The player is welcomed with the ids of the others
-// already there before any other message, and the others are told about the
-// new player.
+// returns the player, or nil when the room is full. The player is welcomed
+// with the ids of the others already there before any other message, and
+// the others are told about the new player.
 func (relay *Relay) join(name string) *player {
 	relay.mu.Lock()
 	defer relay.mu.Unlock()
 
-	if relay.roomsByName == nil {
-		relay.roomsByName = map[string]*room{}
-	}
+	relay.forgetEmptyRooms()
 	r := relay.roomsByName[name]
 	if r == nil {
-		r = &room{playersByID: map[string]*player{}}
-		relay.roomsByName[name] = r
+		r = relay.addRoom(name)
+	}
+	if relay.isFull(r) {
+		return nil
 	}
 
 	relay.lastID++
@@ -194,8 +230,8 @@ func (relay *Relay) join(name string) *player {
 	return p
 }
 
-// leave takes the player out of the room, tells the others, and forgets the
-// room once it is empty.
+// leave takes the player out of the room and tells the others. A room left
+// empty is forgotten once it has been empty for EmptyRoomTime.
 func (relay *Relay) leave(name string, p *player) {
 	relay.mu.Lock()
 	defer relay.mu.Unlock()
@@ -203,7 +239,7 @@ func (relay *Relay) leave(name string, p *player) {
 	r := relay.roomsByName[name]
 	delete(r.playersByID, p.id)
 	if len(r.playersByID) == 0 {
-		delete(relay.roomsByName, name)
+		r.emptySince = time.Now()
 		return
 	}
 	for _, other := range r.playersByID {
@@ -233,5 +269,29 @@ func (p *player) send(m messageToPlayer) {
 	select {
 	case p.out <- data:
 	default:
+	}
+}
+
+// addRoom makes an empty room called name. The relay's lock must be held.
+func (relay *Relay) addRoom(name string) *room {
+	if relay.roomsByName == nil {
+		relay.roomsByName = map[string]*room{}
+	}
+	r := &room{playersByID: map[string]*player{}, emptySince: time.Now()}
+	relay.roomsByName[name] = r
+	return r
+}
+
+// forgetEmptyRooms forgets the rooms that have been empty for
+// EmptyRoomTime. The relay's lock must be held.
+func (relay *Relay) forgetEmptyRooms() {
+	emptyRoomTime := relay.EmptyRoomTime
+	if emptyRoomTime == 0 {
+		emptyRoomTime = defaultEmptyRoomTime
+	}
+	for name, r := range relay.roomsByName {
+		if len(r.playersByID) == 0 && time.Since(r.emptySince) >= emptyRoomTime {
+			delete(relay.roomsByName, name)
+		}
 	}
 }
