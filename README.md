@@ -610,8 +610,9 @@ that does not reflect light, like the axis gizmo's, has none.
 
 A material can also be see-through: `material.opacity` is how opaque it is,
 from 0 to 1, and 1, solid, by default. A mesh with an opacity below 1 is
-drawn after everything solid in the frame, farthest first, blended over what
-is behind it, and it doesn't hide anything drawn after it. Bubble Squadron's
+drawn after everything solid in its viewport, farthest first, blended over
+what is behind it, and it doesn't hide anything drawn after it (see `render`
+in `viewport.js`). Bubble Squadron's
 seedpod has translucent petals, at 0.55. Opacity can be adjusted live on a
 mesh's Material tab.
 
@@ -1061,41 +1062,74 @@ depends on where the camera is. So `SceneRunner.stepFrame`:
 4. Prepares the view: `SceneManager.prepareForView` calls `prepareForView`
    on every node, parents before children, such as the terrain building the
    tiles around the camera and the forest planting the trees around it, from
-   where the camera is now, however far it moved.
+   where the camera is now, however far it moved. Each mesh in view adds
+   itself to its viewport's draw list here (see [The draw list](#the-draw-list)).
 
 A camera following where its node was last drawn instead would trail it by
 a frame's movement, more or less as frames are longer or shorter, and shake
 it on the screen.
 
 `SceneRunner.renderFrame` then calls `SceneManager.render`, which calls
-`render` on every node, children before parents, so by the time a mesh renders
-its children have already filled its draw list. Drawing only reads the
-scene's state:
+`render` on every node, children before parents. Children such as a
+`Material` or `Texture` set up their mesh's shader program as they render,
+and each viewport renders after everything under it, drawing its draw list.
+Drawing only reads the scene's state:
 
 ```mermaid
 sequenceDiagram
   participant SM as SceneManager
+  participant VP as Viewport
   participant Mesh as StaticMesh donut
-  participant Geo as Geometry
-  participant State as StateManager
+  participant Mat as Material
   participant SP as ShaderProgram
 
-  Note over SM,SP: preRender, parents first
-  SM->>Mesh: preRender()
-  Mesh->>Mesh: clear draw list, update world matrix
-  SM->>Geo: preRender()
+  Note over SM,SP: prepareForView, parents first
+  SM->>VP: prepareForView()
+  VP->>VP: empty meshesToRender
+  SM->>Mesh: prepareForView()
+  Mesh->>Mesh: choose copiesToRender
+  Mesh->>VP: add itself to meshesToRender
 
   Note over SM,SP: render, children first
-  SM->>Geo: render()
-  Geo->>Mesh: addVertexBuffer(vertexBuffer)
-  SM->>Mesh: render()
-  Mesh->>State: read material and lights
-  Mesh->>SP: set lighting, material and matrix uniforms
-  Mesh->>SP: render(vertexBuffer) for each buffer in the draw list
+  SM->>Mat: render()
+  Mat->>SP: set material uniforms
+  SM->>VP: render()
+  VP->>Mesh: draw(), solid meshes by program, then translucent
+  Mesh->>SP: set lighting and matrix uniforms, draw each copy
 ```
 
-Other children configure their parent the same way. A `Texture` adds its
-texture uniforms to the parent's shader program when it renders.
+#### The draw list
+
+Before anything is drawn, `prepareForView` has already decided everything a
+viewport will draw this frame: each mesh in view adds itself to the
+viewport's `meshesToRender`, and the viewport draws that list once
+everything under it has rendered (`render` in `viewport.js`). Meshes don't
+draw themselves as the scene is walked. That buys:
+
+- **An order chosen for WebGL, not by how the scene is laid out.** Walking
+  the tree would draw meshes in the order they were added: a tree, a ship,
+  a tree again would switch programs twice, and every switch sends the
+  program its lights, view and fog again. The viewport draws solid meshes
+  grouped by WebGL program instead, so each program is made the one in use
+  once a frame, and the meshes after the first only send what is their
+  own, such as their material and world matrix. Values a program already
+  has aren't sent again (see `use` in `program.js`), and with meshes
+  grouped, most of them already are.
+- **Translucency in one place.** Translucent meshes have to be drawn after
+  everything solid, farthest first. With every mesh in view in one list,
+  that is a split and a sort, in the viewport, rather than each
+  translucent mesh setting itself aside mid-walk to be drawn at the end.
+- **Deciding apart from drawing.** `prepareForView` chooses what to draw,
+  from where the camera is now, and `render` only draws what was chosen.
+  The list is exactly what a frame draws, so it can be counted, shown, or
+  checked in a test without a WebGL context (see `viewport.test.js`).
+- **Room to grow.** A better order is a change to one sort: such as by
+  material within a program, or solid meshes nearest first so that what is
+  hidden fails the depth test early. A pass that draws the same meshes
+  again, such as shadows, can reuse the list rather than walk the scene.
+
+Nodes that aren't meshes, such as the sky, the grid and lights, still draw
+as the scene is walked, before their viewport draws its list.
 
 ### Disposing a scene
 

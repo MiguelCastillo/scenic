@@ -240,6 +240,11 @@ export class Terrain extends Mesh {
     this.tilesToRender = [...this.tiles.values()].filter(({boundingVolume}) =>
       viewport.canSeeBoundingVolume(boundingVolume, this.worldMatrix)
     );
+    // With tiles in view, it is drawn by its viewport, like any mesh (see
+    // render in Viewport).
+    if (this.tilesToRender.length && this.shaderProgram) {
+      viewport.meshesToRender.push(this);
+    }
 
     // What the ground cost, for the app's UI.
     const {hud} = sceneManager.getNodeStateByID(this.id);
@@ -360,15 +365,12 @@ export class Terrain extends Mesh {
     };
   }
 
-  // render draws the tiles in tilesToRender, all at the terrain's world
+  // draw draws the tiles in tilesToRender, all at the terrain's world
   // matrix, since each tile's positions are already where it goes in the
   // terrain. It draws with the terrain's textures, loading them the first
-  // time they are needed.
-  render(context) {
+  // time they are needed. Its viewport calls it, like a mesh's draw.
+  draw(context) {
     const {settings, shaderProgram, tilesToRender} = this;
-    if (!settings || !shaderProgram || !tilesToRender.length) {
-      return;
-    }
 
     const samplers = [
       ["grassTexture", settings.grassTexture, [204, 204, 204, 255]],
