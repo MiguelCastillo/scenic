@@ -9,8 +9,8 @@
 //
 // It can also size what is under it to fit a space, such as a showcase that
 // shows ships of very different sizes, one at a time: with fit, it scales
-// its node so that the models under it reach fit pixels from it at most,
-// whatever their size.
+// its node so that the models under it reach a part of the screen from it
+// at most, whatever their size, and however big the screen is.
 //
 // Its settings come from "script.settings" in the node's config:
 // - x: how far across the screen, from 0 at the left to 1 at the right.
@@ -18,8 +18,10 @@
 // - y: how far up the screen, from 0 at the bottom to 1 at the top. 0.5 by
 //   default.
 // - scale: how big its node is, as its transform's scale. 1 by default.
-// - fit: how far, in pixels, the models under it reach from it at most, in
-//   any direction, which sets its scale instead. Optional.
+// - fit: how far the models under it reach from it at most, in any
+//   direction, as a fraction of the screen's smaller side, its height on a
+//   desktop and its width on a phone, such as 0.28. It sets its scale
+//   instead. Optional.
 // - narrow: where it goes, and how big it is, on a narrow screen instead,
 //   such as a phone, where things stack rather than sit side by side, and
 //   there is less room: {width, x, y, scale, fit}, used on screens narrower
@@ -90,7 +92,10 @@ module.exports = function createAnchorScript(node) {
           measured = now;
         }
       }
-      const size = fit && measured?.distance > 0 ? fit / measured.distance : scale;
+      const size =
+        fit && measured?.distance > 0
+          ? (fit * Math.min(screen.width, screen.height)) / measured.distance
+          : scale;
 
       const [, , z] = state.transform.position;
       sceneManager.updateNodeStateByID(node.id, {
