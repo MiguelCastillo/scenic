@@ -14,7 +14,7 @@ const behaviorsByCameraType = {
 
 // CameraSystem runs a viewport's cameras: which one the viewport looks
 // through, and how they respond to the player's input. The app forwards input
-// to it and calls update every frame.
+// to it and calls moveActiveCamera every frame.
 //
 // The viewport looks through its active camera, named by `activeCamera` in
 // the viewport's state (see Viewport in @scenic/scene). A camera's type says
@@ -38,7 +38,7 @@ const behaviorsByCameraType = {
 //   turn(rightDegrees, upDegrees),
 //   lookAround(rightDegrees, upDegrees), move(forward, right, up),
 //   setMovement({forward, right, up}).
-// - Every frame: update(seconds).
+// - Every frame: moveActiveCamera(seconds).
 // - Resetting: reset().
 export class CameraSystem {
   constructor(sceneManager, viewportID) {
@@ -125,10 +125,13 @@ export class CameraSystem {
     behaviorsByCameraType[camera.type]?.setMovement(this._sceneManager, camera, movement);
   }
 
-  // update moves the active camera for the seconds since the last frame.
-  update(seconds) {
+  // moveActiveCamera moves the active camera for the seconds since the last
+  // frame, the way its type moves: a chase camera to behind what it follows,
+  // a cockpit camera to its target's cockpit, and a free-fly camera on the
+  // way it is flying.
+  moveActiveCamera(seconds) {
     const camera = this.activeCamera;
-    behaviorsByCameraType[camera.type]?.update(this._sceneManager, camera, seconds);
+    behaviorsByCameraType[camera.type]?.moveForFrame(this._sceneManager, camera, seconds);
   }
 
   // reset puts what the active camera changes as it is used, such as a

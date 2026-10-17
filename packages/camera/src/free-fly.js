@@ -84,9 +84,9 @@ export const freeFly = {
     sceneManager.updateNodeStateByID(camera.id, {freeFly: {...freeFly, movement}});
   },
 
-  // update moves the camera by its movement, for the given number of seconds
-  // since the last frame.
-  update(sceneManager, camera, seconds) {
+  // moveForFrame moves the camera by its movement, for the given number of
+  // seconds since the last frame.
+  moveForFrame(sceneManager, camera, seconds) {
     const {freeFly} = sceneManager.getNodeStateByID(camera.id);
     const {forward = 0, right = 0, up = 0} = freeFly.movement || {};
     if (forward || right || up) {

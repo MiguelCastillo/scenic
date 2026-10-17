@@ -8,43 +8,43 @@ import {createFrameRateCounter} from "./fps-counter.js";
 // player's input, draws it, and tells the app its frame rate. It doesn't run
 // on its own, and nothing in it touches the DOM: the app owns the canvas
 // size and input events, and drives the scene through it, with a
-// render loop calling its updateScene and renderFrame every frame (see
+// render loop calling its stepFrame and renderFrame every frame (see
 // startRenderLoop).
 //
 // The player's input goes to the cameras of the viewport the scene marks with
 // "input": true in its config, such as its "world" viewport. A scene without
 // one, such as a menu, has no cameras for the player to move.
 //
-// Using it: every frame, call updateScene once with the frame's time, then
+// Using it: every frame, call stepFrame once with the frame's time, then
 // renderFrame to draw it, after clearing the canvas. startRenderLoop does
 // this for you:
 //
 //   const runner = new SceneRunner(gl, await loadScene(gl, config));
 //   requestAnimationFrame(function frame(ms) {
 //     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-//     runner.updateScene(ms);
+//     runner.stepFrame(ms);
 //     runner.renderFrame();
 //     requestAnimationFrame(frame);
 //   });
 //
 // The two halves do different jobs:
-// - updateScene moves the scene a frame forward: it works out the frame's
+// - stepFrame moves the scene a frame forward: it works out the frame's
 //   seconds since the last one, moves the scene's clock and the cameras,
 //   runs the scripts with those seconds and the input given since the last
 //   frame, and tells the app the frame rate. Call it once a frame:
 //   calling it again moves the scene again.
-// - renderFrame draws the scene as updateScene left it, and changes nothing,
+// - renderFrame draws the scene as stepFrame left it, and changes nothing,
 //   so it can be called as often as needed, such as to draw it again after
 //   the canvas is resized, or to draw the same frame into more than one
 //   place.
 // Input, pausing and registering can happen at any time; the next
-// updateScene picks them up.
+// stepFrame picks them up.
 //
 // Its API:
-// - Each frame: updateScene(ms), then renderFrame(), as often as needed.
+// - Each frame: stepFrame(ms), then renderFrame(), as often as needed.
 // - Input: the player's keys, mouse and wheel, as events the app publishes
 //   on sceneManager.input (see SceneManager in @scenic/scene), which
-//   updateScene adds up for the cameras and the scripts. cameras (see
+//   stepFrame adds up for the cameras and the scripts. cameras (see
 //   CameraSystem in @scenic/camera), or null without an input viewport.
 // - Pausing: togglePause(), which returns whether it is now paused, and
 //   isPaused().
@@ -94,10 +94,10 @@ export class SceneRunner {
     this._refreshRateUpdater = () => {};
   }
 
-  // updateScene moves the scene a frame forward, to ms, the frame's time:
+  // stepFrame moves the scene a frame forward, to ms, the frame's time:
   // its clock, its cameras and, through its scripts, everything else. This is
   // the logic for the game itself.
-  updateScene(ms) {
+  stepFrame(ms) {
     const {sceneManager} = this;
     const paused = this._paused;
 
@@ -179,7 +179,7 @@ export class SceneRunner {
     if (input.player) {
       this.cameras?.applyInput(input.player.intents, {paused});
     }
-    this.cameras?.update(seconds);
+    this.cameras?.moveActiveCamera(seconds);
 
     // Scripts get the frame's seconds and input, so that a script such as a
     // flight controller can move at the same speed at any frame rate and
@@ -190,7 +190,7 @@ export class SceneRunner {
     // place things on it for an orthographic camera, which measures in
     // pixels.
     const {width, height} = this._gl.canvas;
-    sceneManager.update(this._sceneMs, {
+    sceneManager.runScripts(this._sceneMs, {
       screen: {width, height},
       seconds: sceneSeconds,
       input: paused
@@ -209,7 +209,7 @@ export class SceneRunner {
     }
   }
 
-  // renderFrame draws the scene as the last updateScene left it. It changes
+  // renderFrame draws the scene as the last stepFrame left it. It changes
   // nothing, so it can draw the same frame as often as needed.
   renderFrame() {
     this.sceneManager.render(this._sceneMs ?? 0, this._gl);

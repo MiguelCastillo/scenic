@@ -22,7 +22,7 @@ describe("scripts", () => {
     parent.add(createTrackedNode("child", calls));
     const sceneManager = new SceneManager(new StateManager([])).withNodes([parent]);
 
-    sceneManager.update(0);
+    sceneManager.runScripts(0);
 
     expect(calls).toEqual(["parent.script.update", "child.script.update"]);
   });
@@ -61,7 +61,7 @@ describe("scripts", () => {
     const sceneManager = new SceneManager(new StateManager([])).withNodes([node]);
 
     expect(() => {
-      sceneManager.update(0);
+      sceneManager.runScripts(0);
       sceneManager.render(0, null);
     }).not.toThrow();
   });
@@ -88,7 +88,7 @@ describe("ui and network", () => {
   test("keep the last message on each channel for receivers to pull", () => {
     const {sceneManager, publish} = createScene();
     publish({lap: 1});
-    sceneManager.update(0);
+    sceneManager.runScripts(0);
     sceneManager.ui.publish("race", {lap: 2});
 
     expect(sceneManager.ui.messages()).toEqual({race: {lap: 2}});
@@ -103,9 +103,9 @@ describe("ui and network", () => {
   test("leave out channels that stopped publishing", () => {
     const {sceneManager, publish} = createScene();
     publish({lap: 1});
-    sceneManager.update(0);
+    sceneManager.runScripts(0);
     publish(null);
-    sceneManager.update(0);
+    sceneManager.runScripts(0);
 
     expect(sceneManager.ui.messages()).toEqual({});
     expect(sceneManager.network.latest("player")).toBeUndefined();
@@ -135,7 +135,7 @@ describe("input", () => {
       new StateManager([{name: "ship 2", id: "ship 2", input: "player 2"}])
     ).withNodes([createNode("ship 1"), createNode("ship 2")]);
 
-    sceneManager.update(0, {
+    sceneManager.runScripts(0, {
       input: {
         player: {keys: new Set(["ArrowLeft"]), pressed: new Set(), mouse: {x: 0, y: 0}},
         "player 2": {keys: new Set(["ArrowRight"]), pressed: new Set(), mouse: {x: 0, y: 0}},

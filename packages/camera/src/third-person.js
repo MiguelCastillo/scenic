@@ -78,7 +78,10 @@ export const thirdPerson = {
 
   setMovement() {},
 
-  update(sceneManager, camera, seconds) {
+  // moveForFrame moves the camera to behind its target, where the target is,
+  // its heading catching up with the target's over followTime, for the given
+  // number of seconds since the last frame.
+  moveForFrame(sceneManager, camera, seconds) {
     const {transform, thirdPerson} = sceneManager.getNodeStateByID(camera.id);
     const node = findTarget(sceneManager, thirdPerson.target);
     if (!node) {

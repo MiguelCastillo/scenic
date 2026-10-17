@@ -38,7 +38,9 @@ export const firstPerson = {
   move() {},
   setMovement() {},
 
-  update(sceneManager, camera) {
+  // moveForFrame moves the camera to its target's offset, looking where the
+  // target faces, turned by its look.
+  moveForFrame(sceneManager, camera) {
     const {transform, firstPerson} = sceneManager.getNodeStateByID(camera.id);
     const node = findTarget(sceneManager, firstPerson.target);
     if (!node) {

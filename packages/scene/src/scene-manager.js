@@ -35,9 +35,9 @@ export class SceneManager {
     // the app, which knows what each channel's messages hold, shows them
     // however it likes, so the scene never knows about the page. Messages
     // are output, worked out from the scene's state, so publishing never
-    // changes the scene, and it can happen while drawing. update starts each
-    // frame's messages, and the app, their receiver, pulls them when it is
-    // ready to show them, such as once a frame.
+    // changes the scene, and it can happen while drawing. runScripts starts
+    // each frame's messages, and the app, their receiver, pulls them when it
+    // is ready to show them, such as once a frame.
     this.ui = new BufferedEventBus();
     // network carries messages from the scene to the other players in a
     // network game, such as where this player's ship is (see
@@ -46,8 +46,8 @@ export class SceneManager {
     // "network" in its node's state, such as {"network": "player"}, and the
     // app, their receiver, pulls the latest message and sends it to the
     // other players, such as a few times a second, without knowing what it
-    // holds. The other players' messages come back in through input. update
-    // starts each frame's messages.
+    // holds. The other players' messages come back in through input.
+    // runScripts starts each frame's messages.
     this.network = new BufferedEventBus();
     // input carries the players' input into the scene, as events in the
     // order they happened (see EventBus), on a channel for each player: their
@@ -60,7 +60,7 @@ export class SceneManager {
     // other players of a network game on channels of their own, their
     // messages as {type: "network", message}.
     // Whoever runs the scene, such as a SceneRunner, is their receiver: it
-    // pulls each frame's events and gives update what they add up to.
+    // pulls each frame's events and gives runScripts what they add up to.
     this.input = new EventBus();
   }
 
@@ -122,12 +122,13 @@ export class SceneManager {
     this.scene.dispose(gl);
   }
 
-  // update runs every node's script for a frame of the scene at ms, the
+  // runScripts runs every node's script for a frame of the scene at ms, the
   // frame's time, parents before children, through the script's update hook.
   // This is where scripts change the scene's state, such as moving a ship,
-  // so update runs once a frame, before render draws it. frame holds anything
-  // else the app wants the scripts to see this frame, such as the seconds
-  // since the last frame, and it is added to the context update gets.
+  // so runScripts runs once a frame, before render draws it. frame holds
+  // anything else the app wants the scripts to see this frame, such as the
+  // seconds since the last frame, and it is added to the context the
+  // scripts' update gets.
   //
   // frame.input is each input channel's input this frame, {channel: {keys,
   // pressed, mouse, wheel, intents, messages}}: the keys held, the keys
@@ -144,7 +145,7 @@ export class SceneManager {
   //
   // It also starts the frame's messages to the app's UI and to the network
   // (see ui and network).
-  update(ms, frame = {}) {
+  runScripts(ms, frame = {}) {
     this.ui.beginFrame();
     this.network.beginFrame();
     const {input = {}, ...rest} = frame;
@@ -164,7 +165,7 @@ export class SceneManager {
 
   // render draws the scene as its state has it, at ms, the frame's time, such
   // as for animations. It changes nothing in the state, so the same state can
-  // be drawn again, as often as needed (see update for changing it). frame
+  // be drawn again, as often as needed (see runScripts for changing it). frame
   // holds anything else the app wants every node to see while drawing, and it
   // is added to the context that preRender and render get.
   render(ms, gl, frame = {}) {
