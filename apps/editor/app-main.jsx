@@ -157,6 +157,33 @@ domReady.onReady(() => {
   // is rendered again when the active camera changes, so that the panels show
   // it. Rendering the same SceneGraph again keeps its state, such as the
   // selected node.
+  // The page receives what the current scene publishes for it in its own
+  // loop, pulling once an animation frame, when it is ready to show it: the
+  // HUD shows what the scene published on sceneManager.ui on the channels it
+  // knows, such as a
+  // race's lap and time, a blank line apart, and the scene graph is rendered
+  // again when the active camera changes, such as when C switches cameras,
+  // since it shows which one is active.
+  let activeCamera = null;
+  requestAnimationFrame(function receiveFromScene() {
+    if (currentScene) {
+      const text = Object.entries(currentScene.scene.sceneManager.ui.messages())
+        .map(([channel, message]) => hudTexts[channel]?.(message))
+        .filter(Boolean)
+        .join("\n\n");
+      if (hudEl.textContent !== text) {
+        hudEl.textContent = text;
+      }
+
+      const {cameras} = currentScene.runner;
+      if (cameras && cameras.activeCamera !== activeCamera) {
+        activeCamera = cameras.activeCamera;
+        renderSceneGraph();
+      }
+    }
+    requestAnimationFrame(receiveFromScene);
+  });
+
   function renderSceneGraph() {
     const {resourceLoader, sceneManager} = currentScene.scene;
     const {cameras} = currentScene.runner;
@@ -215,28 +242,6 @@ domReady.onReady(() => {
 
         runner.registerRefreshRateUpdater((fps) => {
           fpsEl.innerHTML = fps;
-        });
-
-        // The HUD shows what the scene published last frame on the channels
-        // it knows, such as a race's lap and time, a blank line apart.
-        scene.sceneManager.ui.onUpdate((messages) => {
-          const text = Object.entries(messages)
-            .map(([channel, message]) => hudTexts[channel]?.(message))
-            .filter(Boolean)
-            .join("\n\n");
-          if (hudEl.textContent !== text) {
-            hudEl.textContent = text;
-          }
-        });
-
-        // The scene graph shows which camera is active, so it is rendered
-        // again when that changes, such as when C switches cameras.
-        let activeCamera = runner.cameras?.activeCamera;
-        scene.sceneManager.ui.onUpdate(() => {
-          if (runner.cameras && runner.cameras.activeCamera !== activeCamera) {
-            activeCamera = runner.cameras.activeCamera;
-            renderSceneGraph();
-          }
         });
 
         loadingRoot.render(<Loading isLoading={false} />);

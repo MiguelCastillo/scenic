@@ -87,6 +87,21 @@ domReady.onReady(async () => {
 
   const stack = new SceneStack(gl);
 
+  // The page receives what the scenes publish for it on sceneManager.ui,
+  // such as a menu's choices, in its own loop: its receivers pull from the
+  // scenes once an animation frame, when the page is ready to show what they
+  // publish. receiveEveryFrame adds receive to the loop, and returns a
+  // function that takes it out.
+  const receivers = new Set();
+  requestAnimationFrame(function receiveFromScenes() {
+    receivers.forEach((receive) => receive());
+    requestAnimationFrame(receiveFromScenes);
+  });
+  const receiveEveryFrame = (receive) => {
+    receivers.add(receive);
+    return () => receivers.delete(receive);
+  };
+
   // The page's input goes to the scenes on the stack. The keyboard, mouse
   // and touches become intents (see input-intents.js in @scenic/dom), for
   // the top scene: camera intents while it is the game, and menu intents
@@ -151,8 +166,10 @@ domReady.onReady(async () => {
     document.body.classList.add("menu-open");
     messageEl.textContent = "";
     const chosen = await new Promise((resolve) => {
-      scene.sceneManager.ui.onUpdate(({menu: message}) => {
+      const stopReceiving = receiveEveryFrame(() => {
+        const message = scene.sceneManager.ui.latest("menu");
         if (message?.picked) {
+          stopReceiving();
           resolve(message.picked.goTo);
         } else if (message) {
           showMenu(message);
@@ -218,10 +235,12 @@ domReady.onReady(async () => {
     // HUD shows what it published last frame on the channels the arcade
     // knows, such as a race's lap and time, a blank line apart, and its
     // frame rate shows too.
+    let stopReceivingHud = null;
     const play = (loaded) => {
       hudEl.textContent = "";
-      loaded.scene.sceneManager.ui.onUpdate((messages) => {
-        const text = Object.entries(messages)
+      stopReceivingHud?.();
+      stopReceivingHud = receiveEveryFrame(() => {
+        const text = Object.entries(loaded.scene.sceneManager.ui.messages())
           .map(([channel, message]) => hudTexts[channel]?.(message))
           .filter(Boolean)
           .join("\n\n");
@@ -281,6 +300,7 @@ domReady.onReady(async () => {
     domEvents.Subscription.create(pauseEl).on("click", () => playPolicy.pause());
 
     const closeMenu = () => {
+      menu.stopReceiving();
       stack.pop();
       menu.scene.dispose();
       menu = null;
@@ -300,7 +320,8 @@ domReady.onReady(async () => {
       capture.unlock();
       document.body.classList.add("menu-open");
       menu = await load(manifest.menu, {paused: false});
-      menu.scene.sceneManager.ui.onUpdate(async ({menu: message}) => {
+      menu.stopReceiving = receiveEveryFrame(async () => {
+        const message = menu.scene.sceneManager.ui.latest("menu");
         if (!message || going) {
           return;
         }

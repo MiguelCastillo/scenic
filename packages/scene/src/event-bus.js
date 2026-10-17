@@ -1,57 +1,82 @@
-// EventBus carries events from publishers to whoever reads them, a frame at
-// a time: publishers publish plain data on named channels, and every event
-// of the frame is kept, in order, such as each key going down and up.
+// The buses carry events, plain data on named channels, from publishers to
+// receivers. Publishers publish events to a bus, and receivers pull them from
+// it when they are ready to handle them, such as once a frame or a few times
+// a second: a bus never calls anyone.
+
+// EventBus keeps every event published on it, in order, until it is taken,
+// for events that each matter, such as each key going down and up.
 //
-// beginFrame starts a frame's events, and flush sends them: every listener
-// gets the frame's events as {channel: [event, ...]}, in the order the
-// channels were first published that frame. Flushing again before the next
-// beginFrame sends the same frame's events again, with anything published
-// since. take returns the frame's events the same way and starts the next
-// frame, for whoever reads them itself rather than listening, such as a
-// SceneRunner reading the player's input.
+// A channel can be limited to a number of events, with limit, so that its
+// events pile up only so far when nobody takes them, such as another
+// player's messages, which keep coming while a page in the background draws
+// no frames. A limited channel drops its oldest events to make room for new
+// ones, so a receiver that falls that far behind gets the latest, and logs
+// what it dropped. Channels are unlimited otherwise, so that events that
+// must not be lost, such as a key coming up, never are.
 //
-// Its API: publish(channel, event), onUpdate(cb), which calls cb(events)
-// when the frame is flushed and returns a function that stops it,
-// beginFrame(), flush() and take().
+// Its API: publish(channel, event), limit(channel, maxEvents), and take(),
+// which returns the events since the last take, as {channel: [event, ...]},
+// in the order the channels were first published, and forgets them.
 export class EventBus {
   constructor() {
-    this._listeners = new Set();
-    this._messages = new Map();
+    this._eventsByChannel = new Map();
+    this._maxEventsByChannel = new Map();
   }
 
   publish(channel, event) {
-    this._messages.set(channel, [...(this._messages.get(channel) ?? []), event]);
+    const events = this._eventsByChannel.get(channel) ?? [];
+    events.push(event);
+    const maxEvents = this._maxEventsByChannel.get(channel) ?? Infinity;
+    if (events.length > maxEvents) {
+      const dropped = events.splice(0, events.length - maxEvents);
+      // eslint-disable-next-line no-console
+      console.warn(`dropped ${dropped.length} events on "${channel}", which nobody took`, dropped);
+    }
+    this._eventsByChannel.set(channel, events);
   }
 
-  onUpdate(cb) {
-    this._listeners.add(cb);
-    return () => this._listeners.delete(cb);
-  }
-
-  beginFrame() {
-    this._messages.clear();
-  }
-
-  flush() {
-    const messages = Object.fromEntries(this._messages);
-    this._listeners.forEach((cb) => cb(messages));
+  limit(channel, maxEvents) {
+    this._maxEventsByChannel.set(channel, maxEvents);
   }
 
   take() {
-    const messages = Object.fromEntries(this._messages);
-    this.beginFrame();
-    return messages;
+    const eventsByChannel = Object.fromEntries(this._eventsByChannel);
+    this._eventsByChannel.clear();
+    return eventsByChannel;
   }
 }
 
-// BufferedEventBus is an EventBus that keeps only the last message published
-// on each channel each frame, for messages that each say all there is to
-// know, such as what a HUD shows. A publisher that publishes often, such as
-// every time a scene draws, is heard once a frame: listeners get
-// {channel: message}. A channel that stops publishing is missing from the
-// next frame's messages.
-export class BufferedEventBus extends EventBus {
+// BufferedEventBus keeps only the last message published on each channel in
+// a frame, for messages that each say all there is to know, such as what a
+// HUD shows. A publisher can publish as often as it likes, such as every
+// frame, and receivers pull the latest whenever they like, as often as they
+// like: pulling forgets nothing.
+//
+// beginFrame starts a frame's messages, so that a channel that stops
+// publishing is gone from the next frame's messages, rather than still
+// saying what it last said.
+//
+// Its API: publish(channel, message), latest(channel), which is the last
+// message on channel, or undefined, messages(), which is the last message on
+// every channel, as {channel: message}, and beginFrame().
+export class BufferedEventBus {
+  constructor() {
+    this._messagesByChannel = new Map();
+  }
+
   publish(channel, message) {
-    this._messages.set(channel, message);
+    this._messagesByChannel.set(channel, message);
+  }
+
+  latest(channel) {
+    return this._messagesByChannel.get(channel);
+  }
+
+  messages() {
+    return Object.fromEntries(this._messagesByChannel);
+  }
+
+  beginFrame() {
+    this._messagesByChannel.clear();
   }
 }

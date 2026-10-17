@@ -34,7 +34,8 @@ export class SceneManager {
     // however it likes, so the scene never knows about the page. Messages
     // are output, worked out from the scene's state, so publishing never
     // changes the scene, and it can happen while drawing. update starts each
-    // frame's messages, and render sends them once the frame is drawn.
+    // frame's messages, and the app, their receiver, pulls them when it is
+    // ready to show them, such as once a frame.
     this.ui = new BufferedEventBus();
     // input carries the players' input into the scene, as events in the
     // order they happened (see EventBus), on a channel for each player: their
@@ -45,8 +46,8 @@ export class SceneManager {
     // and {type: "wheel", x, y}, in pixels, with positive y down. The app
     // publishes the player at its keyboard or screen on "player", and a
     // network game could publish other players on channels of their own.
-    // Whoever runs the scene, such as a SceneRunner, reads each frame's
-    // events and gives update what they add up to.
+    // Whoever runs the scene, such as a SceneRunner, is their receiver: it
+    // pulls each frame's events and gives update what they add up to.
     this.input = new EventBus();
   }
 
@@ -127,8 +128,7 @@ export class SceneManager {
   // World matrices are only worked out by render, so a script reading
   // another node's world matrix sees where it was last drawn.
   //
-  // It also starts the frame's messages to the app's UI (see ui), which
-  // render sends.
+  // It also starts the frame's messages to the app's UI (see ui).
   update(ms, frame = {}) {
     this.ui.beginFrame();
     const {input = {}, ...rest} = frame;
@@ -225,9 +225,5 @@ export class SceneManager {
       gl.depthMask(true);
       gl.disable(gl.BLEND);
     }
-
-    // Now the frame is drawn, the app's UI hears what the scene published
-    // for it, once (see ui).
-    this.ui.flush();
   }
 }

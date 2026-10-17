@@ -431,18 +431,19 @@ sceneManager.ui.publish("race", {
   best: null,
   finished: false,
 });
-sceneManager.ui.onUpdate((messages) => {
-  /* the app, once a frame, with {race: {...}, terrain: {...}} */
-});
+// The app, the receiver, pulls whenever it is ready to show them, such as
+// once an animation frame:
+sceneManager.ui.latest("race"); // {lap: 2, ...}
+sceneManager.ui.messages(); // {race: {...}, terrain: {...}}
 ```
 
-Messages are kept for the frame rather than sent as they come, so a scene
-that publishes often tells the app once a frame. `SceneManager.update` starts
-each frame's messages, and `SceneManager.render` sends them once the frame is
-drawn: every listener gets the last message on each channel, as
-`{channel: message}`. A channel that stops publishing is missing from the
-next frame's messages, so the app stops showing it. Drawing again without an
-update sends the same frame's messages again.
+The scene publishes to the bus, and the app, the bus's receiver, pulls the
+last message on each channel when it wants to: the bus never calls the app,
+so the receiver decides when it can handle them, in its own loop, or even on
+another thread, since messages are plain data. `SceneManager.update` starts
+each frame's messages, so a channel that stops publishing is missing from
+the next frame's messages, and the app stops showing it. Pulling forgets
+nothing.
 
 The race publishes `{lap, laps, time, gate, gates, best, finished}` every
 frame, and a terrain `{tiles, drawn, triangles, built}`. Messages are output
