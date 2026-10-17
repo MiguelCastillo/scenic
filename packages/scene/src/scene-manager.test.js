@@ -7,6 +7,7 @@ import {StateManager} from "./state-manager.js";
 function createTrackedNode(name, calls) {
   const node = new Node({name, id: name});
   node.preRender = () => calls.push(`${name}.preRender`);
+  node.prepareForView = () => calls.push(`${name}.prepareForView`);
   node.render = () => calls.push(`${name}.render`);
   return node.withScript({
     update: () => calls.push(`${name}.script.update`),
@@ -27,6 +28,41 @@ describe("scripts", () => {
     expect(calls).toEqual(["parent.script.update", "child.script.update"]);
   });
 
+  test("preRender parents first, without updating or rendering", () => {
+    const calls = [];
+    const parent = createTrackedNode("parent", calls);
+    parent.add(createTrackedNode("child", calls));
+    const sceneManager = new SceneManager(new StateManager([])).withNodes([parent]);
+
+    sceneManager.preRender(0, null);
+
+    expect(calls).toEqual(["parent.preRender", "child.preRender"]);
+  });
+
+  test("preRender one node and what is under it", () => {
+    const calls = [];
+    const parent = createTrackedNode("parent", calls);
+    const child = createTrackedNode("child", calls);
+    parent.add(child);
+    child.add(createTrackedNode("grandchild", calls));
+    const sceneManager = new SceneManager(new StateManager([])).withNodes([parent]);
+
+    sceneManager.preRenderNode(child, 0, null);
+
+    expect(calls).toEqual(["child.preRender", "grandchild.preRender"]);
+  });
+
+  test("prepare for the view parents first, and nothing else", () => {
+    const calls = [];
+    const parent = createTrackedNode("parent", calls);
+    parent.add(createTrackedNode("child", calls));
+    const sceneManager = new SceneManager(new StateManager([])).withNodes([parent]);
+
+    sceneManager.prepareForView(0, null);
+
+    expect(calls).toEqual(["parent.prepareForView", "child.prepareForView"]);
+  });
+
   test("render after their node, children first, without updating", () => {
     const calls = [];
     const parent = createTrackedNode("parent", calls);
@@ -36,8 +72,6 @@ describe("scripts", () => {
     sceneManager.render(0, null);
 
     expect(calls).toEqual([
-      "parent.preRender",
-      "child.preRender",
       "child.render",
       "child.script.render",
       "parent.render",
@@ -62,6 +96,8 @@ describe("scripts", () => {
 
     expect(() => {
       sceneManager.runScripts(0);
+      sceneManager.preRender(0, null);
+      sceneManager.prepareForView(0, null);
       sceneManager.render(0, null);
     }).not.toThrow();
   });

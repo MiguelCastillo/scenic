@@ -29,14 +29,16 @@ import {createFrameRateCounter} from "./fps-counter.js";
 //
 // The two halves do different jobs:
 // - stepFrame moves the scene a frame forward: it works out the frame's
-//   seconds since the last one, moves the scene's clock and the cameras,
-//   runs the scripts with those seconds and the input given since the last
-//   frame, and tells the app the frame rate. Call it once a frame:
-//   calling it again moves the scene again.
-// - renderFrame draws the scene as stepFrame left it, and changes nothing,
-//   so it can be called as often as needed, such as to draw it again after
-//   the canvas is resized, or to draw the same frame into more than one
-//   place.
+//   seconds since the last one, moves the scene's clock, runs the scripts
+//   with those seconds and the input given since the last frame, works out
+//   where everything is (see preRender in SceneManager), then moves the
+//   active camera, so that a camera following a ship follows where the ship
+//   is this frame, then prepares the view from where the camera is (see
+//   prepareForView in SceneManager), and tells the app the frame rate. Call
+//   it once a frame: calling it again moves the scene again.
+// - renderFrame draws the scene where stepFrame left it, and changes
+//   nothing, so it can be called as often as needed, such as to draw the
+//   same frame into more than one place.
 // Input, pausing and registering can happen at any time; the next
 // stepFrame picks them up.
 //
@@ -94,9 +96,11 @@ export class SceneRunner {
     this._refreshRateUpdater = () => {};
   }
 
-  // stepFrame moves the scene a frame forward, to ms, the frame's time:
-  // its clock, its cameras and, through its scripts, everything else. This is
-  // the logic for the game itself.
+  // stepFrame moves the scene a frame forward, to ms, the frame's time: its
+  // clock, then, through its scripts, everything they move, then where
+  // everything is (see preRender in SceneManager), then its active camera,
+  // then what is prepared for the view from where the camera is (see
+  // prepareForView in SceneManager). This is the logic for the game itself.
   stepFrame(ms) {
     const {sceneManager} = this;
     const paused = this._paused;
@@ -179,16 +183,23 @@ export class SceneRunner {
     if (input.player) {
       this.cameras?.applyInput(input.player.intents, {paused});
     }
-    this.cameras?.moveActiveCamera(seconds);
 
-    // Scripts get the frame's seconds and input, so that a script such as a
-    // flight controller can move at the same speed at any frame rate and
-    // respond to the player. While paused they get neither, except for the
-    // messages other players in a network game sent, who play on, so that
-    // what shows them knows where they are. They also get the size of the
-    // screen the scene is drawn on, {width, height}, in pixels, such as to
-    // place things on it for an orthographic camera, which measures in
-    // pixels.
+    // The frame is worked out in steps, in an order set by what depends on
+    // what: a camera that follows a node, such as a ship, depends on where
+    // the node is this frame, and what is prepared for the view, such as
+    // which trees to plant, depends on where the camera is. A camera
+    // following where its node was last drawn instead would trail it by a
+    // frame's movement, more or less as frames are longer or shorter, and
+    // shake it on the screen.
+    //
+    // 1. Scripts move things, such as the ship. They get the frame's seconds
+    // and input, so that a script such as a flight controller can move at the
+    // same speed at any frame rate and respond to the player. While paused
+    // they get neither, except for the messages other players in a network
+    // game sent, who play on, so that what shows them knows where they are.
+    // They also get the size of the screen the scene is drawn on, {width,
+    // height}, in pixels, such as to place things on it for an orthographic
+    // camera, which measures in pixels.
     const {width, height} = this._gl.canvas;
     sceneManager.runScripts(this._sceneMs, {
       screen: {width, height},
@@ -200,6 +211,26 @@ export class SceneRunner {
         : input,
     });
 
+    // 2. Every world matrix is worked out from the new state, so that it is
+    // where the scripts moved everything to. Nothing in it depends on the
+    // camera.
+    sceneManager.preRender(this._sceneMs, this._gl);
+
+    if (this.cameras) {
+      // 3. The active camera, the only one that moves, follows its target's
+      // new world matrix.
+      this.cameras.moveActiveCamera(seconds);
+
+      // 4. The camera, and anything attached to it, are worked out again
+      // where it moved to.
+      sceneManager.preRenderNode(this.cameras.activeCamera, this._sceneMs, this._gl);
+    }
+
+    // 5. What is drawn is prepared for the view from where the camera is
+    // now, however far it moved, such as the terrain's tiles and the
+    // forest's trees around it. 6, drawing it, is renderFrame's.
+    sceneManager.prepareForView(this._sceneMs, this._gl);
+
     // Let's write out the number of frames per second that we are able to
     // run.
     const {frameRate, elapsedMs} = this._getFrameRate(ms);
@@ -209,8 +240,8 @@ export class SceneRunner {
     }
   }
 
-  // renderFrame draws the scene as the last stepFrame left it. It changes
-  // nothing, so it can draw the same frame as often as needed.
+  // renderFrame draws the scene where the last stepFrame left it. It
+  // changes nothing, so it can draw the same frame as often as needed.
   renderFrame() {
     this.sceneManager.render(this._sceneMs ?? 0, this._gl);
   }

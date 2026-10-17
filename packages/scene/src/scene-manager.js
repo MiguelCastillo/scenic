@@ -125,10 +125,10 @@ export class SceneManager {
   // runScripts runs every node's script for a frame of the scene at ms, the
   // frame's time, parents before children, through the script's update hook.
   // This is where scripts change the scene's state, such as moving a ship,
-  // so runScripts runs once a frame, before render draws it. frame holds
-  // anything else the app wants the scripts to see this frame, such as the
-  // seconds since the last frame, and it is added to the context the
-  // scripts' update gets.
+  // so runScripts runs once a frame, before preRender works out where
+  // everything is and render draws it. frame holds anything else the app
+  // wants the scripts to see this frame, such as the seconds since the last
+  // frame, and it is added to the context the scripts' update gets.
   //
   // frame.input is each input channel's input this frame, {channel: {keys,
   // pressed, mouse, wheel, intents, messages}}: the keys held, the keys
@@ -140,8 +140,9 @@ export class SceneManager {
   // state in its context, and "player"'s without one, so a ship can be flown
   // by whichever player its state says.
   //
-  // World matrices are only worked out by render, so a script reading
-  // another node's world matrix sees where it was last drawn.
+  // World matrices are worked out by preRender, after the scripts have run,
+  // so a script reading another node's world matrix sees where it was last
+  // frame.
   //
   // It also starts the frame's messages to the app's UI and to the network
   // (see ui and network).
@@ -163,11 +164,85 @@ export class SceneManager {
     this.scene.items.forEach(updatePass);
   }
 
-  // render draws the scene as its state has it, at ms, the frame's time, such
-  // as for animations. It changes nothing in the state, so the same state can
+  // preRender works out where everything is from its state, at ms, the
+  // frame's time, such as for animations: it runs every node's preRender,
+  // parents before children, so that every world matrix is up to date, such
+  // as for a camera following a ship a script just moved (see SceneRunner in
+  // @scenic/runtime), and for render. It changes nothing in the state. frame
+  // holds anything else the app wants every node to see, and it is added to
+  // the context that preRender gets. Nothing in it depends on where the
+  // camera is: that is prepareForView's.
+  //
+  // When we are traversing the scene graph from the root to its leaf nodes
+  // (down), we will multiply all the matrices along the path to convert from
+  // local space to world space.
+  // Local space simply means that each object in the scene graph is
+  // positioned relative to the location and rotation of parent nodes. So if
+  // you were to draw a random scene graph node directly using its local
+  // space, the object will very likely appear in the wrong place on the
+  // screen.
+  // But we would like to able to render any arbitrary object in the scene
+  // graph in any order.  And to do that we have to change its position from
+  // relative to absolute; change nodes' local space to world space.
+  // There are multiple reasons to do that. In world space (absolute
+  // position) we can render any object is any order, which allows us to do
+  // things like sorting of object based on spatial positining and collision
+  // detection. It can also allows to render any object we need without
+  // concerns about depencies on other objects' location in space.
+  preRender(ms, gl, frame = {}) {
+    this.scene.items.forEach((node) => this.preRenderNode(node, ms, gl, frame));
+  }
+
+  // preRenderNode works out where node and everything under it are, the way
+  // preRender does for the whole scene, such as for a camera that moved
+  // after preRender, and what is attached to it.
+  preRenderNode(node, ms, gl, frame = {}) {
+    const context = {...frame, gl, ms, sceneManager: this};
+    bubbleTraversal(
+      (current) => {
+        current.preRender(context);
+        return current;
+      },
+      () => {}
+    )(node);
+  }
+
+  // prepareForView prepares what every node draws for the view through its
+  // viewport's active camera, where the camera is this frame, at ms, the
+  // frame's time: it runs every node's prepareForView, parents before
+  // children, such as a forest choosing which trees to plant around the
+  // camera. It runs once preRender has worked out where everything is and
+  // the camera has moved, so that it never prepares for where the camera
+  // was. frame holds anything else the app wants every node to see, and it
+  // is added to the context that prepareForView gets.
+  prepareForView(ms, gl, frame = {}) {
+    const context = {...frame, gl, ms, sceneManager: this};
+    const prepareForViewPass = bubbleTraversal(
+      (node) => {
+        node.prepareForView(context);
+        return node;
+      },
+      () => {}
+    );
+    this.scene.items.forEach(prepareForViewPass);
+  }
+
+  // render draws the scene where preRender worked out everything is, at ms,
+  // the frame's time. It changes nothing in the state, so the same state can
   // be drawn again, as often as needed (see runScripts for changing it). frame
   // holds anything else the app wants every node to see while drawing, and it
-  // is added to the context that preRender and render get.
+  // is added to the context that render gets.
+  //
+  // It runs every render, children before parents, so that children such as
+  // Geometry fill their parent's draw list before the parent draws. preRender
+  // having run first means a node that renders can rely on the world matrix
+  // of any other node in the scene, such as the camera or the bones of a
+  // skeleton, no matter where in the tree that node is.
+  //
+  // A node's script, if it has one, can also draw: its render runs just
+  // after the node's. It is called here rather than from Node so that every
+  // node type gets it, including types whose render does not call
+  // super.render.
   render(ms, gl, frame = {}) {
     const context = {
       ...frame,
@@ -179,44 +254,6 @@ export class SceneManager {
       translucent: [],
     };
 
-    // When we are traversing the scene graph from the root to its leaf nodes
-    // (down), we will multiply all the matrices along the path to convert from
-    // local space to world space.
-    // Local space simply means that each object in the scene graph is
-    // positioned relative to the location and rotation of parent nodes. So if
-    // you were to draw a random scene graph node directly using its local
-    // space, the object will very likely appear in the wrong place on the
-    // screen.
-    // But we would like to able to render any arbitrary object in the scene
-    // graph in any order.  And to do that we have to change its position from
-    // relative to absolute; change nodes' local space to world space.
-    // There are multiple reasons to do that. In world space (absolute
-    // position) we can render any object is any order, which allows us to do
-    // things like sorting of object based on spatial positining and collision
-    // detection. It can also allows to render any object we need without
-    // concerns about depencies on other objects' location in space.
-    //
-    // The scene is walked twice. The first pass runs every preRender, parents
-    // before children, so that every world matrix is up to date. The second
-    // pass runs every render, children before parents, so that children such
-    // as Geometry fill their parent's draw list before the parent draws.
-    // Finishing the first pass before starting the second means a node that
-    // renders can rely on the world matrix of any other node in the scene,
-    // such as the camera or the bones of a skeleton, no matter where in the
-    // tree that node is.
-    //
-    // A node's script, if it has one, can also draw: its render runs just
-    // after the node's. It is called here rather than from Node so that every
-    // node type gets it, including types whose render does not call
-    // super.render.
-    const preRenderPass = bubbleTraversal(
-      (node) => {
-        node.preRender(context);
-        return node;
-      },
-      () => {}
-    );
-
     const renderPass = bubbleTraversal(
       (node) => node,
       (node) => {
@@ -225,7 +262,6 @@ export class SceneManager {
       }
     );
 
-    this.scene.items.forEach(preRenderPass);
     this.scene.items.forEach(renderPass);
 
     // Translucent meshes are drawn last, once everything solid is in the
