@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 // build bundles what the browser loads, with esbuild:
 // - each app, such as apps/arcade/dist/arcade.js, with everything it imports,
+//   and the stylesheets it imports next to it, such as
+//   apps/editor/dist/editor.css, which its page loads,
 // - the file formats the resource loader's web worker reads models with,
 //   packages/runtime/dist/file-formats.js, as the global `fileformats`.
 //
