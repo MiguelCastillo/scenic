@@ -13,6 +13,18 @@ export class Viewport extends Node {
     this.cameras = [];
     this.activeCamera = null;
     this._warnedActiveCameraName = null;
+    // meshesToRender is the viewport's draw list: the meshes in view this
+    // frame, which add themselves in their prepareForView, for the viewport
+    // to draw once everything under it has rendered (see render). Drawing
+    // from a list rather than as the scene is walked lets the viewport:
+    // - draw in the order cheapest for WebGL, grouped by program, rather
+    //   than in the order the scene was laid out;
+    // - draw translucent meshes last, farthest first, with a split and a
+    //   sort;
+    // - keep choosing what to draw apart from drawing it, so the list is
+    //   exactly what a frame draws.
+    // See "The draw list" in the README for more.
+    this.meshesToRender = [];
   }
 
   // Cameras are still added as regular children so that they are part of the
@@ -80,6 +92,61 @@ export class Viewport extends Node {
     this._viewUniforms = null;
     const fog = context.sceneManager.getNodeStateByID(this.id)?.fog;
     this._fog = fog && fog.enabled !== false ? fog : null;
+  }
+
+  // prepareForView empties meshesToRender, before the meshes under the
+  // viewport add themselves to it in their own prepareForView.
+  prepareForView() {
+    this.meshesToRender = [];
+  }
+
+  // render draws meshesToRender, after everything else under the viewport
+  // has rendered, since children render before their parents:
+  // 1. Solid meshes first, grouped by WebGL program, so each program is
+  //    made the one in use once, and the meshes drawn with it after the
+  //    first only send the uniforms they don't share, such as their
+  //    material.
+  // 2. Translucent meshes, whose material's opacity is below 1, last, once
+  //    everything solid is in the depth buffer, and farthest first, so
+  //    that each is blended over what is behind it. They don't write
+  //    depth, so they never hide each other.
+  render(context) {
+    const {gl} = context;
+    const solidByProgram = new Map();
+    const translucent = [];
+    for (const mesh of this.meshesToRender) {
+      const opacity = mesh.getMaterialsState(context)?.material?.opacity ?? 1;
+      if (opacity < 1) {
+        translucent.push(mesh);
+      } else {
+        const program = mesh.shaderProgram.program;
+        if (!solidByProgram.has(program)) {
+          solidByProgram.set(program, []);
+        }
+        solidByProgram.get(program).push(mesh);
+      }
+    }
+
+    for (const meshes of solidByProgram.values()) {
+      meshes.forEach((mesh) => mesh.draw(context));
+    }
+
+    if (translucent.length) {
+      // Matrix4 data is row-major, so positions are the last column of
+      // world matrices.
+      const c = this.activeCamera.worldMatrix.data;
+      const distance = ({worldMatrix: {data: m}}) =>
+        Math.hypot(m[3] - c[3], m[7] - c[7], m[11] - c[11]);
+      translucent.sort((a, b) => distance(b) - distance(a));
+      gl.enable(gl.BLEND);
+      // Only colors are blended: the canvas keeps its own alpha, so that
+      // the page never shows through it.
+      gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ZERO, gl.ONE);
+      gl.depthMask(false);
+      translucent.forEach((mesh) => mesh.draw(context));
+      gl.depthMask(true);
+      gl.disable(gl.BLEND);
+    }
   }
 
   // viewProjectionMatrix takes renderables in this viewport from world space

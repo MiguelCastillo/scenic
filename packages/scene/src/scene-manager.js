@@ -234,7 +234,9 @@ export class SceneManager {
   // is added to the context that render gets.
   //
   // It runs every render, children before parents, so that children such as
-  // Geometry fill their parent's draw list before the parent draws. preRender
+  // Material set up their parent's program before the parent draws, and a
+  // viewport draws its meshes in view after everything under it has
+  // rendered (see render in Viewport). preRender
   // having run first means a node that renders can rely on the world matrix
   // of any other node in the scene, such as the camera or the bones of a
   // skeleton, no matter where in the tree that node is.
@@ -244,15 +246,7 @@ export class SceneManager {
   // node type gets it, including types whose render does not call
   // super.render.
   render(ms, gl, frame = {}) {
-    const context = {
-      ...frame,
-      gl,
-      ms,
-      sceneManager: this,
-      // Translucent meshes, which are drawn after everything else (see
-      // Mesh.render), as {distance, draw}.
-      translucent: [],
-    };
+    const context = {...frame, gl, ms, sceneManager: this};
 
     const renderPass = bubbleTraversal(
       (node) => node,
@@ -263,20 +257,5 @@ export class SceneManager {
     );
 
     this.scene.items.forEach(renderPass);
-
-    // Translucent meshes are drawn last, once everything solid is in the
-    // depth buffer, and farthest first, so that each is blended over what is
-    // behind it. They don't write depth, so they never hide each other.
-    if (context.translucent.length) {
-      context.translucent.sort((a, b) => b.distance - a.distance);
-      gl.enable(gl.BLEND);
-      // Only colors are blended: the canvas keeps its own alpha, so that
-      // the page never shows through it.
-      gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ZERO, gl.ONE);
-      gl.depthMask(false);
-      context.translucent.forEach(({draw}) => draw());
-      gl.depthMask(true);
-      gl.disable(gl.BLEND);
-    }
   }
 }

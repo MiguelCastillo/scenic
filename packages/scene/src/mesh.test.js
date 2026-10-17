@@ -148,6 +148,20 @@ describe("Mesh prepareForView", () => {
     expect(mesh.copiesToRender).toEqual([]);
   });
 
+  test("adds itself to its viewport's meshes to render when in view", () => {
+    const mesh = meshWith([[-5, -5, -5, 5, 5, 5]]);
+    mesh.shaderProgram = {};
+    mesh.prepareForView();
+    expect(mesh.getViewport().meshesToRender).toEqual([mesh]);
+  });
+
+  test("isn't added to its viewport's meshes to render when out of view", () => {
+    const mesh = meshWith([[-5, -5, -5, 5, 5, 5]], [0, 0, 600]);
+    mesh.shaderProgram = {};
+    mesh.prepareForView();
+    expect(mesh.getViewport().meshesToRender).toEqual([]);
+  });
+
   test("draws one level of detail of its geometries", () => {
     // Up close, the full mesh, and not the level for 1000 away.
     const mesh = meshWith([
@@ -158,7 +172,7 @@ describe("Mesh prepareForView", () => {
   });
 });
 
-describe("Mesh render at worldMatrices", () => {
+describe("Mesh draw at worldMatrices", () => {
   // A mesh in a viewport whose camera is at z 300 looking down -Z, with one
   // buffer around its origin, and a program that keeps what it was asked to
   // do: [use], [send, names], [draw] and [release].
@@ -187,7 +201,7 @@ describe("Mesh render at worldMatrices", () => {
       release: () => calls.push(["release"]),
     };
     mesh.prepareForView();
-    Mesh.render(mesh);
+    mesh.draw({sceneManager: {getNodeStateByID: () => ({})}});
     return calls;
   };
   const drawsAt = (positions) => callsAt(positions).filter(([call]) => call === "draw").length;
@@ -218,9 +232,5 @@ describe("Mesh render at worldMatrices", () => {
         [50, 0, -100],
       ])
     ).toEqual([["use"], ["draw"], ["send", ["worldMatrix"]], ["draw"], ["release"]]);
-  });
-
-  test("leaves the program alone when nothing is in view", () => {
-    expect(callsAt([[0, 0, 600]])).toEqual([]);
   });
 });

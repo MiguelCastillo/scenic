@@ -62,44 +62,54 @@ export class Mesh extends Renderable {
     return this;
   }
 
-  // render draws the mesh, unless its material's `opacity` is below 1: a
-  // translucent mesh is blended over what is behind it, so it is held back
-  // in the frame's `translucent` list for SceneManager to draw after
-  // everything solid, farthest first (see SceneManager.render). It sets its
-  // lights and material up again when it is drawn then, since meshes share
-  // shader programs.
-  render(context) {
-    if (!this.copiesToRender.length || !this.shaderProgram) {
-      return;
+  // draw draws copiesToRender, each copy of the mesh in view with its
+  // buffers. Its viewport calls it, for the meshes in view (see render in
+  // Viewport), rather than the mesh drawing itself as the scene is walked,
+  // so that meshes can be drawn in the order that is cheapest for WebGL.
+  //
+  // The program is set up once, with the mesh's lights, material and view,
+  // and each copy after the first only sends its world matrix before
+  // drawing.
+  draw(context) {
+    const {shaderProgram} = this;
+    const lightsState = this.getLightsState(context);
+    if (lightsState) {
+      Mesh.configureLighting(shaderProgram, lightsState);
     }
 
-    const draw = () => {
-      const lightsState = this.getLightsState(context);
-      if (lightsState) {
-        Mesh.configureLighting(this.shaderProgram, lightsState);
-      }
-
-      const materialState = this.getMaterialsState(context);
-      if (materialState) {
-        Mesh.configureMaterial(this.shaderProgram, materialState.material, materialState.ambient);
-      }
-
-      Mesh.render(this);
-    };
-
-    const opacity = this.getMaterialsState(context)?.material?.opacity ?? 1;
-    if (opacity < 1 && context.translucent) {
-      // Matrix4 data is row-major, so positions are the last column of world
-      // matrices.
-      const camera = this.getViewport()?.activeCamera?.worldMatrix.data;
-      const m = this.worldMatrix.data;
-      const distance = camera
-        ? Math.hypot(m[3] - camera[3], m[7] - camera[7], m[11] - camera[11])
-        : 0;
-      context.translucent.push({distance, draw});
-    } else {
-      draw();
+    const materialState = this.getMaterialsState(context);
+    if (materialState) {
+      Mesh.configureMaterial(shaderProgram, materialState.material, materialState.ambient);
     }
+
+    const projectionMatrix = this.getViewProjectionMatrix();
+    shaderProgram.addUniforms([
+      {
+        name: "projectionMatrix",
+        update: (gl, {index}) => {
+          gl.uniformMatrix4fv(index, false, projectionMatrix.data);
+        },
+      },
+      ...this.getViewUniforms(),
+    ]);
+
+    this.copiesToRender.forEach(({worldMatrix, vertexBuffers}, i) => {
+      shaderProgram.addUniforms([
+        {
+          name: "worldMatrix",
+          update: (gl, {index}) => {
+            gl.uniformMatrix4fv(index, true, worldMatrix.data);
+          },
+        },
+      ]);
+      if (i === 0) {
+        shaderProgram.use();
+      } else {
+        shaderProgram.sendUniforms(["worldMatrix"]);
+      }
+      vertexBuffers.forEach((vb) => shaderProgram.draw(vb));
+    });
+    shaderProgram.release();
   }
 
   // getMaterialsState provides the current state of the material for this
@@ -309,6 +319,12 @@ export class Mesh extends Renderable {
         this.copiesToRender.push({worldMatrix, vertexBuffers: vertexBuffersAtLevel});
       }
     }
+
+    // A mesh with copies in view, and a program to draw them with, is drawn
+    // by its viewport (see render in Viewport).
+    if (this.copiesToRender.length && this.shaderProgram) {
+      this.getViewport()?.meshesToRender.push(this);
+    }
   }
 
   // isBoundingVolumeInView is whether the mesh's bounding volume, placed
@@ -346,47 +362,5 @@ export class Mesh extends Renderable {
     return levels
       .filter((vb) => vb.lodDistance <= distance)
       .reduce((best, vb) => (!best || vb.lodDistance > best.lodDistance ? vb : best), null);
-  }
-
-  // render draws what prepareForView chose in copiesToRender: each copy of
-  // the mesh in view, with its buffers. The program is set up once, with its
-  // lights, material and view, and each copy after the first only sends its
-  // world matrix before drawing.
-  static render(node) {
-    const {shaderProgram} = node;
-    const projectionMatrix = node.getViewProjectionMatrix();
-
-    // Configure shader program with its current state.
-    const program = shaderProgram.addUniforms([
-      {
-        name: "projectionMatrix",
-        update: (gl, {index}) => {
-          gl.uniformMatrix4fv(index, false, projectionMatrix.data);
-        },
-      },
-      ...node.getViewUniforms(),
-    ]);
-
-    let inUse = false;
-    for (const {worldMatrix, vertexBuffers} of node.copiesToRender) {
-      program.addUniforms([
-        {
-          name: "worldMatrix",
-          update: (gl, {index}) => {
-            gl.uniformMatrix4fv(index, true, worldMatrix.data);
-          },
-        },
-      ]);
-      if (inUse) {
-        program.sendUniforms(["worldMatrix"]);
-      } else {
-        program.use();
-        inUse = true;
-      }
-      vertexBuffers.forEach((vb) => program.draw(vb));
-    }
-    if (inUse) {
-      program.release();
-    }
   }
 }

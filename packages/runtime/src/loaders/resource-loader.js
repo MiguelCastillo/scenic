@@ -77,7 +77,7 @@ export function getResourcesFromConfig(config) {
 
   // A static mesh's lods are simpler versions of its resource for far away,
   // each loaded into the mesh too, with the distance it takes over from (see
-  // Mesh.render in @scenic/scene).
+  // Mesh.prepareForView in @scenic/scene).
   const filename = (resource) => resource.split(/[\/]/).pop();
   return traverse(config.items).flatMap((item) => [
     {node: item, url: item.resource, filename: filename(item.resource)},
