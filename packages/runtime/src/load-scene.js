@@ -61,6 +61,9 @@ export const loadScene = async (gl, config, {sceneURL = self.location.href} = {}
   }
 
   const baseURL = new URL(sceneURL, self.location.href).href;
+  // The scripts the scene has loaded, kept so that each is loaded once for
+  // the scene's life, however often nodes are added to it (see add).
+  const scriptFactoriesByURL = new Map();
 
   // add builds config, a node like those in a scene file with the nodes under
   // it, and adds it to the running scene, such as another player's ship. It
@@ -101,7 +104,7 @@ export const loadScene = async (gl, config, {sceneURL = self.location.href} = {}
       await Promise.all([
         resourceLoader.loadMany(getResourcesFromConfig({items: [state]})),
         applyShaders(gl, node, () => disposed),
-        loadScripts(sceneManager, baseURL, node),
+        loadScripts(sceneManager, baseURL, {root: node, factoriesByURL: scriptFactoriesByURL}),
       ]);
     } catch (ex) {
       remove(state.id);
@@ -134,7 +137,7 @@ export const loadScene = async (gl, config, {sceneURL = self.location.href} = {}
     await Promise.all([
       resourceLoader.loadMany(getResourcesFromConfig(sceneConfig)),
       applyShaders(gl, sceneManager.scene, () => disposed),
-      loadScripts(sceneManager, baseURL),
+      loadScripts(sceneManager, baseURL, {factoriesByURL: scriptFactoriesByURL}),
     ]);
   } catch (ex) {
     // The caller never receives dispose when loading fails, so tear down

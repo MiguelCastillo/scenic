@@ -57,20 +57,36 @@ async function loadScript(src, baseURL) {
 // gets its own instance. src is relative to baseURL, the scene file's URL,
 // the way a page's links are relative to the page, so a scene finds the
 // scripts next to it whichever app runs it. It is the app's page by
-// default. Each script is loaded once however many nodes use it. root is
-// where in the scene to look, such as a node just added to it; the whole
-// scene by default.
-export function loadScripts(sceneManager, baseURL = self.location.href, root = sceneManager.scene) {
-  const factories = {};
+// default. Each script is loaded once however many nodes use it.
+//
+// Options:
+// - root: where in the scene to look, such as a node just added to it. The
+//   whole scene by default.
+// - factoriesByURL: the scripts already loaded, by their full URL, as
+//   promises of their factories, which this adds to, so that a scene that
+//   keeps one loads each script once however often nodes are added to it,
+//   such as a ship's parts every time another ship is shown. A script that
+//   fails to load isn't kept, so it is tried again next time. A new one by
+//   default.
+export function loadScripts(
+  sceneManager,
+  baseURL = self.location.href,
+  {root = sceneManager.scene, factoriesByURL = new Map()} = {}
+) {
   const loads = [];
 
   const visit = (node) => {
     const src = sceneManager.getNodeStateByID(node.id)?.script?.src;
     if (src) {
-      if (!factories[src]) {
-        factories[src] = loadScript(src, baseURL);
+      const url = new URL(src, baseURL).href;
+      if (!factoriesByURL.has(url)) {
+        const loading = loadScript(src, baseURL);
+        loading.catch(() => factoriesByURL.delete(url));
+        factoriesByURL.set(url, loading);
       }
-      loads.push(factories[src].then((createScript) => node.withScript(createScript(node))));
+      loads.push(
+        factoriesByURL.get(url).then((createScript) => node.withScript(createScript(node)))
+      );
     }
     node.items.forEach(visit);
   };
