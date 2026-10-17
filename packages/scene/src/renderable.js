@@ -23,10 +23,15 @@ export const RenderableInterface = (superclass) =>
       // only puts them together as geometries are added and removed (see
       // add and remove), so nothing is measured while drawing.
       this.boundingVolume = null;
+      // vertexBuffers are the buffers of the renderable's geometries, kept as
+      // geometries are added and removed (see add and remove), so drawing
+      // never has to look for them among its children.
+      this.vertexBuffers = [];
     }
 
-    // add takes in the bounding volume of a child with a buffer of its own,
-    // such as a Geometry, which can be one level of detail of a mesh.
+    // add takes in the buffer and the bounding volume of a child with a
+    // buffer of its own, such as a Geometry, which can be one level of
+    // detail of a mesh.
     //
     // Other children, such as a renderable under this one, are left out. A
     // child renderable keeps its own bounding volume, from its own
@@ -36,20 +41,27 @@ export const RenderableInterface = (superclass) =>
     // view.
     add(node) {
       super.add(node);
-      if (node.vertexBuffer && node.boundingVolume) {
-        this.boundingVolume = node.boundingVolume.enclosing(this.boundingVolume);
+      if (node.vertexBuffer) {
+        this.vertexBuffers.push(node.vertexBuffer);
+        if (node.boundingVolume) {
+          this.boundingVolume = node.boundingVolume.enclosing(this.boundingVolume);
+        }
       }
       return this;
     }
 
-    // Removing a child with a buffer puts the renderable's bounding volume
-    // together again from the ones left.
+    // Removing a child with a buffer takes its buffer out, and puts the
+    // renderable's bounding volume together again from the ones left.
     remove(node) {
       super.remove(node);
       if (node.vertexBuffer) {
-        this.boundingVolume = this.items
-          .filter((child) => child.vertexBuffer && child.boundingVolume)
-          .reduce((volume, child) => child.boundingVolume.enclosing(volume), null);
+        this.vertexBuffers = this.vertexBuffers.filter((vb) => vb !== node.vertexBuffer);
+        this.boundingVolume = null;
+        for (const child of this.items) {
+          if (child.vertexBuffer && child.boundingVolume) {
+            this.boundingVolume = child.boundingVolume.enclosing(this.boundingVolume);
+          }
+        }
       }
       return this;
     }

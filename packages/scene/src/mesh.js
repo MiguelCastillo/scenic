@@ -47,10 +47,14 @@ export class Mesh extends Renderable {
     // where it is.
     this.worldMatrices = null;
     // copiesToRender is what to draw this frame, chosen by prepareForView
-    // and drawn by render, as [{worldMatrix, vertexBuffers}]: each copy of
-    // the mesh in view, such as a tree, or the mesh itself where it is, with
-    // the buffers to draw it with.
+    // and drawn by render, as [{worldMatrix, lod}]: each copy of the mesh in
+    // view, such as a tree, or the mesh itself where it is, with its level
+    // of detail, the buffer it draws along with those that aren't one (see
+    // levelOfDetail).
     this.copiesToRender = [];
+    // Performance: the copies' objects, kept from frame to frame and filled
+    // in again, rather than made again every frame for every copy in view.
+    this.copies = [];
   }
 
   // Specular defaults are set once, when the mesh gets its program, and a
@@ -63,9 +67,9 @@ export class Mesh extends Renderable {
     return this;
   }
 
-  // render draws copiesToRender, each copy of the mesh in view with its
-  // buffers. Its viewport calls it, when the mesh is in view (see render in
-  // Viewport).
+  // render draws copiesToRender, each copy of the mesh in view, with its
+  // level of detail and the buffers that aren't one. Its viewport calls it,
+  // when the mesh is in view (see render in Viewport).
   //
   // Performance: the program is set up once, with the mesh's lights,
   // material and view, and each copy after the first only sends its world
@@ -94,7 +98,9 @@ export class Mesh extends Renderable {
       ...this.getViewUniforms(),
     ]);
 
-    this.copiesToRender.forEach(({worldMatrix, vertexBuffers}, i) => {
+    const {vertexBuffers, copiesToRender} = this;
+    for (let i = 0; i < copiesToRender.length; i++) {
+      const {worldMatrix, lod} = copiesToRender[i];
       shaderProgram.addUniforms([
         {
           name: "worldMatrix",
@@ -108,8 +114,13 @@ export class Mesh extends Renderable {
       } else {
         shaderProgram.sendUniforms(["worldMatrix"]);
       }
-      vertexBuffers.forEach((vb) => shaderProgram.draw(vb));
-    });
+      for (let j = 0; j < vertexBuffers.length; j++) {
+        const vb = vertexBuffers[j];
+        if (vb.lodDistance == null || vb === lod) {
+          shaderProgram.draw(vb);
+        }
+      }
+    }
     shaderProgram.release();
   }
 
@@ -286,16 +297,16 @@ export class Mesh extends Renderable {
   //    each of its worldMatrices.
   // 2. A copy is skipped when the mesh's bounding volume, placed with the
   //    copy's world matrix, is outside the view.
-  // 3. Each copy left draws the buffers of its level of detail for its
-  //    distance from the camera, along with the buffers that aren't a level
-  //    of detail.
+  // 3. Each copy left draws its level of detail for its distance from the
+  //    camera, along with the buffers that aren't a level of detail.
   //
-  // The buffers are its Geometry children's.
+  // Performance: this runs for every mesh, and every copy of one, such as
+  // each tree of a forest, every frame. It must not allocate: it loops by
+  // index, and fills in the copies kept from the last frame. See "Best
+  // practices for the hot path" in the README.
   prepareForView(context) {
-    const vertexBuffers = this.items
-      .filter((child) => child.vertexBuffer)
-      .map((child) => child.vertexBuffer);
-    this.copiesToRender = [];
+    const {vertexBuffers, worldMatrices, copiesToRender, copies} = this;
+    copiesToRender.length = 0;
 
     // With nothing to draw, such as before its model has loaded, there is
     // nothing to check against the view either.
@@ -303,26 +314,43 @@ export class Mesh extends Renderable {
       return;
     }
 
-    for (const worldMatrix of this.worldMatrices || [this.worldMatrix]) {
+    // Whether some of its buffers aren't a level of detail, and are drawn
+    // at every distance.
+    let drawnAtAnyDistance = false;
+    for (let i = 0; i < vertexBuffers.length; i++) {
+      if (vertexBuffers[i].lodDistance == null) {
+        drawnAtAnyDistance = true;
+        break;
+      }
+    }
+
+    const count = worldMatrices ? worldMatrices.length : 1;
+    for (let i = 0; i < count; i++) {
+      const worldMatrix = worldMatrices ? worldMatrices[i] : this.worldMatrix;
       if (!this.isBoundingVolumeInView(worldMatrix)) {
         continue;
       }
-      const lod = this.levelOfDetail(worldMatrix, vertexBuffers);
-      const vertexBuffersAtLevel = vertexBuffers.filter(
-        (vb) => vb.lodDistance == null || vb === lod
-      );
 
       // A copy can still be left with nothing to draw, when the mesh's
       // levels of detail all start farther away than the copy is.
-      if (vertexBuffersAtLevel.length) {
-        this.copiesToRender.push({worldMatrix, vertexBuffers: vertexBuffersAtLevel});
+      const lod = this.levelOfDetail(worldMatrix);
+      if (!lod && !drawnAtAnyDistance) {
+        continue;
       }
+
+      if (copies.length === copiesToRender.length) {
+        copies.push({worldMatrix: null, lod: null});
+      }
+      const copy = copies[copiesToRender.length];
+      copy.worldMatrix = worldMatrix;
+      copy.lod = lod;
+      copiesToRender.push(copy);
     }
 
     // A mesh with copies in view, and a program to draw them with, is drawn
     // by its viewport (see render in Viewport), after everything solid when
     // its material's opacity is below 1.
-    if (this.copiesToRender.length && this.shaderProgram) {
+    if (copiesToRender.length && this.shaderProgram) {
       const opacity = this.getMaterialsState(context)?.material?.opacity ?? 1;
       this.renderOrder = opacity < 1 ? RenderOrder.TRANSLUCENT : RenderOrder.SOLID;
       this.getViewport()?.renderablesInView.push(this);
@@ -343,24 +371,40 @@ export class Mesh extends Renderable {
   }
 
   // levelOfDetail is the buffer to draw of a mesh with levels of detail,
-  // drawn with worldMatrix, where this mesh is by default: each of its
-  // buffers with a lodDistance takes over from that distance from the
-  // camera, so it is the one with the farthest lodDistance the mesh is past.
-  // It is undefined for a mesh without levels of detail. vertexBuffers are
-  // the buffers to choose from, its geometries' buffers.
-  levelOfDetail(worldMatrix, vertexBuffers) {
-    const levels = vertexBuffers.filter((vb) => vb.lodDistance != null);
+  // drawn with worldMatrix: each of its buffers with a lodDistance takes over
+  // from that distance from the camera, so it is the one with the farthest
+  // lodDistance the copy is past, or null when it isn't past any. It is
+  // undefined for a mesh without levels of detail, and the first level for
+  // one without a camera to measure from.
+  //
+  // Performance: it runs for every copy in view every frame, so it loops by
+  // index rather than filtering its buffers (see prepareForView).
+  levelOfDetail(worldMatrix) {
+    const {vertexBuffers} = this;
     const camera = this.getViewport()?.activeCamera;
-    if (!levels.length || !camera) {
-      return levels[0];
+    let first;
+    let farthest = null;
+    let distance = 0;
+    for (let i = 0; i < vertexBuffers.length; i++) {
+      const vb = vertexBuffers[i];
+      if (vb.lodDistance == null) {
+        continue;
+      }
+      if (first === undefined) {
+        first = vb;
+        if (!camera) {
+          return first;
+        }
+        // Matrix4 data is row-major, so positions are the last column of
+        // world matrices.
+        const c = camera.worldMatrix.data;
+        const m = worldMatrix.data;
+        distance = Math.hypot(c[3] - m[3], c[7] - m[7], c[11] - m[11]);
+      }
+      if (vb.lodDistance <= distance && (!farthest || vb.lodDistance > farthest.lodDistance)) {
+        farthest = vb;
+      }
     }
-
-    // Matrix4 data is row-major, so positions are the last column of world
-    // matrices.
-    const [c, m] = [camera.worldMatrix.data, worldMatrix.data];
-    const distance = Math.hypot(c[3] - m[3], c[7] - m[7], c[11] - m[11]);
-    return levels
-      .filter((vb) => vb.lodDistance <= distance)
-      .reduce((best, vb) => (!best || vb.lodDistance > best.lodDistance ? vb : best), null);
+    return first === undefined ? undefined : farthest;
   }
 }

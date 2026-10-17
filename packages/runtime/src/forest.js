@@ -43,9 +43,12 @@ export class Forest extends Node {
 
   constructor(options) {
     super({...options, type: "forest"});
-    // The tiles planted so far, by "column,row", each a list of its trees,
-    // {kind, matrix}.
+    // The tiles planted so far, by their column and row (see tileKey), each
+    // {column, row, trees}, with its trees as {kind, matrix}.
     this.tiles = new Map();
+    // The kinds of tree it plants, its Mesh children, kept as they are added
+    // and removed, so they aren't looked for among its children every frame.
+    this.kinds = [];
     // The forest's settings, with defaults for those its state leaves out,
     // and what the tiles were planted for: the state the settings were
     // worked out from, the terrain's ground, and how many kinds of tree
@@ -54,6 +57,20 @@ export class Forest extends Node {
     this.settingsFrom = null;
     this.plantedOn = null;
     this.plantedKinds = 0;
+  }
+
+  add(node) {
+    super.add(node);
+    if (node instanceof Mesh) {
+      this.kinds.push(node);
+    }
+    return this;
+  }
+
+  remove(node) {
+    super.remove(node);
+    this.kinds = this.kinds.filter((kind) => kind !== node);
+    return this;
   }
 
   // prepareForView plants the tiles that have come within the forest's
@@ -67,15 +84,18 @@ export class Forest extends Node {
     if (state !== this.settingsFrom) {
       this.settings = {...Forest.defaults, ...state.forest};
     }
-    const {settings} = this;
-    const kinds = this.items.filter((child) => child instanceof Mesh);
+    const {settings, kinds} = this;
     const terrain = sceneManager.getNodeByID(settings.terrain);
     const camera = Node.findParentByType(this, Viewport)?.activeCamera;
 
     // Until the terrain has its ground, after its first frame, there is
     // nowhere to stand.
     if (!terrain?.ground || !camera || !kinds.length) {
-      kinds.forEach((kind) => (kind.worldMatrices = []));
+      for (let i = 0; i < kinds.length; i++) {
+        if (kinds[i].worldMatrices?.length !== 0) {
+          kinds[i].worldMatrices = [];
+        }
+      }
       return;
     }
 
@@ -99,12 +119,16 @@ export class Forest extends Node {
     // settings themselves every frame, such as with JSON.stringify, which
     // makes a string each time (see "Best practices for the hot path" in
     // the README).
+    // Whether any tile was planted or dropped this frame, for the kinds of
+    // tree to draw at their trees again (see below).
+    let tilesChanged = false;
     if (
       state !== this.settingsFrom ||
       terrain.ground !== this.plantedOn ||
       kinds.length !== this.plantedKinds
     ) {
       this.tiles.clear();
+      tilesChanged = true;
       this.settingsFrom = state;
       this.plantedOn = terrain.ground;
       this.plantedKinds = kinds.length;
@@ -114,13 +138,14 @@ export class Forest extends Node {
     // matrices.
     const {tileSize, distance} = settings;
     const c = camera.worldMatrix.data;
-    const [cx, cz] = [c[3] / tileSize, c[11] / tileSize];
+    const cx = c[3] / tileSize;
+    const cz = c[11] / tileSize;
     const reach = Math.ceil(distance / tileSize);
 
-    for (const key of this.tiles.keys()) {
-      const [column, row] = key.split(",").map(Number);
-      if (Math.max(Math.abs(column + 0.5 - cx), Math.abs(row + 0.5 - cz)) > reach + 1) {
-        this.tiles.delete(key);
+    for (const tile of this.tiles.values()) {
+      if (Math.max(Math.abs(tile.column + 0.5 - cx), Math.abs(tile.row + 0.5 - cz)) > reach + 1) {
+        this.tiles.delete(tileKey(tile.column, tile.row));
+        tilesChanged = true;
       }
     }
 
@@ -128,7 +153,7 @@ export class Forest extends Node {
     for (let column = Math.floor(cx) - reach; column <= Math.floor(cx) + reach; column++) {
       for (let row = Math.floor(cz) - reach; row <= Math.floor(cz) + reach; row++) {
         const away = Math.hypot(column + 0.5 - cx, row + 0.5 - cz);
-        if (away <= reach + 0.75 && !this.tiles.has(`${column},${row}`)) {
+        if (away <= reach + 0.75 && !this.tiles.has(tileKey(column, row))) {
           wanted.push({column, row, away});
         }
       }
@@ -139,21 +164,37 @@ export class Forest extends Node {
     wanted.sort((a, b) => a.away - b.away);
     const start = performance.now();
     for (const {column, row} of wanted) {
-      this.tiles.set(`${column},${row}`, plant(column, row, settings, terrain, kinds.length));
+      const trees = plant(column, row, settings, terrain, kinds.length);
+      this.tiles.set(tileKey(column, row), {column, row, trees});
+      tilesChanged = true;
       if (performance.now() - start > 2) {
         break;
       }
     }
 
-    // Each kind draws at its trees.
-    const worldMatricesByKind = kinds.map(() => []);
-    for (const trees of this.tiles.values()) {
-      for (const {kind, matrix} of trees) {
-        worldMatricesByKind[kind].push(matrix);
+    // Each kind draws at its trees. Performance: the lists are only made
+    // again when a tile was planted or dropped, rather than every frame, and
+    // with loops by index. See "Best practices for the hot path" in the
+    // README.
+    if (tilesChanged) {
+      for (let i = 0; i < kinds.length; i++) {
+        kinds[i].worldMatrices = [];
+      }
+      for (const {trees} of this.tiles.values()) {
+        for (let i = 0; i < trees.length; i++) {
+          kinds[trees[i].kind].worldMatrices.push(trees[i].matrix);
+        }
       }
     }
-    kinds.forEach((kind, i) => (kind.worldMatrices = worldMatricesByKind[i]));
   }
+}
+
+// tileKey is the number a tile in column and row is kept by. Performance: it
+// is worked out for every tile around the camera every frame, so it is a
+// number rather than a string such as "3,-2", which would be garbage. Rows
+// stay well within ±50000 tiles of the world's middle.
+function tileKey(column, row) {
+  return column * 100000 + row;
 }
 
 // plant is the trees of the tile in column and row: about density in each

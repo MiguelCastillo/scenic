@@ -102,7 +102,7 @@ export class Terrain extends Mesh {
 
   constructor(options) {
     super({...options, type: "terrain"});
-    // The tiles built so far, by "column,row".
+    // The tiles built so far, by their column and row (see tileKey).
     this.tiles = new Map();
     // The terrain's settings, with defaults for those its state leaves out,
     // and the state they were worked out from (see prepareForView).
@@ -157,7 +157,7 @@ export class Terrain extends Mesh {
   prepareForView(context) {
     const {gl, sceneManager} = context;
     // Nothing is drawn until there is a camera to choose tiles for.
-    this.tilesToRender = [];
+    this.tilesToRender.length = 0;
 
     // The tiles are kept from frame to frame, built from the terrain's
     // settings, which live in its state. Its state can change on any frame,
@@ -203,13 +203,14 @@ export class Terrain extends Mesh {
     const far = sceneManager.getNodeStateByID(camera.id).projection?.far || 10000;
     const c = camera.worldMatrix.data;
     const o = this.worldMatrix.data;
-    const [cx, cz] = [(c[3] - o[3]) / tileSize, (c[11] - o[11]) / tileSize];
+    const cx = (c[3] - o[3]) / tileSize;
+    const cz = (c[11] - o[11]) / tileSize;
     const reach = Math.ceil(far / tileSize);
 
-    for (const [key, tile] of this.tiles) {
+    for (const tile of this.tiles.values()) {
       if (Math.max(Math.abs(tile.column + 0.5 - cx), Math.abs(tile.row + 0.5 - cz)) > reach + 1) {
         tile.dispose();
-        this.tiles.delete(key);
+        this.tiles.delete(tileKey(tile.column, tile.row));
       }
     }
 
@@ -228,7 +229,7 @@ export class Terrain extends Mesh {
     for (let column = Math.floor(cx) - reach; column <= Math.floor(cx) + reach; column++) {
       for (let row = Math.floor(cz) - reach; row <= Math.floor(cz) + reach; row++) {
         const distance = Math.hypot(column + 0.5 - cx, row + 0.5 - cz);
-        const tile = this.tiles.get(`${column},${row}`);
+        const tile = this.tiles.get(tileKey(column, row));
         const steps = stepsAt(distance);
         const settled = stepsAt(distance - 0.25) === steps && stepsAt(distance + 0.25) === steps;
         if (distance <= reach + 0.75 && (!tile || (tile.steps !== steps && settled))) {
@@ -244,7 +245,7 @@ export class Terrain extends Mesh {
     const start = performance.now();
     let built = 0;
     for (const {column, row, steps} of wanted) {
-      const key = `${column},${row}`;
+      const key = tileKey(column, row);
       this.tiles.get(key)?.dispose();
       this.tiles.set(key, this.buildTile(gl, column, row, steps));
       built++;
@@ -258,9 +259,15 @@ export class Terrain extends Mesh {
     // view, and would leave nothing out. Instead, each tile is checked on
     // its own, by the bounding volume it measured when it was built (see
     // buildTile).
-    this.tilesToRender = [...this.tiles.values()].filter(({boundingVolume}) =>
-      viewport.canSeeBoundingVolume(boundingVolume, this.worldMatrix)
-    );
+    //
+    // Performance: this checks every tile, every frame, so it refills the
+    // same list rather than filtering into a new one. See "Best practices
+    // for the hot path" in the README.
+    for (const tile of this.tiles.values()) {
+      if (viewport.canSeeBoundingVolume(tile.boundingVolume, this.worldMatrix)) {
+        this.tilesToRender.push(tile);
+      }
+    }
     // With tiles in view, it is drawn by its viewport, like any mesh (see
     // render in Viewport).
     if (this.tilesToRender.length && this.shaderProgram) {
@@ -270,13 +277,14 @@ export class Terrain extends Mesh {
     // What the ground cost, for the app's UI.
     const {hud} = sceneManager.getNodeStateByID(this.id);
     if (hud) {
+      let triangles = 0;
+      for (let i = 0; i < this.tilesToRender.length; i++) {
+        triangles += this.tilesToRender[i].vertexBuffer.indexes.data.length / 3;
+      }
       sceneManager.ui.publish(hud, {
         tiles: this.tiles.size,
         drawn: this.tilesToRender.length,
-        triangles: this.tilesToRender.reduce(
-          (sum, tile) => sum + tile.vertexBuffer.indexes.data.length / 3,
-          0
-        ),
+        triangles,
         built,
       });
     }
@@ -505,6 +513,14 @@ export class Terrain extends Mesh {
     this.textures.clear();
     super.dispose(gl);
   }
+}
+
+// tileKey is the number a tile in column and row is kept by. Performance: it
+// is worked out for every tile around the camera every frame, so it is a
+// number rather than a string such as "3,-2", which would be garbage. Rows
+// stay well within ±50000 tiles of the terrain's middle.
+function tileKey(column, row) {
+  return column * 100000 + row;
 }
 
 // edgeIndexes are the points around the edge of a tile with detail steps,

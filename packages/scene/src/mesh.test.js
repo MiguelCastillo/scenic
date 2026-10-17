@@ -83,8 +83,8 @@ describe("Mesh levelOfDetail", () => {
       mat4.Matrix4.trs([0, 0, 0], [0, 0, 0], [1, 1, 1])
     );
     new Viewport({name: "world"}).add(camera).add(mesh);
-    const vertexBuffers = [0, 1000, 3000].map((lodDistance) => ({lodDistance}));
-    return mesh.levelOfDetail(mesh.worldMatrix, vertexBuffers).lodDistance;
+    mesh.vertexBuffers = [0, 1000, 3000].map((lodDistance) => ({lodDistance}));
+    return mesh.levelOfDetail(mesh.worldMatrix).lodDistance;
   };
 
   test("is the full mesh up close", () => {
@@ -98,7 +98,8 @@ describe("Mesh levelOfDetail", () => {
 
   test("is undefined for a mesh without levels of detail", () => {
     const mesh = new Mesh({type: "static-mesh", name: "rock"});
-    expect(mesh.levelOfDetail(mesh.worldMatrix, [{}])).toBeUndefined();
+    mesh.vertexBuffers = [{}];
+    expect(mesh.levelOfDetail(mesh.worldMatrix)).toBeUndefined();
   });
 });
 
@@ -128,7 +129,17 @@ describe("Mesh prepareForView", () => {
   test("draws its geometries where it is in view", () => {
     const mesh = meshWith([[-5, -5, -5, 5, 5, 5]]);
     expect(mesh.copiesToRender).toHaveLength(1);
-    expect(mesh.copiesToRender[0].vertexBuffers).toHaveLength(1);
+    expect(mesh.copiesToRender[0].worldMatrix).toBe(mesh.worldMatrix);
+  });
+
+  // Performance: prepareForView runs for every copy every frame, so it must
+  // not make new copies each time (see prepareForView).
+  test("fills in the same copies every frame", () => {
+    const mesh = meshWith([[-5, -5, -5, 5, 5, 5]]);
+    const [copy] = mesh.copiesToRender;
+    mesh.prepareForView(contextWith());
+    expect(mesh.copiesToRender).toEqual([copy]);
+    expect(mesh.copiesToRender[0]).toBe(copy);
   });
 
   test("draws nothing where its bounding volume is out of view", () => {
@@ -180,7 +191,7 @@ describe("Mesh prepareForView", () => {
       [-5, -5, -5, 5, 5, 5],
       [-5, -5, -5, 5, 5, 5],
     ]);
-    expect(mesh.copiesToRender[0].vertexBuffers.map((vb) => vb.lodDistance)).toEqual([null]);
+    expect(mesh.copiesToRender[0].lod).toBe(null);
   });
 });
 

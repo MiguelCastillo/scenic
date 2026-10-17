@@ -8,17 +8,14 @@ export class Light extends Renderable {
   // prepareForView adds the light to its viewport's renderablesInView when
   // it has a marker shape to draw.
   prepareForView() {
-    if (this.items.some((child) => child.vertexBuffer) && this.shaderProgram) {
+    if (this.vertexBuffers.length && this.shaderProgram) {
       this.getViewport()?.renderablesInView.push(this);
     }
   }
 
   render(context) {
-    const {shaderProgram, worldMatrix} = this;
+    const {shaderProgram, worldMatrix, vertexBuffers} = this;
     const {sceneManager} = context;
-    const vertexBuffers = this.items
-      .filter((child) => child.vertexBuffer)
-      .map((child) => child.vertexBuffer);
 
     const projectionMatrix = this.getViewProjectionMatrix();
 
