@@ -22,6 +22,9 @@ import {Subscription} from "./events.js";
 // - {type: "visibility", hidden}, when the page is hidden or shown again,
 //   such as when switching apps on a tablet.
 //
+// Keys typed into a text field on the page, such as a code to join a race,
+// are text, not input for the scene, so they aren't sent.
+//
 // While the pointer is locked, keys that would scroll the page, scrollKeys,
 // don't, since the scene uses them, and scrolling over element never leaves
 // the page, such as when scrolling sideways on a trackpad.
@@ -67,12 +70,19 @@ export class InputCapture {
 
     Subscription.create(document)
       .on("keydown", (evt) => {
+        if (isTextField(evt.target)) {
+          return;
+        }
         if (this.locked && scrollKeys.has(evt.code)) {
           evt.preventDefault();
         }
         send({type: "keydown", code: evt.code, key: evt.key, repeat: evt.repeat});
       })
-      .on("keyup", (evt) => send({type: "keyup", code: evt.code, key: evt.key}))
+      .on("keyup", (evt) => {
+        if (!isTextField(evt.target)) {
+          send({type: "keyup", code: evt.code, key: evt.key});
+        }
+      })
       .on("pointerlockchange", () => send({type: "pointerlock", locked: this.locked}))
       .on("visibilitychange", () => send({type: "visibility", hidden: document.hidden}));
   }
@@ -93,4 +103,13 @@ export class InputCapture {
   unlock() {
     document.exitPointerLock();
   }
+}
+
+// isTextField is whether target is somewhere to type text, such as an input
+// field, rather than the page.
+function isTextField(target) {
+  return (
+    target instanceof HTMLElement &&
+    (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName))
+  );
 }

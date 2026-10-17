@@ -647,3 +647,149 @@ body.menu-open #hud {
     min-width: 6em;
   }
 }
+
+/* A side panel is a column on the left, like a carousel's panel, over the
+   scene, with its choices as slanted bars like a menu's: Race with friends,
+   over the hangar while its ship turns on the right, with auto join, a box
+   to type a code in to join a friend's race, start new race and back, and
+   the lobby of a race in a room, over the race, with start and leave
+   race. */
+.side-panel {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2vh;
+  width: var(--column-width);
+  padding: 6vh 12px 6vh 48px;
+  background: var(--column-lines), var(--column);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 20px;
+}
+
+.side-panel[hidden] {
+  display: none;
+}
+
+/* The hangar's own panel hides under Race with friends. */
+body.friends-open #menu .carousel-panel {
+  visibility: hidden;
+}
+
+.side-panel .menu-title {
+  margin: 0 0 2vh;
+  font-family: var(--display-font);
+  font-size: 1.5em;
+  line-height: 1.05;
+  text-transform: uppercase;
+  text-shadow: var(--shadow);
+  transform: skewX(-6deg);
+  transform-origin: left bottom;
+}
+
+.side-panel .menu-title::after {
+  content: "";
+  display: block;
+  width: 72px;
+  height: 5px;
+  margin-top: 14px;
+  background: var(--accent);
+  box-shadow: 0 0 12px var(--accent-glow);
+  transform: var(--slant);
+}
+
+.side-panel ul {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.side-panel button {
+  font: inherit;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.side-panel li button {
+  width: 100%;
+  padding: 12px 24px;
+  border: 2px solid var(--choice-rim);
+  border-radius: 6px;
+  background: var(--choice);
+  text-align: left;
+  transform: var(--slant);
+}
+
+.side-panel li button:hover,
+.side-panel li button:focus-visible {
+  border-color: #fff;
+  background: linear-gradient(100deg, var(--selected-top), var(--selected-bottom));
+  box-shadow: 0 0 24px var(--selected-glow);
+  color: var(--ink);
+  outline: none;
+}
+
+.side-panel label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 0.75em;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.friends-join-row {
+  display: flex;
+  gap: 10px;
+}
+
+#friends-code {
+  width: 7ch;
+  padding: 10px 14px;
+  border: 2px solid var(--panel-rim);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--text);
+  font-family: var(--display-font);
+  font-size: 1.2em;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+#friends-code:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 12px var(--accent-glow);
+  outline: none;
+}
+
+#friends-join button {
+  padding: 10px 20px;
+  border: 2px solid #fff;
+  border-radius: 6px;
+  background: linear-gradient(100deg, var(--selected-top), var(--selected-bottom));
+  color: var(--ink);
+}
+
+#friends-error {
+  min-height: 1.2em;
+  color: var(--selected-top);
+  font-size: 0.8em;
+  font-weight: 600;
+}
+
+#lobby-status {
+  font-weight: 600;
+  white-space: pre-line;
+}

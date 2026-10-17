@@ -13,6 +13,10 @@
 // - smoothing: how long, in seconds, the ship takes to get most of the way
 //   to where it was last said to be. Longer is smoother, and further behind.
 //   0.1 by default.
+// - name: what the ship is called in the race's results. Its id by default.
+// - course: the ID of the race's node, which it enters, the way pilot.js
+//   enters an NPC, so that the race places it among the racers. "race" by
+//   default; a scene without one has no race to enter.
 //
 // What it is gliding to is written to its settings, as target, and the
 // throttle it has reached as throttle, and its booster's boost, which the
@@ -49,7 +53,23 @@ module.exports = function createRemoteShipScript(node) {
     update({seconds = 0, messages = [], sceneManager}) {
       const state = sceneManager.getNodeStateByID(node.id);
       const settings = state.script.settings || {};
-      const {smoothing = 0.1} = settings;
+      const {smoothing = 0.1, course = "race"} = settings;
+
+      // It enters the race, once.
+      const courseState = sceneManager.getNodeStateByID(course);
+      const race = courseState?.script?.settings;
+      if (race && !(race.entrants ?? []).some(({id}) => id === node.id)) {
+        sceneManager.updateNodeStateByID(course, {
+          script: {
+            ...courseState.script,
+            settings: {
+              ...race,
+              entrants: [...(race.entrants ?? []), {id: node.id, name: settings.name ?? node.id}],
+            },
+          },
+        });
+      }
+
       const target = messages.at(-1) ?? settings.target;
       if (!target) {
         return;

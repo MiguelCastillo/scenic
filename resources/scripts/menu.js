@@ -8,7 +8,7 @@
 // As a carousel, it shows its choices one at a time, such as ships to look
 // at, beside a list of actions to take on the one shown, such as Race and
 // Back. Left and right move through the choices, up and down through the
-// actions, and select takes the selected action.
+// actions, and select takes the selected action, or act takes one directly.
 //
 // Its settings come from "script.settings" in the node's config:
 // - title: what the menu is, shown above the choices.
@@ -24,7 +24,9 @@
 //   "carousel", one at a time. "list" by default.
 // - actions: a carousel's actions, as [{label, pick}] to pick the choice
 //   shown, and [{label, back}] to leave the menu. Pick, then Back, by
-//   default.
+//   default. An action that picks can add to the pick with "with", such as
+//   {"label": "Race with friends", "pick": true, "with": {"multiplayer":
+//   true}}, which picks the choice shown with multiplayer: true.
 //
 // Which choice and action are selected is written to its settings every
 // frame, so a saved state picks up where it was:
@@ -35,7 +37,7 @@
 // app's UI about the menu every frame, on that channel of sceneManager.ui
 // (see SceneManager in @scenic/scene): {title, choices, selected, hint,
 // layout, actions, action, picked, back}, with picked the choice picked this
-// frame, {label, goTo}, or null, and back whether the player left the menu
+// frame, {label, goTo}, with what its action adds, or null, and back whether the player left the menu
 // this frame. The app shows the menu as its layout says, goes where a pick
 // says, and closes it on back.
 
@@ -60,7 +62,7 @@ module.exports = function createMenuScript(node) {
         layout = "list",
         actions = defaultActions,
       } = settings;
-      const {navigate, choose, select} = intents;
+      const {navigate, choose, act, select} = intents;
       const carousel = layout === "carousel";
 
       let selected = settings.selected ?? 0;
@@ -73,13 +75,16 @@ module.exports = function createMenuScript(node) {
       let action = settings.action ?? 0;
       if (carousel && actions.length) {
         action = around(action, navigate.y, actions.length);
+        if (act != null && actions[act]) {
+          action = act;
+        }
       }
 
       // A list picks the selected choice on select. A carousel takes its
       // selected action, which picks the choice shown or leaves.
-      const takes = carousel && select ? actions[action] ?? {} : {};
-      const picks = choose != null || (select && (!carousel || takes.pick));
-      const picked = picks ? choices[selected] ?? null : null;
+      const takes = carousel && (select || act != null) ? actions[action] ?? {} : {};
+      const picks = choose != null || (select && !carousel) || !!takes.pick;
+      const picked = picks && choices[selected] ? {...choices[selected], ...takes.with} : null;
       const back = intents.back || !!takes.back;
 
       sceneManager.updateNodeStateByID(node.id, {

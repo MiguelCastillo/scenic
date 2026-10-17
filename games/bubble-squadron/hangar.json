@@ -186,8 +186,13 @@
               "layout": "carousel",
               "actions": [
                 {
-                  "label": "Race",
+                  "label": "Race solo",
                   "pick": true
+                },
+                {
+                  "label": "Race with friends",
+                  "pick": true,
+                  "with": {"multiplayer": true}
                 },
                 {
                   "label": "Back",

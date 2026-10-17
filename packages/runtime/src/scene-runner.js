@@ -138,6 +138,7 @@ export class SceneRunner {
         nextCamera: false,
         navigate: {x: 0, y: 0},
         choose: null,
+        act: null,
         select: false,
         back: false,
       };
@@ -166,6 +167,8 @@ export class SceneRunner {
           intents.navigate.y += event.y;
         } else if (event.type === "choose") {
           intents.choose = event.index;
+        } else if (event.type === "act") {
+          intents.act = event.index;
         } else if (["nextCamera", "select", "back"].includes(event.type)) {
           intents[event.type] = true;
         } else if (event.type === "network") {

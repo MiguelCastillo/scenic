@@ -12,7 +12,8 @@ import {PlayOnTap, PlayWhileLocked, registerSceneInputRouting} from "./input.js"
 import {RoomConnection, connecting, connected, disconnected} from "./room.js";
 import {RemotePlayers} from "./remote-players.js";
 import {Ships, replaceShip} from "./ships.js";
-import {addNPCs} from "./npcs.js";
+import {Lobby, racing, ready, waiting} from "./lobby.js";
+import {addNPC, addNPCs, dealShips, gridPosition, removeNPC} from "./npcs.js";
 
 // The arcade plays one of the games in games/, full screen: the one the page's
 // URL names, such as index.html?game=bubble-squadron, or, without one, the one
@@ -114,6 +115,12 @@ domReady.onReady(async () => {
   const roomEl = document.querySelector("#room");
   const roomStatusEl = document.querySelector("#room-status");
   const roomConnectEl = document.querySelector("#room-connect");
+  const friendsEl = document.querySelector("#friends");
+  const friendsCodeEl = document.querySelector("#friends-code");
+  const friendsErrorEl = document.querySelector("#friends-error");
+  const lobbyEl = document.querySelector("#lobby");
+  const lobbyTitleEl = document.querySelector("#lobby-title");
+  const lobbyStatusEl = document.querySelector("#lobby-status");
   const gl = webgl.createContext(canvas);
 
   // Keep the canvas drawing buffer the same size as the canvas is displayed so
@@ -204,14 +211,12 @@ domReady.onReady(async () => {
       // The panel lists the actions, each sending the intent that takes it
       // when clicked, whichever is selected.
       const actionsEl = document.createElement("ul");
-      actions.forEach(({label, back}, i) => {
+      actions.forEach(({label}, i) => {
         const actionEl = document.createElement("li");
         actionEl.textContent = label;
         actionEl.style.setProperty("--i", i);
         actionEl.classList.toggle("selected", i === action);
-        actionEl.dataset.intent = JSON.stringify(
-          back ? {type: "back"} : {type: "choose", index: selected}
-        );
+        actionEl.dataset.intent = JSON.stringify({type: "act", index: i});
         actionsEl.appendChild(actionEl);
       });
       const panelEl = document.createElement("div");
@@ -305,7 +310,11 @@ domReady.onReady(async () => {
   //   selected, such as to show the ship it is.
   // - allowBack: whether the player can leave the menu, such as with Escape
   //   or a Back button, which resolves with {back: true}. false by default.
-  const showWelcome = async (url, {choices, onSelect, allowBack = false} = {}) => {
+  // - confirm: called with a pick before it is taken, such as to ask more
+  //   about it, while the scene stays on screen. It resolves with the pick
+  //   to take, which can add to it, or null to go on choosing. Without it,
+  //   picks are taken as they are.
+  const showWelcome = async (url, {choices, onSelect, allowBack = false, confirm} = {}) => {
     const scene = await loadScene(gl, await fetchJSON(url), {sceneURL: url.href});
     if (choices) {
       setMenuChoices(scene, () => choices);
@@ -314,12 +323,22 @@ domReady.onReady(async () => {
     document.body.classList.add("menu-open");
     messageEl.textContent = "";
     let selected = null;
+    // Whether a pick is being confirmed, while the menu waits.
+    let confirming = false;
     const chosen = await new Promise((resolve) => {
-      const stopReceiving = receiveEveryFrame(() => {
+      const stopReceiving = receiveEveryFrame(async () => {
+        if (confirming) {
+          return;
+        }
         const message = scene.sceneManager.ui.latest("menu");
         if (message?.picked) {
-          stopReceiving();
-          resolve(message.picked);
+          confirming = true;
+          const taken = confirm ? await confirm(message.picked) : message.picked;
+          confirming = false;
+          if (taken) {
+            stopReceiving();
+            resolve(taken);
+          }
         } else if (message?.back && allowBack) {
           stopReceiving();
           resolve({back: true});
@@ -338,6 +357,82 @@ domReady.onReady(async () => {
     document.body.classList.remove("menu-open");
     return chosen;
   };
+
+  // chooseRace shows Race with friends, over the hangar, for a race of
+  // game's scene, and resolves with the race the player chose, as {code,
+  // scene}, its room's code and its scene, or null for Back (see ServeRooms
+  // in server/rooms.go):
+  // - Auto join puts them in a race on the same track with a seat free, or
+  //   a new one others can be put in.
+  // - Join by code joins a friend's race, on whatever track it is. A code
+  //   that isn't a race, or a race that is full or of another game, says so
+  //   and lets them try again.
+  // - Start new race makes a race only those who know its code can join,
+  //   which the lobby shows to read out to friends.
+  // Escape goes back too.
+  let finishChoosingRace = null;
+  const chooseRace = (game, scene) =>
+    new Promise((resolve) => {
+      friendsCodeEl.value = "";
+      friendsErrorEl.textContent = "";
+      friendsEl.hidden = false;
+      document.body.classList.add("friends-open");
+      friendsEl.querySelector("button")?.focus();
+      finishChoosingRace = async (choice) => {
+        let race = null;
+        try {
+          if (choice === "auto" || choice === "new") {
+            const response = await fetch(new URL(`/rooms/${choice}`, location.href), {
+              method: "POST",
+              headers: {"Content-Type": "application/json"},
+              body: JSON.stringify({game, scene}),
+            });
+            race = {code: (await response.json()).code, scene};
+          } else if (choice === "join") {
+            const code = friendsCodeEl.value.trim().toUpperCase();
+            const response = await fetch(new URL(`/rooms/${code}`, location.href));
+            const info = response.ok ? await response.json() : null;
+            const problem = !code
+              ? "Type a race's code"
+              : !info
+              ? `No race with the code ${code}`
+              : info.full
+              ? `Race ${code} is full`
+              : info.game && info.game !== game
+              ? `Race ${code} is another game's`
+              : "";
+            if (problem) {
+              friendsErrorEl.textContent = problem;
+              return;
+            }
+            race = {code: info.code, scene: info.scene || scene};
+          }
+        } catch (ex) {
+          friendsErrorEl.textContent = "Unable to reach the races. Try again.";
+          return;
+        }
+        finishChoosingRace = null;
+        friendsEl.hidden = true;
+        document.body.classList.remove("friends-open");
+        resolve(race);
+      };
+    });
+  domEvents.Subscription.create(friendsEl)
+    .on("click", (evt) => {
+      const choice = evt.target.closest("[data-race]")?.dataset.race;
+      if (choice) {
+        finishChoosingRace?.(choice);
+      }
+    })
+    .on("submit", (evt) => {
+      evt.preventDefault();
+      finishChoosingRace?.("join");
+    })
+    .on("keydown", (evt) => {
+      if (evt.key === "Escape") {
+        finishChoosingRace?.("back");
+      }
+    });
 
   // Where the player is goes in the page's URL as they go, the game and the
   // scene playing, such as ?game=bubble-squadron&scene=highway.json, so that
@@ -363,7 +458,30 @@ domReady.onReady(async () => {
   // latest message and sends it to the others. The others' messages are
   // published to their copies in the scene (see RemotePlayers). What the
   // messages hold is the game's business.
-  const roomName = params.get("room");
+  //
+  // Each message also says where the player is in the room's lobby: the
+  // scene they are in and their status in it, waiting, ready or racing (see
+  // Lobby), which every player's page keeps, so that a race starts for
+  // everyone in a scene once they are all ready.
+  //
+  // A race's room only counts on the race's page, the one with its game,
+  // its track and the ship the player races in, since every other page's
+  // link is made from the one before it: a page without them, such as the
+  // hangar, or one gone back to in the browser's history, leaves the room
+  // out of its link, and doesn't join it. Reloading a race's page joins
+  // its room again.
+  const onRacePage = ["game", "scene", "ship"].every((name) => params.has(name));
+  if (params.has("room") && !onRacePage) {
+    const url = new URL(location.href);
+    url.searchParams.delete("room");
+    history.replaceState(null, "", url);
+  }
+  const roomName = onRacePage ? params.get("room") : null;
+  const lobby = new Lobby();
+  // This player's id in the room, once the relay has given them one, and
+  // their status in the lobby, which the game playing keeps up to date.
+  let yourID = null;
+  let lobbyStatus = waiting;
   // Where the page receives its player's messages from, while a game is
   // playing that can be played together: the scene playing, its file, the
   // channel, and the ship the player flies, if they chose one, as {scene,
@@ -373,22 +491,43 @@ domReady.onReady(async () => {
   if (roomName) {
     roomEl.hidden = false;
     const room = new RoomConnection(roomName, {
-      onChange: ({status, otherPlayerIDs}) => {
-        roomStatusEl.textContent = {
-          [connecting]: `Room ${roomName} · connecting…`,
-          [connected]: `Room ${roomName} · ${otherPlayerIDs.length + 1} playing`,
-          [disconnected]: `Room ${roomName} · disconnected`,
-        }[status];
+      onChange: ({status, yourID: id, otherPlayerIDs, full}) => {
+        yourID = id;
+        lobby.keep(otherPlayerIDs);
+        roomStatusEl.textContent = full
+          ? `Race ${roomName} is full`
+          : {
+              [connecting]: `Race ${roomName} · connecting…`,
+              [connected]: `Race ${roomName} · ${otherPlayerIDs.length + 1} playing`,
+              [disconnected]: `Race ${roomName} · disconnected`,
+            }[status];
         roomConnectEl.hidden = status !== disconnected;
         remotePlayers?.keep(otherPlayerIDs);
       },
-      onMessage: (playerID, message) => remotePlayers?.publishToScene(playerID, message),
+      onMessage: (playerID, message) => {
+        lobby.hear(playerID, message);
+        remotePlayers?.publishToScene(playerID, message);
+      },
     });
     domEvents.Subscription.create(roomConnectEl).on("click", () => room.connect());
+    // The host also sends where each of its NPCs is, from the network
+    // channel each one's node publishes on, named after it, such as "npc 1"
+    // (see RemotePlayers).
     setInterval(() => {
-      const message = networkSource?.scene.sceneManager.network.latest(networkSource.channel);
-      if (message !== undefined) {
-        room.send({scene: networkSource.file, ship: networkSource.ship, message});
+      if (networkSource) {
+        const {network} = networkSource.scene.sceneManager;
+        room.send({
+          scene: networkSource.file,
+          ship: networkSource.ship,
+          status: lobbyStatus,
+          message: network.latest(networkSource.channel),
+          npcs: Object.fromEntries(
+            networkSource.npcs.map(({name, ship, label}) => [
+              name,
+              {ship, label, message: network.latest(name)},
+            ])
+          ),
+        });
       }
     }, 50);
   }
@@ -449,10 +588,18 @@ domReady.onReady(async () => {
     // such as a race before its countdown ends, as its scene said last
     // frame. A game without a race is under way once it has run a frame.
     let underWay = false;
+    // In a room, whether the game playing has started for everyone in its
+    // scene (see Lobby), and the first place on its starting grid, where
+    // the player's node starts in the scene, {position, rotation}, which
+    // the player's place on the grid is measured from (see gridPosition).
+    let started = false;
+    let gridStart = null;
     const play = (loaded, file) => {
       remotePlayers?.dispose();
       remotePlayers = null;
       networkSource = null;
+      started = false;
+      gridStart = loaded.scene.sceneManager.getNodeStateByID(manifest.player)?.transform;
       if (roomName && manifest.multiplayer) {
         remotePlayers = new RemotePlayers(loaded.scene, file, {
           playerNodeID: manifest.player,
@@ -464,6 +611,14 @@ domReady.onReady(async () => {
           file,
           channel: loaded.scene.sceneManager.getNodeStateByID(manifest.player)?.network,
           ship: shipID,
+          // The NPCs this player flies for everyone as the room's host, as
+          // addNPC resolves with them, with their place on the grid.
+          npcs: [],
+          // Whether an NPC is being added, the number the next one gets,
+          // and the ships to deal out to them.
+          addingNPC: false,
+          nextNPC: 1,
+          npcShips: dealShips(ships, shipID),
         };
       }
       hudEl.textContent = "";
@@ -480,9 +635,12 @@ domReady.onReady(async () => {
           hudEl.textContent = text;
         }
 
-        // A race's countdown shows while it runs, each second popping in.
+        // A race's countdown shows while it runs, each second popping in,
+        // and in a room, only once everyone is ready.
         const countdown =
-          messages.race && !loaded.runner.isPaused() ? countdownText(messages.race) : "";
+          messages.race && !loaded.runner.isPaused() && (started || !roomName)
+            ? countdownText(messages.race)
+            : "";
         if (countdownEl.textContent !== countdown) {
           countdownEl.textContent = countdown;
           countdownEl.classList.remove("tick");
@@ -551,6 +709,15 @@ domReady.onReady(async () => {
             showShip(scene);
           }
         },
+        // Racing with friends, outside a room, asks which race to join
+        // first, and Back from there goes back to the ships.
+        confirm: async (pick) => {
+          if (!pick.multiplayer) {
+            return pick;
+          }
+          const race = await chooseRace(game, gameFile);
+          return race && {...pick, race};
+        },
       });
       if (picked.back) {
         const url = new URL(location.href);
@@ -560,6 +727,16 @@ domReady.onReady(async () => {
       }
       shipID = picked.ship;
       pushToURL("ship", shipID);
+
+      // The race chosen to race with friends opens in its room, on its
+      // track, which, joined by code, is the track the friend picked.
+      if (picked.race) {
+        const url = new URL(location.href);
+        url.searchParams.set("room", picked.race.code);
+        url.searchParams.set("scene", picked.race.scene);
+        location.assign(url);
+        return;
+      }
     }
     messageEl.textContent = `Loading ${manifest.name}…`;
     let playing = play(await loadGame(gameFile), gameFile);
@@ -582,16 +759,46 @@ domReady.onReady(async () => {
     // policy last said.
     let playingNow = false;
     let pausedNow = false;
+    // In a room, before the race starts, the race's lobby shows instead,
+    // while the player isn't playing: the race's code, for friends to join
+    // it by, who they are waiting for, the others still racing the last
+    // race, or how many are ready, and Start, to play and be ready, and
+    // Leave race. Once they play, it tells them they are waiting, until
+    // everyone is ready, and letting go of the game brings the lobby back.
     const tellPlayer = () => {
       const menuShows = !!(menu || menuLoading);
       const join = underWay ? "play" : "join race";
-      messageEl.textContent = menuShows
+      const inLobby = roomName && !started;
+      const count = inLobby && lobby.count({scene: gameFile, status: lobbyStatus});
+      const waitingFor = !inLobby
         ? ""
-        : !playingNow
-        ? `${manifest.name}\n${touchScreen ? "Tap" : "Click"} to ${join}`
-        : pausedNow
-        ? "Paused\nPress P to play"
-        : "";
+        : count.racing
+        ? "Waiting for the race to end"
+        : `${count.ready} of ${count.players} ready`;
+      const showLobby = inLobby && !menuShows && !playingNow;
+      if (lobbyEl.hidden === showLobby) {
+        lobbyEl.hidden = !showLobby;
+      }
+      const title = `Race ${roomName}`;
+      if (showLobby && lobbyTitleEl.textContent !== title) {
+        lobbyTitleEl.textContent = title;
+      }
+      if (showLobby && lobbyStatusEl.textContent !== waitingFor) {
+        lobbyStatusEl.textContent = waitingFor;
+      }
+      const text =
+        menuShows || showLobby
+          ? ""
+          : !playingNow
+          ? `${manifest.name}\n${touchScreen ? "Tap" : "Click"} to ${join}`
+          : pausedNow
+          ? "Paused\nPress P to play"
+          : inLobby
+          ? `Waiting for players\n${waitingFor}`
+          : "";
+      if (messageEl.textContent !== text) {
+        messageEl.textContent = text;
+      }
       pauseEl.hidden = !touchScreen || menuShows || !playingNow;
     };
     const onPlayChange = (playsNow, pausedByP = false) => {
@@ -613,6 +820,85 @@ domReady.onReady(async () => {
           () => stack.runners,
           ({locked, paused}) => onPlayChange(locked, paused)
         );
+    // In a room, the player's status in the lobby follows whether they play,
+    // and the race starts once everyone in its scene is ready (see Lobby).
+    // Until then, the player's node stands at their place on the starting
+    // grid, among the others waiting, and the race hears that it is waiting
+    // for players, on its scene's "room" input channel (see race.js).
+    // The scene the player's node was last placed in, and the place.
+    let placed = {scene: null, place: null};
+
+    // fillSeats keeps the race's seats full until it starts, in a scene
+    // with NPCs: the room's host flies an NPC in every seat no one has
+    // taken, adding them one at a time, and taking one out each time
+    // someone comes in, so that people always take an NPC's seat. The NPCs
+    // stand on the starting grid behind the people. Anyone else flies none.
+    const fillSeats = () => {
+      const source = networkSource;
+      const {npcs} = source;
+      const people = lobby.count({scene: gameFile, status: lobbyStatus}).players;
+      const seats = lobby.isHost(yourID) ? Math.max(0, manifest.npcs.racers - people) : 0;
+      if (npcs.length > seats) {
+        removeNPC(source.scene, npcs.pop());
+      } else if (npcs.length < seats && !source.addingNPC) {
+        source.addingNPC = true;
+        const number = source.nextNPC++;
+        addNPC(source.scene, {
+          playerNodeID: manifest.player,
+          pilot: manifest.npcs.pilot,
+          number,
+          position: gridPosition(gridStart, people + npcs.length),
+          ship: source.npcShips.length
+            ? source.npcShips[(number - 1) % source.npcShips.length]
+            : null,
+          ships,
+          skill: 0.5 + (0.45 * ((number - 1) % 5)) / 4,
+          network: true,
+        })
+          .then((npc) => npcs.push({...npc, place: people + npcs.length}))
+          .finally(() => (source.addingNPC = false));
+      }
+      const {sceneManager} = source.scene;
+      npcs.forEach((npc, i) => {
+        const state = sceneManager.getNodeStateByID(npc.shipNodeID);
+        if (npc.place !== people + i && state) {
+          npc.place = people + i;
+          sceneManager.updateNodeStateByID(npc.shipNodeID, {
+            transform: {...state.transform, position: gridPosition(gridStart, npc.place)},
+          });
+        }
+      });
+    };
+    receiveEveryFrame(() => {
+      if (!roomName || !networkSource) {
+        return;
+      }
+      const {sceneManager} = playing.scene;
+      lobbyStatus = started ? racing : playingNow && !pausedNow ? ready : waiting;
+      if (!started && lobby.startsNow({scene: gameFile, status: lobbyStatus})) {
+        started = true;
+        lobbyStatus = racing;
+      }
+      if (!started && yourID && gridStart && manifest.npcs?.scenes?.includes(gameFile)) {
+        fillSeats();
+      }
+      if (!started && yourID && gridStart) {
+        const place = lobby.place(yourID, gameFile);
+        const state = sceneManager.getNodeStateByID(manifest.player);
+        if ((placed.scene !== playing.scene || placed.place !== place) && state) {
+          placed = {scene: playing.scene, place};
+          sceneManager.updateNodeStateByID(manifest.player, {
+            transform: {...state.transform, position: gridPosition(gridStart, place)},
+          });
+        }
+      }
+      sceneManager.input.publish("room", {
+        type: "network",
+        message: {waitingForPlayers: !started},
+      });
+      tellPlayer();
+    });
+
     let wasUnderWay = null;
     receiveEveryFrame(() => {
       if (underWay !== wasUnderWay) {
@@ -620,6 +906,18 @@ domReady.onReady(async () => {
         tellPlayer();
       }
     });
+
+    // leaveRace goes back to choosing a ship in the hangar, or, in a game
+    // without one, a track on its welcome page, by loading the page without
+    // the one chosen in its URL. It leaves the race's room too, so that the
+    // player chooses again whether to race alone or with friends, and which
+    // race.
+    const leaveRace = () => {
+      const url = new URL(location.href);
+      url.searchParams.delete(manifest.hangar ? "ship" : "scene");
+      url.searchParams.delete("room");
+      location.assign(url);
+    };
 
     // replaceGame loads file, one of the game's scenes, in the game's place,
     // such as another track, or the same one again to restart it.
@@ -687,14 +985,9 @@ domReady.onReady(async () => {
           return;
         }
 
-        // Leaving the race goes back to choosing a ship in the hangar, or,
-        // in a game without one, a track on its welcome page, by loading the
-        // page without the one chosen in its URL.
         if (message.picked?.leave) {
           going = true;
-          const url = new URL(location.href);
-          url.searchParams.delete(manifest.hangar ? "ship" : "scene");
-          location.assign(url);
+          leaveRace();
           return;
         }
 
@@ -715,6 +1008,17 @@ domReady.onReady(async () => {
       stack.push(menu.runner);
       playPolicy.reset();
     };
+
+    // The lobby's Start plays, the same as clicking the game, which makes
+    // the player ready, and its Leave race leaves.
+    domEvents.Subscription.create(lobbyEl).on("click", (evt) => {
+      const choice = evt.target.closest("[data-lobby]")?.dataset.lobby;
+      if (choice === "start") {
+        playPolicy.play();
+      } else if (choice === "leave") {
+        leaveRace();
+      }
+    });
 
     // M opens the menu. The menu closes itself, when the player leaves it.
     capture.onInput((event) => {

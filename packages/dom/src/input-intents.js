@@ -18,6 +18,8 @@
 //   down and x to the right.
 // - {type: "choose", index}: pick an item directly, such as by tapping it,
 //   which whatever draws the menu sends, as it knows where its items are.
+// - {type: "act", index}: take one of a menu's actions directly, such as a
+//   carousel's Race, by tapping it.
 // - {type: "select"}: pick the item the menu is on.
 // - {type: "back"}: leave the menu.
 //

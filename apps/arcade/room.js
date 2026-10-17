@@ -22,7 +22,7 @@ export const connecting = "connecting";
 export const connected = "connected";
 
 // disconnected is out of the room, and not trying to get back in: close was
-// called, or the tries to join again ran out. Only connect joins again. This
+// called, the tries to join again ran out, or the room is full. Only connect joins again. This
 // is what tells a connection that dropped, and joins again on its own, from
 // one that won't.
 export const disconnected = "disconnected";
@@ -34,8 +34,9 @@ export const disconnected = "disconnected";
 // hears theirs. What the messages hold is the game's business.
 //
 // Players are known by the ids the relay gives them, such as "p2". onChange
-// is called with {status, yourID, otherPlayerIDs} whenever any of them
-// changes, and onMessage with (playerID, message) for every message another
+// is called with {status, yourID, otherPlayerIDs, full} whenever any of them
+// changes, with full whether the relay turned the player away because the
+// room has no seat free, and onMessage with (playerID, message) for every message another
 // player sends.
 //
 // status is how the connection is doing: connecting, connected or
@@ -54,13 +55,14 @@ export const disconnected = "disconnected";
 // afresh when it restarts. Messages sent while it isn't connected are
 // dropped.
 //
-// Its API: connect(), send(message), close(), status, yourID and
-// otherPlayerIDs.
+// Its API: connect(), send(message), close(), status, yourID,
+// otherPlayerIDs and full.
 export class RoomConnection {
   constructor(room, {onChange = () => {}, onMessage = () => {}} = {}) {
     this.status = disconnected;
     this.yourID = null;
     this.otherPlayerIDs = new Set();
+    this.full = false;
 
     this._url = new URL("/ws", location.href);
     this._url.protocol = location.protocol === "https:" ? "wss:" : "ws:";
@@ -82,6 +84,7 @@ export class RoomConnection {
     }
     this._retries = 0;
     this._retryDelayMs = 0;
+    this.full = false;
     this.status = connecting;
     this._reportRoomConnection();
     this._openConnection();
@@ -112,9 +115,10 @@ export class RoomConnection {
 
     // The connection dropped, since close stops listening before it closes
     // the socket: try to join again, unless the tries ran out.
+    // A full room is no use trying again.
     this._socket.onclose = () => {
       this.otherPlayerIDs.clear();
-      if (this._retries < maxRetries) {
+      if (!this.full && this._retries < maxRetries) {
         this.status = connecting;
         this._retryTimer = setTimeout(() => this._openConnection(), this._retryDelayMs);
         this._retries++;
@@ -149,6 +153,9 @@ export class RoomConnection {
         case "message":
           this._onMessage(message.playerID, message.message);
           break;
+        case "full":
+          this.full = true;
+          break;
       }
     };
   }
@@ -162,6 +169,7 @@ export class RoomConnection {
       status: this.status,
       yourID: this.yourID,
       otherPlayerIDs: [...this.otherPlayerIDs],
+      full: this.full,
     });
   }
 }

@@ -18,6 +18,7 @@ const noInput = {
     nextCamera: false,
     navigate: {x: 0, y: 0},
     choose: null,
+    act: null,
     select: false,
     back: false,
   },

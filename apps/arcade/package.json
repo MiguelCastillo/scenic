@@ -10,7 +10,7 @@
   },
   "devDependencies": {},
   "scripts": {
-    "test": "echo no tests",
+    "test": "jest",
     "lint": "eslint ./"
   },
   "repository": {
@@ -22,5 +22,15 @@
   "bugs": {
     "url": "https://github.com/MiguelCastillo/scenic/issues"
   },
-  "homepage": "https://github.com/MiguelCastillo/scenic#readme"
+  "homepage": "https://github.com/MiguelCastillo/scenic#readme",
+  "jest": {
+    "transform": {
+      "\\.jsx?$": [
+        "babel-jest",
+        {
+          "rootMode": "upward"
+        }
+      ]
+    }
+  }
 }

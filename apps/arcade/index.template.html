@@ -22,6 +22,39 @@
       <span id="room-status"></span>
       <button id="room-connect" hidden>Connect</button>
     </div>
+    <div id="friends" class="side-panel" hidden>
+      <div class="menu-title">Race with friends</div>
+      <ul>
+        <li><button type="button" data-race="auto">Auto join</button></li>
+      </ul>
+      <form id="friends-join">
+        <label for="friends-code">Join by code</label>
+        <div class="friends-join-row">
+          <input
+            id="friends-code"
+            maxlength="4"
+            autocomplete="off"
+            autocapitalize="characters"
+            spellcheck="false"
+            placeholder="CODE"
+          />
+          <button type="submit">Join</button>
+        </div>
+      </form>
+      <div id="friends-error"></div>
+      <ul>
+        <li><button type="button" data-race="new">Start new race</button></li>
+        <li><button type="button" data-race="back">Back</button></li>
+      </ul>
+    </div>
+    <div id="lobby" class="side-panel" hidden>
+      <div class="menu-title" id="lobby-title"></div>
+      <div id="lobby-status"></div>
+      <ul>
+        <li><button type="button" data-lobby="start">Start</button></li>
+        <li><button type="button" data-lobby="leave">Leave race</button></li>
+      </ul>
+    </div>
     <button id="pause" hidden aria-label="Pause">❚❚</button>
   </body>
 </html>

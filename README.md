@@ -1341,7 +1341,12 @@ Players who open the arcade with the same `?room=`, such as
 player's browser runs it and owns its own ship, and the relay passes what
 each one sends to the others in the room, and tells them who joins and
 leaves (see `server/relay.go` and `apps/arcade/room.js`). The arcade shows
-the room and how many are playing in it.
+the room and how many are playing in it. Rooms for races, at most 6
+players each, are made and found at `/rooms/`, by code (see
+`server/rooms.go`): in Bubble Squadron, Race with friends in the hangar
+offers Auto join, Join by code and Start new race. A race starts once
+everyone in its scene has clicked to join it (see `apps/arcade/lobby.js`
+and `games/README.md`).
 
 One server serves it all: `server/`, a small Go program that serves the
 pages and every file they load, and the rooms (see `server/main.go`). `npm run start-dev` runs it on port 3000, restarting it when its Go code

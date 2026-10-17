@@ -27,8 +27,7 @@
                 },
                 {
                   "label": "Restart race",
-                  "restart": true,
-                  "solo": true
+                  "restart": true
                 },
                 {
                   "label": "Leave race",

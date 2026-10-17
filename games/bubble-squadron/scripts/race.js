@@ -7,6 +7,14 @@
 // lap. The countdown runs on the frame's seconds, so it waits while the
 // scene is paused, such as until the player joins the race by clicking.
 //
+// In a room, where people race each other, the race waits for everyone
+// before its countdown starts: the arcade tells it on the input channel its
+// node's "input" names, such as {"input": "room"}, as messages
+// {waitingForPlayers}, which are true until every player in the room is
+// ready, and then false (see games/README.md). Its countdown runs only once
+// the latest says false. Playing alone, nothing says so, and the countdown
+// runs once the scene plays.
+//
 // The racer is held by setting "held" in its node's state, which the
 // scripts that fly it heed (see fly.js and glide.js). Every racer, the
 // others too, has the lap it is on set as "lap" in its node's state, or 0
@@ -51,6 +59,8 @@
 //
 // How the race is going is written to its settings every frame, so a saved
 // state races on from where it was:
+// - waitingForPlayers: whether the race is waiting for the players in a room
+//   before its countdown, as the latest message said. false by default.
 // - lap: the lap being raced, 1 for the first, or 0 before the start.
 // - countdown: how long until the start, in seconds, counting down to 0.
 // - gate: the index of the next gate.
@@ -85,6 +95,7 @@ const defaults = {
   passedOpacity: 0.2,
   racerName: "You",
   entrants: [],
+  waitingForPlayers: false,
   lap: 0,
   gate: 0,
   time: 0,
@@ -105,7 +116,7 @@ const position = (node) => {
 
 module.exports = function createRaceScript(node) {
   return {
-    update({seconds = 0, sceneManager}) {
+    update({seconds = 0, messages = [], sceneManager}) {
       const state = sceneManager.getNodeStateByID(node.id);
       const settings = {...defaults, ...state.script.settings};
       const gates = node.items;
@@ -115,6 +126,7 @@ module.exports = function createRaceScript(node) {
       }
 
       const race = {
+        waitingForPlayers: messages.at(-1)?.waitingForPlayers ?? settings.waitingForPlayers,
         countdown: settings.countdown,
         lap: settings.lap,
         gate: settings.gate,
@@ -130,8 +142,9 @@ module.exports = function createRaceScript(node) {
 
       // The countdown's end starts the race: the first lap, and the clock,
       // toward the first gate after the start gate, which the racer flies
-      // through on its way from behind it.
-      if (race.lap === 0) {
+      // through on its way from behind it. In a room, it counts down only
+      // once everyone is ready.
+      if (race.lap === 0 && !race.waitingForPlayers) {
         race.countdown = Math.max(0, race.countdown - seconds);
         if (race.countdown === 0) {
           Object.assign(race, {lap: 1, gate: 1 % gates.length, time: 0, lapTimes: []});

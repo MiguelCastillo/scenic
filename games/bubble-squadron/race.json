@@ -1280,6 +1280,7 @@
         },
         {
           "name": "race",
+          "input": "room",
           "type": "transform",
           "hud": "race",
           "script": {
