@@ -1,5 +1,5 @@
 import {Animation} from "./animation.js";
-import {boundingBox, boundingSphere, encloseBoxes} from "./bounds.js";
+import {BoundingBox, boundingSphere} from "./bounds.js";
 import {Camera} from "./camera.js";
 import * as collision from "./collision.js";
 import {BufferedEventBus, EventBus} from "./event-bus.js";
@@ -20,9 +20,8 @@ import {Viewport} from "./viewport.js";
 
 export {
   Animation,
-  boundingBox,
+  BoundingBox,
   boundingSphere,
-  encloseBoxes,
   BufferedEventBus,
   Camera,
   collision,

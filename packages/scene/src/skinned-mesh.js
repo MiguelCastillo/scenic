@@ -12,9 +12,10 @@ export class SkinnedMesh extends Mesh {
     this.animation = null;
   }
 
-  // A skinned mesh's bones move its vertices away from where they are in its
-  // buffers, so it is always drawn rather than culled by their bounds.
-  isVisible() {
+  // isBoundingVolumeInView is always true for a skinned mesh: its bones
+  // move its vertices away from where they are in its buffers, so it is
+  // always drawn rather than culled by the bounding volume around them.
+  isBoundingVolumeInView() {
     return true;
   }
 

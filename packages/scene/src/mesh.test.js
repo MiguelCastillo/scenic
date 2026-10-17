@@ -1,6 +1,7 @@
 import {mat4} from "@scenic/math";
 
 import {Camera} from "./camera.js";
+import {Geometry} from "./geometry.js";
 import {Mesh} from "./mesh.js";
 import {Node} from "./node.js";
 import {Viewport} from "./viewport.js";
@@ -67,41 +68,6 @@ describe("Mesh getLightsState", () => {
   });
 });
 
-describe("Mesh isVisible", () => {
-  // A mesh in a viewport whose camera is at z 300 looking down -Z, with a
-  // buffer of positions around the origin, 10 across.
-  const meshAt = (position, scale = 1) => {
-    const camera = new Camera({name: "camera"})
-      .withWorldMatrix(mat4.Matrix4.trs([0, 0, 300], [0, 0, 0], [1, 1, 1]))
-      .updateProjection({type: "perspective", fov: 90, near: 1, far: 1000}, 100, 100);
-    const mesh = new Mesh({type: "static-mesh", name: "tree"}).withWorldMatrix(
-      mat4.Matrix4.trs(position, [0, 0, 0], [scale, scale, scale])
-    );
-    new Viewport({name: "world"}).add(camera).add(mesh);
-    return mesh;
-  };
-  const buffer = {positions: {data: new Float32Array([-5, -5, -5, 5, 5, 5])}};
-
-  test("is visible in front of the camera", () => {
-    expect(meshAt([0, 0, 0]).isVisible({...buffer})).toBe(true);
-  });
-
-  test("is not visible behind the camera", () => {
-    expect(meshAt([0, 0, 600]).isVisible({...buffer})).toBe(false);
-  });
-
-  test("is visible when scaled up enough to reach into view", () => {
-    // At 200 to the right of the view's edge, a 10 wide buffer is out of
-    // view, until it is scaled up 50 times.
-    expect(meshAt([300, 0, 200]).isVisible({...buffer})).toBe(false);
-    expect(meshAt([300, 0, 200], 50).isVisible({...buffer})).toBe(true);
-  });
-
-  test("is visible without positions to bound", () => {
-    expect(meshAt([0, 0, 600]).isVisible({})).toBe(true);
-  });
-});
-
 describe("Mesh levelOfDetail", () => {
   // A mesh at the origin with buffers that take over at 0, 1000 and 3000
   // from the camera, which is distance away along +Z.
@@ -132,6 +98,66 @@ describe("Mesh levelOfDetail", () => {
   });
 });
 
+describe("Mesh prepareForView", () => {
+  // A mesh in a viewport whose camera is at z 300 looking down -Z, with a
+  // 90 degree view, so that 100 away from it, the view is 200 across, with
+  // geometries of positions under it.
+  const meshWith = (positionsByGeometry, position = [0, 0, 0]) => {
+    const camera = new Camera({name: "camera"})
+      .withWorldMatrix(mat4.Matrix4.trs([0, 0, 300], [0, 0, 0], [1, 1, 1]))
+      .updateProjection({type: "perspective", fov: 90, near: 1, far: 1000}, 100, 100);
+    const mesh = new Mesh({type: "static-mesh", name: "gantry"});
+    positionsByGeometry.forEach((positions, i) =>
+      mesh.add(
+        new Geometry(
+          {name: `gantry ${i}`},
+          {positions: {data: new Float32Array(positions)}, lodDistance: i ? i * 1000 : null}
+        )
+      )
+    );
+    mesh.withWorldMatrix(mat4.Matrix4.trs(position, [0, 0, 0], [1, 1, 1]));
+    new Viewport({name: "world"}).add(camera).add(mesh);
+    mesh.prepareForView();
+    return mesh;
+  };
+
+  test("draws its geometries where it is in view", () => {
+    const mesh = meshWith([[-5, -5, -5, 5, 5, 5]]);
+    expect(mesh.copiesToRender).toHaveLength(1);
+    expect(mesh.copiesToRender[0].vertexBuffers).toHaveLength(1);
+  });
+
+  test("draws nothing where its bounding volume is out of view", () => {
+    expect(meshWith([[-5, -5, -5, 5, 5, 5]], [0, 0, 600]).copiesToRender).toEqual([]);
+  });
+
+  test("culls a long, thin mesh by the box it is, not a sphere around it", () => {
+    // A bar 400 long and 2 thick, 100 above the view's top edge 100 away from
+    // the camera. A sphere around it would reach 200 down into the view.
+    const bar = [-200, -1, -1, 200, 1, 1];
+    expect(meshWith([bar], [0, 201, 200]).copiesToRender).toEqual([]);
+    expect(meshWith([bar], [0, 99, 200]).copiesToRender).toHaveLength(1);
+  });
+
+  test("checks nothing against the view with nothing to draw", () => {
+    const mesh = meshWith([]);
+    mesh.isBoundingVolumeInView = () => {
+      throw new Error("checked a mesh with nothing to draw");
+    };
+    mesh.prepareForView();
+    expect(mesh.copiesToRender).toEqual([]);
+  });
+
+  test("draws one level of detail of its geometries", () => {
+    // Up close, the full mesh, and not the level for 1000 away.
+    const mesh = meshWith([
+      [-5, -5, -5, 5, 5, 5],
+      [-5, -5, -5, 5, 5, 5],
+    ]);
+    expect(mesh.copiesToRender[0].vertexBuffers.map((vb) => vb.lodDistance)).toEqual([null]);
+  });
+});
+
 describe("Mesh render at worldMatrices", () => {
   // A mesh in a viewport whose camera is at z 300 looking down -Z, with one
   // buffer around its origin, and a program that keeps what it was asked to
@@ -144,7 +170,12 @@ describe("Mesh render at worldMatrices", () => {
       mat4.Matrix4.trs([0, 0, 0], [0, 0, 0], [1, 1, 1])
     );
     new Viewport({name: "world"}).add(camera).add(mesh);
-    mesh.addVertexBuffer({positions: {data: new Float32Array([-5, -5, -5, 5, 5, 5])}});
+    mesh.add(
+      new Geometry(
+        {name: "tree shape"},
+        {positions: {data: new Float32Array([-5, -5, -5, 5, 5, 5])}}
+      )
+    );
     mesh.worldMatrices =
       positions && positions.map((p) => mat4.Matrix4.trs(p, [0, 0, 0], [1, 1, 1]));
     const calls = [];
@@ -155,6 +186,7 @@ describe("Mesh render at worldMatrices", () => {
       draw: () => calls.push(["draw"]),
       release: () => calls.push(["release"]),
     };
+    mesh.prepareForView();
     Mesh.render(mesh);
     return calls;
   };

@@ -1,6 +1,5 @@
 import {vec3} from "@scenic/math";
 
-import {boundingSphere} from "./bounds.js";
 import {Renderable} from "./renderable.js";
 
 // findLights returns the lights that shine on a node. It walks up from the
@@ -46,6 +45,11 @@ export class Mesh extends Renderable {
     // or edited one by one, and don't collide. null draws the mesh once,
     // where it is.
     this.worldMatrices = null;
+    // copiesToRender is what to draw this frame, chosen by prepareForView
+    // and drawn by render, as [{worldMatrix, vertexBuffers}]: each copy of
+    // the mesh in view, such as a tree, or the mesh itself where it is, with
+    // the buffers to draw it with.
+    this.copiesToRender = [];
   }
 
   // Specular defaults are set once, when the mesh gets its program, and a
@@ -65,7 +69,7 @@ export class Mesh extends Renderable {
   // lights and material up again when it is drawn then, since meshes share
   // shader programs.
   render(context) {
-    if (!this.vertexBuffers.length || !this.shaderProgram) {
+    if (!this.copiesToRender.length || !this.shaderProgram) {
       return;
     }
 
@@ -263,38 +267,73 @@ export class Mesh extends Renderable {
     return uniforms;
   }
 
-  // isVisible is whether any of vertexBuffer, drawn with worldMatrix, where
-  // this mesh is by default, can be in view of its viewport's camera, by the
-  // sphere around the buffer's positions. The sphere is worked out the first
-  // time it is needed.
-  isVisible(vertexBuffer, worldMatrix = this.worldMatrix) {
-    const viewport = this.getViewport();
-    if (!viewport || !vertexBuffer.positions) {
-      return true;
-    }
-    if (!vertexBuffer.bounds) {
-      vertexBuffer.bounds = boundingSphere(vertexBuffer.positions.data);
+  // prepareForView chooses what the mesh draws this frame into
+  // copiesToRender, for the view of its viewport's active camera. It runs
+  // after the camera has moved for this frame, so it checks against where
+  // the camera is now (see prepareForView in SceneManager).
+  // 1. The copies it could draw are the mesh itself where it is, or one at
+  //    each of its worldMatrices.
+  // 2. A copy is skipped when the mesh's bounding volume, placed with the
+  //    copy's world matrix, is outside the view.
+  // 3. Each copy left draws the buffers of its level of detail for its
+  //    distance from the camera, along with the buffers that aren't a level
+  //    of detail.
+  //
+  // The buffers are read from its Geometry children, not from
+  // vertexBuffers: geometries only add their buffers to vertexBuffers when
+  // they render, which is after this.
+  prepareForView() {
+    const vertexBuffers = this.items
+      .filter((child) => child.vertexBuffer)
+      .map((child) => child.vertexBuffer);
+    this.copiesToRender = [];
+
+    // With nothing to draw, such as before its model has loaded, there is
+    // nothing to check against the view either.
+    if (!vertexBuffers.length) {
+      return;
     }
 
-    // Matrix4 data is row-major: each row is an axis of the world matrix
-    // applied to the center, and the longest column is how much it scales.
-    const {center, radius} = vertexBuffer.bounds;
-    const m = worldMatrix.data;
-    const world = [0, 1, 2].map(
-      (r) =>
-        m[r * 4] * center[0] + m[r * 4 + 1] * center[1] + m[r * 4 + 2] * center[2] + m[r * 4 + 3]
+    for (const worldMatrix of this.worldMatrices || [this.worldMatrix]) {
+      if (!this.isBoundingVolumeInView(worldMatrix)) {
+        continue;
+      }
+      const lod = this.levelOfDetail(worldMatrix, vertexBuffers);
+      const vertexBuffersAtLevel = vertexBuffers.filter(
+        (vb) => vb.lodDistance == null || vb === lod
+      );
+
+      // A copy can still be left with nothing to draw, when the mesh's
+      // levels of detail all start farther away than the copy is.
+      if (vertexBuffersAtLevel.length) {
+        this.copiesToRender.push({worldMatrix, vertexBuffers: vertexBuffersAtLevel});
+      }
+    }
+  }
+
+  // isBoundingVolumeInView is whether the mesh's bounding volume, placed
+  // with worldMatrix, can be in view of its viewport's camera (see
+  // canSeeBoundingVolume in Viewport). A mesh without one, or without a
+  // viewport, can't be ruled out by it.
+  isBoundingVolumeInView(worldMatrix) {
+    const viewport = this.getViewport();
+    return (
+      !this.boundingVolume ||
+      !viewport ||
+      viewport.canSeeBoundingVolume(this.boundingVolume, worldMatrix)
     );
-    const scale = Math.max(...[0, 1, 2].map((c) => Math.hypot(m[c], m[4 + c], m[8 + c])));
-    return viewport.canSee(world, radius * scale);
   }
 
   // levelOfDetail is the buffer to draw of a mesh with levels of detail,
   // drawn with worldMatrix, where this mesh is by default: each of its
   // buffers with a lodDistance takes over from that distance from the
   // camera, so it is the one with the farthest lodDistance the mesh is past.
-  // It is undefined for a mesh without levels of detail.
-  levelOfDetail(worldMatrix = this.worldMatrix) {
-    const levels = this.vertexBuffers.filter((vb) => vb.lodDistance != null);
+  // It is undefined for a mesh without levels of detail. vertexBuffers are
+  // the buffers to choose from, the mesh's draw list by default;
+  // prepareForView passes its geometries' buffers, since the draw list is
+  // still empty when it runs.
+  levelOfDetail(worldMatrix = this.worldMatrix, vertexBuffers = this.vertexBuffers) {
+    const levels = vertexBuffers.filter((vb) => vb.lodDistance != null);
     const camera = this.getViewport()?.activeCamera;
     if (!levels.length || !camera) {
       return levels[0];
@@ -309,14 +348,12 @@ export class Mesh extends Renderable {
       .reduce((best, vb) => (!best || vb.lodDistance > best.lodDistance ? vb : best), null);
   }
 
-  // render draws node where it is, or, when it has worldMatrices, at each
-  // of them instead, such as the trees of a forest (see Forest in
-  // @scenic/runtime). Each place gets its own level of detail, and places
-  // out of view are skipped. The program is set up once, its lights,
-  // material and view, and each place after the first only sends its world
-  // matrix, and draws.
+  // render draws what prepareForView chose in copiesToRender: each copy of
+  // the mesh in view, with its buffers. The program is set up once, with its
+  // lights, material and view, and each copy after the first only sends its
+  // world matrix before drawing.
   static render(node) {
-    const {shaderProgram, vertexBuffers} = node;
+    const {shaderProgram} = node;
     const projectionMatrix = node.getViewProjectionMatrix();
 
     // Configure shader program with its current state.
@@ -330,31 +367,23 @@ export class Mesh extends Renderable {
       ...node.getViewUniforms(),
     ]);
 
-    // Buffers out of view are skipped, such as the trees behind a camera,
-    // and so are the levels of detail the mesh is too near or too far for.
     let inUse = false;
-    for (const worldMatrix of node.worldMatrices || [node.worldMatrix]) {
-      const lod = node.levelOfDetail(worldMatrix);
-      const buffers = vertexBuffers
-        .filter((vb) => vb.lodDistance == null || vb === lod)
-        .filter((vb) => node.isVisible(vb, worldMatrix));
-      if (buffers.length) {
-        program.addUniforms([
-          {
-            name: "worldMatrix",
-            update: (gl, {index}) => {
-              gl.uniformMatrix4fv(index, true, worldMatrix.data);
-            },
+    for (const {worldMatrix, vertexBuffers} of node.copiesToRender) {
+      program.addUniforms([
+        {
+          name: "worldMatrix",
+          update: (gl, {index}) => {
+            gl.uniformMatrix4fv(index, true, worldMatrix.data);
           },
-        ]);
-        if (inUse) {
-          program.sendUniforms(["worldMatrix"]);
-        } else {
-          program.use();
-          inUse = true;
-        }
-        buffers.forEach((vb) => program.draw(vb));
+        },
+      ]);
+      if (inUse) {
+        program.sendUniforms(["worldMatrix"]);
+      } else {
+        program.use();
+        inUse = true;
       }
+      vertexBuffers.forEach((vb) => program.draw(vb));
     }
     if (inUse) {
       program.release();

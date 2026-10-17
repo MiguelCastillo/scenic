@@ -96,6 +96,15 @@ export class Animation extends AnimationSceneNode {
 }
 
 export class Mesh extends AnimatableInterface(MeshSceneNode) {
+  // isBoundingVolumeInView is always true for a mesh with skinned geometry,
+  // whose bones move its vertices away from its bounding volume.
+  isBoundingVolumeInView(worldMatrix) {
+    if (this.items.some((child) => child.skinningEnabled)) {
+      return true;
+    }
+    return super.isBoundingVolumeInView(worldMatrix);
+  }
+
   preRender(context) {
     super.preRender(context);
 

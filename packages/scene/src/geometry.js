@@ -1,4 +1,4 @@
-import {boundingBox} from "./bounds.js";
+import {BoundingBox} from "./bounds.js";
 import {Node} from "./node.js";
 import {Renderable} from "./renderable.js";
 
@@ -6,15 +6,17 @@ import {Renderable} from "./renderable.js";
 // draw list every frame. The renderable only draws the buffer, so it is
 // deleted here when the geometry is disposed.
 //
-// It measures its buffer's box when it is built, localBox, {min, max}, the
-// lowest and highest of its positions, in its own space, or null for a buffer
-// without positions. Its renderable keeps the box around all of its
-// geometries (see Renderable).
+// It measures its buffer's bounding volume when it is built, around its
+// positions, in its own space, or null for a buffer without positions. Its
+// renderable keeps the bounding volume around all of its geometries (see
+// Renderable).
 export class Geometry extends Node {
   constructor(options, vertexBuffer) {
     super({type: "geometry", ...options});
     this.vertexBuffer = vertexBuffer;
-    this.localBox = vertexBuffer?.positions ? boundingBox(vertexBuffer.positions.data) : null;
+    this.boundingVolume = vertexBuffer?.positions
+      ? BoundingBox.around(vertexBuffer.positions.data)
+      : null;
   }
 
   render() {
