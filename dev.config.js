@@ -55,7 +55,7 @@ module.exports = {
     {
       name: "build-arcade",
       script: "npm",
-      args: "run build --workspace=apps/arcade -- --watch",
+      args: "run build:bundle --workspace=apps/arcade -- --minify false --watch",
       // The arcade's bundle includes @scenic/runtime's, so it is rebuilt
       // whenever build-runtime rebuilds that.
       watch: ["apps/arcade/.pakit-arcade.js", "packages/runtime/dist/index.js"],
@@ -66,6 +66,14 @@ module.exports = {
       env_production: {
         NODE_ENV: "production",
       },
+    },
+    {
+      // Gives the apps' bundles fingerprinted names, and writes their pages
+      // to load them, whenever the builds above rebuild them (see
+      // bin/fingerprint.js).
+      name: "fingerprint",
+      script: "bin/fingerprint.js",
+      args: "--watch apps/arcade/dist/arcade.js apps/editor/dist/editor.js",
     },
   ],
 };

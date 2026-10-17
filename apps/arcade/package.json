@@ -11,8 +11,10 @@
     "scripts": {
         "test": "echo no tests",
         "lint": "eslint ./",
-        "build": "pakit --config .pakit-arcade.js --minify false",
-        "build:prod": "pakit --config .pakit-arcade.js --minify"
+        "build:bundle": "pakit --config .pakit-arcade.js",
+        "build": "npm run build:bundle -- --minify false && npm run fingerprint",
+        "build:prod": "npm run build:bundle -- --minify && npm run fingerprint",
+        "fingerprint": "node ../../bin/fingerprint.js dist/arcade.js"
     },
     "repository": {
         "type": "git",

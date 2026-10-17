@@ -1,0 +1,106 @@
+#!/usr/bin/env node
+// fingerprint gives an app's bundle a name with a hash of what is in it, such
+// as dist/arcade.3f9a2c41d0.js, and writes the app's page to load it, so that
+// browsers can keep a bundle for good: a bundle that changes gets a new name,
+// and the page, which browsers never keep (see server/files.go), always names
+// the latest.
+//
+//   bin/fingerprint.js [--watch] apps/arcade/dist/arcade.js [...]
+//
+// For each bundle, such as apps/arcade/dist/arcade.js, built by pakit, it:
+// - copies the bundle to its fingerprinted name, next to it,
+// - deletes the bundle's older fingerprinted copies,
+// - writes the app's index.html, from its index.template.html, two folders
+//   up from the bundle, with every reference to the bundle, such as
+//   "dist/arcade.js", naming the fingerprinted copy instead.
+//
+// With --watch, it does it again whenever a bundle or a template changes,
+// such as when pakit rebuilds a bundle in its own watch mode, and keeps
+// running.
+
+const crypto = require("crypto");
+const fs = require("fs");
+const path = require("path");
+
+// How many hex digits of the bundle's hash go in its name.
+const hashLength = 10;
+
+const args = process.argv.slice(2);
+const watch = args.includes("--watch");
+const bundles = args.filter((arg) => arg !== "--watch").map((bundle) => path.resolve(bundle));
+
+if (!bundles.length) {
+  console.error("usage: bin/fingerprint.js [--watch] apps/arcade/dist/arcade.js [...]");
+  process.exit(1);
+}
+
+// fingerprint fingerprints bundle, and writes its app's page to load it. It
+// does nothing if the bundle hasn't been built yet.
+function fingerprint(bundle) {
+  if (!fs.existsSync(bundle)) {
+    console.warn(`fingerprint: ${bundle} isn't built yet`);
+    return;
+  }
+  const dir = path.dirname(bundle);
+  const {name, ext} = path.parse(bundle);
+  const hash = crypto
+    .createHash("sha256")
+    .update(fs.readFileSync(bundle))
+    .digest("hex")
+    .slice(0, hashLength);
+  const fingerprinted = `${name}.${hash}${ext}`;
+
+  fs.copyFileSync(bundle, path.join(dir, fingerprinted));
+  const older = new RegExp(`^${name}\\.[0-9a-f]{${hashLength}}\\${ext}$`);
+  fs.readdirSync(dir)
+    .filter((file) => older.test(file) && file !== fingerprinted)
+    .forEach((file) => fs.unlinkSync(path.join(dir, file)));
+
+  const appDir = path.dirname(dir);
+  const template = path.join(appDir, "index.template.html");
+  const page = path.join(appDir, "index.html");
+  const reference = `${path.basename(dir)}/${name}${ext}`;
+  const html = fs
+    .readFileSync(template, "utf8")
+    .split(reference)
+    .join(`${path.basename(dir)}/${fingerprinted}`);
+  if (!fs.existsSync(page) || fs.readFileSync(page, "utf8") !== html) {
+    fs.writeFileSync(page, html);
+    console.log(`fingerprint: ${path.relative(process.cwd(), page)} loads ${fingerprinted}`);
+  }
+}
+
+bundles.forEach(fingerprint);
+
+if (watch) {
+  // A bundle is fingerprinted again a moment after it or its template last
+  // changed, so that a build that writes the bundle in pieces is
+  // fingerprinted once, when it is done.
+  const timersByBundle = new Map();
+  const later = (bundle) => {
+    clearTimeout(timersByBundle.get(bundle));
+    timersByBundle.set(
+      bundle,
+      setTimeout(() => fingerprint(bundle), 200)
+    );
+  };
+
+  bundles.forEach((bundle) => {
+    const dir = path.dirname(bundle);
+    const appDir = path.dirname(dir);
+    fs.mkdirSync(dir, {recursive: true});
+    fs.watch(dir, (event, file) => {
+      if (file === path.basename(bundle)) {
+        later(bundle);
+      }
+    });
+    fs.watch(appDir, (event, file) => {
+      if (file === "index.template.html") {
+        later(bundle);
+      }
+    });
+  });
+  console.log(
+    `fingerprint: watching ${bundles.map((b) => path.relative(process.cwd(), b)).join(", ")}`
+  );
+}

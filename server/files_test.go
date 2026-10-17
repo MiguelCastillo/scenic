@@ -36,25 +36,49 @@ func TestFilesServesIndexPagesWhereTheyAre(t *testing.T) {
 	}
 }
 
-func TestFilesTellBrowsersToCheckTheirCopyIsCurrent(t *testing.T) {
+func TestFilesTellBrowsersHowLongToKeepEachFile(t *testing.T) {
 	root := t.TempDir()
-	if err := os.WriteFile(filepath.Join(root, "bundle.js"), []byte("code"), 0o644); err != nil {
+	for _, file := range []string{"index.html", "page.html", "scene.json", "app.3f9a2c41d0.js"} {
+		if err := os.WriteFile(filepath.Join(root, file), []byte("file"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	server := httptest.NewServer(Files(root))
+	defer server.Close()
+
+	for path, want := range map[string]string{
+		"/app.3f9a2c41d0.js": "public, max-age=31536000, immutable",
+		"/":                  "no-store",
+		"/index.html":        "no-store",
+		"/page.html":         "no-store",
+		"/scene.json":        "no-cache",
+	} {
+		resp, err := http.Get(server.URL + path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp.Body.Close()
+		if got := resp.Header.Get("Cache-Control"); got != want {
+			t.Errorf("%s: got Cache-Control %q, want %q", path, got, want)
+		}
+	}
+}
+
+func TestFilesAnswerACurrentCopyWithoutTheFile(t *testing.T) {
+	root := t.TempDir()
+	if err := os.WriteFile(filepath.Join(root, "scene.json"), []byte("{}"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	server := httptest.NewServer(Files(root))
 	defer server.Close()
 
-	resp, err := http.Get(server.URL + "/bundle.js")
+	resp, err := http.Get(server.URL + "/scene.json")
 	if err != nil {
 		t.Fatal(err)
 	}
 	resp.Body.Close()
-	if got := resp.Header.Get("Cache-Control"); got != "no-cache" {
-		t.Fatalf("got Cache-Control %q, want no-cache", got)
-	}
 
-	// A copy that is still current is answered without the file.
-	req, _ := http.NewRequest("GET", server.URL+"/bundle.js", nil)
+	req, _ := http.NewRequest("GET", server.URL+"/scene.json", nil)
 	req.Header.Set("If-Modified-Since", resp.Header.Get("Last-Modified"))
 	resp, err = http.DefaultClient.Do(req)
 	if err != nil {

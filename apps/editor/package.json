@@ -15,8 +15,9 @@
         "test": "jest ./",
         "lint": "eslint --ext .js --ext .jsx ./",
         "build:editor": "pakit --config .pakit-editor.js",
-        "build": "npm run build:editor -- --minify false",
-        "build:prod": "npm run build:editor -- --minify"
+        "build": "npm run build:editor -- --minify false && npm run fingerprint",
+        "build:prod": "npm run build:editor -- --minify && npm run fingerprint",
+        "fingerprint": "node ../../bin/fingerprint.js dist/editor.js"
     },
     "repository": {
         "type": "git",

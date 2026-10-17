@@ -8,7 +8,7 @@
     "lint": "npm run lint --workspaces",
     "start": "cd server && go run . -addr :3000 -static ..",
     "start-dev": "pm2 start dev.config.js",
-    "stop-dev": "pm2 delete server build-runtime build-runtime-fileformats build-editor-app build-arcade",
+    "stop-dev": "pm2 delete server build-runtime build-runtime-fileformats build-editor-app build-arcade fingerprint",
     "monit": "pm2 monit",
     "logs": "pm2 logs",
     "build": "npm run build --workspace=packages/math --workspace=packages/encoding --workspace=packages/scene --workspace=packages/camera --workspace=packages/utils --workspace=packages --workspace=apps",

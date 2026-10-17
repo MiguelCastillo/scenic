@@ -1081,6 +1081,15 @@ the editor and the arcade are rebuilt whenever the runtime is. If you change
 any other package under `packages/`, run `npm run build` to rebuild the
 packages too.
 
+Each app's page is written by the build: edit its `index.template.html`, and
+`bin/fingerprint.js` writes `index.html` from it, loading the app's bundle
+by a name with a hash of what is in it, such as `dist/arcade.3f9a2c41d0.js`
+(`npm run start-dev` runs it as the `fingerprint` watcher). The server lets
+browsers keep fingerprinted bundles for good, since a bundle that changes
+gets a new name, never keeps pages, so they always name the latest bundles,
+and has browsers check everything else, such as scenes and models, is still
+current before using it (see `server/files.go`).
+
 The usual `npm run test` will run all the tests.
 
 `npm run build` builds every package and the editor without minification,
