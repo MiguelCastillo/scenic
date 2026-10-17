@@ -4,6 +4,7 @@
     "description": "Arcade for scenic: plays the games in games/",
     "dependencies": {
         "@scenic/dom": "*",
+        "@scenic/math": "*",
         "@scenic/renderer": "*",
         "@scenic/runtime": "*"
     },

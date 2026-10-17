@@ -59,6 +59,13 @@ games/bubble-squadron/
   publishes what the others need to know on the channel its `network` names
   (see `RemotePlayers` in `apps/arcade`), and each copy flies its player's
   ship.
+- `npcs`: racers the computer plays, when the player plays alone, optional,
+  as `{"count": 3, "pilot": "scripts/pilot.js", "scenes": ["race.json"]}`:
+  how many, the script that flies them, and the scenes that have them. Each
+  NPC is a copy of the `player` node, beside it, on an input channel of its
+  own, such as `"npc 1"`, which its pilot presses keys on, the way a
+  player's keyboard would, so it plays by the same rules (see `addNPCs` in
+  `apps/arcade`). In a game with ships, each flies one at random.
 
 A game never reads anything from `apps/`: its scenes and scripts use only
 what is in its own folder, what is shared in `resources/`, and the `@scenic`

@@ -485,6 +485,22 @@ pile up only so far while nothing pulls them, such as in a background tab:
 the oldest are dropped, and logged. The player's own channel is never
 limited, so a key coming up is never lost.
 
+Racers the computer plays, NPCs, use the same channels. When the player
+plays alone, the arcade adds a copy of the player's node for each NPC, on a
+channel of its own, such as `"npc 1"`, with a pilot beside it that presses
+keys on that channel, the way a keyboard would, so an NPC flies by the same
+rules as the player:
+
+```json
+"npcs": {"count": 3, "pilot": "scripts/pilot.js", "scenes": ["race.json"]}
+```
+
+Bubble Squadron's `pilot.js` steers for the middle of the next gate, boosts
+while heading close to it, and comes back around for a gate it misses. A
+pilot's `skill`, from 0 to 1, sets how closely it steers, how quickly it
+reacts and how much it boosts. It holds its ship until the race starts, like
+the player's, and revs up for the start.
+
 ### Scene stacks and menus
 
 An app can run scenes on top of each other, such as a game's menu over the
