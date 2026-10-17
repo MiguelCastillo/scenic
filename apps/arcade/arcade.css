@@ -17,16 +17,17 @@
   --selected-top: #ffd23f;
   --selected-bottom: #ff6a00;
   --selected-glow: rgba(255, 130, 30, 0.5);
-  /* Menus are a column down the left of the screen, a third of it wide,
-     dark at the screen's edge and fading into the scene, with thin
-     diagonal lines over it. */
-  --column-width: clamp(340px, 38vw, 540px);
-  --column: linear-gradient(
-    to right,
-    rgba(8, 11, 32, 0.95) 0%,
-    rgba(8, 11, 32, 0.86) 62%,
-    rgba(8, 11, 32, 0) 100%
-  );
+  /* Menus are a column down the left of the screen, under a third of it
+     wide, dark, with thin diagonal lines over it, and a fade into the scene
+     just past its right edge. The column ends where its choices do, so the
+     rest of the screen, right of it, is a panel of its own, and what is in
+     it, such as a carousel, is centered there. A hangar's showcase anchor
+     is placed in that panel by the same numbers (see beside in
+     anchor.js). */
+  --column-width: clamp(300px, 30vw, 440px);
+  --column: linear-gradient(to right, rgba(8, 11, 32, 0.95), rgba(8, 11, 32, 0.86));
+  --column-fade: linear-gradient(to right, rgba(8, 11, 32, 0.86), rgba(8, 11, 32, 0));
+  --column-fade-width: 10vw;
   --column-phone: linear-gradient(rgba(8, 11, 32, 0.7), rgba(8, 11, 32, 0.95));
   --column-lines: repeating-linear-gradient(
     -60deg,
@@ -158,9 +159,20 @@ button {
   flex-direction: column;
   justify-content: center;
   width: var(--column-width);
-  /* The right side is left clear for the fade into the scene. */
-  padding: 6vh calc(var(--column-width) * 0.2) 6vh 48px;
+  padding: 6vh 12px 6vh 48px;
   background: var(--column-lines), var(--column);
+}
+
+#menu:not(.carousel)::after,
+#menu .carousel-panel::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 100%;
+  width: var(--column-fade-width);
+  background: var(--column-fade);
+  pointer-events: none;
 }
 
 #menu:empty {
@@ -325,6 +337,11 @@ button {
     pointer-events: auto;
   }
 
+  #menu:not(.carousel)::after,
+  #menu .carousel-panel::after {
+    display: none;
+  }
+
   #menu:not(.carousel) .menu-title,
   #menu:not(.carousel) li {
     text-align: center;
@@ -443,14 +460,14 @@ body.menu-open #hud {
   inset: 0;
 }
 
-/* The stage is just under what the scene shows: centered 69% across, in the
-   middle of the screen right of the column, and below a ship 44% down that
-   reaches 28% of the screen's smaller side from there at most (see the
-   hangar's showcase anchor, and its fit). */
+/* The stage is just under what the scene shows: in the middle of the space
+   right of the column, and below a ship 44% down that reaches 28% of the
+   screen's smaller side from there at most (see the hangar's showcase
+   anchor, its beside, which matches the column's width, and its fit). */
 #menu .carousel-stage {
   position: absolute;
   top: calc(44% + min(28vw, 28vh) + 8px);
-  left: 69%;
+  left: calc((100% + var(--column-width)) / 2);
   transform: translateX(-50%);
   display: flex;
   align-items: center;
