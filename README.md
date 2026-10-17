@@ -386,9 +386,12 @@ the course, wide enough for racers side by side and always solid, so the start
 and finish are clear. A ring counts racers flying through it within
 `gateRadius` of its center, and the gantry anywhere in its opening, which its
 node's state gives as `"gate": {"width": 2000, "height": 800}`, from the
-ground up. Flying through the start gate starts the clock, a lap is every gate
-in order and then the start gate again, and after the last lap the race is
-over, until the start gate starts it again. A gate only counts when it is next and flown
+ground up. A race starts with a countdown, 5 seconds by default, while the
+racer is held behind the start gate, and its end lets the racer go and
+starts the clock. The countdown runs only while the scene plays, so it
+starts when the player joins the race by clicking. A lap is every gate in
+order and then the start gate again, and after the last lap the race is
+over. A gate only counts when it is next and flown
 through the way it faces, along its +Z axis. The next gate glows, and the
 ones already flown through this lap fade. A course leaves room around the
 start gate: the first and last gates are placed by their distance from the
@@ -497,12 +500,13 @@ arrow keys move through and Enter picks. It publishes `{title, choices, selected
 picked that frame, and the app shows the menu and goes where a pick says.
 A choice can say something else the app understands instead of `goTo`.
 Bubble Squadron's `menu.json` uses it as a pause menu, on the `menu` channel,
-with `{"label": "Resume", "resume": true}` and
-`{"label": "Leave race", "leave": true}`, and an orthographic camera, which
-places things in screen pixels from the bottom left, for a ship beside the
-menu. The arcade opens it over the game, on M or the pause button on a touch
-screen, closes it on Resume, and goes back to the game's welcome page, to
-choose a track, on Leave race (see `games/README.md`).
+with `{"label": "Resume", "resume": true}`,
+`{"label": "Restart race", "restart": true, "solo": true}` and
+`{"label": "Leave race", "leave": true}`. The arcade opens it over the game
+whenever the race stops playing once it is under way, such as on Escape, M
+or the pause button on a touch screen, plays the race on Resume, loads it again
+on Restart race, which shows only while playing alone, and goes back to
+choosing a ship on Leave race (see `games/README.md`).
 
 ### Collisions
 

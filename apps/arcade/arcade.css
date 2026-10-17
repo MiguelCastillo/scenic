@@ -137,6 +137,35 @@ button {
   }
 }
 
+/* A race's countdown, big in the middle of the screen, each second popping
+   in (see the "tick" class in arcade-main.js), then GO!. */
+#countdown {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--text);
+  font-family: var(--display-font);
+  font-size: clamp(72px, 14vmin, 180px);
+  text-shadow: 0 0 32px var(--accent-glow), var(--shadow);
+  pointer-events: none;
+}
+
+#countdown:empty {
+  display: none;
+}
+
+#countdown.tick {
+  animation: tick 0.5s ease-out;
+}
+
+@keyframes tick {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.8);
+  }
+}
+
 /* The game's menu, such as its choice of tracks, from what the menu scene
    stacked over the game publishes (see arcade-main.js): a title, a list of
    choices with the selected one marked, and a hint. It is a column down the

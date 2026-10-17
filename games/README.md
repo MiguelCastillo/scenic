@@ -13,7 +13,7 @@ games/bubble-squadron/
   hangar.json        the hangar, choosing a ship
   ships.json         the ships to choose from
   ships/             each ship's parts, such as saucer.json
-  menu.json          the pause menu, to resume or leave a race
+  menu.json          the pause menu, to resume, restart or leave a race
   starfighters.json  another scene
   scripts/           the scripts only its scenes run, such as remote-ship.js
 ```
@@ -30,11 +30,16 @@ games/bubble-squadron/
   one, the game opens on `scene`, with its menu over it.
 - `menu`: the game's menu scene, optional. The arcade opens it stacked over
   the game (see `SceneStack` in `@scenic/runtime`), with the game paused
-  behind it, on M, or the pause button on a touch screen, and Escape closes
-  it. It shows what the menu publishes on its `menu` channel, and does what
-  the picked choice says (see `resources/scripts/menu.js`): `goTo` loads that
-  scene in the game's place, such as another track, `resume` closes the
-  menu, and `leave` goes back to the welcome scene.
+  behind it, on M, and whenever the game stops playing once it is under way,
+  such as on Escape or the pause button on a touch screen. A race is under
+  way once its countdown ends, and before that the arcade asks the player
+  to click to join it, which starts the countdown. It shows what the menu
+  publishes on its `menu` channel, and does what the picked choice says (see
+  `resources/scripts/menu.js`): `goTo` loads that scene in the game's place,
+  such as another track, `resume` closes the menu and plays the game,
+  `restart` loads the game's scene again and plays it, and `leave` goes
+  back to choosing a ship or a track. A choice with `"solo": true`, such as
+  restarting a race, shows only while playing alone, not in a room.
 - `player`: the node that is the player in the game's scenes, such as
   `"starfighter"`, for choosing a ship and playing together.
 - `ships` and `hangar`: the ships to choose from, and the scene to choose

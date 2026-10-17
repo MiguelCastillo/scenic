@@ -60,7 +60,9 @@
 // it on the other players' screens (see remote-ship.js).
 //
 // It flies from wherever the node's state puts it, so moving the node, such
-// as in the editor, moves the rocket.
+// as in the editor, moves the rocket. While its node's state has "held" set,
+// such as before a race starts (see race.js), it stays where it is, though
+// its engine still follows Space, so it can rev up for the start.
 //
 // When the node has a collider (see collision in @scenic/scene), the rocket
 // bounces off anything else with one, such as trees: it is pushed back out
@@ -162,6 +164,25 @@ module.exports = function createFlyScript(node) {
       const targetThrottle = held("Space") ? 1 : settings.cruiseThrottle;
       flight.throttle += (targetThrottle - flight.throttle) * ease(settings.response);
 
+      // publish tells the other players in a network game where it is.
+      const publish = (position, rotation) => {
+        if (state.network) {
+          sceneManager.network.publish(state.network, {
+            position,
+            rotation,
+            throttle: flight.throttle,
+          });
+        }
+      };
+
+      if (state.held) {
+        sceneManager.updateNodeStateByID(node.id, {
+          script: {...state.script, settings: {...state.script.settings, ...flight}},
+        });
+        publish(state.transform.position, state.transform.rotation);
+        return;
+      }
+
       // Turning left heads toward +X, the camera's left when it is behind the
       // rocket. A positive roll lowers the rocket's right side, so it banks
       // into the turn.
@@ -226,14 +247,7 @@ module.exports = function createFlyScript(node) {
         transform: {...state.transform, position, rotation: mat4.rotationAngles(matrix)},
         script: {...state.script, settings: {...state.script.settings, ...flight}},
       });
-
-      if (state.network) {
-        sceneManager.network.publish(state.network, {
-          position,
-          rotation: mat4.rotationAngles(matrix),
-          throttle: flight.throttle,
-        });
-      }
+      publish(position, mat4.rotationAngles(matrix));
     },
   };
 };

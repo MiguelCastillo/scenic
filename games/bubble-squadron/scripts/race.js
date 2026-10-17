@@ -1,9 +1,14 @@
 // race runs a race through a course of gates: its node's children, such as
 // rings from bin/generate-gate.js, in the order they are flown through. The
-// first gate is the start and the finish. Flying through it starts the clock
-// and the first lap, a lap is every other gate in order and then the first
-// one again, and the race is over after the last lap. Flying through the
-// start gate after that races again.
+// first gate is the start and the finish. The race starts with a countdown,
+// while the racer is held at the start, behind the start gate, and at its
+// end the racer is let go and the clock starts. A lap is every other gate in
+// order and then the first one again, and the race is over after the last
+// lap. The countdown runs on the frame's seconds, so it waits while the
+// scene is paused, such as until the player joins the race by clicking.
+//
+// The racer is held by setting "held" in its node's state, which the
+// scripts that fly it heed (see fly.js and glide.js).
 //
 // A gate is flown through when the racer crosses the plane it stands in, its
 // local XY plane, within its opening, going the way it faces, along its +Z
@@ -22,6 +27,7 @@
 // - racer: the ID of the node that races, such as a starfighter flown with
 //   fly.js. "starfighter" by default.
 // - laps: how many laps a race is. 3 by default.
+// - countdown: how long the countdown is, in seconds. 5 by default.
 // - gateRadius: how close to a ring gate's center the racer has to fly
 //   through it. 300 by default, the radius of a ring from
 //   bin/generate-gate.js.
@@ -33,6 +39,7 @@
 // How the race is going is written to its settings every frame, so a saved
 // state races on from where it was:
 // - lap: the lap being raced, 1 for the first, or 0 before the start.
+// - countdown: how long until the start, in seconds, counting down to 0.
 // - gate: the index of the next gate.
 // - time: the race's time so far, in seconds.
 // - lapTimes: how long each lap took, in seconds.
@@ -45,13 +52,14 @@
 //
 // With "hud" in its node's state, such as {"hud": "race"}, it tells the app's
 // UI how the race is going every frame, on that channel of sceneManager.ui
-// (see SceneManager in @scenic/scene): {lap, laps, time, gate, gates, best,
-// finished}, as in its settings, with gates the number of gates after the
-// start gate.
+// (see SceneManager in @scenic/scene): {countdown, lap, laps, time, gate,
+// gates, best, finished}, as in its settings, with gates the number of gates
+// after the start gate.
 
 const defaults = {
   racer: "starfighter",
   laps: 3,
+  countdown: 5,
   gateRadius: 300,
   glow: [0.35, 0.3, 0.05],
   opacity: 0.6,
@@ -77,6 +85,7 @@ module.exports = function createRaceScript(node) {
       }
 
       const race = {
+        countdown: settings.countdown,
         lap: settings.lap,
         gate: settings.gate,
         time: settings.time,
@@ -86,6 +95,20 @@ module.exports = function createRaceScript(node) {
       };
       if (race.lap > 0 && !race.finished) {
         race.time += seconds;
+      }
+
+      // The countdown's end starts the race: the first lap, and the clock,
+      // toward the first gate after the start gate, which the racer flies
+      // through on its way from behind it.
+      if (race.lap === 0) {
+        race.countdown = Math.max(0, race.countdown - seconds);
+        if (race.countdown === 0) {
+          Object.assign(race, {lap: 1, gate: 1 % gates.length, time: 0, lapTimes: []});
+        }
+      }
+      const held = race.lap === 0;
+      if (!!sceneManager.getNodeStateByID(racer.id).held !== held) {
+        sceneManager.updateNodeStateByID(racer.id, {held});
       }
 
       // Matrix4 data is row-major, so a node's position in the world is the
@@ -122,18 +145,9 @@ module.exports = function createRaceScript(node) {
           : Math.hypot(x, y) <= settings.gateRadius;
       };
 
-      if (flewThrough(gates[race.gate])) {
+      if (race.lap > 0 && !race.finished && flewThrough(gates[race.gate])) {
         if (race.gate !== 0) {
           race.gate = (race.gate + 1) % gates.length;
-        } else if (race.lap === 0 || race.finished) {
-          // Through the start gate: the race starts, or starts over.
-          Object.assign(race, {
-            lap: 1,
-            gate: 1 % gates.length,
-            time: 0,
-            lapTimes: [],
-            finished: false,
-          });
         } else {
           // Through the finish gate: a lap is done.
           const lapped = race.lapTimes.reduce((sum, v) => sum + v, 0);
@@ -171,8 +185,9 @@ module.exports = function createRaceScript(node) {
       });
 
       if (state.hud) {
-        const {lap, time, gate, best, finished} = race;
+        const {countdown, lap, time, gate, best, finished} = race;
         sceneManager.ui.publish(state.hud, {
+          countdown,
           lap,
           laps: settings.laps,
           time,

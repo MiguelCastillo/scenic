@@ -14,6 +14,10 @@
 // past an edge, the edge pushes it back toward the road and turns it back
 // onto it, harder the farther out it is, like a soft wall.
 //
+// While its node's state has "held" set, such as before a race starts (see
+// race.js), it stays where it is, though its speed still follows Space, so
+// it can rev up for the start.
+//
 // Keys come from the frame's `keys` and time from its `seconds`, so it glides
 // at the same speed at any frame rate. Its settings come from
 // "script.settings" in the node's config, and all are optional:
@@ -109,17 +113,50 @@ module.exports = function createGlideScript(node) {
       // rate.
       const ease = (time) => (time > 0 ? 1 - Math.exp(-seconds / time) : 1);
 
+      let target = held("ArrowDown")
+        ? settings.brakeSpeed
+        : held("Space")
+        ? settings.boostSpeed
+        : settings.cruiseSpeed;
+
+      // throttle is how hard its engine burns, 0 to 1, for its flames and
+      // its copies on the other players' screens: 0.3 at cruising speed,
+      // less down to brakeSpeed, and more up to boostSpeed.
+      const {brakeSpeed, cruiseSpeed, boostSpeed} = settings;
+      const throttleAt = (speed) =>
+        speed < cruiseSpeed
+          ? 0.3 * Math.max(0, (speed - brakeSpeed) / (cruiseSpeed - brakeSpeed || 1))
+          : 0.3 + 0.7 * Math.min(1, (speed - cruiseSpeed) / (boostSpeed - cruiseSpeed || 1));
+
+      // publish tells the other players in a network game where it is.
+      const publish = (position, rotation) => {
+        if (state.network) {
+          sceneManager.network.publish(state.network, {
+            position,
+            rotation,
+            throttle: throttleAt(glide.speed),
+          });
+        }
+      };
+
+      if (state.held) {
+        glide.speed += (target - glide.speed) * ease(settings.response);
+        sceneManager.updateNodeStateByID(node.id, {
+          script: {
+            ...state.script,
+            settings: {...state.script.settings, ...glide, throttle: throttleAt(glide.speed)},
+          },
+        });
+        publish(state.transform.position, state.transform.rotation);
+        return;
+      }
+
       // Turning left heads toward +X, the camera's left behind the ship. A
       // positive roll lowers its right side, so it leans into the turn.
       glide.heading += turn * settings.turnRate * seconds;
       glide.roll += (-turn * settings.bank - glide.roll) * ease(settings.response);
 
       let [x, , z] = state.transform.position;
-      let target = held("ArrowDown")
-        ? settings.brakeSpeed
-        : held("Space")
-        ? settings.boostSpeed
-        : settings.cruiseSpeed;
 
       // Off the road it slows, and past the soft edge it is pushed back and
       // turned to face along the road, whichever way along it is nearer to
@@ -162,24 +199,14 @@ module.exports = function createGlideScript(node) {
         mat4.rotate(mat4.identity(), 0, glide.heading, 0),
         mat4.rotate(mat4.identity(), 0, 0, glide.roll)
       );
-      const {brakeSpeed, cruiseSpeed, boostSpeed} = settings;
-      const throttle =
-        glide.speed < cruiseSpeed
-          ? 0.3 * Math.max(0, (glide.speed - brakeSpeed) / (cruiseSpeed - brakeSpeed || 1))
-          : 0.3 + 0.7 * Math.min(1, (glide.speed - cruiseSpeed) / (boostSpeed - cruiseSpeed || 1));
-
       sceneManager.updateNodeStateByID(node.id, {
         transform: {...state.transform, position: [x, y, z], rotation: mat4.rotationAngles(matrix)},
-        script: {...state.script, settings: {...state.script.settings, ...glide, throttle}},
+        script: {
+          ...state.script,
+          settings: {...state.script.settings, ...glide, throttle: throttleAt(glide.speed)},
+        },
       });
-
-      if (state.network) {
-        sceneManager.network.publish(state.network, {
-          position: [x, y, z],
-          rotation: mat4.rotationAngles(matrix),
-          throttle,
-        });
-      }
+      publish([x, y, z], mat4.rotationAngles(matrix));
     },
   };
 };
