@@ -200,7 +200,9 @@ body.menu-open #hud {
   display: none;
 }
 
-/* The room the player is playing in with others, and how many are in it. */
+/* The room the player is playing in with others, and how many are in it,
+   or whether it is connecting, with a button to connect again once it has
+   given up. */
 #room {
   position: absolute;
   right: 16px;
@@ -213,6 +215,18 @@ body.menu-open #hud {
   pointer-events: none;
 }
 
-#room:empty {
+#room[hidden],
+#room-connect[hidden] {
   display: none;
+}
+
+#room-connect {
+  margin-left: 8px;
+  padding: 2px 10px;
+  border: none;
+  border-radius: 4px;
+  background: white;
+  color: black;
+  font-size: 14px;
+  pointer-events: auto;
 }

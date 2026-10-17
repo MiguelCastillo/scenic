@@ -9,7 +9,7 @@ import {webgl} from "@scenic/renderer";
 import {loadScene, SceneRunner, SceneStack} from "@scenic/runtime";
 
 import {PlayOnTap, PlayWhileLocked, registerSceneInputRouting} from "./input.js";
-import {RoomConnection} from "./room.js";
+import {RoomConnection, connecting, connected, disconnected} from "./room.js";
 import {RemotePlayers} from "./remote-players.js";
 
 // The arcade plays one of the games in games/, full screen: the one the page's
@@ -74,6 +74,8 @@ domReady.onReady(async () => {
   const messageEl = document.querySelector("#message");
   const pauseEl = document.querySelector("#pause");
   const roomEl = document.querySelector("#room");
+  const roomStatusEl = document.querySelector("#room-status");
+  const roomConnectEl = document.querySelector("#room-connect");
   const gl = webgl.createContext(canvas);
 
   // Keep the canvas drawing buffer the same size as the canvas is displayed so
@@ -198,7 +200,10 @@ domReady.onReady(async () => {
   domEvents.Subscription.create(window).on("popstate", () => location.reload());
 
   // Players who open the arcade with the same ?room= play together, through
-  // the relay (see room.js). The page shows the room and how many are in it.
+  // the relay (see room.js). The page shows the room and how many are in it,
+  // or that it is connecting, such as while the server restarts, when the
+  // others' copies are taken out until they are heard from again. Once the
+  // connection gives up, a button connects again.
   // While a game that can be played together is playing, the page receives
   // what its player's node publishes on the scene's sceneManager.network, on
   // the channel the node's "network" names: 20 times a second, it pulls the
@@ -212,16 +217,20 @@ domReady.onReady(async () => {
   let networkSource = null;
   let remotePlayers = null;
   if (roomName) {
-    roomEl.textContent = `Room ${roomName} · joining…`;
+    roomEl.hidden = false;
     const room = new RoomConnection(roomName, {
-      onChange: ({connected, otherPlayerIDs}) => {
-        roomEl.textContent = connected
-          ? `Room ${roomName} · ${otherPlayerIDs.length + 1} playing`
-          : `Room ${roomName} · not connected`;
+      onChange: ({status, otherPlayerIDs}) => {
+        roomStatusEl.textContent = {
+          [connecting]: `Room ${roomName} · connecting…`,
+          [connected]: `Room ${roomName} · ${otherPlayerIDs.length + 1} playing`,
+          [disconnected]: `Room ${roomName} · disconnected`,
+        }[status];
+        roomConnectEl.hidden = status !== disconnected;
         remotePlayers?.keep(otherPlayerIDs);
       },
       onMessage: (playerID, message) => remotePlayers?.publishToScene(playerID, message),
     });
+    domEvents.Subscription.create(roomConnectEl).on("click", () => room.connect());
     setInterval(() => {
       const message = networkSource?.scene.sceneManager.network.latest(networkSource.channel);
       if (message !== undefined) {
