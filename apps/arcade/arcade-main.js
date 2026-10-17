@@ -139,18 +139,20 @@ domReady.onReady(async () => {
     }
   });
 
-  // showMenu shows a menu's message (see menu.js in resources/scripts): its
-  // title, its choices, with the selected one marked, and its hint, redrawn
-  // only when they change. A carousel is in two parts: a panel, on the
-  // left, with its title and its actions, such as Race and Back, and the
-  // stage, on the right, under what is being chosen, such as a ship, with
-  // its name and how many there are between arrows to the choices beside
-  // it.
+  // showMenu shows a menu's message (see menu.js in resources/scripts),
+  // from the menu scene at sceneURL: its title, its choices, with the
+  // selected one marked, and its hint, redrawn only when they change. A
+  // carousel is in two parts: a panel, on the left, with its title and its
+  // actions, such as Race and Back, and the stage, on the right, under what
+  // is being chosen, such as a ship, with its name and how many there are
+  // between arrows to the choices beside it. A choice with a picture, such
+  // as a track's, shows it on the stage, above its name, from its image,
+  // relative to the menu scene's file.
   // A menu that is new, rather than one with another choice selected, is
   // marked "opening", so that it pops in (see arcade.css).
   let shownMenu = null;
   let shownChoices = null;
-  const showMenu = (message) => {
+  const showMenu = (message, sceneURL) => {
     const key = JSON.stringify(message);
     if (key === shownMenu) {
       return;
@@ -202,6 +204,15 @@ domReady.onReady(async () => {
       captionEl.append(labelEl, countEl);
       const stageEl = document.createElement("div");
       stageEl.className = "carousel-stage";
+      const image = choices[selected]?.image;
+      if (image) {
+        const pictureEl = document.createElement("img");
+        pictureEl.className = "carousel-picture";
+        pictureEl.src = new URL(image, sceneURL).href;
+        pictureEl.alt = "";
+        captionEl.prepend(pictureEl);
+        stageEl.classList.add("with-picture");
+      }
       stageEl.append(
         arrow("‹", -1, "carousel-previous"),
         captionEl,
@@ -270,7 +281,7 @@ domReady.onReady(async () => {
           stopReceiving();
           resolve({back: true});
         } else if (message) {
-          showMenu(message);
+          showMenu(message, url);
           if (message.selected !== selected) {
             selected = message.selected;
             onSelect?.(message.choices[selected], scene);
@@ -417,10 +428,18 @@ domReady.onReady(async () => {
     };
     // A game opens on the scene the URL names, or, without one, on its
     // welcome scene, to choose the track to play, or on the scene it starts
-    // in.
+    // in. Back goes back to choosing a game, by loading the page without
+    // the game in its URL.
     let gameFile = params.get("scene");
     if (!gameFile && manifest.welcome) {
-      gameFile = (await showWelcome(new URL(manifest.welcome, manifestURL))).goTo;
+      const picked = await showWelcome(new URL(manifest.welcome, manifestURL), {allowBack: true});
+      if (picked.back) {
+        const url = new URL(location.href);
+        url.searchParams.delete("game");
+        location.assign(url);
+        return;
+      }
+      gameFile = picked.goTo;
       pushToURL("scene", gameFile);
     }
     gameFile = gameFile || manifest.scene;
@@ -575,7 +594,7 @@ domReady.onReady(async () => {
           return;
         }
 
-        showMenu(message);
+        showMenu(message, new URL(manifest.menu, manifestURL));
       });
       stack.push(menu.runner);
       playPolicy.reset();

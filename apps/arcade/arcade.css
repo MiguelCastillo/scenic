@@ -509,6 +509,38 @@ body.menu-open #hud {
   text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
 }
 
+/* A stage with a picture, such as a track's, is the picture, with its
+   name under it, between the arrows, in the middle of the screen right of
+   the column. */
+#menu .carousel-stage.with-picture {
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+#menu .carousel-picture {
+  display: block;
+  width: clamp(240px, 44vw, 820px);
+  max-height: 62vh;
+  margin-bottom: 18px;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border: 2px solid var(--panel-rim);
+  border-radius: 12px;
+  background: var(--panel);
+  box-shadow: 0 0 28px var(--accent-glow), 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+
+#menu.opening .carousel-picture {
+  animation: picture-in 0.35s ease-out both;
+}
+
+@keyframes picture-in {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+}
+
 /* On a phone, the ship is at the top, with the stage under it, and the
    panel across the bottom: the ship 38% down, reaching 34% of the screen's
    width from there at most (see the hangar's showcase anchor). */
@@ -549,6 +581,15 @@ body.menu-open #hud {
     left: 50%;
     gap: 12px;
     font-size: 20px;
+  }
+
+  #menu .carousel-stage.with-picture {
+    top: 30%;
+  }
+
+  #menu .carousel-picture {
+    width: calc(100vw - 140px);
+    margin-bottom: 12px;
   }
 
   #menu .carousel-arrow {
