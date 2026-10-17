@@ -305,7 +305,6 @@ const {angles} = require("@scenic/math");
 module.exports = function createScript(node) {
   return {
     update(context) {}, // once a frame, before the scene is drawn
-    render(context) {}, // just after the node's own render, every draw
     dispose() {}, // when the scene is disposed
   };
 };
@@ -315,8 +314,7 @@ Every hook is optional. `update` is where a script changes the scene's state:
 `SceneManager.runScripts` calls it once a frame, parents before children, and
 the frame is drawn after, so the changes show up in the same frame. Drawing
 (`SceneManager.render`) never runs `update`, so a frame can be drawn as often
-as needed without moving anything, and a script's `render` must leave the
-state alone too. Another node's world matrix is where that node was last
+as needed without moving anything. Another node's world matrix is where that node was last
 frame, since world matrices are worked out after the scripts run. `update`'s `context` has the frame's time in `ms` and the
 `sceneManager`. In the editor
 it also has `seconds` since the last frame, and the player's input: the `keys`
@@ -1046,35 +1044,80 @@ editor's nodes.
 
 ### Rendering a frame
 
+Every node takes part in drawing a frame in three phases, each a method on
+`Node` that a node type overrides for its part:
+
+| Phase            | What it does                                        |
+| ---------------- | --------------------------------------------------- |
+| `preRender`      | Works out where everything is                       |
+| `prepareForView` | Decides what to draw for the camera, and sets it up |
+| `render`         | Draws what `prepareForView` decided                 |
+
+Each phase only does its own job, so that the one after it can rely on it.
+
+**`preRender` works out where everything is.** `SceneManager.preRender`
+calls it on every node, parents before children, so that each node's world
+matrix is worked out from its parent's, which is already up to date. Nodes
+that animate take their pose for the frame's time here, and nodes that need
+a GPU buffer to draw, such as the sky's triangle, create it the first time.
+Nothing in it depends on the camera, since the camera may not have moved for
+this frame yet.
+
+**`prepareForView` decides what to draw, and sets it up.**
+`SceneManager.prepareForView` calls it on every node, parents before
+children, once every world matrix is worked out and the active camera has
+moved, so that it is always from where the camera is now, however far it
+moved. It is where the camera is needed:
+
+- A viewport empties its draw list, `renderablesInView`, before its
+  children run.
+- Renderables decide what of them is in view, such as a mesh choosing its
+  `copiesToRender` and the terrain its `tilesToRender`, by their bounding
+  volumes (see `bounds.js`). Each with something in view adds itself to its
+  viewport's draw list, with its `renderOrder`.
+- Nodes that build around the camera do it here, such as the terrain
+  building its tiles and the forest planting its trees.
+- Children that set up their renderable's shader program do it here, such
+  as a `Material`'s colors, a `Texture`, or an fbx `Geometry`'s bones.
+
+Nothing is drawn in it.
+
+**`render` draws what `prepareForView` decided.** Each viewport draws the
+renderables in its draw list, `renderablesInView`, in their `renderOrder`:
+the background, then solid renderables grouped by shader program, then
+translucent ones farthest first, then overlays (see
+[The draw list](#the-draw-list)). Each renderable's `render` draws only what
+its `prepareForView` chose, such as a mesh's `copiesToRender`, with the
+program its children set up. `SceneManager.render` asks each viewport to
+render, rather than walking the scene, since the draw list already holds
+everything to draw. Drawing only reads the scene's state, so the same frame
+can be drawn again, as often as needed.
+
+#### The order of a frame
+
 A frame is worked out in an order set by what depends on what: a camera
 that follows a node, such as a ship, depends on where the node is this
 frame, and what is prepared for the view, such as which trees to plant,
 depends on where the camera is. So `SceneRunner.stepFrame`:
 
-1. Runs the scripts, with `SceneManager.runScripts` (see [Scripts](#scripts)).
-2. Works out where everything is: `SceneManager.preRender` calls `preRender`
-   on every node, parents before children, so that every world matrix is up
-   to date with what the scripts did. Nothing in it depends on the camera.
+1. Runs the scripts, with `SceneManager.runScripts` (see [Scripts](#scripts)),
+   which change the scene's state, such as moving a ship.
+2. Runs `preRender`, so every world matrix is up to date with what the
+   scripts did.
 3. Moves the active camera, with `CameraSystem.moveActiveCamera`, reading
-   where the node it follows is this frame, then works out the camera and
-   what is attached to it again where it moved to, with
-   `SceneManager.preRenderNode`.
-4. Prepares the view: `SceneManager.prepareForView` calls `prepareForView`
-   on every node, parents before children, such as the terrain building the
-   tiles around the camera and the forest planting the trees around it, from
-   where the camera is now, however far it moved. Each mesh in view adds
-   itself to its viewport's draw list here (see [The draw list](#the-draw-list)).
+   where the node it follows is this frame, then runs `preRender` again on
+   the camera and what is attached to it, with `SceneManager.preRenderNode`.
+4. Runs `prepareForView`, from where the camera is now.
+
+`SceneRunner.renderFrame` then runs `render`.
 
 A camera following where its node was last drawn instead would trail it by
 a frame's movement, more or less as frames are longer or shorter, and shake
-it on the screen.
+it on the screen. And preparing the view before the camera moved would
+choose what to draw for where the camera was: trees and tiles it has flown
+past, and none where it is now.
 
-`SceneRunner.renderFrame` then calls `SceneManager.render`, which calls
-`render` on every node, children before parents. Children such as a
-`Material` or `Texture` have already set up their mesh's shader program, in
-`prepareForView`, and each viewport renders after everything under it,
-drawing its draw list.
-Drawing only reads the scene's state:
+For the `donut`, a static mesh with a material:
 
 ```mermaid
 sequenceDiagram
@@ -1084,28 +1127,33 @@ sequenceDiagram
   participant Mat as Material
   participant SP as ShaderProgram
 
+  Note over SM,SP: preRender, parents first
+  SM->>VP: preRender()
+  SM->>Mesh: preRender()
+  Mesh->>Mesh: work out its world matrix
+
   Note over SM,SP: prepareForView, parents first
   SM->>VP: prepareForView()
-  VP->>VP: empty meshesToRender
+  VP->>VP: empty renderablesInView
   SM->>Mesh: prepareForView()
   Mesh->>Mesh: choose copiesToRender
-  Mesh->>VP: add itself to meshesToRender
+  Mesh->>VP: add itself to renderablesInView
   SM->>Mat: prepareForView()
   Mat->>SP: set material uniforms
 
-  Note over SM,SP: render, children first
+  Note over SM,SP: render, from the draw list
   SM->>VP: render()
-  VP->>Mesh: draw(), solid meshes by program, then translucent
+  VP->>Mesh: render(), in its renderOrder
   Mesh->>SP: set lighting and matrix uniforms, draw each copy
 ```
 
 #### The draw list
 
 Before anything is drawn, `prepareForView` has already decided everything a
-viewport will draw this frame: each mesh in view adds itself to the
-viewport's `meshesToRender`, and the viewport draws that list once
-everything under it has rendered (`render` in `viewport.js`). Meshes don't
-draw themselves as the scene is walked. That buys:
+viewport will draw this frame: each renderable in view, such as a mesh, the
+terrain, the sky or a light, adds itself to the viewport's
+`renderablesInView`, and the viewport renders that list (`render` in
+`viewport.js`). That buys:
 
 - **An order chosen for WebGL, not by how the scene is laid out.** Walking
   the tree would draw meshes in the order they were added: a tree, a ship,
@@ -1116,21 +1164,22 @@ draw themselves as the scene is walked. That buys:
   own, such as their material and world matrix. Values a program already
   has aren't sent again (see `use` in `program.js`), and with meshes
   grouped, most of them already are.
-- **Translucency in one place.** Translucent meshes have to be drawn after
-  everything solid, farthest first. With every mesh in view in one list,
-  that is a split and a sort, in the viewport, rather than each
-  translucent mesh setting itself aside mid-walk to be drawn at the end.
+- **Each renderable drawn when it needs to be.** Some renderables depend
+  on what is drawn before them: translucent meshes go after everything
+  solid, farthest first, so they blend over what is behind them, and an
+  fbx skeleton goes last, over everything. Each renderable says when, as
+  its `renderOrder` (see `RenderOrder` in `viewport.js`), and with
+  everything in view in one list, that is a split and a sort in the
+  viewport, rather than an accident of where each node is in the scene.
 - **Deciding apart from drawing.** `prepareForView` chooses what to draw,
-  from where the camera is now, and `render` only draws what was chosen.
-  The list is exactly what a frame draws, so it can be counted, shown, or
-  checked in a test without a WebGL context (see `viewport.test.js`).
+  from where the camera is now, and sets it up, and `render` only draws
+  what was chosen. The list is exactly what a frame draws, so it can be
+  counted, shown, or checked in a test without a WebGL context (see
+  `viewport.test.js`).
 - **Room to grow.** A better order is a change to one sort: such as by
   material within a program, or solid meshes nearest first so that what is
   hidden fails the depth test early. A pass that draws the same meshes
   again, such as shadows, can reuse the list rather than walk the scene.
-
-Nodes that aren't meshes, such as the sky, the grid and lights, still draw
-as the scene is walked, before their viewport draws its list.
 
 ### Disposing a scene
 

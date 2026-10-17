@@ -4,7 +4,11 @@ import {Camera} from "./camera.js";
 import {Geometry} from "./geometry.js";
 import {Mesh} from "./mesh.js";
 import {Node} from "./node.js";
-import {Viewport} from "./viewport.js";
+import {RenderOrder, Viewport} from "./viewport.js";
+
+// contextWith is the context a mesh gets each frame, with a scene manager
+// whose every node has state.
+const contextWith = (state = {}) => ({sceneManager: {getNodeStateByID: () => state}});
 
 describe("Mesh getLightsState", () => {
   // tree builds nodes from [type, name, children] lists, with meshes as
@@ -117,7 +121,7 @@ describe("Mesh prepareForView", () => {
     );
     mesh.withWorldMatrix(mat4.Matrix4.trs(position, [0, 0, 0], [1, 1, 1]));
     new Viewport({name: "world"}).add(camera).add(mesh);
-    mesh.prepareForView();
+    mesh.prepareForView(contextWith());
     return mesh;
   };
 
@@ -144,22 +148,30 @@ describe("Mesh prepareForView", () => {
     mesh.isBoundingVolumeInView = () => {
       throw new Error("checked a mesh with nothing to draw");
     };
-    mesh.prepareForView();
+    mesh.prepareForView(contextWith());
     expect(mesh.copiesToRender).toEqual([]);
   });
 
-  test("adds itself to its viewport's meshes to render when in view", () => {
+  test("adds itself to its viewport's renderables in view, as solid", () => {
     const mesh = meshWith([[-5, -5, -5, 5, 5, 5]]);
     mesh.shaderProgram = {};
-    mesh.prepareForView();
-    expect(mesh.getViewport().meshesToRender).toEqual([mesh]);
+    mesh.prepareForView(contextWith());
+    expect(mesh.getViewport().renderablesInView).toEqual([mesh]);
+    expect(mesh.renderOrder).toBe(RenderOrder.SOLID);
   });
 
-  test("isn't added to its viewport's meshes to render when out of view", () => {
+  test("is translucent when its material's opacity is below 1", () => {
+    const mesh = meshWith([[-5, -5, -5, 5, 5, 5]]);
+    mesh.shaderProgram = {};
+    mesh.prepareForView(contextWith({material: {opacity: 0.5}}));
+    expect(mesh.renderOrder).toBe(RenderOrder.TRANSLUCENT);
+  });
+
+  test("isn't added to its viewport's renderables in view when out of view", () => {
     const mesh = meshWith([[-5, -5, -5, 5, 5, 5]], [0, 0, 600]);
     mesh.shaderProgram = {};
-    mesh.prepareForView();
-    expect(mesh.getViewport().meshesToRender).toEqual([]);
+    mesh.prepareForView(contextWith());
+    expect(mesh.getViewport().renderablesInView).toEqual([]);
   });
 
   test("draws one level of detail of its geometries", () => {
@@ -172,7 +184,7 @@ describe("Mesh prepareForView", () => {
   });
 });
 
-describe("Mesh draw at worldMatrices", () => {
+describe("Mesh render at worldMatrices", () => {
   // A mesh in a viewport whose camera is at z 300 looking down -Z, with one
   // buffer around its origin, and a program that keeps what it was asked to
   // do: [use], [send, names], [draw] and [release].
@@ -200,8 +212,8 @@ describe("Mesh draw at worldMatrices", () => {
       draw: () => calls.push(["draw"]),
       release: () => calls.push(["release"]),
     };
-    mesh.prepareForView();
-    mesh.draw({sceneManager: {getNodeStateByID: () => ({})}});
+    mesh.prepareForView(contextWith());
+    mesh.render(contextWith());
     return calls;
   };
   const drawsAt = (positions) => callsAt(positions).filter(([call]) => call === "draw").length;

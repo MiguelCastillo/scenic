@@ -5,16 +5,20 @@ import {Renderable} from "./renderable.js";
 // node is rendered in SceneNodeMesh when rendering nodes to which we apply
 // lighting to.
 export class Light extends Renderable {
+  // prepareForView adds the light to its viewport's renderablesInView when
+  // it has a marker shape to draw.
+  prepareForView() {
+    if (this.items.some((child) => child.vertexBuffer) && this.shaderProgram) {
+      this.getViewport()?.renderablesInView.push(this);
+    }
+  }
+
   render(context) {
     const {shaderProgram, worldMatrix} = this;
     const {sceneManager} = context;
     const vertexBuffers = this.items
       .filter((child) => child.vertexBuffer)
       .map((child) => child.vertexBuffer);
-
-    if (!vertexBuffers.length || !shaderProgram) {
-      return;
-    }
 
     const projectionMatrix = this.getViewProjectionMatrix();
 

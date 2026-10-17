@@ -16,7 +16,7 @@ import {StateManager} from "./state-manager.js";
 import {StaticMesh} from "./static-mesh.js";
 import {Texture} from "./texture.js";
 import * as traversal from "./traversal.js";
-import {Viewport} from "./viewport.js";
+import {RenderOrder, Viewport} from "./viewport.js";
 
 export {
   Animation,
@@ -32,6 +32,7 @@ export {
   Mesh,
   Node,
   Renderable,
+  RenderOrder,
   Scene,
   SceneManager,
   SkinnedMesh,

@@ -233,29 +233,15 @@ export class SceneManager {
   // holds anything else the app wants every node to see while drawing, and it
   // is added to the context that render gets.
   //
-  // It runs every render, children before parents, so that children such as
-  // Material set up their parent's program before the parent draws, and a
-  // viewport draws its meshes in view after everything under it has
-  // rendered (see render in Viewport). preRender
-  // having run first means a node that renders can rely on the world matrix
-  // of any other node in the scene, such as the camera or the bones of a
-  // skeleton, no matter where in the tree that node is.
-  //
-  // A node's script, if it has one, can also draw: its render runs just
-  // after the node's. It is called here rather than from Node so that every
-  // node type gets it, including types whose render does not call
-  // super.render.
+  // Each viewport renders what prepareForView chose for it, its
+  // renderablesInView (see render in Viewport). preRender having run first
+  // means a renderable can rely on the world matrix of any other node in the
+  // scene, such as the camera or the bones of a skeleton, no matter where in
+  // the tree that node is.
   render(ms, gl, frame = {}) {
     const context = {...frame, gl, ms, sceneManager: this};
-
-    const renderPass = bubbleTraversal(
-      (node) => node,
-      (node) => {
-        node.render(context);
-        node.script?.render?.(context);
-      }
-    );
-
-    this.scene.items.forEach(renderPass);
+    for (const viewport of Node.findChildrenByType(this.scene, Viewport)) {
+      viewport.render(context);
+    }
   }
 }

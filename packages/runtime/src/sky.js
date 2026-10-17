@@ -1,6 +1,6 @@
 import {mat4} from "@scenic/math";
 import {VertexBuffer, VertexBufferData} from "@scenic/renderer";
-import {Renderable} from "@scenic/scene";
+import {Renderable, RenderOrder} from "@scenic/scene";
 
 import {shaderRegistry} from "./shader-registry.js";
 
@@ -73,6 +73,8 @@ export class Sky extends Renderable {
   constructor(options) {
     super({...options, type: "sky"});
     this.triangle = null;
+    // The sky is behind everything, so it is drawn first.
+    this.renderOrder = RenderOrder.BACKGROUND;
   }
 
   preRender(context) {
@@ -87,11 +89,15 @@ export class Sky extends Renderable {
     }
   }
 
-  render(context) {
-    if (!this.triangle || !this.shaderProgram) {
-      return;
+  // prepareForView adds the sky to its viewport's renderablesInView: it
+  // covers the whole screen, so it is always in view.
+  prepareForView() {
+    if (this.triangle && this.shaderProgram) {
+      this.getViewport()?.renderablesInView.push(this);
     }
+  }
 
+  render(context) {
     const {gl, ms, sceneManager} = context;
     const state = {...Sky.defaults, ...sceneManager.getNodeStateByID(this.id).sky};
 

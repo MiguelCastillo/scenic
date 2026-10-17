@@ -243,7 +243,7 @@ export class Terrain extends Mesh {
     // With tiles in view, it is drawn by its viewport, like any mesh (see
     // render in Viewport).
     if (this.tilesToRender.length && this.shaderProgram) {
-      viewport.meshesToRender.push(this);
+      viewport.renderablesInView.push(this);
     }
 
     // What the ground cost, for the app's UI.
@@ -368,8 +368,8 @@ export class Terrain extends Mesh {
   // draw draws the tiles in tilesToRender, all at the terrain's world
   // matrix, since each tile's positions are already where it goes in the
   // terrain. It draws with the terrain's textures, loading them the first
-  // time they are needed. Its viewport calls it, like a mesh's draw.
-  draw(context) {
+  // time they are needed. Its viewport calls it, like a mesh's render.
+  render(context) {
     const {settings, shaderProgram, tilesToRender} = this;
 
     const samplers = [
