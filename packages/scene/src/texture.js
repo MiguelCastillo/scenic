@@ -83,8 +83,10 @@ export class Texture extends Node {
     return newtexturenode;
   }
 
-  render() {
-    let renderable = Node.findParentByType(this, Renderable);
+  // prepareForView sets the texture up on its renderable's shader program,
+  // before the renderable is drawn.
+  prepareForView() {
+    const renderable = Node.findParentByType(this, Renderable);
 
     // A renderable can be waiting for its shader program to load, and then
     // there is nothing to configure yet.

@@ -79,8 +79,8 @@ describe("Mesh levelOfDetail", () => {
       mat4.Matrix4.trs([0, 0, 0], [0, 0, 0], [1, 1, 1])
     );
     new Viewport({name: "world"}).add(camera).add(mesh);
-    [0, 1000, 3000].forEach((lodDistance) => mesh.addVertexBuffer({lodDistance}));
-    return mesh.levelOfDetail().lodDistance;
+    const vertexBuffers = [0, 1000, 3000].map((lodDistance) => ({lodDistance}));
+    return mesh.levelOfDetail(mesh.worldMatrix, vertexBuffers).lodDistance;
   };
 
   test("is the full mesh up close", () => {
@@ -93,8 +93,8 @@ describe("Mesh levelOfDetail", () => {
   });
 
   test("is undefined for a mesh without levels of detail", () => {
-    const mesh = new Mesh({type: "static-mesh", name: "rock"}).addVertexBuffer({});
-    expect(mesh.levelOfDetail()).toBeUndefined();
+    const mesh = new Mesh({type: "static-mesh", name: "rock"});
+    expect(mesh.levelOfDetail(mesh.worldMatrix, [{}])).toBeUndefined();
   });
 });
 

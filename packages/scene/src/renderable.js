@@ -14,9 +14,6 @@ export const RenderableInterface = (superclass) =>
   class extends superclass {
     constructor(options) {
       super(options);
-      // We will default to a type but often inheriting classes will specify
-      // their own. So we will allow overriding the `type` field.
-      this.vertexBuffers = [];
       // boundingVolume is around everything the renderable's geometries
       // draw, in its own space, or null before it has any (see bounds.js).
       // Each geometry measures its own when it is built; the renderable
@@ -57,20 +54,6 @@ export const RenderableInterface = (superclass) =>
     withShaderProgram(shaderProgram) {
       this.shaderProgram = shaderProgram.clone();
       return this;
-    }
-
-    // vertexBuffers is the list of buffers to draw this frame. It is cleared
-    // in preRender, and child nodes such as Geometry add their buffers to it
-    // when they render, which happens before their parent renders. Adding a
-    // buffer does not transfer ownership; whoever created it deletes it.
-    addVertexBuffer(vertexBuffer) {
-      this.vertexBuffers.push(vertexBuffer);
-      return this;
-    }
-
-    preRender(context) {
-      this.vertexBuffers = [];
-      super.preRender(context);
     }
 
     // The renderable owns its shader program, since withShaderProgram keeps a

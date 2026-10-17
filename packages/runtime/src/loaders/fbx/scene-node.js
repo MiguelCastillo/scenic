@@ -105,15 +105,6 @@ export class Mesh extends AnimatableInterface(MeshSceneNode) {
     return super.isBoundingVolumeInView(worldMatrix);
   }
 
-  preRender(context) {
-    super.preRender(context);
-
-    // Renderable clears its draw list in preRender, but AnimatableInterface
-    // skips super.preRender when an animation transform applies. So the draw
-    // list is cleared here too, before the Geometry children add to it.
-    this.vertexBuffers = [];
-  }
-
   getMaterialsState(context) {
     // because we want to read the settings from relative root for the
     // material, we override the getMaterials method
@@ -164,10 +155,9 @@ export class Geometry extends GeometrySceneNode {
     super.dispose(gl);
   }
 
-  render() {
-    // Adds the vertex buffer to the parent renderable's draw list.
-    super.render();
-
+  // prepareForView sets the bones' matrices up on its renderable's shader
+  // program, before the renderable is drawn.
+  prepareForView() {
     // The parent renderable has no shader program until the shader registry
     // gives it one, which can be a few frames after the model is built, and
     // then there is nothing to configure yet.
@@ -270,11 +260,9 @@ export class Armature extends AnimatableInterface(RenderableSceneNode) {
     return this;
   }
 
-  preRender(context) {
-    super.preRender(context);
-    // Cleared here as well as in Renderable because AnimatableInterface skips
-    // super.preRender when an animation transform applies.
-    this.vertexBuffers = [];
+  // prepareForView empties renderables, before its bones add to it in their
+  // own prepareForView.
+  prepareForView() {
     this.renderables = [];
   }
 
@@ -326,7 +314,9 @@ export class Bone extends AnimatableInterface(SceneNode) {
     this.id = id;
   }
 
-  render(context) {
+  // prepareForView adds a line from the bone to its parent to its
+  // armature's renderables, for the armature to draw.
+  prepareForView(context) {
     const armature = SceneNode.findParentByType(this, Armature);
     if (this.parent === armature || !armature.renderEnabled) {
       return;

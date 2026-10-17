@@ -6,8 +6,11 @@ import {Renderable} from "./renderable.js";
 // lighting to.
 export class Light extends Renderable {
   render(context) {
-    const {shaderProgram, worldMatrix, vertexBuffers} = this;
+    const {shaderProgram, worldMatrix} = this;
     const {sceneManager} = context;
+    const vertexBuffers = this.items
+      .filter((child) => child.vertexBuffer)
+      .map((child) => child.vertexBuffer);
 
     if (!vertexBuffers.length || !shaderProgram) {
       return;

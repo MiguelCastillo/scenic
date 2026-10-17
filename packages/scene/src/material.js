@@ -57,7 +57,9 @@ export class Material extends Node {
     }
   }
 
-  render() {
+  // prepareForView sets the material up on its renderable's shader program,
+  // before the renderable is drawn.
+  prepareForView() {
     const renderable = Node.findParentByType(this, Renderable);
 
     // A renderable can be waiting for its shader program to load, and then
