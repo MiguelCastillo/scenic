@@ -60,8 +60,10 @@ games/bubble-squadron/
   (see `RemotePlayers` in `apps/arcade`), and each copy flies its player's
   ship.
 - `npcs`: racers the computer plays, when the player plays alone, optional,
-  as `{"count": 3, "pilot": "scripts/pilot.js", "scenes": ["race.json"]}`:
-  how many, the script that flies them, and the scenes that have them. Each
+  as `{"racers": 6, "pilot": "scripts/pilot.js", "scenes": ["race.json"]}`:
+  the most racers in a race, the player included, whose other seats NPCs
+  fill, so 5 NPCs in a race of 6, the script that flies them, and the
+  scenes that have them. Each
   NPC is a copy of the `player` node, beside it, on an input channel of its
   own, such as `"npc 1"`, which its pilot presses keys on, the way a
   player's keyboard would, so it plays by the same rules (see `addNPCs` in

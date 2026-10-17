@@ -3,9 +3,11 @@ import {replaceShip} from "./ships.js";
 
 // addNPCs puts racers the computer plays into the scene the player plays
 // alone, beside the player, as the game's manifest says in "npcs":
-// {count, pilot, scenes}, how many, the script that flies them, relative to
-// the scene file like the scene's own, and the scene files that have them,
-// such as ["race.json"] (see games/README.md).
+// {racers, pilot, scenes}, the most racers in a race, the player included,
+// whose seats the NPCs fill, the script that flies them, relative to the
+// scene file like the scene's own, and the scene files that have them, such
+// as ["race.json"] (see games/README.md). Playing alone, that is racers - 1
+// NPCs, such as 5 in a race of 6.
 //
 // Each NPC is a copy of the node that is the player in the scene, whatever it
 // is, such as a ship, with its own script, such as fly.js, and collider,
@@ -31,7 +33,8 @@ import {replaceShip} from "./ships.js";
 //
 // It resolves once every NPC is in the scene, ship and all.
 export async function addNPCs(scene, {playerNodeID, npcs, ships = null, playerShip = null}) {
-  const {count = 0, pilot} = npcs;
+  const {racers = 1, pilot} = npcs;
+  const count = Math.max(0, racers - 1);
   const {sceneManager} = scene;
   const parentID = sceneManager.getNodeByID(playerNodeID).parent.id;
   // eslint-disable-next-line no-unused-vars
