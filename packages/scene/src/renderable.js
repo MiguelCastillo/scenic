@@ -1,5 +1,6 @@
 import {mat4} from "@scenic/math";
 
+import {encloseBoxes} from "./bounds.js";
 import {Node} from "./node.js";
 import {Viewport} from "./viewport.js";
 
@@ -17,6 +18,36 @@ export const RenderableInterface = (superclass) =>
       // We will default to a type but often inheriting classes will specify
       // their own. So we will allow overriding the `type` field.
       this.vertexBuffers = [];
+      // The box around what the renderable's geometries draw, {min, max},
+      // in its own space, or null without any: the boxes they measured when
+      // they were built, put together as they are added and removed, so that
+      // drawing never measures anything. The view places it with the
+      // renderable's world matrix to see whether it can be in view.
+      this.localBox = null;
+    }
+
+    // A child with a buffer of its own, such as a Geometry, adds the box it
+    // measured to the renderable's, such as each level of detail of a mesh.
+    // Other children, such as a renderable under it, are placed by their own
+    // transforms, and keep their own boxes.
+    add(node) {
+      super.add(node);
+      if (node.vertexBuffer) {
+        this.localBox = encloseBoxes(this.localBox, node.localBox);
+      }
+      return this;
+    }
+
+    // Removing a child with a buffer puts the renderable's box together again
+    // from the ones left.
+    remove(node) {
+      super.remove(node);
+      if (node.vertexBuffer) {
+        this.localBox = this.items
+          .filter((child) => child.vertexBuffer)
+          .reduce((box, child) => encloseBoxes(box, child.localBox), null);
+      }
+      return this;
     }
 
     withShaderProgram(shaderProgram) {

@@ -1,13 +1,20 @@
+import {boundingBox} from "./bounds.js";
 import {Node} from "./node.js";
 import {Renderable} from "./renderable.js";
 
 // Geometry owns a vertex buffer and adds it to the closest parent renderable's
 // draw list every frame. The renderable only draws the buffer, so it is
 // deleted here when the geometry is disposed.
+//
+// It measures its buffer's box when it is built, localBox, {min, max}, the
+// lowest and highest of its positions, in its own space, or null for a buffer
+// without positions. Its renderable keeps the box around all of its
+// geometries (see Renderable).
 export class Geometry extends Node {
   constructor(options, vertexBuffer) {
     super({type: "geometry", ...options});
     this.vertexBuffer = vertexBuffer;
+    this.localBox = vertexBuffer?.positions ? boundingBox(vertexBuffer.positions.data) : null;
   }
 
   render() {
