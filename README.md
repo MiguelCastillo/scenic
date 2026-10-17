@@ -893,8 +893,8 @@ standing on the terrain (`heightAt`). Trees keep off the ground the terrain
 keeps for something else, its paths' flat valleys and its clearings, `margin`
 farther, and its bumps (`isClear` in `terrain.js`), so they are never in the
 way of a race's course. Each kind of tree then draws at all of its trees, as
-its `instances`. Every setting is listed in `forest.js`, and they can be tuned
-live from its Forest tab.
+its `worldMatrices`. Every setting is listed in `forest.js`, and they can be
+tuned live from its Forest tab.
 
 ### Renderable, Mesh and Geometry
 
@@ -1004,9 +1004,11 @@ took a frame of its old hand-placed trees from about 1.2 million triangles to
 under 200 thousand.
 
 A mesh can also be drawn at many places at once: code that sets its
-`instances` to a list of world matrices has it drawn at each of them instead
-of where it is, each with its own level of detail and out-of-view check. A
-forest draws its trees that way (see [Forest](#forest)).
+`worldMatrices` to a list of world matrices has it drawn at each of them
+instead of where it is, each with its own level of detail and out-of-view
+check. A forest draws its trees that way (see [Forest](#forest)): hundreds of
+trees, planted around the camera and replaced as it moves, would be too many
+to keep as scene nodes of their own.
 
 ### Shaders
 

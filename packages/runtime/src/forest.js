@@ -12,10 +12,10 @@ import {Mesh, Node, Viewport} from "@scenic/scene";
 // Its children are the kinds of tree it plants: static meshes, each with its
 // resource and its lods (see a static mesh's lods in the README), material and
 // ambient, like any other. A tree is one of them, picked at random, and the
-// forest has each draw at all of its trees (see instances in Mesh) instead of
-// where it is. Trees stand on the terrain, and keep out of the ground it
-// keeps for something else, such as a race's course (see isClear in
-// Terrain), so they are never in the way. The forest plants in the world,
+// forest has each draw at all of its trees (see worldMatrices in Mesh)
+// instead of where it is. Trees stand on the terrain, and keep out of the
+// ground it keeps for something else, such as a race's course (see isClear
+// in Terrain), so they are never in the way. The forest plants in the world,
 // whatever its transform.
 //
 // Its settings come from its state:
@@ -63,7 +63,7 @@ export class Forest extends Node {
     // Until the terrain has its ground, after its first frame, there is
     // nowhere to stand.
     if (!terrain?.ground || !camera || !kinds.length) {
-      kinds.forEach((kind) => (kind.instances = []));
+      kinds.forEach((kind) => (kind.worldMatrices = []));
       return;
     }
 
@@ -109,13 +109,13 @@ export class Forest extends Node {
     }
 
     // Each kind draws at its trees.
-    const instances = kinds.map(() => []);
+    const worldMatricesByKind = kinds.map(() => []);
     for (const trees of this.tiles.values()) {
       for (const {kind, matrix} of trees) {
-        instances[kind].push(matrix);
+        worldMatricesByKind[kind].push(matrix);
       }
     }
-    kinds.forEach((kind, i) => (kind.instances = instances[i]));
+    kinds.forEach((kind, i) => (kind.worldMatrices = worldMatricesByKind[i]));
   }
 }
 

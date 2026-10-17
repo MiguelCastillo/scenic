@@ -31,9 +31,21 @@ export const specularDefaults = {specular: 0.5, shininess: 32};
 export class Mesh extends Renderable {
   constructor(options) {
     super(options);
-    // World matrices to draw the mesh at instead of where it is, when set by
-    // code such as a forest (see render).
-    this.instances = null;
+    // worldMatrices lets one mesh stand in for many copies of itself, such
+    // as a forest's trees of one kind. There are hundreds of them, planted
+    // around the camera and replaced as it moves, which would be too many
+    // to keep as scene nodes of their own.
+    //
+    // The copies only differ by where they are, so the mesh keeps just
+    // their world matrices, set by code such as Forest, and is drawn at
+    // each of them instead of at its own worldMatrix. Each copy uses the
+    // same buffers, material and program, is checked against the view and
+    // given its level of detail on its own, and has a draw call of its own.
+    //
+    // The copies aren't scene nodes, so they have no state, can't be moved
+    // or edited one by one, and don't collide. null draws the mesh once,
+    // where it is.
+    this.worldMatrices = null;
   }
 
   // Specular defaults are set once, when the mesh gets its program, and a
@@ -297,12 +309,12 @@ export class Mesh extends Renderable {
       .reduce((best, vb) => (!best || vb.lodDistance > best.lodDistance ? vb : best), null);
   }
 
-  // render draws node where it is, or, when it has instances, a list of
-  // world matrices, at each of them instead, such as the trees of a forest
-  // (see Forest in @scenic/runtime). Each place gets its own level of detail,
-  // and places out of view are skipped. The program is set up once, its
-  // lights, material and view, and each place after the first only sends
-  // its world matrix, and draws.
+  // render draws node where it is, or, when it has worldMatrices, at each
+  // of them instead, such as the trees of a forest (see Forest in
+  // @scenic/runtime). Each place gets its own level of detail, and places
+  // out of view are skipped. The program is set up once, its lights,
+  // material and view, and each place after the first only sends its world
+  // matrix, and draws.
   static render(node) {
     const {shaderProgram, vertexBuffers} = node;
     const projectionMatrix = node.getViewProjectionMatrix();
@@ -321,7 +333,7 @@ export class Mesh extends Renderable {
     // Buffers out of view are skipped, such as the trees behind a camera,
     // and so are the levels of detail the mesh is too near or too far for.
     let inUse = false;
-    for (const worldMatrix of node.instances || [node.worldMatrix]) {
+    for (const worldMatrix of node.worldMatrices || [node.worldMatrix]) {
       const lod = node.levelOfDetail(worldMatrix);
       const buffers = vertexBuffers
         .filter((vb) => vb.lodDistance == null || vb === lod)
