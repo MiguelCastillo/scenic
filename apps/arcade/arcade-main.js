@@ -42,23 +42,34 @@ import {addNPCs} from "./npcs.js";
 const clock = (seconds) =>
   `${Math.floor(seconds / 60)}:${(seconds % 60).toFixed(1).padStart(4, "0")}`;
 
+// ordinal is a place as people say it, such as 1st or 2nd.
+const ordinal = (n) =>
+  `${n}${["th", "st", "nd", "rd"][n % 100 < 11 || n % 100 > 13 ? n % 10 : 0] ?? "th"}`;
+
 // raceText is a race's message (see games/bubble-squadron/scripts/race.js)
-// as the HUD shows it: the lap, time and next gate, and the best time, once
-// the race has started.
-function raceText({lap, laps, time, gate, gates, best, finished}) {
+// as the HUD shows it, once the race has started: the lap, time, place,
+// with others racing, and next gate, and once the racer has finished, their
+// time and place, and the results so far.
+function raceText({lap, laps, time, gate, gates, best, finished, place, racers, results}) {
   const lines = finished
-    ? [`Finished in ${clock(time)}`]
+    ? [
+        racers > 1 ? `Finished ${ordinal(place)} in ${clock(time)}` : `Finished in ${clock(time)}`,
+        ...(racers > 1
+          ? ["", ...results.map(({name, time}, i) => `${i + 1}. ${name} ${clock(time)}`)]
+          : []),
+      ]
     : lap === 0
     ? []
     : [
         `Lap ${lap}/${laps}   ${clock(time)}`,
+        ...(racers > 1 ? [`Position ${place} of ${racers}`] : []),
         gate === 0
           ? lap === laps
             ? "Next: the finish"
             : "Next: the start gate"
           : `Next: gate ${gate} of ${gates}`,
       ];
-  if (best != null) {
+  if (best != null && !finished) {
     lines.push(`Best ${clock(best)}`);
   }
   return lines.join("\n");

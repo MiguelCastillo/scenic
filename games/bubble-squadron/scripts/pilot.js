@@ -15,12 +15,16 @@
 // steers, how quickly it reacts, and how fine it cuts its turns before it
 // eases off.
 //
-// It holds its ship until the race starts, the way race.js holds the
-// player's (see "held" in fly.js), and revs it up for the last second of
-// the countdown.
+// It enters its ship in the race, so that the race places it (see race.js),
+// holds it until the race starts, the way race.js holds the player's (see
+// "held" in fly.js), and revs it up for the last second of the countdown.
+// Once it has finished, it flies on through the gates without boosting, a
+// lap of honor.
 //
 // Its settings come from "script.settings" in the node's config:
 // - ship: the ID of the ship it flies.
+// - name: what the ship is called in the race's results. Its ID by
+//   default.
 // - course: the ID of the race's node, whose children are the gates, in
 //   order, and whose settings say how the race is going (see race.js).
 //   "race" by default.
@@ -99,12 +103,28 @@ module.exports = function createPilotScript(node) {
       if (!ship || !shipState || !gates.length) {
         return;
       }
-      const race = sceneManager.getNodeStateByID(settings.course).script?.settings ?? {};
+      const courseState = sceneManager.getNodeStateByID(settings.course);
+      const race = courseState.script?.settings ?? {};
       const skill = Math.max(0, Math.min(1, settings.skill));
       const clock = settings.clock + seconds;
 
-      // Held until the race starts, like the player.
-      const held = !(race.lap > 0);
+      // It enters the race, once.
+      const entrants = race.entrants ?? [];
+      if (!entrants.some(({id}) => id === settings.ship)) {
+        sceneManager.updateNodeStateByID(settings.course, {
+          script: {
+            ...courseState.script,
+            settings: {
+              ...race,
+              entrants: [...entrants, {id: settings.ship, name: settings.name ?? settings.ship}],
+            },
+          },
+        });
+      }
+      const finished = race.rivals?.[settings.ship]?.finishedAt != null;
+
+      // Held until the countdown ends, like the player.
+      const held = !(race.countdown <= 0);
       if (!!shipState.held !== held) {
         sceneManager.updateNodeStateByID(settings.ship, {held});
       }
@@ -166,7 +186,7 @@ module.exports = function createPilotScript(node) {
         const margin = 1.05 + (1 - skill) * 0.8;
         const boosting = held
           ? race.countdown != null && race.countdown < 1
-          : Math.hypot(dx, dy, dz) >= margin * 2 * boostRadius * Math.sin(angle);
+          : !finished && Math.hypot(dx, dy, dz) >= margin * 2 * boostRadius * Math.sin(angle);
 
         keys = [
           ...(turning > slack ? ["ArrowLeft"] : turning < -slack ? ["ArrowRight"] : []),

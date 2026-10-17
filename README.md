@@ -501,6 +501,13 @@ comes back around for a gate it misses. A pilot's `skill`, from 0 to 1, sets
 how closely it steers, how quickly it reacts and how fine it cuts its turns. It holds its ship until the race starts, like
 the player's, and revs up for the start.
 
+A pilot enters its ship in the race, by adding it to the race's `entrants`,
+`[{id, name}]`, and `race.js` follows every entrant through the gates the
+same way as the player, and places everyone: whoever has finished, by when,
+then whoever is on a later lap, past more gates, and nearer the next one. The
+HUD shows the player's place while they race, and the results once they
+finish. A pilot that has finished flies on without boosting.
+
 ### Scene stacks and menus
 
 An app can run scenes on top of each other, such as a game's menu over the

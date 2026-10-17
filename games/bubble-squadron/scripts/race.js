@@ -10,6 +10,13 @@
 // The racer is held by setting "held" in its node's state, which the
 // scripts that fly it heed (see fly.js and glide.js).
 //
+// Others can race too, such as NPCs flown by pilot.js: each enters the race
+// by adding itself to the race's entrants, and the race follows them through
+// the gates the same way, from the start, and places everyone: whoever has
+// finished, by when, ahead of whoever hasn't, and of those, whoever is on a
+// later lap, then past more gates, then nearer the next one. Only the
+// racer's own gates glow, and the others hold themselves at the start.
+//
 // A gate is flown through when the racer crosses the plane it stands in, its
 // local XY plane, within its opening, going the way it faces, along its +Z
 // axis, so a course turns its gates to face along it. A gate's opening is a
@@ -35,6 +42,9 @@
 // - opacity: the opacity of the gates still ahead. 0.6 by default.
 // - passedOpacity: the opacity of the gates flown through this lap. 0.2 by
 //   default.
+// - racerName: what the racer is called in the results. "You" by default.
+// - entrants: the others racing, as [{id, name}]: the ids of their nodes,
+//   and what they are called in the results. Racers add themselves to it.
 //
 // How the race is going is written to its settings every frame, so a saved
 // state races on from where it was:
@@ -47,14 +57,20 @@
 // - best: the fastest race's time, in seconds, or null before one finishes.
 // - from: where the racer was in the world last frame, to see which gates it
 //   crossed since.
+// - clock: the race's time since the start, in seconds, which runs on after
+//   the racer finishes, for the others.
+// - rivals: how each of the others is doing, by id: {lap, gate, finishedAt,
+//   from}, with finishedAt the clock when they finished, or null.
 // The clock runs on the frame's `seconds`, so it stops while the scene is
 // paused.
 //
 // With "hud" in its node's state, such as {"hud": "race"}, it tells the app's
 // UI how the race is going every frame, on that channel of sceneManager.ui
 // (see SceneManager in @scenic/scene): {countdown, lap, laps, time, gate,
-// gates, best, finished}, as in its settings, with gates the number of gates
-// after the start gate.
+// gates, best, finished, place, racers, results}, as in its settings, with
+// gates the number of gates after the start gate, place the racer's place,
+// from 1, racers how many are racing, and results those who have finished,
+// in order, as [{name, time, racer}], with racer true for the racer.
 
 const defaults = {
   racer: "starfighter",
@@ -64,6 +80,8 @@ const defaults = {
   glow: [0.35, 0.3, 0.05],
   opacity: 0.6,
   passedOpacity: 0.2,
+  racerName: "You",
+  entrants: [],
   lap: 0,
   gate: 0,
   time: 0,
@@ -71,6 +89,15 @@ const defaults = {
   finished: false,
   best: null,
   from: null,
+  clock: 0,
+  rivals: {},
+};
+
+// position is where a node is in the world: the last column of its world
+// matrix, since Matrix4 data is row-major.
+const position = (node) => {
+  const m = node.worldMatrix.data;
+  return [m[3], m[7], m[11]];
 };
 
 module.exports = function createRaceScript(node) {
@@ -96,6 +123,7 @@ module.exports = function createRaceScript(node) {
       if (race.lap > 0 && !race.finished) {
         race.time += seconds;
       }
+      let raceClock = race.lap > 0 ? settings.clock + seconds : 0;
 
       // The countdown's end starts the race: the first lap, and the clock,
       // toward the first gate after the start gate, which the racer flies
@@ -104,6 +132,7 @@ module.exports = function createRaceScript(node) {
         race.countdown = Math.max(0, race.countdown - seconds);
         if (race.countdown === 0) {
           Object.assign(race, {lap: 1, gate: 1 % gates.length, time: 0, lapTimes: []});
+          raceClock = 0;
         }
       }
       const held = race.lap === 0;
@@ -111,18 +140,15 @@ module.exports = function createRaceScript(node) {
         sceneManager.updateNodeStateByID(racer.id, {held});
       }
 
-      // Matrix4 data is row-major, so a node's position in the world is the
-      // last column of its world matrix, and its Z axis the third.
-      const m = racer.worldMatrix.data;
-      const to = [m[3], m[7], m[11]];
+      const to = position(racer);
       const from = settings.from || to;
 
-      // Whether the racer flew through the gate from `from` to `to`: where
+      // Whether a racer flew through the gate from `from` to `to`: where
       // that path crosses the gate's plane, if it does, is within its
       // opening. Points are measured along the gate's own axes, which are
       // divided by their length squared so that the measure is in the gate's
-      // own units.
-      const flewThrough = (gate) => {
+      // own units. A gate's Z axis is the third column of its world matrix.
+      const flewThrough = (gate, from, to) => {
         const g = gate.worldMatrix.data;
         const origin = [g[3], g[7], g[11]];
         const axis = (i) => {
@@ -145,7 +171,7 @@ module.exports = function createRaceScript(node) {
           : Math.hypot(x, y) <= settings.gateRadius;
       };
 
-      if (race.lap > 0 && !race.finished && flewThrough(gates[race.gate])) {
+      if (race.lap > 0 && !race.finished && flewThrough(gates[race.gate], from, to)) {
         if (race.gate !== 0) {
           race.gate = (race.gate + 1) % gates.length;
         } else {
@@ -161,6 +187,65 @@ module.exports = function createRaceScript(node) {
           }
         }
       }
+
+      // The others go through the gates the same way, from the start.
+      const rivals = {};
+      for (const {id} of settings.entrants) {
+        const rivalNode = sceneManager.getNodeByID(id);
+        if (!rivalNode) {
+          continue;
+        }
+        const rivalTo = position(rivalNode);
+        const rival = {lap: 0, gate: 0, finishedAt: null, ...settings.rivals[id], from: rivalTo};
+        const rivalFrom = settings.rivals[id]?.from || rivalTo;
+        if (rival.lap === 0 && race.lap > 0) {
+          Object.assign(rival, {lap: 1, gate: 1 % gates.length});
+        } else if (
+          rival.lap > 0 &&
+          rival.finishedAt == null &&
+          flewThrough(gates[rival.gate], rivalFrom, rivalTo)
+        ) {
+          if (rival.gate !== 0) {
+            rival.gate = (rival.gate + 1) % gates.length;
+          } else if (rival.lap >= settings.laps) {
+            rival.finishedAt = raceClock;
+          } else {
+            Object.assign(rival, {lap: rival.lap + 1, gate: 1 % gates.length});
+          }
+        }
+        rivals[id] = rival;
+      }
+
+      // Everyone's place: whoever has finished, by when, then whoever is on
+      // a later lap, past more gates, and nearer the next one. Heading for
+      // the start gate is past every other gate of the lap.
+      const standing = ({lap, gate, finishedAt}, at) => {
+        const next = gates[gate];
+        const distance = Math.hypot(...position(next).map((v, i) => v - at[i]));
+        return {finishedAt, progress: lap * gates.length + (gate || gates.length), distance};
+      };
+      const racers = [
+        {
+          name: settings.racerName,
+          racer: true,
+          ...standing({...race, finishedAt: race.finished ? race.time : null}, to),
+        },
+        ...settings.entrants
+          .filter(({id}) => rivals[id])
+          .map(({id, name}) => ({
+            name,
+            racer: false,
+            ...standing(rivals[id], position(sceneManager.getNodeByID(id))),
+          })),
+      ].sort((a, b) =>
+        a.finishedAt != null || b.finishedAt != null
+          ? (a.finishedAt ?? Infinity) - (b.finishedAt ?? Infinity)
+          : b.progress - a.progress || a.distance - b.distance
+      );
+      const place = racers.findIndex(({racer}) => racer) + 1;
+      const results = racers
+        .filter(({finishedAt}) => finishedAt != null)
+        .map(({name, finishedAt, racer}) => ({name, time: finishedAt, racer}));
 
       // The next gate glows. Before the start and after the finish that is
       // the start gate, and the rest wait.
@@ -181,7 +266,10 @@ module.exports = function createRaceScript(node) {
       });
 
       sceneManager.updateNodeStateByID(node.id, {
-        script: {...state.script, settings: {...state.script.settings, ...race, from: to}},
+        script: {
+          ...state.script,
+          settings: {...state.script.settings, ...race, from: to, clock: raceClock, rivals},
+        },
       });
 
       if (state.hud) {
@@ -195,6 +283,9 @@ module.exports = function createRaceScript(node) {
           gates: gates.length - 1,
           best,
           finished,
+          place,
+          racers: racers.length,
+          results,
         });
       }
     },
