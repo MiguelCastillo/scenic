@@ -50,8 +50,10 @@ export class Forest extends Node {
     this.plantedFor = "";
   }
 
-  preRender(context) {
-    super.preRender(context);
+  // prepareForView plants the tiles that have come within the forest's
+  // distance of the camera, where it is this frame, drops those well behind
+  // it, and has each kind of tree draw at the trees of the tiles it keeps.
+  prepareForView(context) {
     const {sceneManager} = context;
     const settings = {...Forest.defaults, ...sceneManager.getNodeStateByID(this.id).forest};
     const kinds = this.items.filter((child) => child instanceof Mesh);

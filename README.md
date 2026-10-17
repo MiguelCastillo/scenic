@@ -317,7 +317,7 @@ the frame is drawn after, so the changes show up in the same frame. Drawing
 (`SceneManager.render`) never runs `update`, so a frame can be drawn as often
 as needed without moving anything, and a script's `render` must leave the
 state alone too. Another node's world matrix is where that node was last
-drawn. `update`'s `context` has the frame's time in `ms` and the
+frame, since world matrices are worked out after the scripts run. `update`'s `context` has the frame's time in `ms` and the
 `sceneManager`. In the editor
 it also has `seconds` since the last frame, and the player's input: the `keys`
 being held, by `KeyboardEvent.code`, the keys `pressed` this frame, even if
@@ -762,7 +762,7 @@ the camera exist. Seen from above, with the camera at `C`:
     └────┴────┴────┴────┴────┴────┴────┘
 ```
 
-Every frame, the terrain (`preRender` in `terrain.js`):
+Every frame, the terrain (`prepareForView` in `terrain.js`):
 
 1. Works out which tiles reach within the active camera's far plane of it:
    the tiles in a circle around the camera's tile, `far / tileSize` tiles out.
@@ -1041,12 +1041,31 @@ editor's nodes.
 
 ### Rendering a frame
 
-`SceneManager.render` walks the tree twice. The first pass calls `preRender` on
-every node, parents before children, so that every world matrix is up to date,
-including the camera's. The second pass calls `render` on every node, children
-before parents, so by the time a mesh renders its children have already filled
-its draw list. Scripts have already moved things before this, in
-`SceneManager.runScripts` (see [Scripts](#scripts)), so drawing only reads the
+A frame is worked out in an order set by what depends on what: a camera
+that follows a node, such as a ship, depends on where the node is this
+frame, and what is prepared for the view, such as which trees to plant,
+depends on where the camera is. So `SceneRunner.stepFrame`:
+
+1. Runs the scripts, with `SceneManager.runScripts` (see [Scripts](#scripts)).
+2. Works out where everything is: `SceneManager.preRender` calls `preRender`
+   on every node, parents before children, so that every world matrix is up
+   to date with what the scripts did. Nothing in it depends on the camera.
+3. Moves the active camera, with `CameraSystem.moveActiveCamera`, reading
+   where the node it follows is this frame, then works out the camera and
+   what is attached to it again where it moved to, with
+   `SceneManager.preRenderNode`.
+4. Prepares the view: `SceneManager.prepareForView` calls `prepareForView`
+   on every node, parents before children, such as the terrain building the
+   tiles around the camera and the forest planting the trees around it, from
+   where the camera is now, however far it moved.
+
+A camera following where its node was last drawn instead would trail it by
+a frame's movement, more or less as frames are longer or shorter, and shake
+it on the screen.
+
+`SceneRunner.renderFrame` then calls `SceneManager.render`, which calls
+`render` on every node, children before parents, so by the time a mesh renders
+its children have already filled its draw list. Drawing only reads the
 scene's state:
 
 ```mermaid
@@ -1057,12 +1076,12 @@ sequenceDiagram
   participant State as StateManager
   participant SP as ShaderProgram
 
-  Note over SM,SP: first pass, parents first
+  Note over SM,SP: preRender, parents first
   SM->>Mesh: preRender()
   Mesh->>Mesh: clear draw list, update world matrix
   SM->>Geo: preRender()
 
-  Note over SM,SP: second pass, children first
+  Note over SM,SP: render, children first
   SM->>Geo: render()
   Geo->>Mesh: addVertexBuffer(vertexBuffer)
   SM->>Mesh: render()

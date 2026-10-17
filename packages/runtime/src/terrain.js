@@ -144,8 +144,11 @@ export class Terrain extends Mesh {
     );
   }
 
-  preRender(context) {
-    super.preRender(context);
+  // prepareForView builds the tiles that reach within the camera's far plane
+  // of it, where it is this frame, nearest first, at the detail their
+  // distance from it calls for, drops those beyond it, and draws the ones it
+  // keeps.
+  prepareForView(context) {
     const {gl, sceneManager} = context;
     this.settings = this.getSettings(sceneManager);
 

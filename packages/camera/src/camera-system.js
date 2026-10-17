@@ -128,7 +128,9 @@ export class CameraSystem {
   // moveActiveCamera moves the active camera for the seconds since the last
   // frame, the way its type moves: a chase camera to behind what it follows,
   // a cockpit camera to its target's cockpit, and a free-fly camera on the
-  // way it is flying.
+  // way it is flying. It reads where a camera's target is from the target's
+  // world matrix, so the app works out where everything is first (see
+  // SceneRunner in @scenic/runtime).
   moveActiveCamera(seconds) {
     const camera = this.activeCamera;
     behaviorsByCameraType[camera.type]?.moveForFrame(this._sceneManager, camera, seconds);

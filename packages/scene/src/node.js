@@ -65,6 +65,14 @@ export class Node {
     }
   }
 
+  // prepareForView is a hook for preparing what the node draws for the view
+  // through its viewport's active camera, where the camera is this frame,
+  // such as a forest choosing which trees to plant around it. It runs after
+  // every world matrix is worked out and the camera has moved, and before
+  // anything draws. A node that draws the same whatever the view has
+  // nothing to prepare.
+  prepareForView() {}
+
   render() {}
 
   // withScript attaches a script to the node: an object with any of the hooks
