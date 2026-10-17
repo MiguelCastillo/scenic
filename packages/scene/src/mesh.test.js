@@ -132,11 +132,11 @@ describe("Mesh levelOfDetail", () => {
   });
 });
 
-describe("Mesh render with instances", () => {
+describe("Mesh render at worldMatrices", () => {
   // A mesh in a viewport whose camera is at z 300 looking down -Z, with one
   // buffer around its origin, and a program that keeps what it was asked to
   // do: [use], [send, names], [draw] and [release].
-  const callsAt = (instances) => {
+  const callsAt = (positions) => {
     const camera = new Camera({name: "camera"})
       .withWorldMatrix(mat4.Matrix4.trs([0, 0, 300], [0, 0, 0], [1, 1, 1]))
       .updateProjection({type: "perspective", fov: 90, near: 1, far: 1000}, 100, 100);
@@ -145,7 +145,8 @@ describe("Mesh render with instances", () => {
     );
     new Viewport({name: "world"}).add(camera).add(mesh);
     mesh.addVertexBuffer({positions: {data: new Float32Array([-5, -5, -5, 5, 5, 5])}});
-    mesh.instances = instances && instances.map((p) => mat4.Matrix4.trs(p, [0, 0, 0], [1, 1, 1]));
+    mesh.worldMatrices =
+      positions && positions.map((p) => mat4.Matrix4.trs(p, [0, 0, 0], [1, 1, 1]));
     const calls = [];
     mesh.shaderProgram = {
       addUniforms: () => mesh.shaderProgram,
@@ -157,13 +158,13 @@ describe("Mesh render with instances", () => {
     Mesh.render(mesh);
     return calls;
   };
-  const drawsAt = (instances) => callsAt(instances).filter(([call]) => call === "draw").length;
+  const drawsAt = (positions) => callsAt(positions).filter(([call]) => call === "draw").length;
 
-  test("draws once where the mesh is without instances", () => {
+  test("draws once where the mesh is without worldMatrices", () => {
     expect(drawsAt(null)).toBe(1);
   });
 
-  test("draws once at each instance in view, and not where the mesh is", () => {
+  test("draws once at each of its worldMatrices in view, and not where the mesh is", () => {
     // Two in front of the camera, and one behind it.
     expect(
       drawsAt([
@@ -174,7 +175,7 @@ describe("Mesh render with instances", () => {
     ).toBe(2);
   });
 
-  test("draws nothing with no instances", () => {
+  test("draws nothing with no worldMatrices", () => {
     expect(drawsAt([])).toBe(0);
   });
 
