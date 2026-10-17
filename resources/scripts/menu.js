@@ -16,7 +16,9 @@
 //   where picking it goes, such as the scene of a track, relative to the
 //   menu's scene file. A choice can say anything else the app understands
 //   instead of goTo, such as {"label": "Resume", "resume": true}, which the
-//   arcade gets as is when it is picked.
+//   arcade gets as is when it is picked. A choice can have a picture too,
+//   such as a track's, as its image, relative to the menu's scene file,
+//   which a carousel shows.
 // - hint: what to tell the player, such as which keys to press. Optional.
 // - layout: how the choices are laid out: "list", one above the other, or
 //   "carousel", one at a time. "list" by default.
