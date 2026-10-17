@@ -90,7 +90,7 @@
           "name": "key light",
           "type": "light",
           "light": {
-            "intensity": 0.9,
+            "intensity": 0.6,
             "color": [1, 0.96, 0.88]
           },
           "transform": {
@@ -101,7 +101,7 @@
           "name": "fill light",
           "type": "light",
           "light": {
-            "intensity": 0.45,
+            "intensity": 0.3,
             "color": [0.7, 0.82, 1]
           },
           "transform": {
