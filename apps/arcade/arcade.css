@@ -37,7 +37,7 @@
   /* Choices lean forward, like they are moving. */
   --slant: skewX(-12deg);
   /* Menus' text grows with the screen, from a phone's to a big desktop's. */
-  --menu-font-size: clamp(18px, 1.2vw + 8px, 30px);
+  --menu-font-size: clamp(16px, 0.7vw + 8px, 22px);
   --shadow: 0 3px 0 rgba(0, 0, 0, 0.35), 0 6px 18px rgba(0, 0, 0, 0.45);
 }
 
@@ -183,7 +183,7 @@ button {
 #menu .menu-title {
   margin: 0 0 4vh;
   font-family: var(--display-font);
-  font-size: 1.7em;
+  font-size: 1.5em;
   line-height: 1.05;
   text-transform: uppercase;
   text-shadow: var(--shadow);
@@ -309,7 +309,7 @@ button {
 /* On a tablet, the menu is big, with choices far enough apart to tap. */
 @media (pointer: coarse) and (min-width: 641px) {
   #menu {
-    font-size: 28px;
+    font-size: 24px;
   }
 
   #menu ul {
@@ -326,7 +326,7 @@ button {
    choice picks one. */
 @media (max-width: 640px) {
   #menu {
-    font-size: 22px;
+    font-size: 20px;
   }
 
   #menu:not(.carousel) {
@@ -509,7 +509,7 @@ body.menu-open #hud {
 
 #menu .carousel-label {
   font-family: var(--display-font);
-  font-size: 1.4em;
+  font-size: 1.25em;
   line-height: 1.1;
   text-transform: uppercase;
   text-shadow: var(--shadow);
