@@ -119,9 +119,14 @@
           "script": {
             "src": "/resources/scripts/anchor.js",
             "settings": {
-              "x": 0.69,
+              "x": 0.5,
               "y": 0.56,
               "fit": 0.28,
+              "beside": {
+                "min": 300,
+                "width": 0.3,
+                "max": 440
+              },
               "narrow": {
                 "width": 640,
                 "x": 0.5,

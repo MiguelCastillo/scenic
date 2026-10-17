@@ -22,6 +22,12 @@
 //   direction, as a fraction of the screen's smaller side, its height on a
 //   desktop and its width on a phone, such as 0.28. It sets its scale
 //   instead. Optional.
+// - beside: a column down the left of the screen, such as a menu, that x
+//   is measured beside instead, from the column's right edge, at 0, to the
+//   screen's right edge, at 1, so that 0.5 is in the middle of the space
+//   the column leaves: {min, width, max}, the column as wide as width of
+//   the screen, between min and max pixels, the way the CSS clamp(min,
+//   width, max) sizes it. Optional.
 // - narrow: where it goes, and how big it is, on a narrow screen instead,
 //   such as a phone, where things stack rather than sit side by side, and
 //   there is less room: {width, x, y, scale, fit}, used on screens narrower
@@ -82,7 +88,10 @@ module.exports = function createAnchorScript(node) {
         y = 0.5,
         scale = 1,
         fit,
+        beside,
       } = narrow && screen.width < narrow.width ? narrow : settings;
+
+      const smaller = Math.min(screen.width, screen.height);
 
       // Measure the models under it again only when they change.
       let measured = settings.reach;
@@ -92,16 +101,18 @@ module.exports = function createAnchorScript(node) {
           measured = now;
         }
       }
-      const size =
-        fit && measured?.distance > 0
-          ? (fit * Math.min(screen.width, screen.height)) / measured.distance
-          : scale;
+      const size = fit && measured?.distance > 0 ? (fit * smaller) / measured.distance : scale;
+
+      const column = beside
+        ? Math.min(Math.max(beside.width * screen.width, beside.min), beside.max)
+        : 0;
+      const across = column + x * (screen.width - column);
 
       const [, , z] = state.transform.position;
       sceneManager.updateNodeStateByID(node.id, {
         transform: {
           ...state.transform,
-          position: [x * screen.width, y * screen.height, z],
+          position: [across, y * screen.height, z],
           scale: [size, size, size],
         },
         script: {...state.script, settings: {...settings, reach: measured}},
