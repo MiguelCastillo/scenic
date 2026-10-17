@@ -45,6 +45,11 @@
 // - speed: how fast it is going. cruiseSpeed by default.
 // - throttle: how hard its engine burns, from its speed: 0 braking, 0.3
 //   cruising and 1 at full boost.
+//
+// In a network game, the other players see it when its node names a channel
+// of sceneManager.network in its state, such as {"network": "player"}: every
+// frame it publishes {position, rotation, throttle} there, for the copies of
+// it on the other players' screens (see remote-ship.js).
 const {mat4} = require("@scenic/math");
 
 const defaults = {
@@ -167,6 +172,14 @@ module.exports = function createGlideScript(node) {
         transform: {...state.transform, position: [x, y, z], rotation: mat4.rotationAngles(matrix)},
         script: {...state.script, settings: {...state.script.settings, ...glide, throttle}},
       });
+
+      if (state.network) {
+        sceneManager.network.publish(state.network, {
+          position: [x, y, z],
+          rotation: mat4.rotationAngles(matrix),
+          throttle,
+        });
+      }
     },
   };
 };

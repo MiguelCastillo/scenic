@@ -402,6 +402,7 @@
           "items": [
             {
               "name": "starfighter",
+              "network": "player",
               "collider": {
                 "shape": "sphere",
                 "radius": 95

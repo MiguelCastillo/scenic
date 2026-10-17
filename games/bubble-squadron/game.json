@@ -4,5 +4,6 @@
   "scene": "race.json",
   "scenes": ["race.json", "highway.json", "starfighters.json", "welcome.json", "menu.json"],
   "welcome": "welcome.json",
-  "menu": "menu.json"
+  "menu": "menu.json",
+  "multiplayer": {"player": "starfighter", "remote": "scripts/remote-ship.js"}
 }

@@ -34,37 +34,40 @@ export function createScene(config) {
   // information such as world matrices.
   const sceneManager = new SceneManager(stateManager);
 
-  function buildSceneParentNode(parent, children = []) {
-    return parent.addItems(children);
+  return sceneManager.withNodes(buildSceneNodes(config).items);
+}
+
+// buildSceneNodes builds the scene node for config, and the nodes for the
+// items under it, each of the class its type says, such as a StaticMesh for
+// a "static-mesh". config's state is buildDefaultState's, with ids.
+export function buildSceneNodes(config) {
+  return traversal.buildTraversal(buildSceneNode, (parent, children = []) =>
+    parent.addItems(children)
+  )(config);
+}
+
+function buildSceneNode(nodeConfig) {
+  if (isStaticMesh(nodeConfig)) {
+    return new StaticMesh(nodeConfig);
+  } else if (isSkinnedMesh(nodeConfig)) {
+    return new SkinnedMesh(nodeConfig);
+  } else if (isLight(nodeConfig)) {
+    return new SceneLight(nodeConfig);
+  } else if (isViewport(nodeConfig)) {
+    return new Viewport(nodeConfig);
+  } else if (isCamera(nodeConfig)) {
+    return new Camera(nodeConfig);
+  } else if (isGrid(nodeConfig)) {
+    return new Grid(nodeConfig);
+  } else if (isSky(nodeConfig)) {
+    return new Sky(nodeConfig);
+  } else if (isTerrain(nodeConfig)) {
+    return new Terrain(nodeConfig);
+  } else if (isForest(nodeConfig)) {
+    return new Forest(nodeConfig);
   }
 
-  function buildSceneNode(nodeConfig) {
-    if (isStaticMesh(nodeConfig)) {
-      return new StaticMesh(nodeConfig);
-    } else if (isSkinnedMesh(nodeConfig)) {
-      return new SkinnedMesh(nodeConfig);
-    } else if (isLight(nodeConfig)) {
-      return new SceneLight(nodeConfig);
-    } else if (isViewport(nodeConfig)) {
-      return new Viewport(nodeConfig);
-    } else if (isCamera(nodeConfig)) {
-      return new Camera(nodeConfig);
-    } else if (isGrid(nodeConfig)) {
-      return new Grid(nodeConfig);
-    } else if (isSky(nodeConfig)) {
-      return new Sky(nodeConfig);
-    } else if (isTerrain(nodeConfig)) {
-      return new Terrain(nodeConfig);
-    } else if (isForest(nodeConfig)) {
-      return new Forest(nodeConfig);
-    }
-
-    return new SceneNode(nodeConfig);
-  }
-
-  const traverse = traversal.buildTraversal(buildSceneNode, buildSceneParentNode);
-  const sceneNode = traverse(config);
-  return sceneManager.withNodes(sceneNode.items);
+  return new SceneNode(nodeConfig);
 }
 
 export function isViewport(nodeConfig) {

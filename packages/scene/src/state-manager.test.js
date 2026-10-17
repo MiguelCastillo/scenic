@@ -66,3 +66,29 @@ test("array with items itemsByID", () => {
     "item2.2",
   ]);
 });
+
+test("addItems adds items and the items under them", () => {
+  const stateManager = new StateManager([{id: "world"}]);
+  stateManager.addItems([{id: "p2 ship", items: [{id: "p2 ship body"}]}]);
+
+  expect(stateManager.getItemByID("p2 ship").id).toEqual("p2 ship");
+  expect(stateManager.getItemByID("p2 ship body")).toEqual({id: "p2 ship body"});
+});
+
+test("addItems adds nothing when an id is taken", () => {
+  const stateManager = new StateManager([{id: "world"}]);
+  expect(() => stateManager.addItems([{id: "ship", items: [{id: "world"}]}])).toThrow(
+    /"world" already exists/
+  );
+  expect(stateManager.getItemByID("ship")).toBeUndefined();
+});
+
+test("removeItemByID removes the item and the items under it", () => {
+  const stateManager = new StateManager([{id: "world"}]);
+  stateManager.addItems([{id: "p2 ship", items: [{id: "p2 ship body"}]}]);
+  stateManager.removeItemByID("p2 ship");
+
+  expect(stateManager.getItemByID("p2 ship")).toBeUndefined();
+  expect(stateManager.getItemByID("p2 ship body")).toBeUndefined();
+  expect(stateManager.getItemByID("world")).toEqual({id: "world"});
+});

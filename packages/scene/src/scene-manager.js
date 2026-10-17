@@ -4,7 +4,8 @@ import {Scene} from "./scene.js";
 import {BufferedEventBus, EventBus} from "./event-bus.js";
 import {Viewport} from "./viewport.js";
 
-// What a script gets for input on a channel nobody has published on.
+// What a script gets for input on a channel nobody has published on, or for
+// what its channel has none of, such as keys while the scene is paused.
 const noInput = {
   keys: new Set(),
   pressed: new Set(),
@@ -20,6 +21,7 @@ const noInput = {
     select: false,
     back: false,
   },
+  messages: [],
 };
 
 export class SceneManager {
@@ -37,6 +39,16 @@ export class SceneManager {
     // frame's messages, and the app, their receiver, pulls them when it is
     // ready to show them, such as once a frame.
     this.ui = new BufferedEventBus();
+    // network carries messages from the scene to the other players in a
+    // network game, such as where this player's ship is (see
+    // BufferedEventBus). A node's script publishes what the game wants the
+    // others to know about it, as plain data, on the channel named by
+    // "network" in its node's state, such as {"network": "player"}, and the
+    // app, their receiver, pulls the latest message and sends it to the
+    // other players, such as a few times a second, without knowing what it
+    // holds. The other players' messages come back in through input. update
+    // starts each frame's messages.
+    this.network = new BufferedEventBus();
     // input carries the players' input into the scene, as events in the
     // order they happened (see EventBus), on a channel for each player: their
     // intents, such as {type: "look", x, y} (see input-intents.js in
@@ -44,8 +56,9 @@ export class SceneManager {
     // them, such as a ship's flight controls: {type: "keydown", code} and
     // {type: "keyup", code}, by KeyboardEvent.code, {type: "mousemove", x, y}
     // and {type: "wheel", x, y}, in pixels, with positive y down. The app
-    // publishes the player at its keyboard or screen on "player", and a
-    // network game could publish other players on channels of their own.
+    // publishes the player at its keyboard or screen on "player", and the
+    // other players of a network game on channels of their own, their
+    // messages as {type: "network", message}.
     // Whoever runs the scene, such as a SceneRunner, is their receiver: it
     // pulls each frame's events and gives update what they add up to.
     this.input = new EventBus();
@@ -117,27 +130,30 @@ export class SceneManager {
   // since the last frame, and it is added to the context update gets.
   //
   // frame.input is each input channel's input this frame, {channel: {keys,
-  // pressed, mouse, wheel, intents}}: the keys held, the keys that went
-  // down, even if they also came up, how far the mouse moved and the wheel
-  // scrolled, {x, y}, and what the player means, whatever device they used,
-  // such as to move through a menu (see SceneRunner in @scenic/runtime). A script gets the
-  // input of the channel named by "input" in its node's state as keys,
-  // pressed and mouse in its context, and "player" without one, so a ship
-  // can be flown by whichever player its state says.
+  // pressed, mouse, wheel, intents, messages}}: the keys held, the keys
+  // that went down, even if they also came up, how far the mouse moved and
+  // the wheel scrolled, {x, y}, what the player means, whatever device they
+  // used, such as to move through a menu, and the messages a player in a
+  // network game sent, in order (see SceneRunner in @scenic/runtime). A
+  // script gets the input of the channel named by "input" in its node's
+  // state in its context, and "player"'s without one, so a ship can be flown
+  // by whichever player its state says.
   //
   // World matrices are only worked out by render, so a script reading
   // another node's world matrix sees where it was last drawn.
   //
-  // It also starts the frame's messages to the app's UI (see ui).
+  // It also starts the frame's messages to the app's UI and to the network
+  // (see ui and network).
   update(ms, frame = {}) {
     this.ui.beginFrame();
+    this.network.beginFrame();
     const {input = {}, ...rest} = frame;
     const context = {...rest, ms, sceneManager: this};
     const updatePass = bubbleTraversal(
       (node) => {
         if (node.script?.update) {
           const channel = this.getNodeStateByID(node.id)?.input ?? "player";
-          node.script.update({...context, ...(input[channel] ?? noInput)});
+          node.script.update({...context, ...noInput, ...input[channel]});
         }
         return node;
       },

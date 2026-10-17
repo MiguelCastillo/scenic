@@ -67,20 +67,25 @@ describe("scripts", () => {
   });
 });
 
-describe("ui", () => {
+describe("ui and network", () => {
   // createScene is a scene with a node that publishes what it is given on
-  // "race" when it updates.
+  // "race" of ui and "player" of network when it updates.
   function createScene() {
     const node = new Node({name: "race", id: "race"});
     let publish = null;
     node.withScript({
-      update: ({sceneManager}) => publish && sceneManager.ui.publish("race", publish),
+      update: ({sceneManager}) => {
+        if (publish) {
+          sceneManager.ui.publish("race", publish);
+          sceneManager.network.publish("player", publish);
+        }
+      },
     });
     const sceneManager = new SceneManager(new StateManager([])).withNodes([node]);
     return {sceneManager, publish: (message) => (publish = message)};
   }
 
-  test("keeps the last message on each channel for receivers to pull", () => {
+  test("keep the last message on each channel for receivers to pull", () => {
     const {sceneManager, publish} = createScene();
     publish({lap: 1});
     sceneManager.update(0);
@@ -88,13 +93,14 @@ describe("ui", () => {
 
     expect(sceneManager.ui.messages()).toEqual({race: {lap: 2}});
     expect(sceneManager.ui.latest("race")).toEqual({lap: 2});
+    expect(sceneManager.network.latest("player")).toEqual({lap: 1});
 
     // Pulling forgets nothing, and drawing changes nothing.
     sceneManager.render(0, null);
     expect(sceneManager.ui.latest("race")).toEqual({lap: 2});
   });
 
-  test("leaves out channels that stopped publishing", () => {
+  test("leave out channels that stopped publishing", () => {
     const {sceneManager, publish} = createScene();
     publish({lap: 1});
     sceneManager.update(0);
@@ -102,6 +108,7 @@ describe("ui", () => {
     sceneManager.update(0);
 
     expect(sceneManager.ui.messages()).toEqual({});
+    expect(sceneManager.network.latest("player")).toBeUndefined();
   });
 });
 

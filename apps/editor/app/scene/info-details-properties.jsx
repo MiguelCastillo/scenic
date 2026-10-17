@@ -65,6 +65,10 @@ export class InfoDetailsProperties extends WithNodeState {
     // Terrains and nodes with scripts can tell the app's UI what they know,
     // on the channel named by their "hud" (see SceneManager in @scenic/scene).
     const canPublish = node.type === "terrain" || !!nodeState.script || !!nodeState.hud;
+    // Nodes with scripts can tell the other players in a network game about
+    // themselves, on the channel named by their "network", such as a ship
+    // flown by fly.js.
+    const canSend = !!nodeState.script || !!nodeState.network;
 
     // Cameras the editor runs show whether they are the one being looked
     // through.
@@ -109,6 +113,17 @@ export class InfoDetailsProperties extends WithNodeState {
               placeholder="channel"
               onChange={(evt) => this.handleChange("hud", evt)}
               value={nodeState.hud ?? ""}
+            />
+          </div>
+        ) : null}
+        {canSend ? (
+          <div className="network">
+            <label>Network</label>
+            <input
+              type="text"
+              placeholder="channel"
+              onChange={(evt) => this.handleChange("network", evt)}
+              value={nodeState.network ?? ""}
             />
           </div>
         ) : null}

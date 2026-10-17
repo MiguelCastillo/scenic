@@ -57,8 +57,10 @@ async function loadScript(src, baseURL) {
 // gets its own instance. src is relative to baseURL, the scene file's URL,
 // the way a page's links are relative to the page, so a scene finds the
 // scripts next to it whichever app runs it. It is the app's page by
-// default. Each script is loaded once however many nodes use it.
-export function loadScripts(sceneManager, baseURL = self.location.href) {
+// default. Each script is loaded once however many nodes use it. root is
+// where in the scene to look, such as a node just added to it; the whole
+// scene by default.
+export function loadScripts(sceneManager, baseURL = self.location.href, root = sceneManager.scene) {
   const factories = {};
   const loads = [];
 
@@ -72,7 +74,7 @@ export function loadScripts(sceneManager, baseURL = self.location.href) {
     }
     node.items.forEach(visit);
   };
-  visit(sceneManager.scene);
+  visit(root);
 
   return Promise.all(loads);
 }

@@ -114,7 +114,9 @@ export class SceneRunner {
     // mouse moved and the wheel scrolled, and the player's intents (see
     // input-intents.js in @scenic/dom): how far to look and zoom, which way
     // to fly, how far to move through a menu, and whether to switch cameras,
-    // choose, select or go back.
+    // choose, select or go back. A channel for another player in a network
+    // game also has the messages the player sent since the last frame, in
+    // order, {type: "network", message} events, as messages.
     const eventsByChannel = sceneManager.input.take();
     const input = {};
     for (const channel of new Set([
@@ -135,6 +137,7 @@ export class SceneRunner {
         select: false,
         back: false,
       };
+      const messages = [];
       for (const event of eventsByChannel[channel] ?? []) {
         if (event.type === "keydown") {
           keys.add(event.code);
@@ -161,11 +164,13 @@ export class SceneRunner {
           intents.choose = event.index;
         } else if (["nextCamera", "select", "back"].includes(event.type)) {
           intents[event.type] = true;
+        } else if (event.type === "network") {
+          messages.push(event.message);
         }
       }
       this._heldKeysByChannel.set(channel, keys);
       this._moveByChannel.set(channel, intents.move);
-      input[channel] = {keys, pressed, mouse, wheel, intents};
+      input[channel] = {keys, pressed, mouse, wheel, intents, messages};
     }
 
     // The player's input moves the cameras too, even while paused, when the
@@ -178,8 +183,17 @@ export class SceneRunner {
 
     // Scripts get the frame's seconds and input, so that a script such as a
     // flight controller can move at the same speed at any frame rate and
-    // respond to the player. While paused they get neither.
-    sceneManager.update(this._sceneMs, {seconds: sceneSeconds, input: paused ? {} : input});
+    // respond to the player. While paused they get neither, except for the
+    // messages other players in a network game sent, who play on, so that
+    // what shows them knows where they are.
+    sceneManager.update(this._sceneMs, {
+      seconds: sceneSeconds,
+      input: paused
+        ? Object.fromEntries(
+            Object.entries(input).map(([channel, {messages}]) => [channel, {messages}])
+          )
+        : input,
+    });
 
     // Let's write out the number of frames per second that we are able to
     // run.

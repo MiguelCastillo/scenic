@@ -54,6 +54,11 @@
 // They are kept rather than read back from the node's rotation, since the
 // same rotation can come from different angles.
 //
+// In a network game, the other players see it when its node names a channel
+// of sceneManager.network in its state, such as {"network": "player"}: every
+// frame it publishes {position, rotation, throttle} there, for the copies of
+// it on the other players' screens (see remote-ship.js).
+//
 // It flies from wherever the node's state puts it, so moving the node, such
 // as in the editor, moves the rocket.
 //
@@ -221,6 +226,14 @@ module.exports = function createFlyScript(node) {
         transform: {...state.transform, position, rotation: mat4.rotationAngles(matrix)},
         script: {...state.script, settings: {...state.script.settings, ...flight}},
       });
+
+      if (state.network) {
+        sceneManager.network.publish(state.network, {
+          position,
+          rotation: mat4.rotationAngles(matrix),
+          throttle: flight.throttle,
+        });
+      }
     },
   };
 };

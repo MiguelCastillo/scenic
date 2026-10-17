@@ -454,6 +454,34 @@ race, and a terrain's counts with what the whole frame cost. Each ignores
 channels it doesn't know. In the editor, the Info tab of a terrain or a node
 with a script sets its `hud` channel.
 
+### Playing together: `sceneManager.network`
+
+In a network game, a scene tells the other players what they need to know
+about its player through `sceneManager.network`, a bus like `ui`. The node
+that is the player publishes on the channel named by `network` in its own
+state, such as Bubble Squadron's ship publishing
+`{position, rotation, throttle}` every frame. The app is the receiver: a few
+times a second, it pulls the latest message and sends it to the other
+players, without knowing what it holds. The arcade pulls 20 times a second.
+
+The app publishes the other players' messages to `sceneManager.input`, on a
+channel for each player, as `{type: "network", message}` events. The scene's
+runner is that bus's receiver, and a script whose node's `input` names a
+player's channel gets their messages in order, as the frame's `messages`.
+The arcade adds a copy of the player's node for each other player, run by
+the script the game's manifest names:
+
+```json
+"multiplayer": {"player": "starfighter", "remote": "scripts/remote-ship.js"}
+```
+
+Bubble Squadron's `remote-ship.js` glides its copy to where the last message
+says, so it moves smoothly between messages. Each other player's channel is
+limited, with `input.limit(channel, maxEvents)`, to 256 messages, so they
+pile up only so far while nothing pulls them, such as in a background tab:
+the oldest are dropped, and logged. The player's own channel is never
+limited, so a key coming up is never lost.
+
 ### Scene stacks and menus
 
 An app can run scenes on top of each other, such as a game's menu over the

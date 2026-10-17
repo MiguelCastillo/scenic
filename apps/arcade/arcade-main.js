@@ -10,6 +10,7 @@ import {loadScene, SceneRunner, SceneStack} from "@scenic/runtime";
 
 import {PlayOnTap, PlayWhileLocked, registerSceneInputRouting} from "./input.js";
 import {RoomConnection} from "./room.js";
+import {RemotePlayers} from "./remote-players.js";
 
 // The arcade plays one of the games in games/, full screen: the one the page's
 // URL names, such as index.html?game=bubble-squadron, or, without one, the one
@@ -198,16 +199,35 @@ domReady.onReady(async () => {
 
   // Players who open the arcade with the same ?room= play together, through
   // the relay (see room.js). The page shows the room and how many are in it.
+  // While a game that can be played together is playing, the page receives
+  // what its player's node publishes on the scene's sceneManager.network, on
+  // the channel the node's "network" names: 20 times a second, it pulls the
+  // latest message and sends it to the others. The others' messages are
+  // published to their copies in the scene (see RemotePlayers). What the
+  // messages hold is the game's business.
   const roomName = params.get("room");
+  // Where the page receives its player's messages from, while a game is
+  // playing that can be played together: the scene playing, its file and the
+  // channel, as {scene, file, channel}.
+  let networkSource = null;
+  let remotePlayers = null;
   if (roomName) {
     roomEl.textContent = `Room ${roomName} · joining…`;
-    new RoomConnection(roomName, {
+    const room = new RoomConnection(roomName, {
       onChange: ({connected, players}) => {
         roomEl.textContent = connected
           ? `Room ${roomName} · ${players.length + 1} playing`
           : `Room ${roomName} · not connected`;
+        remotePlayers?.keep(players);
       },
+      onState: (player, state) => remotePlayers?.publish(player, state),
     });
+    setInterval(() => {
+      const message = networkSource?.scene.sceneManager.network.latest(networkSource.channel);
+      if (message !== undefined) {
+        room.sendState({scene: networkSource.file, message});
+      }
+    }, 50);
   }
 
   let game = params.get("game");
@@ -231,12 +251,26 @@ domReady.onReady(async () => {
       return {scene, runner: new SceneRunner(gl, scene, options)};
     };
 
-    // play makes loaded the game's scene, at the bottom of the stack. Its
-    // HUD shows what it published last frame on the channels the arcade
-    // knows, such as a race's lap and time, a blank line apart, and its
-    // frame rate shows too.
+    // play makes loaded, from the game's scene file, the game's scene, at the
+    // bottom of the stack. Its HUD shows what it published last frame on the
+    // channels the arcade knows, such as a race's lap and time, a blank line
+    // apart, and its frame rate shows too. In a room, the other players show
+    // in it, if the game can be played together.
     let stopReceivingHud = null;
-    const play = (loaded) => {
+    const play = (loaded, file) => {
+      remotePlayers?.dispose();
+      remotePlayers = null;
+      networkSource = null;
+      if (roomName && manifest.multiplayer) {
+        const {sceneManager} = loaded.scene;
+        const {player} = manifest.multiplayer;
+        remotePlayers = new RemotePlayers(loaded.scene, file, manifest.multiplayer);
+        networkSource = {
+          scene: loaded.scene,
+          file,
+          channel: sceneManager.getNodeStateByID(player)?.network,
+        };
+      }
       hudEl.textContent = "";
       stopReceivingHud?.();
       stopReceivingHud = receiveEveryFrame(() => {
@@ -263,7 +297,7 @@ domReady.onReady(async () => {
     }
     gameFile = gameFile || manifest.scene;
     messageEl.textContent = `Loading ${manifest.name}…`;
-    let playing = play(await load(gameFile));
+    let playing = play(await load(gameFile), gameFile);
     stack.push(playing.runner);
 
     // The menu scene, while it is open, over the game, and whether it is
@@ -340,7 +374,7 @@ domReady.onReady(async () => {
           if (file !== gameFile) {
             hideMenu();
             messageEl.textContent = "Loading…";
-            const next = play(await load(file));
+            const next = play(await load(file), file);
             stack.replace(0, next.runner);
             playing.scene.dispose();
             playing = next;
