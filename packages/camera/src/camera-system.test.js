@@ -76,7 +76,7 @@ describe("CameraSystem", () => {
 
   test("moves a camera by its type", () => {
     const scene = createScene({chase});
-    scene.cameras.update(0);
+    scene.cameras.moveActiveCamera(0);
 
     // Behind the rocket, which faces +Z.
     const [x, y, z] = positionOf(scene, "chase");
@@ -88,7 +88,7 @@ describe("CameraSystem", () => {
   test("leaves a plain camera where it is", () => {
     const scene = createScene({still: {type: "camera"}});
     scene.cameras.turn(10, 0);
-    scene.cameras.update(1);
+    scene.cameras.moveActiveCamera(1);
     expect(rotationOf(scene, "still")).toEqual([0, 0, 0]);
   });
 
@@ -103,12 +103,12 @@ describe("CameraSystem", () => {
     const scene = createScene({chase, cockpit: freeFly});
     const {cameras} = scene;
     cameras.turn(90, 0);
-    cameras.update(0);
+    cameras.moveActiveCamera(0);
     const orbited = positionOf(scene, "chase");
 
     cameras.nextCamera();
     cameras.nextCamera();
-    cameras.update(0);
+    cameras.moveActiveCamera(0);
     expect(positionOf(scene, "chase")).toEqual(orbited);
   });
 
@@ -116,22 +116,22 @@ describe("CameraSystem", () => {
     const scene = createScene({chase: freeFly, cockpit: freeFly});
     const {cameras} = scene;
     cameras.setMovement({forward: 0, right: 0, up: 1});
-    cameras.update(1);
+    cameras.moveActiveCamera(1);
     expect(positionOf(scene, "chase")[1]).toBeCloseTo(100);
 
     cameras.nextCamera();
-    cameras.update(1);
+    cameras.moveActiveCamera(1);
     expect(positionOf(scene, "cockpit")[1]).toBe(0);
   });
 
   test("keeps everything in the state, so a new system carries on", () => {
     const scene = createScene({chase});
     scene.cameras.turn(90, 0);
-    scene.cameras.update(0);
+    scene.cameras.moveActiveCamera(0);
     const orbited = positionOf(scene, "chase");
 
     const cameras = new CameraSystem(scene.sceneManager, scene.id("world"));
-    cameras.update(0);
+    cameras.moveActiveCamera(0);
     expect(positionOf(scene, "chase")).toEqual(orbited);
   });
 
@@ -154,26 +154,26 @@ describe("CameraSystem", () => {
     test("flies the way move says, and stops when it says not to", () => {
       const scene = createScene({free: freeFly});
       scene.cameras.applyInput(intents({move: {forward: 0, right: 0, up: 1}}));
-      scene.cameras.update(1);
+      scene.cameras.moveActiveCamera(1);
       expect(positionOf(scene, "free")[1]).toBeCloseTo(100);
 
       scene.cameras.applyInput(intents({}));
-      scene.cameras.update(1);
+      scene.cameras.moveActiveCamera(1);
       expect(positionOf(scene, "free")[1]).toBeCloseTo(100);
     });
 
     test("looks, and looks around while paused", () => {
       const leftToTheScene = {...chase, thirdPerson: {...chase.thirdPerson, mouseOrbit: false}};
       const scene = createScene({chase: leftToTheScene});
-      scene.cameras.update(0);
+      scene.cameras.moveActiveCamera(0);
       const behind = positionOf(scene, "chase");
 
       scene.cameras.applyInput(intents({look: {x: 90, y: 0}}));
-      scene.cameras.update(0);
+      scene.cameras.moveActiveCamera(0);
       expect(positionOf(scene, "chase")).toEqual(behind);
 
       scene.cameras.applyInput(intents({look: {x: 90, y: 0}}), {paused: true});
-      scene.cameras.update(0);
+      scene.cameras.moveActiveCamera(0);
       expect(positionOf(scene, "chase")).not.toEqual(behind);
     });
   });
@@ -184,26 +184,26 @@ describe("CameraSystem", () => {
     test("off leaves the mouse to the scene", () => {
       const scene = createScene({chase: leftToTheScene});
       const {cameras} = scene;
-      cameras.update(0);
+      cameras.moveActiveCamera(0);
       const behind = positionOf(scene, "chase");
 
       cameras.turn(90, 0);
-      cameras.update(0);
+      cameras.moveActiveCamera(0);
       expect(positionOf(scene, "chase")).toEqual(behind);
     });
 
     test("is ignored by lookAround, and reset goes back behind", () => {
       const scene = createScene({chase: leftToTheScene});
       const {cameras} = scene;
-      cameras.update(0);
+      cameras.moveActiveCamera(0);
       const behind = positionOf(scene, "chase");
 
       cameras.lookAround(90, 0);
-      cameras.update(0);
+      cameras.moveActiveCamera(0);
       expect(positionOf(scene, "chase")).not.toEqual(behind);
 
       cameras.reset();
-      cameras.update(0);
+      cameras.moveActiveCamera(0);
       expect(positionOf(scene, "chase")).toEqual(behind);
     });
   });

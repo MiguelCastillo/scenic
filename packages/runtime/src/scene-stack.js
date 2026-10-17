@@ -17,7 +17,7 @@ export class SceneStack {
   constructor(gl) {
     this.runners = [];
     this._stopRenderLoop = startRenderLoop(gl, {
-      updateScene: (ms) => this.runners.forEach((runner) => runner.updateScene(ms)),
+      stepFrame: (ms) => this.runners.forEach((runner) => runner.stepFrame(ms)),
       renderFrame: () =>
         this.runners.forEach((runner, i) => {
           if (i > 0) {

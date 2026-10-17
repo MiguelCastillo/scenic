@@ -15,7 +15,8 @@ import {findTarget} from "./target.js";
 //   such as for scrolling.
 // - setMovement({forward, right, up}): keep moving while input is held down,
 //   such as keys. Each value is -1, 0 or 1.
-// - update(seconds): called every frame with the seconds since the last one.
+// - moveForFrame(seconds): move for a frame, the seconds since the last one,
+//   such as following a target or flying on.
 // A behavior also has stateKey, the block of the camera's state it reads,
 // and reset(state, originalState), which is that block with what the
 // behavior changes as it is used put back to originalState's, the block in

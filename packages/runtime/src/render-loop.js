@@ -1,7 +1,7 @@
 import {renderStats} from "@scenic/renderer";
 
 // startRenderLoop runs runner every frame, such as a SceneRunner: it sets up
-// and clears the canvas, then calls the runner's updateScene with the frame's
+// and clears the canvas, then calls the runner's stepFrame with the frame's
 // time and its renderFrame. It returns a function that stops it.
 export function startRenderLoop(gl, runner) {
   const {canvas} = gl;
@@ -36,7 +36,7 @@ export function startRenderLoop(gl, runner) {
     renderStats.startFrame();
 
     // Update the scene and states.
-    runner.updateScene(ms);
+    runner.stepFrame(ms);
 
     // Render the udpated scene with updated states.
     runner.renderFrame();

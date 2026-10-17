@@ -312,8 +312,8 @@ module.exports = function createScript(node) {
 ```
 
 Every hook is optional. `update` is where a script changes the scene's state:
-`SceneManager.update` calls it once a frame, parents before children, and the
-frame is drawn after, so the changes show up in the same frame. Drawing
+`SceneManager.runScripts` calls it once a frame, parents before children, and
+the frame is drawn after, so the changes show up in the same frame. Drawing
 (`SceneManager.render`) never runs `update`, so a frame can be drawn as often
 as needed without moving anything, and a script's `render` must leave the
 state alone too. Another node's world matrix is where that node was last
@@ -443,7 +443,7 @@ sceneManager.ui.messages(); // {race: {...}, terrain: {...}}
 The scene publishes to the bus, and the app, the bus's receiver, pulls the
 last message on each channel when it wants to: the bus never calls the app,
 so the receiver decides when it can handle them, in its own loop, or even on
-another thread, since messages are plain data. `SceneManager.update` starts
+another thread, since messages are plain data. `SceneManager.runScripts` starts
 each frame's messages, so a channel that stops publishing is missing from
 the next frame's messages, and the app stops showing it. Pulling forgets
 nothing.
@@ -1046,7 +1046,7 @@ every node, parents before children, so that every world matrix is up to date,
 including the camera's. The second pass calls `render` on every node, children
 before parents, so by the time a mesh renders its children have already filled
 its draw list. Scripts have already moved things before this, in
-`SceneManager.update` (see [Scripts](#scripts)), so drawing only reads the
+`SceneManager.runScripts` (see [Scripts](#scripts)), so drawing only reads the
 scene's state:
 
 ```mermaid
