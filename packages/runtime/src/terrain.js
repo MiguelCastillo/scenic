@@ -4,7 +4,7 @@ import {
   VertexBufferData,
   VertexBufferIndexes,
 } from "@scenic/renderer";
-import {Mesh} from "@scenic/scene";
+import {BoundingBox, Mesh} from "@scenic/scene";
 
 import {shaderRegistry} from "./shader-registry.js";
 
@@ -104,9 +104,8 @@ export class Terrain extends Mesh {
     this.indexes = new Map();
     // The textures loaded so far, by URL.
     this.textures = new Map();
-    // The tiles drawn this frame, and their triangles, counted as they are
-    // drawn (see isVisible), for showTiles.
-    this.drawn = {tiles: 0, triangles: 0};
+    // The tiles in view this frame, chosen by prepareForView.
+    this.tilesToRender = [];
   }
 
   // getSettings is the terrain's settings, with defaults for those its state
@@ -146,11 +145,16 @@ export class Terrain extends Mesh {
 
   // prepareForView builds the tiles that reach within the camera's far plane
   // of it, where it is this frame, nearest first, at the detail their
-  // distance from it calls for, drops those beyond it, and draws the ones it
-  // keeps.
+  // distance from it calls for, drops those beyond it, and chooses the ones
+  // in view to draw, into tilesToRender.
+  //
+  // It replaces Mesh's prepareForView: the terrain's tiles aren't Geometry
+  // children, and are checked against the view one by one (see below).
   prepareForView(context) {
     const {gl, sceneManager} = context;
     this.settings = this.getSettings(sceneManager);
+    // Nothing is drawn until there is a camera to choose tiles for.
+    this.tilesToRender = [];
 
     // Changing the shape of the ground or its grass changes every tile, so
     // they are all built again. Textures and the dirt color are only drawn.
@@ -228,21 +232,27 @@ export class Terrain extends Mesh {
       }
     }
 
-    // What the ground cost, for the app's UI. Tiles are counted as they are
-    // drawn, after this, so the counts are the last frame's.
+    // It draws only the tiles in view. The tiles are spread all around the
+    // camera, so one bounding volume around all of them would always be in
+    // view, and would leave nothing out. Instead, each tile is checked on
+    // its own, by the bounding volume it measured when it was built (see
+    // buildTile).
+    this.tilesToRender = [...this.tiles.values()].filter(({boundingVolume}) =>
+      viewport.canSeeBoundingVolume(boundingVolume, this.worldMatrix)
+    );
+
+    // What the ground cost, for the app's UI.
     const {hud} = sceneManager.getNodeStateByID(this.id);
     if (hud) {
       sceneManager.ui.publish(hud, {
         tiles: this.tiles.size,
-        drawn: this.drawn.tiles,
-        triangles: this.drawn.triangles,
+        drawn: this.tilesToRender.length,
+        triangles: this.tilesToRender.reduce(
+          (sum, tile) => sum + tile.vertexBuffer.indexes.data.length / 3,
+          0
+        ),
         built,
       });
-    }
-    this.drawn = {tiles: 0, triangles: 0};
-
-    for (const tile of this.tiles.values()) {
-      this.addVertexBuffer(tile.vertexBuffer);
     }
   }
 
@@ -323,28 +333,19 @@ export class Terrain extends Mesh {
     });
 
     // Index buffers are shared by every tile with as many steps, so a tile
-    // only deletes its own buffers.
+    // only deletes its own buffers. Its bounding volume is measured now, for
+    // checking it against the view every frame.
     return {
       column,
       row,
       steps: detail,
       vertexBuffer,
+      boundingVolume: BoundingBox.around(positions),
       dispose: () =>
         ["positions", "normals", "colors", "textureCoords"].forEach((b) =>
           vertexBuffer[b].dispose()
         ),
     };
-  }
-
-  // isVisible is whether a tile is in view (see Mesh.isVisible), counting the
-  // tiles that are, and their triangles, for showTiles.
-  isVisible(vertexBuffer) {
-    const visible = super.isVisible(vertexBuffer);
-    if (visible) {
-      this.drawn.tiles++;
-      this.drawn.triangles += vertexBuffer.indexes.data.length / 3;
-    }
-    return visible;
   }
 
   // getMaterialsState gives terrain a dull material when its state has none,
@@ -359,11 +360,13 @@ export class Terrain extends Mesh {
     };
   }
 
-  // render draws the tiles with the terrain's textures, loading them the
-  // first time they are needed.
+  // render draws the tiles in tilesToRender, all at the terrain's world
+  // matrix, since each tile's positions are already where it goes in the
+  // terrain. It draws with the terrain's textures, loading them the first
+  // time they are needed.
   render(context) {
-    const {settings} = this;
-    if (!settings || !this.shaderProgram) {
+    const {settings, shaderProgram, tilesToRender} = this;
+    if (!settings || !shaderProgram || !tilesToRender.length) {
       return;
     }
 
@@ -376,7 +379,25 @@ export class Terrain extends Mesh {
       name,
       update: (gl, {index}) => gl.uniform1f(index, value),
     });
-    this.shaderProgram.addUniforms([
+    const lightsState = this.getLightsState(context);
+    if (lightsState) {
+      Mesh.configureLighting(shaderProgram, lightsState);
+    }
+    const {material, ambient} = this.getMaterialsState(context);
+    Mesh.configureMaterial(shaderProgram, material, ambient);
+
+    const projectionMatrix = this.getViewProjectionMatrix();
+    const worldMatrix = this.worldMatrix;
+    const program = shaderProgram.addUniforms([
+      {
+        name: "projectionMatrix",
+        update: (gl, {index}) => gl.uniformMatrix4fv(index, false, projectionMatrix.data),
+      },
+      {
+        name: "worldMatrix",
+        update: (gl, {index}) => gl.uniformMatrix4fv(index, true, worldMatrix.data),
+      },
+      ...this.getViewUniforms(),
       ...samplers.map(([name, url, placeholder], unit) => ({
         name,
         update: (gl, {index}) => {
@@ -393,7 +414,9 @@ export class Terrain extends Mesh {
       {name: "dirtColor", update: (gl, {index}) => gl.uniform3fv(index, settings.dirtColor)},
     ]);
 
-    super.render(context);
+    program.use();
+    tilesToRender.forEach((tile) => program.draw(tile.vertexBuffer));
+    program.release();
   }
 
   // getTexture is the texture at url, which repeats, with placeholder, an

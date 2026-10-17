@@ -776,7 +776,9 @@ Every frame, the terrain (`prepareForView` in `terrain.js`):
    frame, such as when the scene loads or the camera flies fast; spreading
    them out keeps flying smooth while far tiles fill in, out in the fog.
 4. Draws every tile it has, each its own vertex buffer, except the ones out
-   of the camera's view (see `Mesh.isVisible`).
+   of the camera's view. Each tile measures its bounding volume, a box
+   around its ground, when it is built, and is checked against the view on
+   its own (see `prepareForView` in `terrain.js`).
 
 Up close, a tile is a grid of `detail` steps along each side (16 by default),
 so 17 by 17 points, and 512 triangles, each square of the grid split in two.
@@ -820,9 +822,9 @@ taller the hills are, which fills any crack with ground. It is drawn from both
 sides, and adds two triangles for every step around the edge.
 
 Tiles are small so that what is out of view can be left out of a frame in
-small pieces: a tile is drawn whole if any of it is in view (see
-`Mesh.isVisible`), so smaller tiles leave out more of the ground behind and
-beside the camera, at the cost of more tiles to build and draw. With
+small pieces: a tile is drawn whole if any of it is in view, so smaller
+tiles leave out more of the ground behind and beside the camera, at the cost
+of more tiles to build and draw. With
 `showTiles` on, the terrain draws lines on the ground around every tile and
 every square of its grid, to see how the ground is cut up and where tiles
 change their steps. With a `hud` channel, it publishes how many tiles it has,

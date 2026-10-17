@@ -128,11 +128,11 @@ export class Viewport extends Node {
     return this._frustumPlanes;
   }
 
-  // canSee is whether any of the sphere around center, a world position,
-  // with radius is in view of the active camera: whether it is not wholly
-  // outside any side of what the camera sees.
-  canSee([x, y, z], radius) {
-    return this.frustumPlanes.every(([a, b, c, d]) => a * x + b * y + c * z + d >= -radius);
+  // canSeeBoundingVolume is whether any of boundingVolume, such as a mesh's
+  // (see bounds.js), placed with worldMatrix, can be in view of the active
+  // camera: whether it is not wholly outside what the camera sees.
+  canSeeBoundingVolume(boundingVolume, worldMatrix) {
+    return !boundingVolume.isOutsideView(this.frustumPlanes, worldMatrix);
   }
 
   // viewUniforms are the shader uniforms that describe how this viewport is

@@ -1,5 +1,6 @@
 import {mat4} from "@scenic/math";
 
+import {BoundingBox} from "./bounds.js";
 import {Camera} from "./camera.js";
 import {SceneManager} from "./scene-manager.js";
 import {StateManager} from "./state-manager.js";
@@ -55,42 +56,49 @@ describe("Viewport.viewProjectionMatrix", () => {
   });
 });
 
-describe("Viewport.canSee", () => {
+describe("Viewport.canSeeBoundingVolume", () => {
   // The camera is at z 300 looking down -Z, seeing 90 degrees across, from 1
   // to 1000 away.
   const viewport = () => new Viewport({name: "world"}).add(createCamera("camera", [0, 0, 300]));
+  // seesCube is whether view sees a cube reaching half each way from
+  // position.
+  const seesCube = (view, position, half) =>
+    view.canSeeBoundingVolume(
+      new BoundingBox([-half, -half, -half], [half, half, half]),
+      mat4.Matrix4.trs(position, [0, 0, 0], [1, 1, 1])
+    );
 
   test("sees what is in front of the camera", () => {
-    expect(viewport().canSee([0, 0, 0], 1)).toBe(true);
+    expect(seesCube(viewport(), [0, 0, 0], 1)).toBe(true);
   });
 
   test("does not see what is behind the camera", () => {
-    expect(viewport().canSee([0, 0, 500], 10)).toBe(false);
+    expect(seesCube(viewport(), [0, 0, 500], 10)).toBe(false);
   });
 
   test("does not see what is past the far plane", () => {
     // 1050 away, past the far plane at 1000.
-    expect(viewport().canSee([0, 0, -750], 10)).toBe(false);
-    expect(viewport().canSee([0, 0, -650], 10)).toBe(true);
+    expect(seesCube(viewport(), [0, 0, -750], 10)).toBe(false);
+    expect(seesCube(viewport(), [0, 0, -650], 10)).toBe(true);
   });
 
   test("does not see what is off to the side", () => {
     // 200 to the right at 100 away is past the 45 degrees to each side.
-    expect(viewport().canSee([200, 0, 200], 10)).toBe(false);
+    expect(seesCube(viewport(), [200, 0, 200], 10)).toBe(false);
   });
 
-  test("sees a sphere that only reaches into view", () => {
-    // The right side of the view is 100 out at 100 away, and this sphere's
-    // center is 50 past it, but its radius reaches back in.
-    expect(viewport().canSee([150, 0, 200], 60)).toBe(true);
+  test("sees what only reaches into view", () => {
+    // The right side of the view is 100 out at 100 away, and this cube's
+    // center is 50 past it, but it reaches back in.
+    expect(seesCube(viewport(), [150, 0, 200], 60)).toBe(true);
   });
 
   test("follows the camera when it is turned", () => {
     // Turned to look down -X, it sees what is to its left and not what was
     // in front of it.
     const turned = new Viewport({name: "world"}).add(createCamera("camera", [0, 0, 0], [0, 90, 0]));
-    expect(turned.canSee([-300, 0, 0], 1)).toBe(true);
-    expect(turned.canSee([0, 0, -300], 1)).toBe(false);
+    expect(seesCube(turned, [-300, 0, 0], 1)).toBe(true);
+    expect(seesCube(turned, [0, 0, -300], 1)).toBe(false);
   });
 });
 
