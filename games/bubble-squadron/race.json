@@ -406,7 +406,8 @@
               "hud": "booster",
               "collider": {
                 "shape": "sphere",
-                "radius": 95
+                "radius": 95,
+                "bump": true
               },
               "type": "transform",
               "transform": {

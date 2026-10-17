@@ -83,8 +83,12 @@
 //
 // When the node has a collider (see collision in @scenic/scene), the rocket
 // bounces off anything else with one, such as trees: it is pushed back out
-// and its course turns away, like a ball off a wall. Pushing out assumes the
-// node's parent is not rotated or scaled.
+// and its course turns away, like a ball off a wall. A collider with "bump"
+// set, such as another ship's, {"shape": "sphere", "radius": 95, "bump":
+// true}, is bumped rather than bounced off, like bumping shoulders: the
+// rocket is nudged aside, half of the way out, since the other ship, flown
+// the same way, nudges itself the other half, and its course doesn't turn.
+// Pushing out assumes the node's parent is not rotated or scaled.
 const {mat4} = require("@scenic/math");
 const {collision} = require("@scenic/scene");
 
@@ -127,8 +131,10 @@ function rotation(heading, climb, roll) {
 
 // bounce pushes the rocket out of anything its collider runs into at
 // position, and turns its course away from what it hit: its nose is
-// reflected off the surface, the way a ball bounces off a wall. It returns
-// whether the rocket hit anything, after updating position and flight.
+// reflected off the surface, the way a ball bounces off a wall. What it
+// bumps, a collider with "bump" set, it is only nudged half of the way out
+// of, without turning. It returns whether its course turned, after updating
+// position and flight.
 function bounce(sceneManager, node, state, position, matrix, flight) {
   // Collisions are found where the rocket is now, which its world matrix
   // only shows after this script runs.
@@ -141,15 +147,21 @@ function bounce(sceneManager, node, state, position, matrix, flight) {
   }
 
   let nose = [matrix[2], matrix[6], matrix[10]];
-  for (const {normal, depth} of hits) {
+  let turned = false;
+  for (const {node: other, normal, depth} of hits) {
+    const bump = !!sceneManager.getNodeStateByID(other.id).collider.bump;
     for (let i = 0; i < 3; i++) {
-      position[i] += normal[i] * depth;
+      position[i] += normal[i] * (bump ? depth / 2 : depth);
     }
 
     const into = nose[0] * normal[0] + nose[1] * normal[1] + nose[2] * normal[2];
-    if (into < 0) {
+    if (!bump && into < 0) {
       nose = nose.map((v, i) => v - 2 * into * normal[i]);
+      turned = true;
     }
+  }
+  if (!turned) {
+    return false;
   }
 
   // The nose is [sin(heading) cos(climb), sin(climb), cos(heading) cos(climb)]
