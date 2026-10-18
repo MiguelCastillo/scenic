@@ -13,7 +13,10 @@
 // - deletes the bundle's older fingerprinted copies,
 // - writes the app's index.html, from its index.template.html, two folders
 //   up from the bundle, with every reference to the bundle, such as
-//   "dist/arcade.js", naming the fingerprinted copy instead.
+//   "dist/arcade.js", naming the fingerprinted copy instead,
+// - writes the app's version.json, beside it, as {"version": "3f9a2c41d0"},
+//   the hash, for the server to tell whether a player's page is the one it
+//   serves (see server/src/server.js).
 //
 // With --watch, it does it again whenever a bundle or a template changes,
 // such as when bin/build.js builds a bundle again in its watch mode, and keeps
@@ -68,6 +71,11 @@ function fingerprint(bundle) {
   if (!fs.existsSync(page) || fs.readFileSync(page, "utf8") !== html) {
     fs.writeFileSync(page, html);
     console.log(`fingerprint: ${path.relative(process.cwd(), page)} loads ${fingerprinted}`);
+  }
+  const versionFile = path.join(appDir, "version.json");
+  const version = `${JSON.stringify({version: hash})}\n`;
+  if (!fs.existsSync(versionFile) || fs.readFileSync(versionFile, "utf8") !== version) {
+    fs.writeFileSync(versionFile, version);
   }
 }
 

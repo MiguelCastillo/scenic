@@ -101,15 +101,21 @@ describe("Relay", () => {
     expect((await join(server, code)).welcome.type).toBe("welcome");
   });
 
-  test("turns away players whose page is older than the one it serves", async () => {
-    server = await startServer({version: () => "new"});
+  test("turns away players whose page runs an older arcade or game, saying which", async () => {
+    server = await startServer({versions: () => ({arcade: "a2", game: "g2"})});
     const code = await newRoom(server);
-    expect((await join(server, code, {version: "old"})).welcome).toEqual({
+    const joinAt = async (arcadeVersion, gameVersion) =>
+      (await join(server, code, {arcadeVersion, gameVersion})).welcome;
+
+    expect(await joinAt("a1", "g2")).toEqual({
       type: "outdated",
+      changed: ["arcade"],
       errorID,
       serverStartedAt: expect.any(Number),
     });
-    expect((await join(server, code, {version: "new"})).welcome.type).toBe("welcome");
+    expect((await joinAt("a2", "g1")).changed).toEqual(["game"]);
+    expect((await joinAt("a1", "g1")).changed).toEqual(["arcade", "game"]);
+    expect((await joinAt("a2", "g2")).type).toBe("welcome");
   });
 
   test("tells everyone when it shuts down", async () => {

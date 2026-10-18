@@ -14,7 +14,7 @@ import {rooms} from "./rooms.js";
 // race in, at /ws (see Relay), which races are made and found in at /rooms/
 // (see rooms), and whose races it runs (see RoomRace). Without a root, it
 // only serves rooms, without races. The relay's options, originPatterns,
-// maxPlayers, emptyRoomMs, startRace and version, are Relay's. It returns
+// maxPlayers, emptyRoomMs, startRace and versions, are Relay's. It returns
 // {server, relay}, the relay to close when the server shuts down (see close
 // in Relay).
 export function createServer({root = null, ...relayOptions} = {}) {
@@ -24,24 +24,26 @@ export function createServer({root = null, ...relayOptions} = {}) {
     const {port} = server.address();
     return RoomRace.load(new URL(`/games/${game}/`, `http://127.0.0.1:${port}`), scene);
   };
-  // The version a player's page needs, to play game, is the arcade's and
-  // the game's: the fingerprint of the bundle the arcade's page loads (see
-  // bin/fingerprint.js), and the version of everything the game uses (see
-  // bin/version-games.js), such as "638dac9d62.9fb39cc53b", which the page
-  // knows too. They are read when players join, since they change whenever
-  // the arcade is built again or a game's files change.
-  const version = (game) => {
-    try {
-      const page = readFileSync(path.join(root, "apps/arcade/index.html"), "utf8");
-      const arcade = page.match(/dist\/arcade\.([0-9a-f]{10})\.js/)?.[1];
-      const gameFile = path.join(root, "games", game, "version.json");
-      const gameVersion = JSON.parse(readFileSync(gameFile, "utf8")).version;
-      return arcade && gameVersion ? `${arcade}.${gameVersion}` : null;
-    } catch {
-      return null;
-    }
+  // The versions a player's page needs, to play game, each from its
+  // version.json, or null without it: the arcade's, of the bundle its page
+  // loads (see bin/fingerprint.js), and the game's, of everything it uses
+  // (see bin/version-games.js), which the page knows too. They are read when
+  // players join, since they change whenever the arcade is built again or a
+  // game's files change.
+  const versions = (game) => {
+    const readVersion = (file) => {
+      try {
+        return JSON.parse(readFileSync(path.join(root, file), "utf8")).version;
+      } catch {
+        return null;
+      }
+    };
+    return {
+      arcade: readVersion("apps/arcade/version.json"),
+      game: readVersion(`games/${game}/version.json`),
+    };
   };
-  const relay = new Relay({...(root && {startRace, version}), ...relayOptions});
+  const relay = new Relay({...(root && {startRace, versions}), ...relayOptions});
   const serveRooms = rooms(relay);
   const serveFiles = root ? files(root) : null;
 

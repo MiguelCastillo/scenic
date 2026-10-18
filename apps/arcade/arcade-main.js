@@ -528,17 +528,15 @@ domReady.onReady(async () => {
       pushToURL("game", game);
     }
     const manifestURL = new URL(`/games/${game}/game.json`, location.href);
-    // The page's version is the arcade's and the game's, the version of
-    // everything the game uses (see bin/version-games.js), which the server
-    // checks are still the ones it serves, such as "638dac9d62.9fb39cc53b",
-    // or null without either. The game's is read before any of its files,
-    // so that files changed while they load make the page older than they
-    // are, never newer.
+    // The game's version, of everything it uses (see bin/version-games.js),
+    // which the server checks is still the one it serves, with the arcade's,
+    // or null without one. It is read before any of the game's files, so
+    // that files changed while they load make the page older than they are,
+    // never newer.
     const gameVersion = await fetchJSON(new URL("version.json", manifestURL)).then(
       ({version}) => version,
       () => null
     );
-    const version = arcadeVersion && gameVersion ? `${arcadeVersion}.${gameVersion}` : null;
     // The game's files are asked for at its version, such as
     // "bubble-squadron.9fb39cc53b", so that the browser keeps them until
     // they change (see versionedURL), and gameURL is where one of them is,
@@ -847,14 +845,23 @@ domReady.onReady(async () => {
       },
       outdated: {
         title: "New version",
-        why: `${manifest.name} has been updated.`,
+        why: null,
         go: "Reload",
         code: "PAGE-OUTDATED",
       },
     };
     const tellPlayer = () => {
       if (raceEnded) {
-        const {title, why, go, code} = raceEndedTexts[raceEnded.reason];
+        const texts = raceEndedTexts[raceEnded.reason];
+        const {title, go, code} = texts;
+        // What was updated, for a page that is out of date: the arcade, the
+        // game, or both.
+        const updated = (raceEnded.changed ?? []).map((part) =>
+          part === "game" ? manifest.name : "The arcade"
+        );
+        const why =
+          texts.why ??
+          `${updated.join(" and ")} ${updated.length > 1 ? "have" : "has"} been updated.`;
         raceOverTitleEl.textContent = title;
         raceOverStatusEl.textContent = why;
         raceOverCodeEl.textContent = code;
@@ -988,7 +995,8 @@ domReady.onReady(async () => {
       const room = new RoomConnection(code, {
         game,
         scene: gameFile,
-        version,
+        arcadeVersion,
+        gameVersion,
         onChange: ({status, otherPlayerIDs, turnedAway}) => {
           // The race is over, or the page out of date, which the player is
           // told, letting go of the pointer, so they can click on.

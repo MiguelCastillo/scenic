@@ -36,14 +36,21 @@ export async function newRoom(testServer, {game = "bubble-squadron", scene = "ra
 }
 
 // join connects a player to the room with code on the test server,
-// expecting a race of game's scene in it, from a page of version, if given,
-// and returns it with the first message to it, its welcome.
+// expecting a race of game's scene in it, from a page running arcadeVersion
+// and gameVersion, if given, and returns it with the first message to it,
+// its welcome.
 export async function join(
   testServer,
   code,
-  {origin, game = "bubble-squadron", scene = "race.json", version = null} = {}
+  {origin, game = "bubble-squadron", scene = "race.json", arcadeVersion, gameVersion} = {}
 ) {
-  const query = new URLSearchParams({room: code, game, scene, ...(version && {version})});
+  const query = new URLSearchParams({
+    room: code,
+    game,
+    scene,
+    ...(arcadeVersion && {arcadeVersion}),
+    ...(gameVersion && {gameVersion}),
+  });
   const socket = new WebSocket(`${testServer.wsURL}?${query}`, {origin});
   const player = new TestPlayer(socket);
   testServer.players.push(player);

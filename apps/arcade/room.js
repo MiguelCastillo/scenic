@@ -34,26 +34,27 @@ export const disconnected = "disconnected";
 // together, and a player alone races in a room of their own.
 //
 // It joins the room expecting its race, {game, scene}, such as
-// "bubble-squadron" and "race.json", from the page's version, if it has one,
-// such as the fingerprint of the arcade's bundle, so that joining again,
-// such as after the server restarted, finds out whether the room is still
-// that race, and the page still the one the server serves.
+// "bubble-squadron" and "race.json", from a page running arcadeVersion and
+// gameVersion, if it knows them, the versions of the arcade's bundle and of
+// everything the game uses, so that joining again, such as after the server
+// restarted, finds out whether the room is still that race, and the page
+// still runs what the server serves.
 //
 // Players are known by the ids the relay gives them, such as "p2". onChange
 // is called with {status, yourID, otherPlayerIDs, turnedAway} whenever any
 // of them changes, and onRace with every message about the race, {type:
 // "race", ...}, which says what is in it. turnedAway is why the server
 // turned the player away, or ended their room, which joining again won't
-// change, as {reason, errorID}, with errorID the id the server logged it
-// with, such as "7F3K-Q2MD", or null. The reasons:
+// change, as {reason, errorID, changed}, with errorID the id the server
+// logged it with, such as "7F3K-Q2MD", or null. The reasons:
 // - "full": the room has no seat free.
 // - "restarted": the server restarted since the player joined, and forgot
 //   their room.
 // - "gone": the room isn't the race any more, without the server having
 //   restarted since the player joined, such as when it was forgotten while
 //   no one was in it, or the player never joined it.
-// - "outdated": the page is older than the one the server serves, and needs
-//   to load again.
+// - "outdated": what the page runs is older than what the server serves,
+//   and it needs to load again; changed says which, of "arcade" and "game".
 // - "closing": the server shut down, such as to restart, ending the race.
 //
 // status is how the connection is doing: connecting, connected or
@@ -75,7 +76,10 @@ export const disconnected = "disconnected";
 // Its API: connect(), send(message), close(), status, yourID,
 // otherPlayerIDs and turnedAway.
 export class RoomConnection {
-  constructor(room, {game, scene, version = null, onChange = () => {}, onRace = () => {}}) {
+  constructor(
+    room,
+    {game, scene, arcadeVersion = null, gameVersion = null, onChange = () => {}, onRace = () => {}}
+  ) {
     this.status = disconnected;
     this.yourID = null;
     this.otherPlayerIDs = new Set();
@@ -86,8 +90,11 @@ export class RoomConnection {
     this._url.searchParams.set("room", room);
     this._url.searchParams.set("game", game);
     this._url.searchParams.set("scene", scene);
-    if (version) {
-      this._url.searchParams.set("version", version);
+    if (arcadeVersion) {
+      this._url.searchParams.set("arcadeVersion", arcadeVersion);
+    }
+    if (gameVersion) {
+      this._url.searchParams.set("gameVersion", gameVersion);
     }
     this._onChange = onChange;
     this._onRace = onRace;
@@ -190,7 +197,11 @@ export class RoomConnection {
         case "full":
         case "outdated":
         case "closing":
-          this.turnedAway = {reason: message.type, errorID: message.errorID};
+          this.turnedAway = {
+            reason: message.type,
+            errorID: message.errorID,
+            changed: message.changed ?? [],
+          };
           break;
       }
     };

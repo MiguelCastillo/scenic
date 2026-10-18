@@ -20,12 +20,13 @@ const codeLetters = "ABCDEFGHJKLMNPQRSTUVWXYZ";
 // tells what they do and hears from.
 //
 // A player joins a room by connecting to /ws?room=code&game=game&scene=scene
-// &version=version with a WebSocket: the room's code, the race they expect
-// in it, such as "bubble-squadron" and "race.json", and the version of the
-// page they play in, if it has one, such as the fingerprint of the arcade's
-// bundle. A player joining again, such as after the server restarted, finds
-// out this way whether their room is still the race they were in, and
-// whether their page is still the one the server serves. Every message is
+// &arcadeVersion=arcadeVersion&gameVersion=gameVersion with a WebSocket: the
+// room's code, the race they expect in it, such as "bubble-squadron" and
+// "race.json", and the versions of what their page runs, if it knows them:
+// the arcade's, the fingerprint of its bundle, and the game's, of everything
+// the game uses. A player joining again, such as after the server
+// restarted, finds out this way whether their room is still the race they
+// were in, and whether their page still runs what the server serves. Every message is
 // JSON, and everything about who is in the room comes from the relay:
 //
 // From a player:
@@ -47,8 +48,9 @@ const codeLetters = "ABCDEFGHJKLMNPQRSTUVWXYZ";
 //   These, and those below, which end a player's race before its time, have
 //   an "errorID" too, such as "7F3K-Q2MD", which the server logs with what
 //   happened (see newErrorID).
-//   - {"type": "outdated"}: the player's page is older than the one the
-//     server serves, so it needs to load again, and the connection closes.
+//   - {"type": "outdated", "changed": ["game"]}: what the player's page runs
+//     is older than what the server serves, so it needs to load again, with
+//     which of "arcade" and "game" changed since, and the connection closes.
 //   - {"type": "gone", "serverStartedAt": 1792328325537}: there is no such
 //     race, such as after the server restarted and forgot its rooms, or the
 //     room was forgotten emptyRoomMs after its last player left, or the code
@@ -85,9 +87,10 @@ const codeLetters = "ABCDEFGHJKLMNPQRSTUVWXYZ";
 //   leave(playerID), dispose() and underway, whether it has started, or
 //   null for rooms without races, such as in tests of the rooms alone. null
 //   by default.
-// - version: (game) => the version of the page the server serves now, for
-//   players to have to play game, or null to let any player in. null by
-//   default.
+// - versions: (game) => the versions of what the server serves now, for
+//   players to have to play game, as {arcade, game}, with a version it
+//   doesn't know null, which isn't checked, or null to check neither. null
+//   by default.
 //
 // Its API: handleUpgrade(request, socket, head), for an HTTP server's
 // "upgrade" event, roomFor(game, scene, auto) and roomInfo(code), for
@@ -99,13 +102,13 @@ export class Relay {
     maxPlayers = 0,
     emptyRoomMs = defaultEmptyRoomMs,
     startRace = null,
-    version = null,
+    versions = null,
   } = {}) {
     this.originPatterns = originPatterns;
     this.maxPlayers = maxPlayers;
     this.emptyRoomMs = emptyRoomMs;
     this._startRace = startRace;
-    this._version = version;
+    this._versions = versions;
     this._startedAt = Date.now();
     // The rooms, by name: {playersByID, game, scene, public, emptySince,
     // race, runningRace}, with playersByID each player's socket by their id,
@@ -133,7 +136,8 @@ export class Relay {
     const expected = {
       game: url.searchParams.get("game") ?? "",
       scene: url.searchParams.get("scene") ?? "",
-      version: url.searchParams.get("version"),
+      arcadeVersion: url.searchParams.get("arcadeVersion"),
+      gameVersion: url.searchParams.get("gameVersion"),
     };
     this._sockets.handleUpgrade(request, socket, head, (ws) => this._join(name, ws, expected));
   }
@@ -206,26 +210,39 @@ export class Relay {
   // the ids of the others already there before any other message, and the
   // others are told about them. Their messages go to the others until they
   // leave.
-  _join(name, ws, {game, scene, version}) {
+  _join(name, ws, {game, scene, arcadeVersion, gameVersion}) {
     this._forgetEmptyRooms();
     const room = this._roomsByName.get(name);
-    const current = this._version?.(game);
-    const refusal =
-      current && version && version !== current
-        ? "outdated"
-        : !room || room.game !== game || room.scene !== scene
-        ? "gone"
-        : this._isFull(room)
-        ? "full"
-        : null;
+    const current = this._versions?.(game) ?? {};
+    const changed = [
+      ["arcade", arcadeVersion, current.arcade],
+      ["game", gameVersion, current.game],
+    ]
+      .filter(([, theirs, ours]) => theirs && ours && theirs !== ours)
+      .map(([part]) => part);
+    const refusal = changed.length
+      ? "outdated"
+      : !room || room.game !== game || room.scene !== scene
+      ? "gone"
+      : this._isFull(room)
+      ? "full"
+      : null;
     if (refusal) {
       const errorID = newErrorID();
       console.error(
         `${errorID}: turned a player away, ${refusal}: room ${name}, expecting ` +
-          `${game} ${scene}, version ${version} of ${current}, room has ` +
+          `${game} ${scene}, arcade ${arcadeVersion} of ${current.arcade}, game ` +
+          `${gameVersion} of ${current.game}, room has ` +
           `${room ? `${room.game} ${room.scene}, ${room.playersByID.size} players` : "none"}`
       );
-      ws.send(JSON.stringify({type: refusal, errorID, serverStartedAt: this._startedAt}));
+      ws.send(
+        JSON.stringify({
+          type: refusal,
+          errorID,
+          serverStartedAt: this._startedAt,
+          ...(refusal === "outdated" && {changed}),
+        })
+      );
       ws.close(1008, refusal);
       return;
     }

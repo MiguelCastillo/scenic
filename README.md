@@ -1391,8 +1391,9 @@ down, such as when pm2 restarts it, it tells everyone racing first, and
 when it stops without a word, such as when it crashes, their pages join
 again once it is back, and hear that their room is gone. Either way, the
 page says the race is over, and offers a new one. Joining, a page also says
-which version of the arcade it is, the fingerprint of its bundle, and one
-older than the server serves is told to load again (see
+the versions of what it runs, the arcade's and its game's, each from its
+`version.json` on the server, and a page with either older than the
+server's is told which was updated, and to load again (see
 `server/src/relay.js`).
 
 When something goes wrong for a player, the server makes an error id for

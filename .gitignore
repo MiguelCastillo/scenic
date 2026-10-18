@@ -78,8 +78,9 @@ typings/
 .fusebox/
 
 # Apps' pages, written from their index.template.html by bin/fingerprint.js
-# to load their fingerprinted bundles
+# to load their fingerprinted bundles, and their versions
 apps/*/index.html
+apps/*/version.json
 
 # Games' versions, written by bin/version-games.js
 games/*/version.json
