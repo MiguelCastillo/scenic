@@ -32,20 +32,15 @@ export class Grid extends Renderable {
     this.square = null;
   }
 
-  preRender(context) {
-    super.preRender(context);
-
-    // The square the grid is drawn on, from -1 to 1 along X and Z. Render
-    // stretches and places it.
+  // prepareForView adds the grid to its viewport's renderablesInView. The
+  // square it is drawn on, from -1 to 1 along X and Z, which render
+  // stretches and places, is made the first time it is drawn.
+  prepareForView(context) {
     if (!this.square) {
       const corners = [-1, 0, -1, 1, 0, -1, 1, 0, 1, -1, 0, -1, 1, 0, 1, -1, 0, 1];
       this.square = new VertexBuffer({positions: new VertexBufferData(context.gl, corners)});
     }
-  }
-
-  // prepareForView adds the grid to its viewport's renderablesInView.
-  prepareForView() {
-    if (this.square && this.shaderProgram) {
+    if (this.shaderProgram) {
       this.getViewport()?.renderablesInView.push(this);
     }
   }

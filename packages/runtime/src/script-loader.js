@@ -70,7 +70,7 @@ async function loadScript(src, baseURL) {
 //   default.
 export function loadScripts(
   sceneManager,
-  baseURL = self.location.href,
+  baseURL = globalThis.location?.href,
   {root = sceneManager.scene, factoriesByURL = new Map()} = {}
 ) {
   const loads = [];

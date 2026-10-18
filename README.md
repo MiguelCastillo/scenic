@@ -1090,10 +1090,12 @@ Each phase only does its own job, so that the one after it can rely on it.
 **`preRender` works out where everything is.** `SceneManager.preRender`
 calls it on every node, parents before children, so that each node's world
 matrix is worked out from its parent's, which is already up to date. Nodes
-that animate take their pose for the frame's time here, and nodes that need
-a GPU buffer to draw, such as the sky's triangle, create it the first time.
-Nothing in it depends on the camera, since the camera may not have moved for
-this frame yet.
+that animate take their pose for the frame's time here, and nodes work out
+anything else from their state that scripts read, such as the terrain's
+ground, which `heightAt` measures. Nothing in it depends on the camera,
+since the camera may not have moved for this frame yet, and nothing in it
+uses WebGL, so a scene runs the same where nothing draws it, such as on a
+server (see [Running without a screen](#running-without-a-screen)).
 
 **`prepareForView` decides what to draw, and sets it up.**
 `SceneManager.prepareForView` calls it on every node, parents before
@@ -1101,8 +1103,8 @@ children, once every world matrix is worked out and the active camera has
 moved, so that it is always from where the camera is now, however far it
 moved. It is where the camera is needed:
 
-- A viewport empties its draw list, `renderablesInView`, before its
-  children run.
+- A viewport builds its active camera's projection for the canvas, and
+  empties its draw list, `renderablesInView`, before its children run.
 - Renderables decide what of them is in view, such as a mesh choosing its
   `copiesToRender` and the terrain its `tilesToRender`, by their bounding
   volumes (see `bounds.js`). Each with something in view adds itself to its
@@ -1111,6 +1113,8 @@ moved. It is where the camera is needed:
   building its tiles and the forest planting its trees.
 - Children that set up their renderable's shader program do it here, such
   as a `Material`'s colors, a `Texture`, or an fbx `Geometry`'s bones.
+- Nodes that need a GPU buffer to draw, such as the sky's triangle or the
+  grid's square, create it the first time.
 
 Nothing is drawn in it.
 
@@ -1142,6 +1146,17 @@ depends on where the camera is. So `SceneRunner.stepFrame`:
 4. Runs `prepareForView`, from where the camera is now.
 
 `SceneRunner.renderFrame` then runs `render`.
+
+#### Running without a screen
+
+A scene can run where nothing draws it, such as a game on a server: WebGL
+is only for creating GPU buffers and drawing, which only `prepareForView`
+and `render` do. `loadScene(null, config, {sceneURL})` builds the scene and
+loads its scripts, but none of its models or shaders, and a
+`SceneRunner(null, scene)`'s `stepFrame` runs only steps 1 and 2: the
+scripts, then `preRender`. Nodes are where their state puts them, so
+colliders, scripts and the terrain's ground work the same as on a screen
+(see `headless.test.js` in `@scenic/runtime`).
 
 A camera following where its node was last drawn instead would trail it by
 a frame's movement, more or less as frames are longer or shorter, and shake
@@ -1310,8 +1325,9 @@ modern JavaScript as it is (see `target` in `bin/build.js`).
 
 Scenes are run by `@scenic/runtime` (`packages/runtime`), which apps are built
 on, in three steps: `loadScene` builds a scene from its config and loads its
-models, shaders and scripts; a `SceneRunner` steps it a frame at a time, with
-its clock, pausing, cameras, the player's input and frame rate; and
+models, shaders and scripts, or only its scripts without WebGL; a
+`SceneRunner` steps it a frame at a time, with its clock, pausing, cameras,
+the player's input and frame rate; and
 `startRenderLoop` calls the runner every frame. It is also where most of the
 logic for FBX animation lives while support for it is implemented. The apps
 bundle it from its source, and the build makes one bundle of its own, the

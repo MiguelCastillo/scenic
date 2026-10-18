@@ -77,22 +77,17 @@ export class Sky extends Renderable {
     this.renderOrder = RenderOrder.BACKGROUND;
   }
 
-  preRender(context) {
-    super.preRender(context);
-
-    // A triangle twice the screen's size in each direction, in clip space,
-    // covers the whole screen with one triangle.
+  // prepareForView adds the sky to its viewport's renderablesInView: it
+  // covers the whole screen, so it is always in view. Its triangle, twice the
+  // screen's size in each direction, in clip space, covers the whole screen
+  // with one triangle, made the first time it is drawn.
+  prepareForView(context) {
     if (!this.triangle) {
       this.triangle = new VertexBuffer({
         positions: new VertexBufferData(context.gl, [-1, -1, 0, 3, -1, 0, -1, 3, 0]),
       });
     }
-  }
-
-  // prepareForView adds the sky to its viewport's renderablesInView: it
-  // covers the whole screen, so it is always in view.
-  prepareForView() {
-    if (this.triangle && this.shaderProgram) {
+    if (this.shaderProgram) {
       this.getViewport()?.renderablesInView.push(this);
     }
   }

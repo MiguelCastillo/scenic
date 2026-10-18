@@ -55,6 +55,11 @@ import {createFrameRateCounter} from "./fps-counter.js";
 //   in @scenic/scene).
 // - sceneManager, the scene's.
 //
+// Without gl, it runs a scene that nothing draws, such as a game run on a
+// server, loaded without one (see loadScene): stepFrame runs its scripts and
+// works out where everything is, and there is no camera to move or view to
+// prepare, and nothing to render.
+//
 // Options:
 // - paused: whether the scene starts paused, so that it doesn't run until
 //   the app resumes it, such as a game waiting for the player to click to
@@ -69,7 +74,7 @@ export class SceneRunner {
     const inputViewport = Node.findChildrenByType(sceneManager.scene, Viewport).find(
       (viewport) => sceneManager.getNodeStateByID(viewport.id)?.input
     );
-    this.cameras = inputViewport ? new CameraSystem(sceneManager, inputViewport.id) : null;
+    this.cameras = gl && inputViewport ? new CameraSystem(sceneManager, inputViewport.id) : null;
 
     this._getFrameRate = createFrameRateCounter();
     this._lastFrameMs = null;
@@ -203,7 +208,7 @@ export class SceneRunner {
     // They also get the size of the screen the scene is drawn on, {width,
     // height}, in pixels, such as to place things on it for an orthographic
     // camera, which measures in pixels.
-    const {width, height} = this._gl.canvas;
+    const {width, height} = this._gl?.canvas ?? {width: 0, height: 0};
     sceneManager.runScripts(this._sceneMs, {
       screen: {width, height},
       seconds: sceneSeconds,
@@ -231,8 +236,11 @@ export class SceneRunner {
 
     // 5. What is drawn is prepared for the view from where the camera is
     // now, however far it moved, such as the terrain's tiles and the
-    // forest's trees around it. 6, drawing it, is renderFrame's.
-    sceneManager.prepareForView(this._sceneMs, this._gl);
+    // forest's trees around it. 6, drawing it, is renderFrame's. A scene
+    // that nothing draws has no view.
+    if (this._gl) {
+      sceneManager.prepareForView(this._sceneMs, this._gl);
+    }
 
     // Let's write out the number of frames per second that we are able to
     // run.

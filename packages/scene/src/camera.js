@@ -29,7 +29,11 @@ export class Camera extends Node {
   }
 
   // updateProjection builds the projection matrix from the camera's lens and
-  // the size of what it draws into, in pixels.
+  // the size of what it draws into, in pixels. Its viewport calls it for its
+  // active camera every frame, before anything is prepared for its view, so
+  // it always matches the canvas size and the lens settings in state, which
+  // the editor can change (see prepareForView in Viewport). A camera that
+  // draws nothing, such as in a game without a screen, has no use for one.
   updateProjection(projection, width, height) {
     if (projection.type === "perspective") {
       const {fov, near, far} = projection;
@@ -49,14 +53,5 @@ export class Camera extends Node {
     }
 
     return this;
-  }
-
-  // The projection is rebuilt every frame so that it always matches the
-  // canvas size and the lens settings in state, which the editor can change.
-  preRender(context) {
-    super.preRender(context);
-    const {projection} = context.sceneManager.getNodeStateByID(this.id);
-    const {width, height} = context.gl.canvas;
-    this.updateProjection(projection, width, height);
   }
 }

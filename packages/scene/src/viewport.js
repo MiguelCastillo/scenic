@@ -111,9 +111,17 @@ export class Viewport extends Node {
     this._fog = fog && fog.enabled !== false ? fog : null;
   }
 
-  // prepareForView empties renderablesInView, before the renderables under
-  // the viewport add themselves to it in their own prepareForView.
-  prepareForView() {
+  // prepareForView builds its active camera's projection for the canvas it
+  // draws on (see updateProjection in Camera), and empties
+  // renderablesInView, before the renderables under the viewport add
+  // themselves to it in their own prepareForView, which runs after it.
+  prepareForView(context) {
+    const camera = this.activeCamera;
+    if (camera) {
+      const {projection} = context.sceneManager.getNodeStateByID(camera.id);
+      const {width, height} = context.gl.canvas;
+      camera.updateProjection(projection, width, height);
+    }
     this.renderablesInView = [];
   }
 

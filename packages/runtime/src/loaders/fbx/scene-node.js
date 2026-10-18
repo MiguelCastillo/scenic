@@ -136,17 +136,6 @@ export class Geometry extends GeometrySceneNode {
     return this;
   }
 
-  preRender(context) {
-    super.preRender(context);
-    if (!this._boneMatrixTexture && this.skinningEnabled) {
-      const {gl} = context;
-      this._boneMatrixTexture = gl.createTexture();
-      gl.bindTexture(gl.TEXTURE_2D, this._boneMatrixTexture);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-    }
-  }
-
   dispose(gl) {
     if (this._boneMatrixTexture) {
       gl.deleteTexture(this._boneMatrixTexture);
@@ -157,8 +146,9 @@ export class Geometry extends GeometrySceneNode {
   }
 
   // prepareForView sets the bones' matrices up on its renderable's shader
-  // program, before the renderable is drawn.
-  prepareForView() {
+  // program, before the renderable is drawn, in a texture made the first
+  // time.
+  prepareForView(context) {
     // The parent renderable has no shader program until the shader registry
     // gives it one, which can be a few frames after the model is built, and
     // then there is nothing to configure yet.
@@ -168,6 +158,13 @@ export class Geometry extends GeometrySceneNode {
     }
 
     if (this.skinningEnabled) {
+      if (!this._boneMatrixTexture) {
+        const {gl} = context;
+        this._boneMatrixTexture = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, this._boneMatrixTexture);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+      }
       let boneMatrices = [];
 
       // Skin deformers deform the mesh for the model we are processing.

@@ -17,21 +17,28 @@ import {loadScripts} from "./script-loader.js";
 // its sceneManager, its resourceLoader, add and remove, which add nodes to it
 // and take them out while it runs, and dispose, which tears it down.
 //
+// Without gl, a scene that nothing draws, such as a game run on a server, is
+// loaded the same, with its scripts, but none of its models or shaders,
+// which only drawing needs: nodes are where their state puts them, and
+// colliders, scripts and the terrain's ground work without them.
+//
 // Options:
 // - sceneURL: where config came from, such as "/games/bubble-squadron/
 //   race.json", which the scene's script paths are relative to. The app's
-//   page by default.
-export const loadScene = async (gl, config, {sceneURL = self.location.href} = {}) => {
-  const {vendor, renderer, limits, contextAttributes} = webgl.getDebugData(gl);
-
-  // eslint-disable-next-line no-console
-  console.log("Vendor:", vendor);
-  // eslint-disable-next-line no-console
-  console.log("Renderer:", renderer);
-  // eslint-disable-next-line no-console
-  console.log("Limits:", JSON.stringify(limits));
-  // eslint-disable-next-line no-console
-  console.log("Context:", JSON.stringify(contextAttributes));
+//   page by default, and required without one, such as on a server, where
+//   it is a full URL.
+export const loadScene = async (gl, config, {sceneURL = globalThis.location?.href} = {}) => {
+  if (gl) {
+    const {vendor, renderer, limits, contextAttributes} = webgl.getDebugData(gl);
+    // eslint-disable-next-line no-console
+    console.log("Vendor:", vendor);
+    // eslint-disable-next-line no-console
+    console.log("Renderer:", renderer);
+    // eslint-disable-next-line no-console
+    console.log("Limits:", JSON.stringify(limits));
+    // eslint-disable-next-line no-console
+    console.log("Context:", JSON.stringify(contextAttributes));
+  }
 
   const start = Date.now();
 
@@ -41,14 +48,14 @@ export const loadScene = async (gl, config, {sceneURL = self.location.href} = {}
   // state manager.
   const sceneManager = createScene(sceneConfig);
 
-  // Initialize every node's world matrix, so scripts see where everything is
-  // on their first frame.
-  Node.findChildrenByType(sceneManager.scene, Node).forEach((node) =>
-    Node.prototype.preRender.call(node, {sceneManager})
-  );
+  // Initialize every node's world matrix, and anything else worked out from
+  // its state, such as the terrain's ground, so scripts see where everything
+  // is on their first frame.
+  sceneManager.preRender(0, gl);
 
-  // API for loading resources for scene nodes.
-  const resourceLoader = createResourceLoader(gl, sceneManager);
+  // API for loading resources for scene nodes, such as models, for a scene
+  // that is drawn.
+  const resourceLoader = gl ? createResourceLoader(gl, sceneManager) : null;
 
   // dispose tears down everything this call set up, including the GPU
   // resources of every node in the scene, so that another scene can be
@@ -56,11 +63,11 @@ export const loadScene = async (gl, config, {sceneURL = self.location.href} = {}
   let disposed = false;
   function dispose() {
     disposed = true;
-    resourceLoader.dispose();
+    resourceLoader?.dispose();
     sceneManager.dispose(gl);
   }
 
-  const baseURL = new URL(sceneURL, self.location.href).href;
+  const baseURL = new URL(sceneURL, globalThis.location?.href).href;
   // The scripts the scene has loaded, kept so that each is loaded once for
   // the scene's life, however often nodes are added to it (see add).
   const scriptFactoriesByURL = new Map();
@@ -102,8 +109,12 @@ export const loadScene = async (gl, config, {sceneURL = self.location.href} = {}
 
     try {
       await Promise.all([
-        resourceLoader.loadMany(getResourcesFromConfig({items: [state]})),
-        applyShaders(gl, node, () => disposed),
+        ...(gl
+          ? [
+              resourceLoader.loadMany(getResourcesFromConfig({items: [state]})),
+              applyShaders(gl, node, () => disposed),
+            ]
+          : []),
         loadScripts(sceneManager, baseURL, {root: node, factoriesByURL: scriptFactoriesByURL}),
       ]);
     } catch (ex) {
@@ -135,8 +146,12 @@ export const loadScene = async (gl, config, {sceneURL = self.location.href} = {}
     // their shader programs now. The resource loader gives the others theirs
     // once their models are built.
     await Promise.all([
-      resourceLoader.loadMany(getResourcesFromConfig(sceneConfig)),
-      applyShaders(gl, sceneManager.scene, () => disposed),
+      ...(gl
+        ? [
+            resourceLoader.loadMany(getResourcesFromConfig(sceneConfig)),
+            applyShaders(gl, sceneManager.scene, () => disposed),
+          ]
+        : []),
       loadScripts(sceneManager, baseURL, {factoriesByURL: scriptFactoriesByURL}),
     ]);
   } catch (ex) {
