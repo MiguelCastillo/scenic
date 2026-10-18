@@ -29,5 +29,13 @@ module.exports = {
       script: "bin/fingerprint.js",
       args: "--watch apps/arcade/dist/arcade.js apps/editor/dist/editor.js",
     },
+    {
+      // Gives each game a version, of everything it uses, again whenever
+      // anything in games/ or resources/ changes, for players to tell
+      // whether their files are the server's (see bin/version-games.js).
+      name: "versions",
+      script: "bin/version-games.js",
+      args: "--watch",
+    },
   ],
 };

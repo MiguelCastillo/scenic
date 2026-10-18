@@ -65,6 +65,54 @@ describe("files", () => {
     expect(again.status).toBe(304);
   });
 
+  test("keeps a game's files for good at its version, and never at another", async () => {
+    server = await startServer({
+      root: withFiles({
+        "games/race/version.json": JSON.stringify({
+          version: "abc123",
+          resources: ["resources/used.js"],
+        }),
+        "games/race/track.json": "{}",
+        "resources/used.js": "",
+      }),
+    });
+    const cacheControl = async (file) =>
+      (await fetch(server.url + file)).headers.get("cache-control");
+
+    expect(await cacheControl("/games/race/track.json?v=race.abc123")).toBe(
+      "public, max-age=31536000, immutable"
+    );
+    expect(await cacheControl("/resources/used.js?v=race.abc123")).toBe(
+      "public, max-age=31536000, immutable"
+    );
+    expect(await cacheControl("/games/race/track.json?v=race.def456")).toBe("no-store");
+    expect(await cacheControl("/games/race/track.json")).toBe("no-cache");
+  });
+
+  test("logs a shared file a game loads that its version doesn't cover, once", async () => {
+    const logged = jest.spyOn(console, "error").mockImplementation(() => {});
+    server = await startServer({
+      root: withFiles({
+        "games/race/version.json": JSON.stringify({
+          version: "abc123",
+          resources: ["resources/used.js"],
+        }),
+        "resources/used.js": "",
+        "resources/unnamed.png": "",
+      }),
+    });
+
+    await fetch(`${server.url}/resources/used.js?v=race.abc123`);
+    expect(logged).not.toHaveBeenCalled();
+    await fetch(`${server.url}/resources/unnamed.png?v=race.abc123`);
+    await fetch(`${server.url}/resources/unnamed.png?v=race.abc123`);
+    expect(logged).toHaveBeenCalledTimes(1);
+    expect(logged.mock.calls[0][0]).toMatch(
+      /^[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}: race's version abc123 doesn't cover resources\/unnamed.png/
+    );
+    logged.mockRestore();
+  });
+
   test("serves nothing outside its folder", async () => {
     server = await startServer({root: withFiles({"scene.json": "{}"})});
     const response = await fetch(`${server.url}/%2e%2e/%2e%2e/etc/hosts`);

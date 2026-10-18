@@ -81,3 +81,5 @@ typings/
 # to load their fingerprinted bundles
 apps/*/index.html
 
+# Games' versions, written by bin/version-games.js
+games/*/version.json

@@ -3,8 +3,12 @@ import {Loader as ObjFileLoader, buildSceneNode as objBuildSceneNode} from "./ob
 import {Loader as FbxFileLoader, buildSceneNode as fbxBuildSceneNode} from "./fbx/loader.js";
 import {applyShaders} from "../shader-registry.js";
 import {isLight, isStaticMesh, isSkinnedMesh} from "../scene-factory.js";
+import {versionedURL} from "../versioned-url.js";
 
-export function createResourceLoader(gl, sceneManager) {
+// createResourceLoader loads the models of the scene sceneManager runs, at
+// version, the version of the files the scene uses, if it has one (see
+// versionedURL).
+export function createResourceLoader(gl, sceneManager, {version = null} = {}) {
   const cache = {};
   let disposed = false;
 
@@ -33,7 +37,7 @@ export function createResourceLoader(gl, sceneManager) {
     const {loader, buildSceneNode} = loaderManager.getLoader(filename);
 
     if (!cache[filename]) {
-      cache[filename] = loader.load(url);
+      cache[filename] = loader.load(versionedURL(url, version));
     }
 
     return cache[filename].then((data) => {

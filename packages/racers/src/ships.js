@@ -8,7 +8,9 @@
 // player, show in the hangar, or fly as another player's copy.
 //
 // Its API: Ships.load(url), list, find(id), and shipConfig(id), which
-// resolves with the ship's file, fetched once however often it is asked for.
+// resolves with the ship's file, fetched once however often it is asked for,
+// with the catalog's URL's query, such as the game's version (see
+// versionedURL in @scenic/runtime).
 export class Ships {
   static async load(url) {
     const response = await fetch(url);
@@ -34,9 +36,14 @@ export class Ships {
       if (!ship) {
         return Promise.reject(new Error(`there is no ship "${id}"`));
       }
+      // A ship's src is relative to ships.json, which defines it, as is any
+      // path to an asset in a configuration file, and asked for at its
+      // version, if it has one (see games/README.md).
+      const url = new URL(ship.src, this._url);
+      url.search = this._url.search;
       this._configsByID.set(
         id,
-        fetch(new URL(ship.src, this._url)).then((response) => {
+        fetch(url).then((response) => {
           if (!response.ok) {
             throw new Error(`unable to load ship "${id}": ${response.status}`);
           }

@@ -11,6 +11,7 @@ export {loadScene} from "./load-scene.js";
 export {SceneRunner} from "./scene-runner.js";
 export {SceneStack} from "./scene-stack.js";
 export {startRenderLoop} from "./render-loop.js";
+export {versionedURL} from "./versioned-url.js";
 // renderStats is what the runtime's own copy of @scenic/renderer counted the
 // last frame drawing, such as its draw calls, for apps to show. An app's own
 // copy of @scenic/renderer counts nothing, since the runtime draws.

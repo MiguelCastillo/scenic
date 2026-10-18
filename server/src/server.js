@@ -24,14 +24,19 @@ export function createServer({root = null, ...relayOptions} = {}) {
     const {port} = server.address();
     return RoomRace.load(new URL(`/games/${game}/`, `http://127.0.0.1:${port}`), scene);
   };
-  // The version players' pages need is the arcade's: the fingerprint of the
-  // bundle its page loads (see bin/fingerprint.js), which the page knows
-  // too, read when they join, since it changes whenever the arcade is built
-  // again.
-  const version = () => {
+  // The version a player's page needs, to play game, is the arcade's and
+  // the game's: the fingerprint of the bundle the arcade's page loads (see
+  // bin/fingerprint.js), and the version of everything the game uses (see
+  // bin/version-games.js), such as "638dac9d62.9fb39cc53b", which the page
+  // knows too. They are read when players join, since they change whenever
+  // the arcade is built again or a game's files change.
+  const version = (game) => {
     try {
       const page = readFileSync(path.join(root, "apps/arcade/index.html"), "utf8");
-      return page.match(/dist\/arcade\.([0-9a-f]{10})\.js/)?.[1] ?? null;
+      const arcade = page.match(/dist\/arcade\.([0-9a-f]{10})\.js/)?.[1];
+      const gameFile = path.join(root, "games", game, "version.json");
+      const gameVersion = JSON.parse(readFileSync(gameFile, "utf8")).version;
+      return arcade && gameVersion ? `${arcade}.${gameVersion}` : null;
     } catch {
       return null;
     }

@@ -85,8 +85,9 @@ const codeLetters = "ABCDEFGHJKLMNPQRSTUVWXYZ";
 //   leave(playerID), dispose() and underway, whether it has started, or
 //   null for rooms without races, such as in tests of the rooms alone. null
 //   by default.
-// - version: () => the version of the page the server serves now, for
-//   players to have, or null to let any player in. null by default.
+// - version: (game) => the version of the page the server serves now, for
+//   players to have to play game, or null to let any player in. null by
+//   default.
 //
 // Its API: handleUpgrade(request, socket, head), for an HTTP server's
 // "upgrade" event, roomFor(game, scene, auto) and roomInfo(code), for
@@ -208,7 +209,7 @@ export class Relay {
   _join(name, ws, {game, scene, version}) {
     this._forgetEmptyRooms();
     const room = this._roomsByName.get(name);
-    const current = this._version?.();
+    const current = this._version?.(game);
     const refusal =
       current && version && version !== current
         ? "outdated"

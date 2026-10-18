@@ -27,7 +27,15 @@ import {loadScripts} from "./script-loader.js";
 //   race.json", which the scene's script paths are relative to. The app's
 //   page by default, and required without one, such as on a server, where
 //   it is a full URL.
-export const loadScene = async (gl, config, {sceneURL = globalThis.location?.href} = {}) => {
+// - version: the version of the files the scene uses, such as
+//   "bubble-squadron.3f9a2c41d0", which its scripts and models are asked
+//   for at, so that browsers can keep them (see versionedURL), or null to
+//   ask for them as they are. null by default.
+export const loadScene = async (
+  gl,
+  config,
+  {sceneURL = globalThis.location?.href, version = null} = {}
+) => {
   if (gl) {
     const {vendor, renderer, limits, contextAttributes} = webgl.getDebugData(gl);
     // eslint-disable-next-line no-console
@@ -55,7 +63,7 @@ export const loadScene = async (gl, config, {sceneURL = globalThis.location?.hre
 
   // API for loading resources for scene nodes, such as models, for a scene
   // that is drawn.
-  const resourceLoader = gl ? createResourceLoader(gl, sceneManager) : null;
+  const resourceLoader = gl ? createResourceLoader(gl, sceneManager, {version}) : null;
 
   // dispose tears down everything this call set up, including the GPU
   // resources of every node in the scene, so that another scene can be
@@ -115,7 +123,11 @@ export const loadScene = async (gl, config, {sceneURL = globalThis.location?.hre
               applyShaders(gl, node, () => disposed),
             ]
           : []),
-        loadScripts(sceneManager, baseURL, {root: node, factoriesByURL: scriptFactoriesByURL}),
+        loadScripts(sceneManager, baseURL, {
+          root: node,
+          factoriesByURL: scriptFactoriesByURL,
+          version,
+        }),
       ]);
     } catch (ex) {
       remove(state.id);
@@ -152,7 +164,7 @@ export const loadScene = async (gl, config, {sceneURL = globalThis.location?.hre
             applyShaders(gl, sceneManager.scene, () => disposed),
           ]
         : []),
-      loadScripts(sceneManager, baseURL, {factoriesByURL: scriptFactoriesByURL}),
+      loadScripts(sceneManager, baseURL, {factoriesByURL: scriptFactoriesByURL, version}),
     ]);
   } catch (ex) {
     // The caller never receives dispose when loading fails, so tear down

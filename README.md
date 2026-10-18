@@ -1323,6 +1323,18 @@ gets a new name, never keeps pages, so they always name the latest bundles,
 and has browsers check everything else, such as scenes and models, is still
 current before using it (see `server/src/files.js`).
 
+Each game has a version too: a hash of everything it uses, the files in its
+folder and the shared files in `resources/` it reaches, by following what
+names them, such as a scene naming a model, which `bin/version-games.js`
+writes to the game's `version.json` (`npm run start-dev` runs it as the
+`versions` watcher). The arcade asks for a game's files at its version,
+such as `race.json?v=bubble-squadron.3f9a2c41d0`, which the server lets
+browsers keep for good, and a page whose game, or arcade, changed since it
+loaded is told to load again when it joins a race. A change to a shared
+file only gives a new version to the games that use it, and a shared file a
+game loads that its version doesn't cover is logged with an error id, so
+that the script can learn what names it.
+
 The usual `npm run test` will run all the tests.
 
 `npm run build` builds the bundles without minification, which keeps things

@@ -115,10 +115,31 @@ on any app, so every app can run it. What games and apps both use goes in
 `resources/`: models in `resources/obj`, and scripts that aren't about one
 game, such as `hover.js`, `flame.js` and `spin.js`, in `resources/scripts`.
 
-A scene's script paths, such as `"src": "scripts/fly.js"`, are relative to
-the scene file (see `loadScene` in `@scenic/runtime`), so a game's scenes
-find their scripts in any app that runs them. Shared models and scripts are
-loaded by absolute path, such as `/resources/scripts/hover.js`.
+A path to an asset in a configuration file is relative to that
+configuration file, the way a web page's links are, and a path starting
+with `/` is from the server's root:
+
+- In a scene file, such as `race.json`, a script's path, such as
+  `"src": "scripts/fly.js"`, is relative to the scene file (see `loadScene`
+  in `@scenic/runtime`).
+- In `ships.json`, which defines all the ships in a game, a ship's path,
+  such as `"src": "ships/seedpod.json"`, is relative to `ships.json` (see
+  `Ships` in `@scenic/racers`).
+- In a model, such as an `.obj` file, its materials' path, its `mtllib`, is
+  relative to the model.
+- Shared assets are named from the root, such as
+  `/resources/scripts/hover.js`.
+
+Because the paths are relative, a game's files work wherever the game is
+served from.
+
+Every file of a game is asked for with the game's version on the end, such
+as `race.json?v=bubble-squadron.3f9a2c41d0`. The version changes whenever
+anything the game uses changes (see `bin/version-games.js`), so the browser
+can keep each file until then. An asset named in a configuration file is
+asked for with the same version: `ships.json?v=bubble-squadron.3f9a2c41d0`
+loads `ships/seedpod.json?v=bubble-squadron.3f9a2c41d0`. Terrain textures
+and menu images don't get the version yet.
 
 The editor lists the games' scenes alongside its own, in `sceneFiles` in
 `apps/editor/app-main.jsx`.

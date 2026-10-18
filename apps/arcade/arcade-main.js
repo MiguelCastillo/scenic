@@ -7,7 +7,7 @@ import {
 } from "@scenic/dom";
 import {webgl} from "@scenic/renderer";
 import {replaceShip, Ships} from "@scenic/racers";
-import {loadScene, SceneRunner, SceneStack} from "@scenic/runtime";
+import {loadScene, SceneRunner, SceneStack, versionedURL} from "@scenic/runtime";
 
 import {PlayOnTap, PlayWhileLocked, registerSceneInputRouting} from "./input.js";
 import {RoomConnection, connecting, connected, disconnected} from "./room.js";
@@ -334,8 +334,11 @@ domReady.onReady(async () => {
   //   about it, while the scene stays on screen. It resolves with the pick
   //   to take, which can add to it, or null to go on choosing. Without it,
   //   picks are taken as they are.
-  const showWelcome = async (url, {choices, onSelect, allowBack = false, confirm} = {}) => {
-    const scene = await loadScene(gl, await fetchJSON(url), {sceneURL: url.href});
+  const showWelcome = async (
+    url,
+    {choices, onSelect, allowBack = false, confirm, version = null} = {}
+  ) => {
+    const scene = await loadScene(gl, await fetchJSON(url), {sceneURL: url.href, version});
     if (choices) {
       setMenuChoices(scene, () => choices);
     }
@@ -509,10 +512,10 @@ domReady.onReady(async () => {
   // The id of the racer the player watches, while a race they came in
   // after the start of goes on without them, or null.
   let watchedID = null;
-  // The page's version, the fingerprint of the arcade's bundle it loaded
-  // (see bin/fingerprint.js), which the server checks the page is still
-  // the one it serves, or null when it loaded one without, such as a test's.
-  const version =
+  // The arcade's version, the fingerprint of the bundle the page loaded (see
+  // bin/fingerprint.js), or null when it loaded one without, such as a
+  // test's.
+  const arcadeVersion =
     document
       .querySelector("script[src*='dist/arcade.']")
       ?.getAttribute("src")
@@ -525,7 +528,24 @@ domReady.onReady(async () => {
       pushToURL("game", game);
     }
     const manifestURL = new URL(`/games/${game}/game.json`, location.href);
-    const manifest = await fetchJSON(manifestURL);
+    // The page's version is the arcade's and the game's, the version of
+    // everything the game uses (see bin/version-games.js), which the server
+    // checks are still the ones it serves, such as "638dac9d62.9fb39cc53b",
+    // or null without either. The game's is read before any of its files,
+    // so that files changed while they load make the page older than they
+    // are, never newer.
+    const gameVersion = await fetchJSON(new URL("version.json", manifestURL)).then(
+      ({version}) => version,
+      () => null
+    );
+    const version = arcadeVersion && gameVersion ? `${arcadeVersion}.${gameVersion}` : null;
+    // The game's files are asked for at its version, such as
+    // "bubble-squadron.9fb39cc53b", so that the browser keeps them until
+    // they change (see versionedURL), and gameURL is where one of them is,
+    // by its path in the game's folder.
+    const filesVersion = gameVersion && `${game}.${gameVersion}`;
+    const gameURL = (file) => new URL(versionedURL(new URL(file, manifestURL).href, filesVersion));
+    const manifest = await fetchJSON(gameURL("game.json"));
     document.title = manifest.name;
     messageEl.textContent = `Loading ${manifest.name}…`;
 
@@ -535,14 +555,17 @@ domReady.onReady(async () => {
     // player clicks to play (see input.js). edit changes the scene's config
     // before it loads.
     const load = async (file, {edit = (config) => config, ...options} = {}) => {
-      const url = new URL(file, manifestURL);
-      const scene = await loadScene(gl, edit(await fetchJSON(url)), {sceneURL: url.href});
+      const url = gameURL(file);
+      const scene = await loadScene(gl, edit(await fetchJSON(url)), {
+        sceneURL: url.href,
+        version: filesVersion,
+      });
       return {scene, runner: new SceneRunner(gl, scene, options)};
     };
 
     // The ships the player can choose from, for a game with a hangar, and the
     // one they chose, from the URL, such as &ship=saucer.
-    const ships = manifest.ships ? await Ships.load(new URL(manifest.ships, manifestURL)) : null;
+    const ships = manifest.ships ? await Ships.load(gameURL(manifest.ships)) : null;
     let shipID = params.get("ship");
 
     // racedOnServer is whether the scene file is one of the game's races,
@@ -633,7 +656,10 @@ domReady.onReady(async () => {
     // the game in its URL.
     let gameFile = params.get("scene");
     if (!gameFile && manifest.welcome) {
-      const picked = await showWelcome(new URL(manifest.welcome, manifestURL), {allowBack: true});
+      const picked = await showWelcome(gameURL(manifest.welcome), {
+        allowBack: true,
+        version: filesVersion,
+      });
       if (picked.back) {
         const url = new URL(location.href);
         url.searchParams.delete("game");
@@ -674,7 +700,8 @@ domReady.onReady(async () => {
         }
         showing = false;
       };
-      const picked = await showWelcome(new URL(manifest.hangar, manifestURL), {
+      const picked = await showWelcome(gameURL(manifest.hangar), {
+        version: filesVersion,
         choices: ships.list.map(({id, label}) => ({label, ship: id})),
         allowBack: true,
         onSelect: (choice, scene) => {

@@ -1,6 +1,8 @@
-import {createReadStream} from "node:fs";
+import {createReadStream, readFileSync, statSync} from "node:fs";
 import {stat} from "node:fs/promises";
 import path from "node:path";
+
+import {newErrorID} from "./error-ids.js";
 
 // The types of the files the apps load, by their extension. Anything else
 // is sent as bytes.
@@ -40,8 +42,37 @@ const contentTypes = {
 // without asking (see cacheControl). A browser that asks whether its copy
 // is still current, with the Last-Modified it was given, is answered
 // quickly, with 304 Not Modified, when it is.
+//
+// A game's file asked for at the game's version, with its "v", such as
+// ?v=bubble-squadron.3f9a2c41d0 (see versionedURL in @scenic/runtime), is
+// kept for good, since any change to what the game uses gives it a new
+// version (see bin/version-games.js), and is never kept at another version,
+// such as an older page's, so that a file's new content is never kept
+// under an old version. A shared file in resources/ that a game's page asks
+// for at its version, which its version doesn't cover, is logged with an
+// error id, once, since a change to it wouldn't give the game a new
+// version: bin/version-games.js needs to learn what names it.
 export function files(root) {
   const base = path.resolve(root);
+  // Each game's version as of its version.json, by the game, as {modified,
+  // version, resources}, read again when the file changes, and the shared
+  // files already logged as missing from a version.
+  const versionsByGame = new Map();
+  const loggedMissing = new Set();
+  const gameVersion = (game) => {
+    const file = path.join(base, "games", game, "version.json");
+    try {
+      const modified = statSync(file).mtimeMs;
+      if (versionsByGame.get(game)?.modified !== modified) {
+        const {version, resources} = JSON.parse(readFileSync(file, "utf8"));
+        versionsByGame.set(game, {modified, version, resources: new Set(resources)});
+      }
+      return versionsByGame.get(game);
+    } catch {
+      return null;
+    }
+  };
+
   return async (request, response) => {
     const url = new URL(request.url, "http://localhost");
     let filePath = path.join(base, decodeURIComponent(url.pathname));
@@ -65,9 +96,29 @@ export function files(root) {
       return notFound(response);
     }
 
+    // A file asked for at a game's version, if it is.
+    const [, game, version] = url.searchParams.get("v")?.match(/^([a-z0-9-]+)\.([0-9a-f]+)$/) ?? [];
+    const current = game ? gameVersion(game) : null;
+    const atCurrent = !!current && current.version === version;
+    const file = path.relative(base, filePath);
+    if (atCurrent && file.startsWith(`resources${path.sep}`) && !current.resources.has(file)) {
+      const missing = `${game} ${version} ${file}`;
+      if (!loggedMissing.has(missing)) {
+        loggedMissing.add(missing);
+        console.error(
+          `${newErrorID()}: ${game}'s version ${version} doesn't cover ${file}, which its ` +
+            "page loaded; teach bin/version-games.js what names it"
+        );
+      }
+    }
+
     const lastModified = new Date(Math.floor(info.mtimeMs / 1000) * 1000);
     const headers = {
-      "Cache-Control": cacheControl(url.pathname),
+      "Cache-Control": atCurrent
+        ? "public, max-age=31536000, immutable"
+        : game
+        ? "no-store"
+        : cacheControl(url.pathname),
       "Last-Modified": lastModified.toUTCString(),
     };
     const since = Date.parse(request.headers["if-modified-since"] ?? "");

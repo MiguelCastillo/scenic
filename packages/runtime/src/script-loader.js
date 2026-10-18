@@ -3,6 +3,8 @@ import * as scene from "@scenic/scene";
 import * as animation from "@scenic/animation";
 import * as renderer from "@scenic/renderer";
 
+import {versionedURL} from "./versioned-url.js";
+
 // The modules scripts can require, which are the app's own copies of them.
 // Scripts get these rather than bundling their own so that they share the
 // app's classes: a script's own copy of @scenic/scene would have Node and
@@ -20,9 +22,10 @@ const scriptModules = {
 // libraries they need with their own build, marking the @scenic packages as
 // external so that their bundle requires them from the app. It returns the
 // script's factory, from `module.exports = createScript` or, for a bundled ES
-// module, its default export. src is relative to baseURL.
-async function loadScript(src, baseURL) {
-  const response = await fetch(new URL(src, baseURL).href);
+// module, its default export. src is what the scene calls it, and url where
+// it is.
+async function loadScript(src, url) {
+  const response = await fetch(url);
   if (!response.ok) {
     throw new Error(`unable to load script "${src}": ${response.status} ${response.statusText}`);
   }
@@ -68,19 +71,21 @@ async function loadScript(src, baseURL) {
 //   such as a ship's parts every time another ship is shown. A script that
 //   fails to load isn't kept, so it is tried again next time. A new one by
 //   default.
+// - version: the version scripts are asked for at (see versionedURL), or
+//   null. null by default.
 export function loadScripts(
   sceneManager,
   baseURL = globalThis.location?.href,
-  {root = sceneManager.scene, factoriesByURL = new Map()} = {}
+  {root = sceneManager.scene, factoriesByURL = new Map(), version = null} = {}
 ) {
   const loads = [];
 
   const visit = (node) => {
     const src = sceneManager.getNodeStateByID(node.id)?.script?.src;
     if (src) {
-      const url = new URL(src, baseURL).href;
+      const url = versionedURL(new URL(src, baseURL).href, version);
       if (!factoriesByURL.has(url)) {
-        const loading = loadScript(src, baseURL);
+        const loading = loadScript(src, url);
         loading.catch(() => factoriesByURL.delete(url));
         factoriesByURL.set(url, loading);
       }
