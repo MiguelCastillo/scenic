@@ -70,8 +70,9 @@
 //
 // In a network game, the other players see it when its node names a channel
 // of sceneManager.network in its state, such as {"network": "player"}: every
-// frame it publishes {position, rotation, throttle, boost} there, for the
-// copies of it on the other players' screens (see remote-ship.js).
+// frame it publishes {position, rotation, throttle, boost, booster} there,
+// with booster as the HUD has it (see below), for the copies of it on the
+// other players' screens (see remote-ship.js).
 const {mat4} = require("@scenic/math");
 
 const defaults = {
@@ -148,11 +149,9 @@ module.exports = function createGlideScript(node) {
       }
       const targetBoost = glide.boosterLeft > 0 ? 1 : 0;
       glide.boost += (targetBoost - glide.boost) * ease(settings.response);
+      const booster = {ready: racing && glide.boosterLap !== lap, left: glide.boosterLeft};
       if (state.hud) {
-        sceneManager.ui.publish(state.hud, {
-          ready: racing && glide.boosterLap !== lap,
-          left: glide.boosterLeft,
-        });
+        sceneManager.ui.publish(state.hud, booster);
       }
 
       // While the booster burns, every speed is boosterSpeedUp faster.
@@ -180,6 +179,7 @@ module.exports = function createGlideScript(node) {
             rotation,
             throttle: throttleAt(glide.speed),
             boost: glide.boost,
+            booster,
           });
         }
       };

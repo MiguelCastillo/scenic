@@ -29,33 +29,39 @@ describe("Relay", () => {
     expect(await a.next()).toEqual({type: "left", playerID: welcome.yourID});
   });
 
-  test("relays messages to the others in the room", async () => {
-    server = await startServer();
-    const {player: a, welcome} = await join(server, "race");
-    const {player: b} = await join(server, "race");
-    const {player: c} = await join(server, "other race");
-    await a.next(); // b joined
-
-    a.send({position: [1, 2, 3]});
-
-    expect(await b.next()).toEqual({
-      type: "message",
-      playerID: welcome.yourID,
-      message: {position: [1, 2, 3]},
+  test("gives a room's race its players, and what each one does, as from them", async () => {
+    // A race that keeps what it is told, and answers each player who joins.
+    const heard = [];
+    const startRace = jest.fn(async (game, scene) => ({
+      join: (playerID, send) => {
+        heard.push(["join", playerID]);
+        send({type: "race", game, scene});
+      },
+      hear: (playerID, message) => heard.push(["hear", playerID, message.ready]),
+      leave: (playerID) => heard.push(["leave", playerID]),
+      dispose: () => heard.push(["dispose"]),
+    }));
+    server = await startServer({startRace});
+    const response = await fetch(`${server.url}/rooms/new`, {
+      method: "POST",
+      body: JSON.stringify({game: "bubble-squadron", scene: "race.json"}),
     });
-    expect(await a.nothing()).toBe(true);
-    expect(await c.nothing()).toBe(true);
-  });
+    const {code} = await response.json();
 
-  test("says who sent a message whatever the sender claims", async () => {
-    server = await startServer();
-    const {player: a, welcome} = await join(server, "race");
-    const {player: b} = await join(server, "race");
-    await a.next(); // b joined
+    const {player: a, welcome} = await join(server, code);
+    expect(await a.next()).toEqual({type: "race", game: "bubble-squadron", scene: "race.json"});
+    a.socket.send(JSON.stringify({type: "player", playerID: "p99", ready: true}));
+    await a.nothing();
+    a.socket.close();
+    await new Promise((resolve) => setTimeout(resolve, 100));
 
-    a.socket.send(JSON.stringify({type: "message", playerID: "p99", message: {}}));
-
-    expect((await b.next()).playerID).toBe(welcome.yourID);
+    expect(startRace).toHaveBeenCalledTimes(1);
+    expect(heard).toEqual([
+      ["join", welcome.yourID],
+      ["hear", welcome.yourID, true],
+      ["leave", welcome.yourID],
+      ["dispose"],
+    ]);
   });
 
   test("refuses rooms without a name", async () => {

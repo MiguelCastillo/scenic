@@ -28,16 +28,16 @@ export const connected = "connected";
 export const disconnected = "disconnected";
 
 // RoomConnection joins a room on the relay, at /ws on the server the page
-// came from (see server/src/relay.js), so that players who open the arcade with
-// the same ?room= play together. Each player's browser runs the game and
-// owns its own player, sends the others messages about it with send, and
-// hears theirs. What the messages hold is the game's business.
+// came from (see server/src/relay.js), whose race the server runs (see
+// server/src/room-race.js): the player tells it what they do with send, and
+// hears how the race is going, so that players who join the same room race
+// together, and a player alone races in a room of their own.
 //
 // Players are known by the ids the relay gives them, such as "p2". onChange
 // is called with {status, yourID, otherPlayerIDs, full} whenever any of them
 // changes, with full whether the relay turned the player away because the
-// room has no seat free, and onMessage with (playerID, message) for every message another
-// player sends.
+// room has no seat free, and onRace with every message about the race,
+// {type: "race", ...}, which says what is in it.
 //
 // status is how the connection is doing: connecting, connected or
 // disconnected (see each).
@@ -58,7 +58,7 @@ export const disconnected = "disconnected";
 // Its API: connect(), send(message), close(), status, yourID,
 // otherPlayerIDs and full.
 export class RoomConnection {
-  constructor(room, {onChange = () => {}, onMessage = () => {}} = {}) {
+  constructor(room, {onChange = () => {}, onRace = () => {}} = {}) {
     this.status = disconnected;
     this.yourID = null;
     this.otherPlayerIDs = new Set();
@@ -68,7 +68,7 @@ export class RoomConnection {
     this._url.protocol = location.protocol === "https:" ? "wss:" : "ws:";
     this._url.searchParams.set("room", room);
     this._onChange = onChange;
-    this._onMessage = onMessage;
+    this._onRace = onRace;
     // How many times in a row it has tried to join again, how long to wait
     // before the next try, and the timer waiting for it.
     this._retries = 0;
@@ -90,9 +90,11 @@ export class RoomConnection {
     this._openConnection();
   }
 
+  // send tells the room's race what the player does, such as {ship, ready,
+  // keys, race} (see hear in RoomRace).
   send(message) {
     if (this.status === connected) {
-      this._socket.send(JSON.stringify({type: "message", message}));
+      this._socket.send(JSON.stringify({...message, type: "player"}));
     }
   }
 
@@ -150,8 +152,8 @@ export class RoomConnection {
           this.otherPlayerIDs.delete(message.playerID);
           this._reportRoomConnection();
           break;
-        case "message":
-          this._onMessage(message.playerID, message.message);
+        case "race":
+          this._onRace(message);
           break;
         case "full":
           this.full = true;

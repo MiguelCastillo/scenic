@@ -16,7 +16,10 @@ export async function startServer(options) {
     players,
     stop: async () => {
       players.forEach((player) => player.socket.terminate());
-      await new Promise((resolve) => server.close(resolve));
+      await new Promise((resolve) => {
+        server.close(resolve);
+        server.closeAllConnections();
+      });
     },
   };
 }
@@ -58,14 +61,27 @@ export class TestPlayer {
     return this.messages.shift();
   }
 
+  // nextWhere is the next message to the player that matches, skipping the
+  // others, or fails after a few seconds.
+  async nextWhere(matches) {
+    const deadline = Date.now() + 5000;
+    while (Date.now() < deadline) {
+      const message = await this.next();
+      if (matches(message)) {
+        return message;
+      }
+    }
+    throw new Error("no matching message came");
+  }
+
   // nothing is whether no message comes to the player for a little while.
   async nothing() {
     await new Promise((resolve) => setTimeout(resolve, 100));
     return !this.messages.length;
   }
 
-  // send sends message for the others in the room.
-  send(message) {
-    this.socket.send(JSON.stringify({type: "message", message}));
+  // say tells the room's race what the player does (see hear in RoomRace).
+  say(message) {
+    this.socket.send(JSON.stringify({type: "player", ...message}));
   }
 }

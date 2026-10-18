@@ -13,19 +13,18 @@ const defaultEmptyRoomMs = 2 * 60 * 1000;
 // like 1 and 0.
 const codeLetters = "ABCDEFGHJKLMNPQRSTUVWXYZ";
 
-// Relay passes messages between the players of a room. It doesn't run the
-// game: what the players send each other is the game's business, such as
-// where a ship is, which the relay forwards to the other players in the room
-// without looking inside.
+// Relay keeps the rooms players race in: who is in each one, and its race,
+// which the server runs (see RoomRace), and which each player in the room
+// tells what they do and hears from.
 //
 // A player joins a room by connecting to /ws?room=name with a WebSocket.
-// Every message is JSON. A player only ever sends messages for the others,
-// and everything about who is in the room comes from the relay:
+// Every message is JSON, and everything about who is in the room comes from
+// the relay:
 //
 // From a player:
-//   - {"type": "message", "message": {...}}: a message for the others in
-//     the room, forwarded to them as is. Anything else in it, such as an
-//     id, is ignored, so that a player can't speak for another.
+//   - {"type": "player", ...}: what the player does, for the room's race
+//     (see hear in RoomRace). It is from the player who sent it, whatever
+//     it says, so that a player can't speak for another.
 //
 // To a player:
 //   - {"type": "welcome", "yourID": "p1", "otherPlayerIDs": ["p2"]}: the
@@ -33,8 +32,7 @@ const codeLetters = "ABCDEFGHJKLMNPQRSTUVWXYZ";
 //     player joins.
 //   - {"type": "joined", "playerID": "p3"}: someone joined the room.
 //   - {"type": "left", "playerID": "p2"}: someone left the room.
-//   - {"type": "message", "playerID": "p2", "message": {...}}: a message
-//     another player sent.
+//   - {"type": "race", ...}: how the room's race is going (see RoomRace).
 //   - {"type": "full"}: the room already has maxPlayers players, so the
 //     player can't join it, and the connection closes.
 //
@@ -45,9 +43,10 @@ const codeLetters = "ABCDEFGHJKLMNPQRSTUVWXYZ";
 // there for its players to come back to, such as when they reload the page.
 // A room made for a race has the game and the scene it is for, such as
 // "bubble-squadron" and "race.json", and whether anyone can be put in it by
-// auto join (public), rather than only those who know its code. A player
-// that can't keep up with the messages to it misses some, rather than
-// holding up the room.
+// auto join (public), rather than only those who know its code. Its race
+// starts when its first player joins, with startRace, and stops when the
+// last one leaves. A player that can't keep up with the messages to it
+// misses some, rather than holding up the room.
 //
 // Options:
 // - originPatterns: the hosts of the pages allowed to connect, such as
@@ -59,17 +58,29 @@ const codeLetters = "ABCDEFGHJKLMNPQRSTUVWXYZ";
 //   limit. 0 by default.
 // - emptyRoomMs: how long a room is kept after the last player leaves it,
 //   or before the first one joins, in milliseconds. 2 minutes by default.
+// - startRace: (game, scene) => a promise of a room's race, such as a
+//   RoomRace, with join(playerID, send), hear(playerID, message),
+//   leave(playerID) and dispose(), or null for rooms without races, such as
+//   in tests of the rooms alone. null by default.
 //
 // Its API: handleUpgrade(request, socket, head), for an HTTP server's
 // "upgrade" event, and roomFor(game, scene, auto) and roomInfo(code), for
 // making and finding races (see rooms.js).
 export class Relay {
-  constructor({originPatterns = ["*"], maxPlayers = 0, emptyRoomMs = defaultEmptyRoomMs} = {}) {
+  constructor({
+    originPatterns = ["*"],
+    maxPlayers = 0,
+    emptyRoomMs = defaultEmptyRoomMs,
+    startRace = null,
+  } = {}) {
     this.originPatterns = originPatterns;
     this.maxPlayers = maxPlayers;
     this.emptyRoomMs = emptyRoomMs;
-    // The rooms, by name: {playersByID, game, scene, public, emptySince},
-    // with playersByID each player's socket by their id.
+    this._startRace = startRace;
+    // The rooms, by name: {playersByID, game, scene, public, emptySince,
+    // race}, with playersByID each player's socket by their id, and race a
+    // promise of its race while it has players, which is null if it has
+    // none, or it failed to start.
     this._roomsByName = new Map();
     this._lastID = 0;
     this._sockets = new WebSocketServer({noServer: true, maxPayload: maxMessageSize});
@@ -153,6 +164,13 @@ export class Relay {
     }
     send(ws, {type: "welcome", yourID: id, otherPlayerIDs});
     room.playersByID.set(id, ws);
+    if (room.game && this._startRace && !room.race) {
+      room.race = this._startRace(room.game, room.scene).catch((error) => {
+        console.error(`starting the race in room ${name}:`, error);
+        return null;
+      });
+    }
+    room.race?.then((race) => race?.join(id, (message) => send(ws, message)));
 
     ws.on("message", (data) => {
       let message;
@@ -161,13 +179,8 @@ export class Relay {
       } catch {
         return;
       }
-      if (message?.type !== "message") {
-        return;
-      }
-      for (const [otherID, other] of room.playersByID) {
-        if (otherID !== id) {
-          send(other, {type: "message", playerID: id, message: message.message});
-        }
+      if (message?.type === "player") {
+        room.race?.then((race) => race?.hear(id, message));
       }
     });
     ws.on("close", () => this._leave(room, id));
@@ -177,7 +190,10 @@ export class Relay {
   // left empty is forgotten once it has been empty for emptyRoomMs.
   _leave(room, id) {
     room.playersByID.delete(id);
+    room.race?.then((race) => race?.leave(id));
     if (!room.playersByID.size) {
+      room.race?.then((race) => race?.dispose());
+      room.race = null;
       room.emptySince = Date.now();
       return;
     }
@@ -193,6 +209,7 @@ export class Relay {
       scene: "",
       public: false,
       emptySince: Date.now(),
+      race: null,
     };
     this._roomsByName.set(name, room);
     return room;

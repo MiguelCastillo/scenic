@@ -17,16 +17,13 @@
 // straight: lined up with the next gate, at least two seconds away at the
 // booster's speed, and not too tight a turn at that speed.
 //
-// It enters its ship in the race, so that the race places it (see race.js),
-// holds it until the race starts, the way race.js holds the player's (see
-// "held" in fly.js), and revs it up for the last second of the countdown.
-// Once it has finished, it flies on through the gates without boosting, a
-// lap of honor.
+// The race holds its ship until the race starts, as it does every racer's
+// (see race.js, and "held" in fly.js), and it revs it up for the last second
+// of the countdown. Once it has finished, it flies on through the gates
+// without boosting, a lap of honor.
 //
 // Its settings come from "script.settings" in the node's config:
 // - ship: the ID of the ship it flies.
-// - name: what the ship is called in the race's results. Its ID by
-//   default.
 // - course: the ID of the race's node, whose children are the gates, in
 //   order, and whose settings say how the race is going (see race.js).
 //   "race" by default.
@@ -110,26 +107,9 @@ module.exports = function createPilotScript(node) {
       const skill = Math.max(0, Math.min(1, settings.skill));
       const clock = settings.clock + seconds;
 
-      // It enters the race, once.
-      const entrants = race.entrants ?? [];
-      if (!entrants.some(({id}) => id === settings.ship)) {
-        sceneManager.updateNodeStateByID(settings.course, {
-          script: {
-            ...courseState.script,
-            settings: {
-              ...race,
-              entrants: [...entrants, {id: settings.ship, name: settings.name ?? settings.ship}],
-            },
-          },
-        });
-      }
-      const finished = race.rivals?.[settings.ship]?.finishedAt != null;
-
-      // Held until the countdown ends, like the player.
-      const held = !(race.countdown <= 0);
-      if (!!shipState.held !== held) {
-        sceneManager.updateNodeStateByID(settings.ship, {held});
-      }
+      // The race holds it until the countdown ends, like every racer.
+      const finished = race.racers?.[settings.ship]?.finishedAt != null;
+      const held = !!shipState.held;
 
       // Matrix4 data is row-major, so the ship's position is the last
       // column of its world matrix, and its nose, its Z axis, the third.

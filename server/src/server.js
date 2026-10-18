@@ -2,16 +2,24 @@ import http from "node:http";
 
 import {files} from "./files.js";
 import {Relay} from "./relay.js";
+import {RoomRace} from "./room-race.js";
 import {rooms} from "./rooms.js";
 
 // createServer makes the scenic server, an http.Server that serves
 // everything the arcade and the editor need: their pages and the files they
 // load from root, such as bundles, games and models, and the rooms players
-// play together in, at /ws (see Relay), which races are made and found in at
-// /rooms/ (see rooms). Without a root, it only serves rooms. The relay's
-// options, originPatterns, maxPlayers and emptyRoomMs, are Relay's.
+// race in, at /ws (see Relay), which races are made and found in at /rooms/
+// (see rooms), and whose races it runs (see RoomRace). Without a root, it
+// only serves rooms, without races. The relay's options, originPatterns,
+// maxPlayers, emptyRoomMs and startRace, are Relay's.
 export function createServer({root = null, ...relayOptions} = {}) {
-  const relay = new Relay(relayOptions);
+  // A room's race loads its game from the server itself, which serves the
+  // games, so there are races only with files to serve.
+  const startRace = (game, scene) => {
+    const {port} = server.address();
+    return RoomRace.load(new URL(`/games/${game}/`, `http://127.0.0.1:${port}`), scene);
+  };
+  const relay = new Relay({...(root && {startRace}), ...relayOptions});
   const serveRooms = rooms(relay);
   const serveFiles = root ? files(root) : null;
 

@@ -1,2 +1,2 @@
-export {addNPC, addNPCs, dealShips, gridPosition, removeNPC} from "./npcs.js";
+export {addRacer, dealShips, gridPosition, racerTemplate, removeRacer} from "./racers.js";
 export {Ships, replaceShip} from "./ships.js";

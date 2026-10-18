@@ -66,8 +66,9 @@
 //
 // In a network game, the other players see it when its node names a channel
 // of sceneManager.network in its state, such as {"network": "player"}: every
-// frame it publishes {position, rotation, throttle, boost} there, for the
-// copies of it on the other players' screens (see remote-ship.js).
+// frame it publishes {position, rotation, throttle, boost, booster} there,
+// with booster as the HUD has it (see below), for the copies of it on the
+// other players' screens (see remote-ship.js).
 //
 // It flies from wherever the node's state puts it, so moving the node, such
 // as in the editor, moves the rocket. While its node's state has "held" set,
@@ -209,6 +210,7 @@ module.exports = function createFlyScript(node) {
             rotation,
             throttle: flight.throttle,
             boost: flight.boost,
+            booster,
           });
         }
       };
@@ -222,11 +224,9 @@ module.exports = function createFlyScript(node) {
       }
       const targetBoost = flight.boosterLeft > 0 ? 1 : 0;
       flight.boost += (targetBoost - flight.boost) * ease(settings.response);
+      const booster = {ready: racing && flight.boosterLap !== lap, left: flight.boosterLeft};
       if (state.hud) {
-        sceneManager.ui.publish(state.hud, {
-          ready: racing && flight.boosterLap !== lap,
-          left: flight.boosterLeft,
-        });
+        sceneManager.ui.publish(state.hud, booster);
       }
 
       if (state.held) {
@@ -278,8 +278,8 @@ module.exports = function createFlyScript(node) {
       // booster burns.
       const {cruiseSpeed, boostSpeed, cruiseThrottle} = settings;
       const boost = Math.max(0, (flight.throttle - cruiseThrottle) / (1 - cruiseThrottle || 1));
-      const booster = flight.boosterLeft > 0 ? 1 + settings.boosterSpeedUp : 1;
-      const speed = (cruiseSpeed + (boostSpeed - cruiseSpeed) * boost) * booster;
+      const boosterFactor = flight.boosterLeft > 0 ? 1 + settings.boosterSpeedUp : 1;
+      const speed = (cruiseSpeed + (boostSpeed - cruiseSpeed) * boost) * boosterFactor;
 
       // The rocket's nose, its local +Z axis, is the third column of its
       // rotation, since Matrix4 data is row-major.

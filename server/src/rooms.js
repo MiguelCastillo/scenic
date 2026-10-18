@@ -17,7 +17,9 @@
 //     has no seat free, or 404 when there is no such room.
 //
 // Codes are four capitals without I and O, such as "KXQM", and a code in a
-// request can be in any case.
+// request can be in any case. A game is named by its folder in games/, and a
+// scene by its file there, so that a race can't be made of anything else:
+// the server runs its scripts.
 export function rooms(relay) {
   return async (request, response) => {
     const kind = new URL(request.url, "http://localhost").pathname.replace(/^\/rooms\//, "");
@@ -28,8 +30,8 @@ export function rooms(relay) {
       } catch {
         // Not JSON, which is answered below.
       }
-      if (!race?.game || !race?.scene) {
-        return answer(response, 400, "a race needs a game and a scene");
+      if (!gameName.test(race?.game) || !sceneName.test(race?.scene)) {
+        return answer(response, 400, "a race needs a game and a scene, by their names");
       }
       return answerJSON(response, {code: relay.roomFor(race.game, race.scene, kind === "auto")});
     }
@@ -40,6 +42,9 @@ export function rooms(relay) {
     answer(response, 404, "404 page not found");
   };
 }
+
+const gameName = /^[a-z0-9-]+$/;
+const sceneName = /^[a-z0-9-]+\.json$/;
 
 function readBody(request) {
   return new Promise((resolve, reject) => {

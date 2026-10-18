@@ -1,22 +1,27 @@
-// remote-ship flies another player's ship in a network game: a copy of this
-// player's ship, moved by what the other player's browser says about theirs,
-// a few times a second (see fly.js and glide.js, which publish it). It gets
-// the player's messages, {position, rotation, throttle, boost}, as the frame's
-// `messages`, from the input channel its node's "input" names, and glides
-// the node to where the last one says, every frame, so that it moves
-// smoothly between messages rather than jumping at each one, at any frame
-// rate. It snaps there for the first one, so it never glides in from where
-// the copy started.
+// remote-ship flies a ship whose flying is done somewhere else, such as on
+// the server that runs a race, or in another player's browser: it is moved
+// by what it hears about where the ship is, a few times a second (see
+// fly.js and glide.js, which publish it). It gets those messages,
+// {position, rotation, throttle, boost, booster}, as the frame's `messages`,
+// from the input channel its node's "input" names, and glides the node to
+// where the last one says, every frame, so that it moves smoothly between
+// messages rather than jumping at each one, at any frame rate. It snaps
+// there for the first one, so it never glides in from where the ship
+// started.
+//
+// The player's own ship can fly this way too, with the race run on the
+// server: its keys go to the server, and it shows where the server says it
+// is. With "network" in its node's state, such as {"network": "player"}, it
+// publishes the keys held on its input channel there every frame, as
+// {keys}, for the app to send on, and with "hud", such as {"hud":
+// "booster"}, it tells the app's UI about its booster, as the messages
+// have it, the way fly.js does.
 //
 // Its settings come from "script.settings" in the node's config, and all are
 // optional:
 // - smoothing: how long, in seconds, the ship takes to get most of the way
 //   to where it was last said to be. Longer is smoother, and further behind.
 //   0.1 by default.
-// - name: what the ship is called in the race's results. Its id by default.
-// - course: the ID of the race's node, which it enters, the way pilot.js
-//   enters an NPC, so that the race places it among the racers. "race" by
-//   default; a scene without one has no race to enter.
 //
 // What it is gliding to is written to its settings, as target, and the
 // throttle it has reached as throttle, and its booster's boost, which the
@@ -50,29 +55,21 @@ function turnToward(rotation, target, ease) {
 
 module.exports = function createRemoteShipScript(node) {
   return {
-    update({seconds = 0, messages = [], sceneManager}) {
+    update({seconds = 0, keys = new Set(), messages = [], sceneManager}) {
       const state = sceneManager.getNodeStateByID(node.id);
       const settings = state.script.settings || {};
-      const {smoothing = 0.1, course = "race"} = settings;
+      const {smoothing = 0.1} = settings;
 
-      // It enters the race, once.
-      const courseState = sceneManager.getNodeStateByID(course);
-      const race = courseState?.script?.settings;
-      if (race && !(race.entrants ?? []).some(({id}) => id === node.id)) {
-        sceneManager.updateNodeStateByID(course, {
-          script: {
-            ...courseState.script,
-            settings: {
-              ...race,
-              entrants: [...(race.entrants ?? []), {id: node.id, name: settings.name ?? node.id}],
-            },
-          },
-        });
+      if (state.network) {
+        sceneManager.network.publish(state.network, {keys: [...keys]});
       }
 
       const target = messages.at(-1) ?? settings.target;
       if (!target) {
         return;
+      }
+      if (state.hud && target.booster) {
+        sceneManager.ui.publish(state.hud, target.booster);
       }
 
       // How far to go toward the target this frame, the same each second

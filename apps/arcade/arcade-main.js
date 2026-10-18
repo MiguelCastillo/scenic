@@ -6,21 +6,12 @@ import {
   registerTouchIntents,
 } from "@scenic/dom";
 import {webgl} from "@scenic/renderer";
-import {
-  addNPC,
-  addNPCs,
-  dealShips,
-  gridPosition,
-  removeNPC,
-  replaceShip,
-  Ships,
-} from "@scenic/racers";
+import {replaceShip, Ships} from "@scenic/racers";
 import {loadScene, SceneRunner, SceneStack} from "@scenic/runtime";
 
 import {PlayOnTap, PlayWhileLocked, registerSceneInputRouting} from "./input.js";
 import {RoomConnection, connecting, connected, disconnected} from "./room.js";
 import {RemotePlayers} from "./remote-players.js";
-import {Lobby, racing, ready, waiting} from "./lobby.js";
 
 // The arcade plays one of the games in games/, full screen: the one the page's
 // URL names, such as index.html?game=bubble-squadron, or, without one, the one
@@ -102,6 +93,21 @@ function boosterText({ready, left}) {
 // SceneManager in @scenic/scene), from its messages. Channels not here don't
 // show.
 const hudTexts = {race: raceText, booster: boosterText};
+
+// newRace makes a room on the server for a race of game's scene, such as
+// "race.json", for a player racing alone, and resolves with its code (see
+// server/src/rooms.js).
+async function newRace(game, scene) {
+  const response = await fetch(new URL("/rooms/new", location.href), {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({game, scene}),
+  });
+  if (!response.ok) {
+    throw new Error(`unable to start a race: ${response.status} ${response.statusText}`);
+  }
+  return (await response.json()).code;
+}
 
 async function fetchJSON(url) {
   const response = await fetch(url);
@@ -454,22 +460,12 @@ domReady.onReady(async () => {
   };
   domEvents.Subscription.create(window).on("popstate", () => location.reload());
 
-  // Players who open the arcade with the same ?room= play together, through
-  // the relay (see room.js). The page shows the room and how many are in it,
-  // or that it is connecting, such as while the server restarts, when the
-  // others' copies are taken out until they are heard from again. Once the
-  // connection gives up, a button connects again.
-  // While a game that can be played together is playing, the page receives
-  // what its player's node publishes on the scene's sceneManager.network, on
-  // the channel the node's "network" names: 20 times a second, it pulls the
-  // latest message and sends it to the others. The others' messages are
-  // published to their copies in the scene (see RemotePlayers). What the
-  // messages hold is the game's business.
-  //
-  // Each message also says where the player is in the room's lobby: the
-  // scene they are in and their status in it, waiting, ready or racing (see
-  // Lobby), which every player's page keeps, so that a race starts for
-  // everyone in a scene once they are all ready.
+  // Every race runs on the server, in a room (see room.js and
+  // RemotePlayers): players who open the arcade with the same ?room= race
+  // together, and a player racing alone races in a room of their own, with
+  // no code. The page shows a shared room and how many are in it, or that
+  // it is connecting, such as while the server restarts. Once the connection
+  // gives up, a button connects again.
   //
   // A race's room only counts on the race's page, the one with its game,
   // its track and the ship the player races in, since every other page's
@@ -484,60 +480,13 @@ domReady.onReady(async () => {
     history.replaceState(null, "", url);
   }
   const roomName = onRacePage ? params.get("room") : null;
-  const lobby = new Lobby();
-  // This player's id in the room, once the relay has given them one, and
-  // their status in the lobby, which the game playing keeps up to date.
-  let yourID = null;
-  let lobbyStatus = waiting;
-  // Where the page receives its player's messages from, while a game is
-  // playing that can be played together: the scene playing, its file, the
-  // channel, and the ship the player flies, if they chose one, as {scene,
-  // file, channel, ship}.
-  let networkSource = null;
+  // The race the server runs, while one is playing: the latest the server
+  // said about it, {number, you, started, lobby, race, ships} (see
+  // server/src/room-race.js), and the number of the race the player wants
+  // to race, which is a later one to race again.
+  let snapshot = null;
+  let wantedRace = 0;
   let remotePlayers = null;
-  if (roomName) {
-    roomEl.hidden = false;
-    const room = new RoomConnection(roomName, {
-      onChange: ({status, yourID: id, otherPlayerIDs, full}) => {
-        yourID = id;
-        lobby.keep(otherPlayerIDs);
-        roomStatusEl.textContent = full
-          ? `Race ${roomName} is full`
-          : {
-              [connecting]: `Race ${roomName} · connecting…`,
-              [connected]: `Race ${roomName} · ${otherPlayerIDs.length + 1} playing`,
-              [disconnected]: `Race ${roomName} · disconnected`,
-            }[status];
-        roomConnectEl.hidden = status !== disconnected;
-        remotePlayers?.keep(otherPlayerIDs);
-      },
-      onMessage: (playerID, message) => {
-        lobby.hear(playerID, message);
-        remotePlayers?.publishToScene(playerID, message);
-      },
-    });
-    domEvents.Subscription.create(roomConnectEl).on("click", () => room.connect());
-    // The host also sends where each of its NPCs is, from the network
-    // channel each one's node publishes on, named after it, such as "npc 1"
-    // (see RemotePlayers).
-    setInterval(() => {
-      if (networkSource) {
-        const {network} = networkSource.scene.sceneManager;
-        room.send({
-          scene: networkSource.file,
-          ship: networkSource.ship,
-          status: lobbyStatus,
-          message: network.latest(networkSource.channel),
-          npcs: Object.fromEntries(
-            networkSource.npcs.map(({name, ship, label}) => [
-              name,
-              {ship, label, message: network.latest(name)},
-            ])
-          ),
-        });
-      }
-    }, 50);
-  }
 
   let game = params.get("game");
   try {
@@ -553,10 +502,11 @@ domReady.onReady(async () => {
     // load loads one of the game's scenes, by its file, relative to the
     // game's folder, as are the scripts in it, with a runner for the stack:
     // {scene, runner}. Scenes run paused, so the game doesn't run until the
-    // player clicks to play (see input.js).
-    const load = async (file, options) => {
+    // player clicks to play (see input.js). edit changes the scene's config
+    // before it loads.
+    const load = async (file, {edit = (config) => config, ...options} = {}) => {
       const url = new URL(file, manifestURL);
-      const scene = await loadScene(gl, await fetchJSON(url), {sceneURL: url.href});
+      const scene = await loadScene(gl, edit(await fetchJSON(url)), {sceneURL: url.href});
       return {scene, runner: new SceneRunner(gl, scene, options)};
     };
 
@@ -565,22 +515,33 @@ domReady.onReady(async () => {
     const ships = manifest.ships ? await Ships.load(new URL(manifest.ships, manifestURL)) : null;
     let shipID = params.get("ship");
 
+    // racedOnServer is whether the scene file is one of the game's races,
+    // which the server runs: one with NPCs, as the manifest says in "npcs":
+    // {scenes}, in a game that can be played together.
+    const racedOnServer = (file) =>
+      !!manifest.multiplayer && !!manifest.npcs?.scenes?.includes(file);
+
+    // flyFromServer has the player's node in a scene config, the one the
+    // manifest names in "player", run the game's remote script instead of
+    // its own, so that it flies where the server says (see RemotePlayers).
+    const flyFromServer = (config) => {
+      const visit = (node) => {
+        if ((node.id ?? node.name) === manifest.player) {
+          node.script = {src: manifest.multiplayer.remote};
+        }
+        node.items?.forEach(visit);
+      };
+      config.items.forEach(visit);
+      return config;
+    };
+
     // loadGame loads one of the game's scenes to play, by its file, with the
     // player's node, the one the manifest names in "player", flying the ship
-    // they chose, if they chose one, and, when they play alone, the NPCs the
-    // manifest has for the scene, if any (see addNPCs).
+    // they chose, if they chose one, where the server says, in a race.
     const loadGame = async (file) => {
-      const loaded = await load(file);
+      const loaded = await load(file, racedOnServer(file) ? {edit: flyFromServer} : {});
       if (shipID) {
         await replaceShip(loaded.scene, manifest.player, await ships.shipConfig(shipID));
-      }
-      if (!roomName && manifest.npcs?.scenes?.includes(file)) {
-        await addNPCs(loaded.scene, {
-          playerNodeID: manifest.player,
-          npcs: manifest.npcs,
-          ships,
-          playerShip: shipID,
-        });
       }
       return loaded;
     };
@@ -588,46 +549,22 @@ domReady.onReady(async () => {
     // play makes loaded, from the game's scene file, the game's scene, at the
     // bottom of the stack. Its HUD shows what it published last frame on the
     // channels the arcade knows, such as a race's lap and time, a blank line
-    // apart, and its frame rate shows too. In a room, the other players show
-    // in it, if the game can be played together.
+    // apart, and its frame rate shows too. In a race, every racer shows in
+    // it where the server says (see RemotePlayers).
     let stopReceivingHud = null;
     // Whether the game playing is under way, rather than waiting to start,
     // such as a race before its countdown ends, as its scene said last
     // frame. A game without a race is under way once it has run a frame.
     let underWay = false;
-    // In a room, whether the game playing has started for everyone in its
-    // scene (see Lobby), and the first place on its starting grid, where
-    // the player's node starts in the scene, {position, rotation}, which
-    // the player's place on the grid is measured from (see gridPosition).
-    let started = false;
-    let gridStart = null;
     const play = (loaded, file) => {
       remotePlayers?.dispose();
-      remotePlayers = null;
-      networkSource = null;
-      started = false;
-      gridStart = loaded.scene.sceneManager.getNodeStateByID(manifest.player)?.transform;
-      if (roomName && manifest.multiplayer) {
-        remotePlayers = new RemotePlayers(loaded.scene, file, {
-          playerNodeID: manifest.player,
-          remoteScript: manifest.multiplayer.remote,
-          ships,
-        });
-        networkSource = {
-          scene: loaded.scene,
-          file,
-          channel: loaded.scene.sceneManager.getNodeStateByID(manifest.player)?.network,
-          ship: shipID,
-          // The NPCs this player flies for everyone as the room's host, as
-          // addNPC resolves with them, with their place on the grid.
-          npcs: [],
-          // Whether an NPC is being added, the number the next one gets,
-          // and the ships to deal out to them.
-          addingNPC: false,
-          nextNPC: 1,
-          npcShips: dealShips(ships, shipID),
-        };
-      }
+      remotePlayers = racedOnServer(file)
+        ? new RemotePlayers(loaded.scene, {
+            playerNodeID: manifest.player,
+            remoteScript: manifest.multiplayer.remote,
+            ships,
+          })
+        : null;
       hudEl.textContent = "";
       underWay = false;
       stopReceivingHud?.();
@@ -643,9 +580,9 @@ domReady.onReady(async () => {
         }
 
         // A race's countdown shows while it runs, each second popping in,
-        // and in a room, only once everyone is ready.
+        // once everyone is ready.
         const countdown =
-          messages.race && !loaded.runner.isPaused() && (started || !roomName)
+          messages.race && !loaded.runner.isPaused() && snapshot?.started
             ? countdownText(messages.race)
             : "";
         if (countdownEl.textContent !== countdown) {
@@ -775,13 +712,14 @@ domReady.onReady(async () => {
     const tellPlayer = () => {
       const menuShows = !!(menu || menuLoading);
       const join = underWay ? "play" : "join race";
-      const inLobby = roomName && !started;
-      const count = inLobby && lobby.count({scene: gameFile, status: lobbyStatus});
+      // A player who came in once the race had started waits for the next.
+      const spectating = !!snapshot?.started && !snapshot.you;
+      const inLobby = roomName && (!snapshot?.started || spectating);
       const waitingFor = !inLobby
         ? ""
-        : count.racing
+        : spectating
         ? "Waiting for the race to end"
-        : `${count.ready} of ${count.players} ready`;
+        : `${snapshot?.lobby.ready ?? 0} of ${snapshot?.lobby.players ?? 1} ready`;
       const showLobby = inLobby && !menuShows && !playingNow;
       if (lobbyEl.hidden === showLobby) {
         lobbyEl.hidden = !showLobby;
@@ -827,84 +765,60 @@ domReady.onReady(async () => {
           () => stack.runners,
           ({locked, paused}) => onPlayChange(locked, paused)
         );
-    // In a room, the player's status in the lobby follows whether they play,
-    // and the race starts once everyone in its scene is ready (see Lobby).
-    // Until then, the player's node stands at their place on the starting
-    // grid, among the others waiting, and the race hears that it is waiting
-    // for players, on its scene's "room" input channel (see race.js).
-    // The scene the player's node was last placed in, and the place.
-    let placed = {scene: null, place: null};
-
-    // fillSeats keeps the race's seats full until it starts, in a scene
-    // with NPCs: the room's host flies an NPC in every seat no one has
-    // taken, adding them one at a time, and taking one out each time
-    // someone comes in, so that people always take an NPC's seat. The NPCs
-    // stand on the starting grid behind the people. Anyone else flies none.
-    const fillSeats = () => {
-      const source = networkSource;
-      const {npcs} = source;
-      const people = lobby.count({scene: gameFile, status: lobbyStatus}).players;
-      const seats = lobby.isHost(yourID) ? Math.max(0, manifest.npcs.racers - people) : 0;
-      if (npcs.length > seats) {
-        removeNPC(source.scene, npcs.pop());
-      } else if (npcs.length < seats && !source.addingNPC) {
-        source.addingNPC = true;
-        const number = source.nextNPC++;
-        addNPC(source.scene, {
-          playerNodeID: manifest.player,
-          pilot: manifest.npcs.pilot,
-          number,
-          position: gridPosition(gridStart, people + npcs.length),
-          ship: source.npcShips.length
-            ? source.npcShips[(number - 1) % source.npcShips.length]
-            : null,
-          ships,
-          skill: 0.5 + (0.45 * ((number - 1) % 5)) / 4,
-          network: true,
-        })
-          .then((npc) => npcs.push({...npc, place: people + npcs.length}))
-          .finally(() => (source.addingNPC = false));
-      }
-      const {sceneManager} = source.scene;
-      npcs.forEach((npc, i) => {
-        const state = sceneManager.getNodeStateByID(npc.shipNodeID);
-        if (npc.place !== people + i && state) {
-          npc.place = people + i;
-          sceneManager.updateNodeStateByID(npc.shipNodeID, {
-            transform: {...state.transform, position: gridPosition(gridStart, npc.place)},
-          });
-        }
-      });
-    };
+    // In a race, the server says how it is going, which its scene follows,
+    // from its "room" input channel (see race.js), and whose ship is the
+    // player's, every frame.
     receiveEveryFrame(() => {
-      if (!roomName || !networkSource) {
+      if (!remotePlayers) {
         return;
       }
-      const {sceneManager} = playing.scene;
-      lobbyStatus = started ? racing : playingNow && !pausedNow ? ready : waiting;
-      if (!started && lobby.startsNow({scene: gameFile, status: lobbyStatus})) {
-        started = true;
-        lobbyStatus = racing;
-      }
-      if (!started && yourID && gridStart && manifest.npcs?.scenes?.includes(gameFile)) {
-        fillSeats();
-      }
-      if (!started && yourID && gridStart) {
-        const place = lobby.place(yourID, gameFile);
-        const state = sceneManager.getNodeStateByID(manifest.player);
-        if ((placed.scene !== playing.scene || placed.place !== place) && state) {
-          placed = {scene: playing.scene, place};
-          sceneManager.updateNodeStateByID(manifest.player, {
-            transform: {...state.transform, position: gridPosition(gridStart, place)},
-          });
-        }
-      }
-      sceneManager.input.publish("room", {
+      playing.scene.sceneManager.input.publish("room", {
         type: "network",
-        message: {waitingForPlayers: !started},
+        message: {race: snapshot?.race ?? null, you: snapshot?.you?.id ?? null},
       });
       tellPlayer();
     });
+
+    // A race joins its room once it plays, the race's page's, or for a
+    // player racing alone, a new one of their own, and tells the server 20
+    // times a second what the player does: the ship they fly, whether they
+    // play, rather than wait or pause, the keys their ship's script says
+    // they hold, on its node's network channel (see remote-ship.js), and
+    // the race they want to race. What the server says about the race shows
+    // in the scene (see RemotePlayers).
+    if (remotePlayers) {
+      const code = roomName ?? (await newRace(game, gameFile));
+      const label = roomName ? `Race ${roomName}` : "Race";
+      const room = new RoomConnection(code, {
+        onChange: ({status, otherPlayerIDs, full}) => {
+          roomStatusEl.textContent = full
+            ? `${label} is full`
+            : {
+                [connecting]: `${label} · connecting…`,
+                [connected]: `${label} · ${otherPlayerIDs.length + 1} playing`,
+                [disconnected]: `${label} · disconnected`,
+              }[status];
+          // Racing alone, the room only shows when its connection is down.
+          roomEl.hidden = !roomName && status === connected && !full;
+          roomConnectEl.hidden = status !== disconnected;
+        },
+        onRace: (message) => {
+          snapshot = message;
+          remotePlayers?.show(message);
+        },
+      });
+      domEvents.Subscription.create(roomConnectEl).on("click", () => room.connect());
+      setInterval(() => {
+        const {sceneManager} = playing.scene;
+        const channel = sceneManager.getNodeStateByID(manifest.player)?.network;
+        room.send({
+          ship: shipID,
+          ready: playingNow && !pausedNow,
+          keys: sceneManager.network.latest(channel)?.keys ?? [],
+          race: wantedRace,
+        });
+      }, 50);
+    }
 
     let wasUnderWay = null;
     receiveEveryFrame(() => {
@@ -927,8 +841,17 @@ domReady.onReady(async () => {
     };
 
     // replaceGame loads file, one of the game's scenes, in the game's place,
-    // such as another track, or the same one again to restart it.
+    // such as another track, or the same one again to restart it. A race
+    // runs in a room on the server, which is the track's, so from or to a
+    // race, the page loads the track afresh, in a room of its own.
     const replaceGame = async (file) => {
+      if (remotePlayers || racedOnServer(file)) {
+        const url = new URL(location.href);
+        url.searchParams.set("scene", file);
+        url.searchParams.delete("room");
+        location.assign(url);
+        return;
+      }
       hideMenu();
       messageEl.textContent = "Loading…";
       const next = play(await loadGame(file), file);
@@ -983,10 +906,16 @@ domReady.onReady(async () => {
           return;
         }
 
-        // Restarting loads the game's scene again, and plays it.
+        // Restarting loads the game's scene again, and plays it. A race the
+        // server runs asks it for the next race instead, which loads once
+        // everyone racing asks for it.
         if (message.picked?.restart) {
           going = true;
-          await replaceGame(gameFile);
+          if (remotePlayers) {
+            wantedRace = (snapshot?.number ?? 0) + 1;
+          } else {
+            await replaceGame(gameFile);
+          }
           closeMenu();
           playPolicy.play();
           return;

@@ -435,8 +435,10 @@ finish coming:
 }
 ```
 
-The race keeps its lap, next gate, time, lap times and best time in its
-settings, and tells the app's UI how it is going, as described next.
+The race keeps how every racer is doing, their lap, next gate and finishing
+time, and their places, in its settings, and tells the app's UI how the
+race is going for the player, as described next. In the arcade, every race
+runs on the server, and the race in the page follows it (see below).
 
 ### Telling the UI: `sceneManager.ui`
 
@@ -461,7 +463,6 @@ sceneManager.ui.publish("race", {
   time: 64.2,
   gate: 4,
   gates: 10,
-  best: null,
   finished: false,
 });
 // The app, the receiver, pulls whenever it is ready to show them, such as
@@ -1351,18 +1352,21 @@ the scene the game starts in. Each choice goes into the page's URL, such as
 `?game=bubble-squadron&scene=highway.json`, so reloading the page comes back
 to the same track, and the browser's back button goes back a page.
 
-Players who open the arcade with the same `?room=`, such as
-`?room=friday&game=bubble-squadron`, play together through the relay, at
-`/ws` on the same server as the page. The relay doesn't run the game: each
-player's browser runs it and owns its own ship, and the relay passes what
-each one sends to the others in the room, and tells them who joins and
-leaves (see `server/src/relay.js` and `apps/arcade/room.js`). The arcade shows
-the room and how many are playing in it. Rooms for races, at most 6
-players each, are made and found at `/rooms/`, by code (see
-`server/src/rooms.js`): in Bubble Squadron, Race with friends in the hangar
-offers Auto join, Join by code and Start new race. A race starts once
-everyone in its scene has clicked to join it (see `apps/arcade/lobby.js`
-and `games/README.md`).
+Every race runs on the server, in a room, at `/ws` on the same server as
+the page: the server runs the race's scene with the game's own scripts and
+nothing to draw it (see "Running without a screen"), every ship in it,
+people's and NPCs', and the race itself. Each player's browser sends the
+keys they hold, the ship they chose and whether they are ready, and 20
+times a second hears where every ship is and how the race is going, which
+it draws (see `server/src/room-race.js`, `apps/arcade/room.js` and
+`apps/arcade/remote-players.js`). Everyone sees the same race, and a slow
+device only draws it. Players who open the arcade with the same `?room=`,
+such as `?room=KXQM&game=bubble-squadron`, race together, and a player
+racing alone gets a room of their own. Rooms for races, at most 6 players
+each, are made and found at `/rooms/`, by code (see `server/src/rooms.js`):
+in Bubble Squadron, Race with friends in the hangar offers Auto join, Join
+by code and Start new race. A race starts once everyone in its room is
+ready (see `games/README.md`).
 
 One server serves it all: `server/`, a small Node program that serves the
 pages and every file they load, and the rooms (see `server/src/main.js`).
