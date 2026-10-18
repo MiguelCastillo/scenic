@@ -1368,6 +1368,21 @@ in Bubble Squadron, Race with friends in the hangar offers Auto join, Join
 by code and Start new race. A race starts once everyone in its room is
 ready (see `games/README.md`).
 
+Rooms and their races live only as long as the server runs. When it shuts
+down, such as when pm2 restarts it, it tells everyone racing first, and
+when it stops without a word, such as when it crashes, their pages join
+again once it is back, and hear that their room is gone. Either way, the
+page says the race is over, and offers a new one. Joining, a page also says
+which version of the arcade it is, the fingerprint of its bundle, and one
+older than the server serves is told to load again (see
+`server/src/relay.js`).
+
+When something goes wrong for a player, the server makes an error id for
+it, such as `7F3K-Q2MD`, logs it with what happened, and tells the player
+(see `server/src/error-ids.js`). The arcade shows it with a code for what
+kind of thing went wrong, such as `SERVER-RESTARTED · 7F3K-Q2MD`, so that
+what a player reports can be found in the server's logs.
+
 One server serves it all: `server/`, a small Node program that serves the
 pages and every file they load, and the rooms (see `server/src/main.js`).
 `npm run start-dev` runs it on port 3000, restarting it when its code

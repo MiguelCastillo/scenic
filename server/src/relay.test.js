@@ -1,6 +1,9 @@
 import WebSocket from "ws";
 
-import {join, startServer} from "./test-server.js";
+import {join, newRoom, startServer} from "./test-server.js";
+
+// An error id, as the server makes them (see newErrorID).
+const errorID = expect.stringMatching(/^[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}$/);
 
 describe("Relay", () => {
   let server;
@@ -8,21 +11,29 @@ describe("Relay", () => {
 
   test("welcomes players with who is there", async () => {
     server = await startServer();
-    const {welcome: first} = await join(server, "race");
-    expect(first).toEqual({type: "welcome", yourID: expect.any(String), otherPlayerIDs: []});
+    const code = await newRoom(server);
+    const {welcome: first} = await join(server, code);
+    expect(first).toEqual({
+      type: "welcome",
+      yourID: expect.any(String),
+      otherPlayerIDs: [],
+      serverStartedAt: expect.any(Number),
+    });
 
-    const {welcome: second} = await join(server, "race");
+    const {welcome: second} = await join(server, code);
     expect(second).toEqual({
       type: "welcome",
       yourID: expect.any(String),
       otherPlayerIDs: [first.yourID],
+      serverStartedAt: first.serverStartedAt,
     });
   });
 
   test("tells players who joins and leaves", async () => {
     server = await startServer();
-    const {player: a} = await join(server, "race");
-    const {player: b, welcome} = await join(server, "race");
+    const code = await newRoom(server);
+    const {player: a} = await join(server, code);
+    const {player: b, welcome} = await join(server, code);
     expect(await a.next()).toEqual({type: "joined", playerID: welcome.yourID});
 
     b.socket.close();
@@ -72,6 +83,40 @@ describe("Relay", () => {
       socket.on("open", () => resolve("open"));
     });
     expect(status).toBe(400);
+  });
+
+  test("turns away players whose room isn't the race they expect", async () => {
+    server = await startServer();
+    const code = await newRoom(server);
+    expect((await join(server, "ZZZZ")).welcome).toEqual({
+      type: "gone",
+      errorID,
+      serverStartedAt: expect.any(Number),
+    });
+    expect((await join(server, code, {scene: "highway.json"})).welcome).toEqual({
+      type: "gone",
+      errorID,
+      serverStartedAt: expect.any(Number),
+    });
+    expect((await join(server, code)).welcome.type).toBe("welcome");
+  });
+
+  test("turns away players whose page is older than the one it serves", async () => {
+    server = await startServer({version: () => "new"});
+    const code = await newRoom(server);
+    expect((await join(server, code, {version: "old"})).welcome).toEqual({
+      type: "outdated",
+      errorID,
+      serverStartedAt: expect.any(Number),
+    });
+    expect((await join(server, code, {version: "new"})).welcome.type).toBe("welcome");
+  });
+
+  test("tells everyone when it shuts down", async () => {
+    server = await startServer();
+    const {player} = await join(server, await newRoom(server));
+    server.relay.close();
+    expect(await player.next()).toEqual({type: "closing", errorID});
   });
 
   test("origin patterns choose which pages can connect", async () => {

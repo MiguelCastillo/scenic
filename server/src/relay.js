@@ -1,5 +1,7 @@
 import {WebSocketServer} from "ws";
 
+import {newErrorID} from "./error-ids.js";
+
 // The longest message a player can send, in bytes.
 const maxMessageSize = 64 * 1024;
 // The longest room name, in bytes.
@@ -17,9 +19,14 @@ const codeLetters = "ABCDEFGHJKLMNPQRSTUVWXYZ";
 // which the server runs (see RoomRace), and which each player in the room
 // tells what they do and hears from.
 //
-// A player joins a room by connecting to /ws?room=name with a WebSocket.
-// Every message is JSON, and everything about who is in the room comes from
-// the relay:
+// A player joins a room by connecting to /ws?room=code&game=game&scene=scene
+// &version=version with a WebSocket: the room's code, the race they expect
+// in it, such as "bubble-squadron" and "race.json", and the version of the
+// page they play in, if it has one, such as the fingerprint of the arcade's
+// bundle. A player joining again, such as after the server restarted, finds
+// out this way whether their room is still the race they were in, and
+// whether their page is still the one the server serves. Every message is
+// JSON, and everything about who is in the room comes from the relay:
 //
 // From a player:
 //   - {"type": "player", ...}: what the player does, for the room's race
@@ -27,23 +34,38 @@ const codeLetters = "ABCDEFGHJKLMNPQRSTUVWXYZ";
 //     it says, so that a player can't speak for another.
 //
 // To a player:
-//   - {"type": "welcome", "yourID": "p1", "otherPlayerIDs": ["p2"]}: the
-//     player's id, and the ids of the others already in the room, when the
-//     player joins.
+//   - {"type": "welcome", "yourID": "p1", "otherPlayerIDs": ["p2"],
+//     "serverStartedAt": 1792328325537}: the player's id, the ids of the
+//     others already in the room, and when the server started, in
+//     milliseconds since 1970, when the player joins, so that a player who
+//     comes back can tell whether it has restarted since.
 //   - {"type": "joined", "playerID": "p3"}: someone joined the room.
 //   - {"type": "left", "playerID": "p2"}: someone left the room.
 //   - {"type": "race", ...}: how the room's race is going (see RoomRace).
 //   - {"type": "full"}: the room already has maxPlayers players, so the
 //     player can't join it, and the connection closes.
+//   These, and those below, which end a player's race before its time, have
+//   an "errorID" too, such as "7F3K-Q2MD", which the server logs with what
+//   happened (see newErrorID).
+//   - {"type": "outdated"}: the player's page is older than the one the
+//     server serves, so it needs to load again, and the connection closes.
+//   - {"type": "gone", "serverStartedAt": 1792328325537}: there is no such
+//     race, such as after the server restarted and forgot its rooms, or the
+//     room was forgotten emptyRoomMs after its last player left, or the code
+//     is now another race's, with when the server started, and the
+//     connection closes.
+//   - {"type": "closing"}: the server is shutting down, such as to restart,
+//     which ends every race in it, and then the connection closes.
 //
 // Players are given ids in the order they join, "p1", "p2" and so on.
 //
-// A room exists while it has players in it, and for emptyRoomMs after the
-// last one leaves, so that a room made for a race (see roomFor) is still
-// there for its players to come back to, such as when they reload the page.
-// A room made for a race has the game and the scene it is for, such as
-// "bubble-squadron" and "race.json", and whether anyone can be put in it by
-// auto join (public), rather than only those who know its code. Its race
+// Rooms are made for races (see roomFor), with the game and the scene each
+// is for, such as "bubble-squadron" and "race.json", and whether anyone can
+// be put in it by auto join (public), rather than only those who know its
+// code. A room exists while it has players in it, and for emptyRoomMs after
+// the last one leaves, so that it is still there for its players to come
+// back to, such as when they reload the page. Rooms live only as long as the
+// server runs. Its race
 // starts when its first player joins, with startRace, and stops when the
 // last one leaves. A player that can't keep up with the messages to it
 // misses some, rather than holding up the room.
@@ -62,21 +84,27 @@ const codeLetters = "ABCDEFGHJKLMNPQRSTUVWXYZ";
 //   RoomRace, with join(playerID, send), hear(playerID, message),
 //   leave(playerID) and dispose(), or null for rooms without races, such as
 //   in tests of the rooms alone. null by default.
+// - version: () => the version of the page the server serves now, for
+//   players to have, or null to let any player in. null by default.
 //
 // Its API: handleUpgrade(request, socket, head), for an HTTP server's
-// "upgrade" event, and roomFor(game, scene, auto) and roomInfo(code), for
-// making and finding races (see rooms.js).
+// "upgrade" event, roomFor(game, scene, auto) and roomInfo(code), for
+// making and finding races (see rooms.js), and close(), for when the server
+// shuts down.
 export class Relay {
   constructor({
     originPatterns = ["*"],
     maxPlayers = 0,
     emptyRoomMs = defaultEmptyRoomMs,
     startRace = null,
+    version = null,
   } = {}) {
     this.originPatterns = originPatterns;
     this.maxPlayers = maxPlayers;
     this.emptyRoomMs = emptyRoomMs;
     this._startRace = startRace;
+    this._version = version;
+    this._startedAt = Date.now();
     // The rooms, by name: {playersByID, game, scene, public, emptySince,
     // race}, with playersByID each player's socket by their id, and race a
     // promise of its race while it has players, which is null if it has
@@ -99,7 +127,28 @@ export class Relay {
     if (!this._allowsOrigin(request)) {
       return refuse(socket, 403, "this page can't join rooms");
     }
-    this._sockets.handleUpgrade(request, socket, head, (ws) => this._join(name, ws));
+    const expected = {
+      game: url.searchParams.get("game") ?? "",
+      scene: url.searchParams.get("scene") ?? "",
+      version: url.searchParams.get("version"),
+    };
+    this._sockets.handleUpgrade(request, socket, head, (ws) => this._join(name, ws, expected));
+  }
+
+  // close tells every player the server is shutting down, closes their
+  // connections, and stops every race.
+  close() {
+    const errorID = newErrorID();
+    console.error(`${errorID}: shutting down, ending ${this._roomsByName.size} rooms`);
+    for (const room of this._roomsByName.values()) {
+      for (const ws of room.playersByID.values()) {
+        send(ws, {type: "closing", errorID});
+        ws.close(1001, "the server is shutting down");
+      }
+      room.race?.then((race) => race?.dispose());
+      room.race = null;
+    }
+    this._roomsByName.clear();
   }
 
   // roomFor is the code of a room for a race of game's scene: to auto join,
@@ -143,17 +192,33 @@ export class Relay {
     };
   }
 
-  // _join adds the player on ws to the room called name, making the room if
-  // it is new, or turns them away if it is full. The player is welcomed with
+  // _join adds the player on ws to the room called name, or turns them away
+  // if their page is outdated, the room isn't the race they expect, or it is
+  // full. The player is welcomed with
   // the ids of the others already there before any other message, and the
   // others are told about them. Their messages go to the others until they
   // leave.
-  _join(name, ws) {
+  _join(name, ws, {game, scene, version}) {
     this._forgetEmptyRooms();
-    const room = this._roomsByName.get(name) ?? this._addRoom(name);
-    if (this._isFull(room)) {
-      ws.send(JSON.stringify({type: "full"}));
-      ws.close(1008, "the room is full");
+    const room = this._roomsByName.get(name);
+    const current = this._version?.();
+    const refusal =
+      current && version && version !== current
+        ? "outdated"
+        : !room || room.game !== game || room.scene !== scene
+        ? "gone"
+        : this._isFull(room)
+        ? "full"
+        : null;
+    if (refusal) {
+      const errorID = newErrorID();
+      console.error(
+        `${errorID}: turned a player away, ${refusal}: room ${name}, expecting ` +
+          `${game} ${scene}, version ${version} of ${current}, room has ` +
+          `${room ? `${room.game} ${room.scene}, ${room.playersByID.size} players` : "none"}`
+      );
+      ws.send(JSON.stringify({type: refusal, errorID, serverStartedAt: this._startedAt}));
+      ws.close(1008, refusal);
       return;
     }
 
@@ -162,7 +227,7 @@ export class Relay {
     for (const other of room.playersByID.values()) {
       send(other, {type: "joined", playerID: id});
     }
-    send(ws, {type: "welcome", yourID: id, otherPlayerIDs});
+    send(ws, {type: "welcome", yourID: id, otherPlayerIDs, serverStartedAt: this._startedAt});
     room.playersByID.set(id, ws);
     if (room.game && this._startRace && !room.race) {
       room.race = this._startRace(room.game, room.scene).catch((error) => {

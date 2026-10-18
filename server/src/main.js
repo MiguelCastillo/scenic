@@ -35,7 +35,7 @@ if (!port) {
   process.exit(1);
 }
 
-const server = createServer({
+const {server, relay} = createServer({
   root: flags.static || null,
   originPatterns: flags.origins.split(","),
   maxPlayers: Number(flags["max-players"]),
@@ -44,3 +44,18 @@ if (flags.static) {
   console.log(`serving files from ${flags.static}`);
 }
 server.listen(Number(port), host || undefined, () => console.log(`listening on ${flags.addr}`));
+
+// Stopping the server, such as pm2 restarting it, or Ctrl-C, tells everyone
+// racing that their race is over (see close in Relay) before it goes.
+for (const signal of ["SIGINT", "SIGTERM"]) {
+  process.once(signal, () => {
+    console.log(`${signal}: shutting down`);
+    relay.close();
+    server.close();
+    server.closeAllConnections();
+    // It ends once every connection has closed, or soon after, so that
+    // nothing still going, such as a race loading, holds it up, while
+    // everyone hears that it is going.
+    setTimeout(() => process.exit(0), 500).unref();
+  });
+}

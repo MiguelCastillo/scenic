@@ -3,16 +3,17 @@ import WebSocket from "ws";
 import {createServer} from "./server.js";
 
 // startServer starts a scenic server for a test, on a free port, with
-// createServer's options, and returns its HTTP URL, its WebSocket URL, and
-// stop, which closes it and every player connected to it.
+// createServer's options, and returns its HTTP URL, its WebSocket URL, its
+// relay, and stop, which closes it and every player connected to it.
 export async function startServer(options) {
-  const server = createServer(options);
+  const {server, relay} = createServer(options);
   const players = [];
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
   const url = `http://127.0.0.1:${server.address().port}`;
   return {
     url,
     wsURL: `${url.replace(/^http/, "ws")}/ws`,
+    relay,
     players,
     stop: async () => {
       players.forEach((player) => player.socket.terminate());
@@ -24,10 +25,26 @@ export async function startServer(options) {
   };
 }
 
-// join connects a player to room on the test server, and returns it with
-// the first message to it, its welcome.
-export async function join(testServer, room, {origin} = {}) {
-  const socket = new WebSocket(`${testServer.wsURL}?room=${encodeURIComponent(room)}`, {origin});
+// newRoom makes a room for a race of game's scene on the test server, and
+// returns its code.
+export async function newRoom(testServer, {game = "bubble-squadron", scene = "race.json"} = {}) {
+  const response = await fetch(`${testServer.url}/rooms/new`, {
+    method: "POST",
+    body: JSON.stringify({game, scene}),
+  });
+  return (await response.json()).code;
+}
+
+// join connects a player to the room with code on the test server,
+// expecting a race of game's scene in it, from a page of version, if given,
+// and returns it with the first message to it, its welcome.
+export async function join(
+  testServer,
+  code,
+  {origin, game = "bubble-squadron", scene = "race.json", version = null} = {}
+) {
+  const query = new URLSearchParams({room: code, game, scene, ...(version && {version})});
+  const socket = new WebSocket(`${testServer.wsURL}?${query}`, {origin});
   const player = new TestPlayer(socket);
   testServer.players.push(player);
   return {player, welcome: await player.next()};

@@ -1,5 +1,8 @@
 import {join, startServer} from "./test-server.js";
 
+// An error id, as the server makes them (see newErrorID).
+const errorID = expect.stringMatching(/^[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}$/);
+
 // postRace asks the test server for a room for a race, at /rooms/new or
 // /rooms/auto, and returns its code.
 async function postRace(server, kind, game, scene) {
@@ -68,7 +71,7 @@ describe("rooms", () => {
     expect((await getRoom(server, code)).info.full).toBe(true);
 
     const {welcome} = await join(server, code);
-    expect(welcome).toEqual({type: "full"});
+    expect(welcome).toEqual({type: "full", errorID, serverStartedAt: expect.any(Number)});
   });
 
   test("keeps an empty room for its players to come back", async () => {

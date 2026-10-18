@@ -134,6 +134,12 @@ domReady.onReady(async () => {
   const lobbyEl = document.querySelector("#lobby");
   const lobbyTitleEl = document.querySelector("#lobby-title");
   const lobbyStatusEl = document.querySelector("#lobby-status");
+  const raceOverEl = document.querySelector("#race-over");
+  const raceOverTitleEl = document.querySelector("#race-over-title");
+  const raceOverStatusEl = document.querySelector("#race-over-status");
+  const raceOverCodeEl = document.querySelector("#race-over-code");
+  const raceOverIDEl = document.querySelector("#race-over-id");
+  const raceOverGoEl = document.querySelector("#race-over-go");
   const gl = webgl.createContext(canvas);
 
   // Keep the canvas drawing buffer the same size as the canvas is displayed so
@@ -495,6 +501,18 @@ domReady.onReady(async () => {
   // The server's latest answer about the player's own ship, until it goes
   // to the ship.
   let answer = null;
+  // Why the race ended before its time, when the server ended it, such as
+  // by restarting, or the page needs to load again, as {reason, errorID}
+  // (see turnedAway in RoomConnection), or null.
+  let raceEnded = null;
+  // The page's version, the fingerprint of the arcade's bundle it loaded
+  // (see bin/fingerprint.js), which the server checks the page is still
+  // the one it serves, or null when it loaded one without, such as a test's.
+  const version =
+    document
+      .querySelector("script[src*='dist/arcade.']")
+      ?.getAttribute("src")
+      .match(/arcade\.([0-9a-f]{10})\.js/)?.[1] ?? null;
 
   let game = params.get("game");
   try {
@@ -717,7 +735,50 @@ domReady.onReady(async () => {
     // race, or how many are ready, and Start, to play and be ready, and
     // Leave race. Once they play, it tells them they are waiting, until
     // everyone is ready, and letting go of the game brings the lobby back.
+    // What the player sees when the race ended before its time, by why (see
+    // turnedAway in RoomConnection): its title, why, what to do, a new race
+    // to start, back in the hangar, or the page to load again, for a new
+    // version, and its code, which, with the id the server logged it with,
+    // shows under it, for the player to report.
+    const raceEndedTexts = {
+      closing: {
+        title: "Race over",
+        why: "The server is restarting, so this race ended.",
+        go: "Start a new race",
+        code: "SERVER-RESTARTING",
+      },
+      restarted: {
+        title: "Race over",
+        why: "The server restarted, so this race ended.",
+        go: "Start a new race",
+        code: "SERVER-RESTARTED",
+      },
+      gone: {
+        title: "Race over",
+        why: "This race has closed.",
+        go: "Start a new race",
+        code: "RACE-CLOSED",
+      },
+      outdated: {
+        title: "New version",
+        why: `${manifest.name} has been updated.`,
+        go: "Reload",
+        code: "PAGE-OUTDATED",
+      },
+    };
     const tellPlayer = () => {
+      if (raceEnded) {
+        const {title, why, go, code} = raceEndedTexts[raceEnded.reason];
+        raceOverTitleEl.textContent = title;
+        raceOverStatusEl.textContent = why;
+        raceOverCodeEl.textContent = code;
+        raceOverIDEl.textContent = raceEnded.errorID ?? "";
+        raceOverGoEl.textContent = go;
+        raceOverEl.hidden = false;
+        lobbyEl.hidden = true;
+        messageEl.textContent = "";
+        return;
+      }
       const menuShows = !!(menu || menuLoading);
       const join = underWay ? "play" : "join race";
       // A player who came in once the race had started waits for the next.
@@ -755,7 +816,7 @@ domReady.onReady(async () => {
       pauseEl.hidden = !touchScreen || menuShows || !playingNow;
     };
     const onPlayChange = (playsNow, pausedByP = false) => {
-      if (playingNow && !playsNow && underWay) {
+      if (playingNow && !playsNow && underWay && !raceEnded) {
         openMenu();
       }
       playingNow = playsNow;
@@ -812,16 +873,27 @@ domReady.onReady(async () => {
       const code = roomName ?? (await newRace(game, gameFile));
       const label = roomName ? `Race ${roomName}` : "Race";
       const room = new RoomConnection(code, {
-        onChange: ({status, otherPlayerIDs, full}) => {
+        game,
+        scene: gameFile,
+        version,
+        onChange: ({status, otherPlayerIDs, turnedAway}) => {
+          // The race is over, or the page out of date, which the player is
+          // told, letting go of the pointer, so they can click on.
+          if (turnedAway && turnedAway.reason !== "full" && !raceEnded) {
+            raceEnded = turnedAway;
+            capture.unlock();
+            tellPlayer();
+          }
+          const full = turnedAway?.reason === "full";
           roomStatusEl.textContent = full
-            ? `${label} is full`
+            ? `${label} is full · RACE-FULL · ${turnedAway.errorID}`
             : {
                 [connecting]: `${label} · connecting…`,
                 [connected]: `${label} · ${otherPlayerIDs.length + 1} playing`,
                 [disconnected]: `${label} · disconnected`,
               }[status];
           // Racing alone, the room only shows when its connection is down.
-          roomEl.hidden = !roomName && status === connected && !full;
+          roomEl.hidden = (!roomName && status === connected && !full) || !!raceEnded;
           roomConnectEl.hidden = status !== disconnected;
         },
         onRace: (message) => {
@@ -987,6 +1059,16 @@ domReady.onReady(async () => {
       stack.push(menu.runner);
       playPolicy.reset();
     };
+
+    // Once the race has ended before its time, the player starts a new one,
+    // back in the hangar, or loads the page again, for a new version.
+    domEvents.Subscription.create(raceOverGoEl).on("click", () => {
+      if (raceEnded.reason === "outdated") {
+        location.reload();
+      } else {
+        leaveRace();
+      }
+    });
 
     // The lobby's Start plays, the same as clicking the game, which makes
     // the player ready, and its Leave race leaves.

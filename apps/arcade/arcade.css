@@ -789,7 +789,22 @@ body.friends-open #menu .carousel-panel {
   font-weight: 600;
 }
 
-#lobby-status {
+#lobby-status,
+#race-over-status {
   font-weight: 600;
   white-space: pre-line;
+}
+
+/* The code and id of why the race ended, for the player to report. */
+#race-over-error {
+  margin-top: 0.5em;
+  font-size: 0.75em;
+  letter-spacing: 0.08em;
+  opacity: 0.6;
+  user-select: text;
+}
+
+/* The code and the id each stay on one line. */
+#race-over-error span {
+  white-space: nowrap;
 }
