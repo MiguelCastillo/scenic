@@ -1,4 +1,4 @@
-import {createReadStream, readFileSync, statSync} from "node:fs";
+import {createReadStream, existsSync, readFileSync, statSync} from "node:fs";
 import {stat} from "node:fs/promises";
 import path from "node:path";
 
@@ -48,26 +48,31 @@ const contentTypes = {
 // kept for good, since any change to what the game uses gives it a new
 // version (see bin/version-games.js), and is never kept at another version,
 // such as an older page's, so that a file's new content is never kept
-// under an old version. A shared file in resources/ that a game's page asks
+// under an old version. The same goes for a file asked for at an app's
+// version, such as a shader at ?v=arcade.3f9a2c41d0 (see
+// bin/fingerprint.js). A shared file in resources/ that a game's page asks
 // for at its version, which its version doesn't cover, is logged with an
 // error id, once, since a change to it wouldn't give the game a new
 // version: bin/version-games.js needs to learn what names it.
 export function files(root) {
   const base = path.resolve(root);
-  // Each game's version as of its version.json, by the game, as {modified,
-  // version, resources}, read again when the file changes, and the shared
-  // files already logged as missing from a version.
-  const versionsByGame = new Map();
+  // Each game's or app's version as of its version.json, by its name, as
+  // {modified, version, resources}, read again when the file changes, and
+  // the shared files already logged as missing from a game's version.
+  const versionsByName = new Map();
   const loggedMissing = new Set();
-  const gameVersion = (game) => {
-    const file = path.join(base, "games", game, "version.json");
+  const versionOf = (name) => {
+    const file = [
+      path.join(base, "games", name, "version.json"),
+      path.join(base, "apps", name, "version.json"),
+    ].find(existsSync);
     try {
       const modified = statSync(file).mtimeMs;
-      if (versionsByGame.get(game)?.modified !== modified) {
-        const {version, resources} = JSON.parse(readFileSync(file, "utf8"));
-        versionsByGame.set(game, {modified, version, resources: new Set(resources)});
+      if (versionsByName.get(name)?.modified !== modified) {
+        const {version, resources = []} = JSON.parse(readFileSync(file, "utf8"));
+        versionsByName.set(name, {modified, version, resources: new Set(resources)});
       }
-      return versionsByGame.get(game);
+      return versionsByName.get(name);
     } catch {
       return null;
     }
@@ -96,17 +101,18 @@ export function files(root) {
       return notFound(response);
     }
 
-    // A file asked for at a game's version, if it is.
-    const [, game, version] = url.searchParams.get("v")?.match(/^([a-z0-9-]+)\.([0-9a-f]+)$/) ?? [];
-    const current = game ? gameVersion(game) : null;
+    // A file asked for at a game's or an app's version, if it is.
+    const [, owner, version] =
+      url.searchParams.get("v")?.match(/^([a-z0-9-]+)\.([0-9a-f]+)$/) ?? [];
+    const current = owner ? versionOf(owner) : null;
     const atCurrent = !!current && current.version === version;
     const file = path.relative(base, filePath);
     if (atCurrent && file.startsWith(`resources${path.sep}`) && !current.resources.has(file)) {
-      const missing = `${game} ${version} ${file}`;
+      const missing = `${owner} ${version} ${file}`;
       if (!loggedMissing.has(missing)) {
         loggedMissing.add(missing);
         console.error(
-          `${newErrorID()}: ${game}'s version ${version} doesn't cover ${file}, which its ` +
+          `${newErrorID()}: ${owner}'s version ${version} doesn't cover ${file}, which its ` +
             "page loaded; teach bin/version-games.js what names it"
         );
       }
@@ -116,7 +122,7 @@ export function files(root) {
     const headers = {
       "Cache-Control": atCurrent
         ? "public, max-age=31536000, immutable"
-        : game
+        : owner
         ? "no-store"
         : cacheControl(url.pathname),
       "Last-Modified": lastModified.toUTCString(),

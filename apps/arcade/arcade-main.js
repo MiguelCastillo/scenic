@@ -7,7 +7,7 @@ import {
 } from "@scenic/dom";
 import {webgl} from "@scenic/renderer";
 import {replaceShip, Ships} from "@scenic/racers";
-import {loadScene, SceneRunner, SceneStack, versionedURL} from "@scenic/runtime";
+import {loadScene, SceneRunner, SceneStack, setShadersVersion, versionedURL} from "@scenic/runtime";
 
 import {PlayOnTap, PlayWhileLocked, registerSceneInputRouting} from "./input.js";
 import {RoomConnection, connecting, connected, disconnected} from "./room.js";
@@ -520,6 +520,8 @@ domReady.onReady(async () => {
       .querySelector("script[src*='dist/arcade.']")
       ?.getAttribute("src")
       .match(/arcade\.([0-9a-f]{10})\.js/)?.[1] ?? null;
+  // Its shaders are asked for at its version, which covers them.
+  setShadersVersion(arcadeVersion && `arcade.${arcadeVersion}`);
 
   let game = params.get("game");
   try {

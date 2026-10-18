@@ -1,11 +1,25 @@
 import {ShaderProgram, compileShaderSource, parseVertexShaderAttributes} from "@scenic/renderer";
 
+import {versionedURL} from "./versioned-url.js";
+
 const shaderCache = {};
 
 // Shader names, such as "shaders/grid", are paths in the runtime package,
 // which is where shader files are served from, so every app built on the
 // runtime draws with the same ones.
 const shadersURL = "/packages/runtime/";
+
+// The version shader files are asked for at, such as "arcade.3f9a2c41d0",
+// the version of the app the page loaded, which covers its shaders (see
+// bin/fingerprint.js), or null to ask for them without one.
+let shadersVersion = null;
+
+// setShadersVersion sets the version shader files are asked for at, before
+// any is loaded, such as the app's, "arcade.3f9a2c41d0", so that browsers
+// keep them until the app changes (see files.js in server/src).
+export function setShadersVersion(version) {
+  shadersVersion = version;
+}
 
 // Shaders that are being downloaded, by name, so that asking for a shader
 // again while it downloads waits for the same download instead of starting
@@ -27,8 +41,11 @@ export function loadShaders(names) {
           // File extensions for shaders aren't quite standard, however I have
           // chosen what is used here:
           // https://www.khronos.org/opengles/sdk/tools/Reference-Compiler/
-          const vertexShaderPath = shadersURL + shaderName + ".vert";
-          const fragmentShaderPath = shadersURL + shaderName + ".frag";
+          const vertexShaderPath = versionedURL(shadersURL + shaderName + ".vert", shadersVersion);
+          const fragmentShaderPath = versionedURL(
+            shadersURL + shaderName + ".frag",
+            shadersVersion
+          );
 
           pendingLoads[shaderName] = Promise.all([
             fetch(vertexShaderPath).then((resp) => resp.text()),
