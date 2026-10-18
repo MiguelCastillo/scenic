@@ -105,11 +105,14 @@ export class Terrain extends Mesh {
     // The tiles built so far, by their column and row (see tileKey).
     this.tiles = new Map();
     // The terrain's settings, with defaults for those its state leaves out,
-    // and the state they were worked out from (see prepareForView).
+    // and the state they were worked out from (see preRender).
     this.settings = null;
     this.settingsFrom = null;
-    // The settings that shape the ground, ready to measure (see withPieces).
+    // The settings that shape the ground, ready to measure (see withPieces),
+    // and the ground the tiles were built for, to build them again when it
+    // changes (see prepareForView).
     this.ground = null;
+    this.tilesGround = null;
     // The index buffers tiles share, by how many steps they have.
     this.indexes = new Map();
     // The textures loaded so far, by URL.
@@ -119,7 +122,9 @@ export class Terrain extends Mesh {
   }
 
   // heightAt is the height of the ground in the world under the world's
-  // (x, z), from the settings of its last frame; it is flat until its first.
+  // (x, z), from its settings as of its last preRender, which runs when the
+  // scene loads, and every frame, with or without anything to draw it, such
+  // as on a server.
   // Matrix4 data is row-major, so positions are the last column of world
   // matrices.
   heightAt(x, z) {
@@ -130,7 +135,7 @@ export class Terrain extends Mesh {
   // isClear is whether the world's (x, z) is clear of the ground the terrain
   // keeps for something, such as a race's course: farther than margin past
   // the flat valley of every path and the flat middle of every clearing, and
-  // off every bump. It is all clear until the terrain's first frame.
+  // off every bump.
   isClear(x, z, margin = 0) {
     if (!this.ground) {
       return true;
@@ -147,6 +152,43 @@ export class Terrain extends Mesh {
     );
   }
 
+  // preRender works out the terrain's settings, and the ground's shape from
+  // them, which heightAt measures, as well as its world matrix. It runs every
+  // frame, whether or not anything draws the terrain, so a game without a
+  // screen, such as on a server, flies over the same hills.
+  //
+  // The settings live in the terrain's state. Its state can change on any
+  // frame, and nothing tells the terrain, so it checks every frame. Its
+  // state changes, for example, when:
+  // - a setting is tuned live on the editor's Terrain tab, such as the
+  //   height of the hills, or showTiles turned on;
+  // - a script reshapes the ground, such as a game moving on to a level
+  //   with other paths;
+  // - the terrain is moved, which changes its state but not its settings.
+  //
+  // Any change to a node's state replaces its state object, keeping the
+  // values that didn't change (see updateItemByID in StateManager), so
+  // comparing the object tells whether anything changed. Only then are the
+  // settings worked out again, and the ground's shape too if one of the
+  // settings that shape it changed (see shapedBy), and not for one that is
+  // only drawn, such as showTiles.
+  //
+  // Performance: that is one comparison a frame. Don't compare the settings
+  // themselves every frame, such as with JSON.stringify, which makes a
+  // string each time (see "Best practices for the hot path" in the README).
+  preRender(context) {
+    super.preRender(context);
+    const state = context.sceneManager.getNodeStateByID(this.id);
+    if (state && state !== this.settingsFrom) {
+      const settings = {...Terrain.defaults, ...state.terrain};
+      if (!this.settings || Terrain.shapedBy.some((key) => settings[key] !== this.settings[key])) {
+        this.ground = withPieces(settings);
+      }
+      this.settings = settings;
+      this.settingsFrom = state;
+    }
+  }
+
   // prepareForView builds the tiles that reach within the camera's far plane
   // of it, where it is this frame, nearest first, at the detail their
   // distance from it calls for, drops those beyond it, and chooses the ones
@@ -159,36 +201,11 @@ export class Terrain extends Mesh {
     // Nothing is drawn until there is a camera to choose tiles for.
     this.tilesToRender.length = 0;
 
-    // The tiles are kept from frame to frame, built from the terrain's
-    // settings, which live in its state. Its state can change on any frame,
-    // and nothing tells the terrain, so it checks every frame. Its state
-    // changes, for example, when:
-    // - a setting is tuned live on the editor's Terrain tab, such as the
-    //   height of the hills, or showTiles turned on;
-    // - a script reshapes the ground, such as a game moving on to a level
-    //   with other paths;
-    // - the terrain is moved, which changes its state but not its settings.
-    //
-    // Any change to a node's state replaces its state object, keeping the
-    // values that didn't change (see updateItemByID in StateManager), so
-    // comparing the object tells whether anything changed. Only then are
-    // the settings worked out again, and the tiles built again if one of the
-    // settings that shape the ground changed (see shapedBy), and not for one
-    // that is only drawn, such as showTiles.
-    //
-    // Performance: that is one comparison a frame. Don't compare the
-    // settings themselves every frame, such as with JSON.stringify, which
-    // makes a string each time (see "Best practices for the hot path" in
-    // the README).
-    const state = sceneManager.getNodeStateByID(this.id);
-    if (state !== this.settingsFrom) {
-      const settings = {...Terrain.defaults, ...state.terrain};
-      if (!this.settings || Terrain.shapedBy.some((key) => settings[key] !== this.settings[key])) {
-        this.disposeTiles();
-        this.ground = withPieces(settings);
-      }
-      this.settings = settings;
-      this.settingsFrom = state;
+    // The tiles are kept from frame to frame, built for the ground's shape
+    // (see preRender), and built again when it changes.
+    if (this.tilesGround !== this.ground) {
+      this.disposeTiles();
+      this.tilesGround = this.ground;
     }
 
     const {tileSize, detail, detailDistance} = this.settings;
