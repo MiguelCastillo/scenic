@@ -1,0 +1,25 @@
+{
+  "name": "@scenic/racers",
+  "version": "0.0.0",
+  "description": "The racers in a game's races: the ships players choose from, and NPCs in every seat no one takes",
+  "type": "module",
+  "main": "src/index.js",
+  "dependencies": {
+    "@scenic/math": "*"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo no tests",
+    "lint": "eslint ./src"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MiguelCastillo/scenic.git"
+  },
+  "author": "Miguel Castillo <manchagnu@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/MiguelCastillo/scenic/issues"
+  },
+  "homepage": "https://github.com/MiguelCastillo/scenic#readme"
+}

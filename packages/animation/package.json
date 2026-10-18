@@ -2,6 +2,7 @@
   "name": "@scenic/animation",
   "version": "0.0.0",
   "description": "scenic animation library",
+  "type": "module",
   "main": "src/index.js",
   "dependencies": {
     "@scenic/math": "*"

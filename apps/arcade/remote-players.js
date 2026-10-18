@@ -1,4 +1,4 @@
-import {replaceShip} from "./ships.js";
+import {replaceShip} from "@scenic/racers";
 
 // The most messages a player's channel keeps until the scene pulls them:
 // over 10 seconds' worth at 20 a second.

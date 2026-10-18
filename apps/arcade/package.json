@@ -5,6 +5,7 @@
   "dependencies": {
     "@scenic/dom": "*",
     "@scenic/math": "*",
+    "@scenic/racers": "*",
     "@scenic/renderer": "*",
     "@scenic/runtime": "*"
   },

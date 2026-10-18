@@ -24,7 +24,7 @@ from the root folder; be sure to switch out `math` in the path for the
 specific module you want to configure.
 
 ```
-$ ln -sf ../.eslintrc.js packages/math/.eslintrc.js
+$ ln -sf ../.eslintrc.cjs packages/math/.eslintrc.cjs
 ```
 
 Babel is only used by the tests, with the project's config at the root

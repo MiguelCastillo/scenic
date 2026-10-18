@@ -2,6 +2,7 @@
   "name": "@scenic/runtime",
   "version": "0.0.0",
   "description": "scenic runtime: loads and runs scenes, for apps such as the editor",
+  "type": "module",
   "main": "src/index.js",
   "dependencies": {
     "@scenic/animation": "*",

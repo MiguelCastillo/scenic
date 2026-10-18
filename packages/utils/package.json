@@ -2,6 +2,7 @@
   "name": "@scenic/utils",
   "version": "0.0.0",
   "description": "scenic utility library",
+  "type": "module",
   "main": "src/index.js",
   "dependencies": {
     "@scenic/math": "*"

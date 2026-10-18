@@ -2,6 +2,7 @@
   "name": "@scenic/renderer",
   "version": "0.0.0",
   "description": "scenic webgl rendering library",
+  "type": "module",
   "main": "src/index.js",
   "devDependencies": {},
   "scripts": {

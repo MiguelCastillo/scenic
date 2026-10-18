@@ -2,6 +2,7 @@
   "name": "@scenic/camera",
   "version": "0.0.0",
   "description": "scenic camera behaviors: free-fly, first-person and third-person cameras",
+  "type": "module",
   "main": "src/index.js",
   "dependencies": {
     "@scenic/math": "*",

@@ -6,6 +6,8 @@
   "type": "module",
   "main": "src/main.js",
   "dependencies": {
+    "@scenic/racers": "*",
+    "@scenic/runtime": "*",
     "ws": "8.18.3"
   },
   "scripts": {

@@ -28,6 +28,11 @@
 // later lap, then past more gates, then nearer the next one. Only the
 // racer's own gates glow, and the others hold themselves at the start.
 //
+// A race can run without a racer of its own, when the scene has no node
+// called racer, such as on a server, where everyone racing is an entrant:
+// it counts down, starts, and follows and places the entrants the same way,
+// with no racer to hold, follow or place.
+//
 // A gate is flown through when the racer crosses the plane it stands in, its
 // local XY plane, within its opening, going the way it faces, along its +Z
 // axis, so a course turns its gates to face along it. A gate's opening is a
@@ -43,7 +48,8 @@
 // Its settings come from "script.settings" in the node's config, and all are
 // optional:
 // - racer: the ID of the node that races, such as a starfighter flown with
-//   fly.js. "starfighter" by default.
+//   fly.js. "starfighter" by default; a scene without that node races only
+//   its entrants.
 // - laps: how many laps a race is. 3 by default.
 // - countdown: how long the countdown is, in seconds. 5 by default.
 // - gateRadius: how close to a ring gate's center the racer has to fly
@@ -121,7 +127,7 @@ module.exports = function createRaceScript(node) {
       const settings = {...defaults, ...state.script.settings};
       const gates = node.items;
       const racer = sceneManager.getNodeByID(settings.racer);
-      if (!racer || !gates.length) {
+      if (!gates.length) {
         return;
       }
 
@@ -152,7 +158,7 @@ module.exports = function createRaceScript(node) {
         }
       }
       const held = race.lap === 0;
-      if (!!sceneManager.getNodeStateByID(racer.id).held !== held) {
+      if (racer && !!sceneManager.getNodeStateByID(racer.id).held !== held) {
         sceneManager.updateNodeStateByID(racer.id, {held});
       }
 
@@ -164,7 +170,7 @@ module.exports = function createRaceScript(node) {
         }
       };
 
-      const to = position(racer);
+      const to = racer ? position(racer) : null;
       const from = settings.from || to;
 
       // Whether a racer flew through the gate from `from` to `to`: where
@@ -195,7 +201,7 @@ module.exports = function createRaceScript(node) {
           : Math.hypot(x, y) <= settings.gateRadius;
       };
 
-      if (race.lap > 0 && !race.finished && flewThrough(gates[race.gate], from, to)) {
+      if (racer && race.lap > 0 && !race.finished && flewThrough(gates[race.gate], from, to)) {
         if (race.gate !== 0) {
           race.gate = (race.gate + 1) % gates.length;
         } else {
@@ -212,7 +218,9 @@ module.exports = function createRaceScript(node) {
         }
       }
 
-      setLap(racer.id, race.finished ? 0 : race.lap);
+      if (racer) {
+        setLap(racer.id, race.finished ? 0 : race.lap);
+      }
 
       // The others go through the gates the same way, from the start.
       const rivals = {};
@@ -252,11 +260,15 @@ module.exports = function createRaceScript(node) {
         return {finishedAt, progress: lap * gates.length + (gate || gates.length), distance};
       };
       const racers = [
-        {
-          name: settings.racerName,
-          racer: true,
-          ...standing({...race, finishedAt: race.finished ? race.time : null}, to),
-        },
+        ...(racer
+          ? [
+              {
+                name: settings.racerName,
+                racer: true,
+                ...standing({...race, finishedAt: race.finished ? race.time : null}, to),
+              },
+            ]
+          : []),
         ...settings.entrants
           .filter(({id}) => rivals[id])
           .map(({id, name}) => ({

@@ -6,14 +6,21 @@ import {
   registerTouchIntents,
 } from "@scenic/dom";
 import {webgl} from "@scenic/renderer";
+import {
+  addNPC,
+  addNPCs,
+  dealShips,
+  gridPosition,
+  removeNPC,
+  replaceShip,
+  Ships,
+} from "@scenic/racers";
 import {loadScene, SceneRunner, SceneStack} from "@scenic/runtime";
 
 import {PlayOnTap, PlayWhileLocked, registerSceneInputRouting} from "./input.js";
 import {RoomConnection, connecting, connected, disconnected} from "./room.js";
 import {RemotePlayers} from "./remote-players.js";
-import {Ships, replaceShip} from "./ships.js";
 import {Lobby, racing, ready, waiting} from "./lobby.js";
-import {addNPC, addNPCs, dealShips, gridPosition, removeNPC} from "./npcs.js";
 
 // The arcade plays one of the games in games/, full screen: the one the page's
 // URL names, such as index.html?game=bubble-squadron, or, without one, the one
