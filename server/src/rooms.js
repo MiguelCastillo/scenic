@@ -10,11 +10,14 @@
 //     scene, such as "bubble-squadron" and "race.json", which only those who
 //     know its code can join, and returns {"code"}.
 //   - POST /rooms/auto {"game", "scene"}: returns {"code"} of a room for a
-//     race of game's scene that anyone can be put in and has a seat free,
-//     the fullest one, so that races fill up, or of a new one.
+//     race of game's scene that anyone can be put in, with a seat free and a
+//     race that hasn't started, the fullest one, so that races fill up, or
+//     of a new one.
 //   - GET /rooms/{code}: returns {"code", "game", "scene", "players",
-//     "full"}, what the room's race is, how many are in it, and whether it
-//     has no seat free, or 404 when there is no such room.
+//     "full", "underway"}, what the room's race is, how many are in it,
+//     whether it has no seat free, and whether its race has started, which
+//     someone joining watches until the next, or 404 when there is no such
+//     room.
 //
 // Codes are four capitals without I and O, such as "KXQM", and a code in a
 // request can be in any case. A game is named by its folder in games/, and a

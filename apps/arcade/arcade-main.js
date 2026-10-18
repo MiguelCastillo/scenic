@@ -134,6 +134,7 @@ domReady.onReady(async () => {
   const lobbyEl = document.querySelector("#lobby");
   const lobbyTitleEl = document.querySelector("#lobby-title");
   const lobbyStatusEl = document.querySelector("#lobby-status");
+  const lobbyWatchEl = document.querySelector("#lobby-watch");
   const raceOverEl = document.querySelector("#race-over");
   const raceOverTitleEl = document.querySelector("#race-over-title");
   const raceOverStatusEl = document.querySelector("#race-over-status");
@@ -505,6 +506,9 @@ domReady.onReady(async () => {
   // by restarting, or the page needs to load again, as {reason, errorID}
   // (see turnedAway in RoomConnection), or null.
   let raceEnded = null;
+  // The id of the racer the player watches, while a race they came in
+  // after the start of goes on without them, or null.
+  let watchedID = null;
   // The page's version, the fingerprint of the arcade's bundle it loaded
   // (see bin/fingerprint.js), which the server checks the page is still
   // the one it serves, or null when it loaded one without, such as a test's.
@@ -735,6 +739,61 @@ domReady.onReady(async () => {
     // race, or how many are ready, and Start, to play and be ready, and
     // Leave race. Once they play, it tells them they are waiting, until
     // everyone is ready, and letting go of the game brings the lobby back.
+    // watchable is the racers a player can watch, in the order they are
+    // placed, while a race they came in after the start of goes on without
+    // them, those whose ships show here, as [{id, name}], or null while they
+    // aren't watching.
+    const watchable = () => {
+      if (!snapshot?.started || snapshot.you || !remotePlayers) {
+        return null;
+      }
+      const {sceneManager} = playing.scene;
+      return snapshot.race.standings.filter(({id}) => sceneManager.getNodeByID(id));
+    };
+
+    // watch watches the racer step places behind the one watched now, or
+    // ahead, for a negative step, going around.
+    const watch = (step) => {
+      const racers = watchable();
+      if (!racers?.length) {
+        return;
+      }
+      const i = racers.findIndex(({id}) => id === watchedID);
+      watchedID = racers[(i + step + racers.length) % racers.length].id;
+      tellPlayer();
+    };
+
+    // aimCameras points the cameras in the scene that follow its player's
+    // ship, such as a chase camera and a cockpit camera, at nodeID's instead,
+    // by the target in their state (see @scenic/camera), or back at the
+    // player's. Which cameras those are is found once a scene.
+    let followers = {scene: null, cameras: []};
+    const aimCameras = (sceneManager, nodeID) => {
+      if (followers.scene !== sceneManager) {
+        const cameras = [];
+        const visit = (node) => {
+          const state = sceneManager.getNodeStateByID(node.id);
+          const kind = ["thirdPerson", "firstPerson"].find(
+            (key) => state?.[key]?.target?.nodeID === manifest.player
+          );
+          if (kind) {
+            cameras.push({id: node.id, kind});
+          }
+          node.items.forEach(visit);
+        };
+        visit(sceneManager.scene);
+        followers = {scene: sceneManager, cameras};
+      }
+      for (const {id, kind} of followers.cameras) {
+        const state = sceneManager.getNodeStateByID(id);
+        if (state[kind].target.nodeID !== nodeID) {
+          sceneManager.updateNodeStateByID(id, {
+            [kind]: {...state[kind], target: {...state[kind].target, nodeID}},
+          });
+        }
+      }
+    };
+
     // What the player sees when the race ended before its time, by why (see
     // turnedAway in RoomConnection): its title, why, what to do, a new race
     // to start, back in the hangar, or the page to load again, for a new
@@ -781,14 +840,26 @@ domReady.onReady(async () => {
       }
       const menuShows = !!(menu || menuLoading);
       const join = underWay ? "play" : "join race";
-      // A player who came in once the race had started waits for the next.
-      const spectating = !!snapshot?.started && !snapshot.you;
-      const inLobby = roomName && (!snapshot?.started || spectating);
+      // A player who came in once the race had started watches it, and
+      // races the next one.
+      const racers = watchable();
+      const inLobby = roomName && (!snapshot?.started || !!racers);
+      const watchedPlace = racers?.findIndex(({id}) => id === watchedID) ?? -1;
       const waitingFor = !inLobby
         ? ""
-        : spectating
-        ? "Waiting for the race to end"
+        : racers
+        ? [
+            watchedPlace >= 0
+              ? `Watching ${racers[watchedPlace].name} · ${ordinal(watchedPlace + 1)} of ${
+                  racers.length
+                }`
+              : "Waiting for the race to end",
+            ...(touchScreen ? [] : ["← → to watch another racer"]),
+          ].join("\n")
         : `${snapshot?.lobby.ready ?? 0} of ${snapshot?.lobby.players ?? 1} ready`;
+      if (lobbyWatchEl.hidden === !!racers) {
+        lobbyWatchEl.hidden = !racers;
+      }
       const showLobby = inLobby && !menuShows && !playingNow;
       if (lobbyEl.hidden === showLobby) {
         lobbyEl.hidden = !showLobby;
@@ -847,6 +918,21 @@ domReady.onReady(async () => {
         type: "network",
         message: {race: snapshot?.race ?? null, you: snapshot?.you?.id ?? null},
       });
+      // Watching the race, the cameras that follow the player's ship follow
+      // the racer they watch instead, the leader at first, and their own
+      // ship is hidden until they race again.
+      const racers = watchable();
+      if (racers && !racers.some(({id}) => id === watchedID)) {
+        watchedID = racers[0]?.id ?? null;
+      } else if (!racers) {
+        watchedID = null;
+      }
+      aimCameras(sceneManager, watchedID ?? manifest.player);
+      const ownShip = sceneManager.getNodeStateByID(manifest.player);
+      if (ownShip && (ownShip.visible !== false) === !!racers) {
+        sceneManager.updateNodeStateByID(manifest.player, {visible: !racers});
+      }
+
       // This runs just after the scene's frame, so how long ago the ship
       // here flew as the server's did is measured from it.
       if (answer) {
@@ -1071,13 +1157,30 @@ domReady.onReady(async () => {
     });
 
     // The lobby's Start plays, the same as clicking the game, which makes
-    // the player ready, and its Leave race leaves.
+    // the player ready, its Leave race leaves, and while the player watches
+    // a race, its arrows watch another racer.
     domEvents.Subscription.create(lobbyEl).on("click", (evt) => {
       const choice = evt.target.closest("[data-lobby]")?.dataset.lobby;
       if (choice === "start") {
         playPolicy.play();
       } else if (choice === "leave") {
         leaveRace();
+      } else if (choice === "previous") {
+        watch(-1);
+      } else if (choice === "next") {
+        watch(1);
+      }
+    });
+
+    // Watching a race, the left and right arrows watch the racer ahead of
+    // the one watched now, or behind.
+    capture.onInput((event) => {
+      if (event.type === "keydown" && !event.repeat && watchable()) {
+        if (event.code === "ArrowLeft") {
+          watch(-1);
+        } else if (event.code === "ArrowRight") {
+          watch(1);
+        }
       }
     });
 

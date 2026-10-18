@@ -87,7 +87,11 @@ games/bubble-squadron/
   shows its lobby: the race's code, how many are ready, Start, which plays
   the game, the same as clicking it, and makes the player ready, and Leave
   race. The race starts once every player in the room is ready; someone
-  who comes in during a race waits for the next one. The players stand on
+  who comes in during a race watches it, and races the next one: the
+  cameras that follow their ship follow a racer instead, the leader at
+  first, and the arrows, on the keyboard or in the lobby, watch the racer
+  ahead or behind, while their own ship is hidden. Auto join never puts
+  anyone in a race that has started. The players stand on
   the starting grid in the order they joined the room. A race pauses while
   everyone racing it has paused, so a player racing alone can pause.
 

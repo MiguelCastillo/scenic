@@ -14,7 +14,8 @@ const snapshotsPerSecond = 20;
 // time a player comes in, so players always take an NPC's seat. On the
 // starting grid, the players stand first, in the order they joined, and the
 // NPCs behind them. The race starts once every player in the room is ready.
-// A player who joins once it has started waits for the next one.
+// A player who joins once it has started watches it, and races the next
+// one, and auto join puts no one in it (see underway).
 //
 // Each player says what they do, as often as they like, as {ship, ready,
 // keys, race, seq}: the id of the ship they chose, whether they are ready to
@@ -46,7 +47,8 @@ const snapshotsPerSecond = 20;
 //   called, and where it is, as its script publishes it (see fly.js).
 //
 // Its API: load(gameURL, sceneFile), join(playerID, send), hear(playerID,
-// message), leave(playerID), and dispose().
+// message), leave(playerID), underway, whether the race has started, and
+// dispose().
 export class RoomRace {
   // load loads the room's first race, of sceneFile in the game at gameURL
   // (see load in RaceRunner).
@@ -73,6 +75,11 @@ export class RoomRace {
     this._runner = runner;
     this._runner.start();
     this._timer = setInterval(() => this._tick(), 1000 / snapshotsPerSecond);
+  }
+
+  // underway is whether the race has started, until the next one loads.
+  get underway() {
+    return this._started;
   }
 
   join(playerID, send) {

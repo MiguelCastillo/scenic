@@ -82,8 +82,9 @@ const codeLetters = "ABCDEFGHJKLMNPQRSTUVWXYZ";
 //   or before the first one joins, in milliseconds. 2 minutes by default.
 // - startRace: (game, scene) => a promise of a room's race, such as a
 //   RoomRace, with join(playerID, send), hear(playerID, message),
-//   leave(playerID) and dispose(), or null for rooms without races, such as
-//   in tests of the rooms alone. null by default.
+//   leave(playerID), dispose() and underway, whether it has started, or
+//   null for rooms without races, such as in tests of the rooms alone. null
+//   by default.
 // - version: () => the version of the page the server serves now, for
 //   players to have, or null to let any player in. null by default.
 //
@@ -106,9 +107,10 @@ export class Relay {
     this._version = version;
     this._startedAt = Date.now();
     // The rooms, by name: {playersByID, game, scene, public, emptySince,
-    // race}, with playersByID each player's socket by their id, and race a
-    // promise of its race while it has players, which is null if it has
-    // none, or it failed to start.
+    // race, runningRace}, with playersByID each player's socket by their id,
+    // race a promise of its race while it has players, which is null if it
+    // has none, or it failed to start, and runningRace the race once it has
+    // loaded.
     this._roomsByName = new Map();
     this._lastID = 0;
     this._sockets = new WebSocketServer({noServer: true, maxPayload: maxMessageSize});
@@ -147,20 +149,23 @@ export class Relay {
       }
       room.race?.then((race) => race?.dispose());
       room.race = null;
+      room.runningRace = null;
     }
     this._roomsByName.clear();
   }
 
   // roomFor is the code of a room for a race of game's scene: to auto join,
-  // the fullest public one with a seat free, or else a new room, public to
-  // auto join, and only for those who know its code otherwise.
+  // the fullest public one with a seat free, whose race hasn't started, or
+  // else a new room, public to auto join, and only for those who know its
+  // code otherwise.
   roomFor(game, scene, auto) {
     this._forgetEmptyRooms();
     if (auto) {
       let best = null;
       for (const [code, room] of this._roomsByName) {
         const fits = room.public && room.game === game && room.scene === scene;
-        if (fits && !this._isFull(room) && (!best || room.playersByID.size > best.players)) {
+        const open = !this._isFull(room) && !this._isUnderway(room);
+        if (fits && open && (!best || room.playersByID.size > best.players)) {
           best = {code, players: room.playersByID.size};
         }
       }
@@ -189,12 +194,14 @@ export class Relay {
       scene: room.scene,
       players: room.playersByID.size,
       full: this._isFull(room),
+      underway: this._isUnderway(room),
     };
   }
 
   // _join adds the player on ws to the room called name, or turns them away
   // if their page is outdated, the room isn't the race they expect, or it is
-  // full. The player is welcomed with
+  // full. A player who joins once its race has started watches it, and
+  // races the next one (see RoomRace). The player is welcomed with
   // the ids of the others already there before any other message, and the
   // others are told about them. Their messages go to the others until they
   // leave.
@@ -230,10 +237,12 @@ export class Relay {
     send(ws, {type: "welcome", yourID: id, otherPlayerIDs, serverStartedAt: this._startedAt});
     room.playersByID.set(id, ws);
     if (room.game && this._startRace && !room.race) {
-      room.race = this._startRace(room.game, room.scene).catch((error) => {
-        console.error(`starting the race in room ${name}:`, error);
-        return null;
-      });
+      room.race = this._startRace(room.game, room.scene)
+        .then((race) => (room.runningRace = race))
+        .catch((error) => {
+          console.error(`starting the race in room ${name}:`, error);
+          return null;
+        });
     }
     room.race?.then((race) => race?.join(id, (message) => send(ws, message)));
 
@@ -259,6 +268,7 @@ export class Relay {
     if (!room.playersByID.size) {
       room.race?.then((race) => race?.dispose());
       room.race = null;
+      room.runningRace = null;
       room.emptySince = Date.now();
       return;
     }
@@ -275,6 +285,7 @@ export class Relay {
       public: false,
       emptySince: Date.now(),
       race: null,
+      runningRace: null,
     };
     this._roomsByName.set(name, room);
     return room;
@@ -302,6 +313,10 @@ export class Relay {
         return code;
       }
     }
+  }
+
+  _isUnderway(room) {
+    return !!room.runningRace?.underway;
   }
 
   _isFull(room) {

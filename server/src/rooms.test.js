@@ -32,7 +32,14 @@ describe("rooms", () => {
 
     expect(await getRoom(server, code.toLowerCase())).toEqual({
       status: 200,
-      info: {code, game: "bubble-squadron", scene: "race.json", players: 0, full: false},
+      info: {
+        code,
+        game: "bubble-squadron",
+        scene: "race.json",
+        players: 0,
+        full: false,
+        underway: false,
+      },
     });
 
     await join(server, code);
@@ -55,6 +62,28 @@ describe("rooms", () => {
 
     await join(server, first);
     expect(await postRace(server, "auto", "bubble-squadron", "race.json")).not.toBe(first);
+  });
+
+  test("auto join skips races that have started, which joining by code watches", async () => {
+    // A race that has started once someone is ready.
+    let race = null;
+    const startRace = async () =>
+      (race = {
+        underway: false,
+        join: () => {},
+        hear: () => (race.underway = true),
+        leave: () => {},
+        dispose: () => {},
+      });
+    server = await startServer({startRace});
+    const started = await postRace(server, "auto", "bubble-squadron", "race.json");
+    const {player} = await join(server, started);
+    player.say({ready: true});
+    await player.nothing();
+
+    expect((await getRoom(server, started)).info.underway).toBe(true);
+    expect(await postRace(server, "auto", "bubble-squadron", "race.json")).not.toBe(started);
+    expect((await join(server, started)).welcome.type).toBe("welcome");
   });
 
   test("auto join skips races started with a code", async () => {

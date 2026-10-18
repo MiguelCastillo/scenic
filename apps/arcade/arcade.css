@@ -789,6 +789,16 @@ body.friends-open #menu .carousel-panel {
   font-weight: 600;
 }
 
+/* Watching a race, the arrows to watch another racer, side by side. */
+#lobby-watch {
+  display: flex;
+  gap: 10px;
+}
+
+#lobby-watch[hidden] {
+  display: none;
+}
+
 #lobby-status,
 #race-over-status {
   font-weight: 600;
