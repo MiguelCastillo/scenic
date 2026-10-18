@@ -31,7 +31,7 @@ const course = "race";
 // Its API: load(gameURL, sceneFile); addRacer, moveRacer and removeRacer;
 // waitForPlayers(waiting); pause(paused); start() and stop(), to run the
 // race in real time, and stepFrame(ms), to run it a frame at a time, such as
-// in a test; seats, the most racers in it; ships, the game's ships, or null;
+// in a test; frameAt, when its last frame ran; seats, the most racers in it; ships, the game's ships, or null;
 // sceneManager, the scene's; race(), how the race is going; and dispose(),
 // which stops it and tears it down.
 export class RaceRunner {
@@ -74,6 +74,9 @@ export class RaceRunner {
     this._racing = {template, parentID, gridStart, pilot};
     this._runner = new SceneRunner(null, scene, {paused: false});
     this._timer = null;
+    // When the last frame ran, in performance.now's time, while it runs in
+    // real time.
+    this.frameAt = 0;
     this.waitForPlayers(true);
   }
 
@@ -142,10 +145,10 @@ export class RaceRunner {
   // stop.
   start() {
     const startedAt = performance.now();
-    this._timer = setInterval(
-      () => this._runner.stepFrame(performance.now() - startedAt),
-      1000 / framesPerSecond
-    );
+    this._timer = setInterval(() => {
+      this.frameAt = performance.now();
+      this._runner.stepFrame(this.frameAt - startedAt);
+    }, 1000 / framesPerSecond);
   }
 
   stop() {

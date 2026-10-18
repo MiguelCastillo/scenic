@@ -5,22 +5,22 @@ import {replaceShip} from "@scenic/racers";
 const maxMessages = 256;
 
 // RemotePlayers shows a race the server runs (see server/src/room-race.js)
-// in the scene this player is playing: every racer's ship where the server
-// says it is, the player's own and everyone else's, people's and NPCs'.
+// in the scene this player is playing: every other racer's ship, people's
+// and NPCs', where the server says it is. The player's own ship flies here
+// (see arcade-main.js).
 //
-// The player's own ship is the node that is the player in the scene, which
-// the game's manifest names in "player", such as "starfighter". The others
-// are copies of it, each run by the script the manifest names in
-// "multiplayer": {"remote": "scripts/remote-ship.js"}, relative to the scene
-// file, like the scene's own, which the player's node runs too (see
-// flyFromServer in arcade-main.js). In a game with ships to choose from,
-// each copy flies the ship its racer flies.
+// The others are copies of the node that is the player in the scene, which
+// the game's manifest names in "player", such as "starfighter", each run by
+// the script the manifest names in "multiplayer": {"remote":
+// "scripts/remote-ship.js"}, relative to the scene file, like the scene's
+// own. In a game with ships to choose from, each copy flies the ship its
+// racer flies.
 //
-// Where each ship is goes to it on the scene's input, as {type: "network",
-// message} events, so its script gets them as the frame's `messages` (see
-// SceneRunner in @scenic/runtime): the player's own on its node's input
-// channel, and each copy's on a channel of its own, its racer's on the
-// server, such as "p2" or "npc 1", which the copy's "input" names.
+// Where each ship is goes to its copy on the scene's input, as {type:
+// "network", message} events, so its script gets them as the frame's
+// `messages` (see SceneRunner in @scenic/runtime), on a channel of its own,
+// its racer's on the server, such as "p2" or "npc 1", which the copy's
+// "input" names.
 //
 // A racer's copy is added with the first snapshot it is in, beside the
 // player's node, and taken out once it is no longer in one, such as an NPC
@@ -49,15 +49,13 @@ export class RemotePlayers {
     this._copiesByChannel = new Map();
   }
 
-  // show puts every racer's ship in the race the server says, snapshot,
-  // {ships, you}, where it says (see RoomRace): the player's own, you,
-  // and a copy of each other's.
+  // show puts a copy of every other racer's ship in the race the server
+  // says, snapshot, {ships, you}, where it says (see RoomRace), other than
+  // the player's own, you.
   show({ships, you}) {
     const {input} = this._scene.sceneManager;
     for (const [channel, where] of Object.entries(ships)) {
       if (channel === you?.name) {
-        const playerState = this._scene.sceneManager.getNodeStateByID(this._playerNodeID);
-        input.publish(playerState?.input ?? "player", {type: "network", message: where});
         continue;
       }
       if (!this._copiesByChannel.has(channel)) {

@@ -17,20 +17,25 @@ const snapshotsPerSecond = 20;
 // A player who joins once it has started waits for the next one.
 //
 // Each player says what they do, as often as they like, as {ship, ready,
-// keys, race}: the id of the ship they chose, whether they are ready to
+// keys, race, seq}: the id of the ship they chose, whether they are ready to
 // race, or once it has started, playing rather than paused, the keys they
 // hold, such as ["Space", "ArrowLeft"], which go to their ship on its input
 // channel as a keyboard's would, and the number of the race they want to
-// race, to race again. Once every player racing wants
+// race, to race again, and seq, which numbers what they say, for the
+// answer to say which was the last it heard. Once every player racing wants
 // a later race than this one, or no one is racing it, the next race loads,
 // with everyone in it.
 //
 // Each player hears how the race is going, snapshotsPerSecond times a
 // second, as {type: "race", number, you, started, lobby, race, ships}:
 // - number: which race of the room's it is, from 1.
-// - you: the player's racer, as {name, id}, its channel, such as "p2", and
-//   its node's id in the race, such as "p2 starfighter", or null while they
-//   aren't racing.
+// - you: the player's racer, as {name, id, ack, ackAge, ship}, or null while
+//   they aren't racing: its channel, such as "p2", its node's id in the
+//   race, such as "p2 starfighter", the seq of the last thing the player
+//   said before the race's last frame, how many milliseconds before it the
+//   race heard it, and its ship's node state as of that frame, {transform, held, lap, settings}, so that the player's browser,
+//   which flies its own ship from its keys too, can see how far off it is
+//   (see fly.js).
 // - started: whether the race has started, rather than waiting for its
 //   players.
 // - lobby: {players, ready}, how many players are in the room, and how many
@@ -79,12 +84,13 @@ export class RoomRace {
       keys: [],
       wants: 0,
       racer: null,
+      heard: [],
     });
   }
 
   // hear keeps what playerID said they do, and presses and lets go of keys
   // on their racer's channel, as they did.
-  hear(playerID, {ship = null, ready = false, keys = [], race = 0} = {}) {
+  hear(playerID, {ship = null, ready = false, keys = [], race = 0, seq = 0} = {}) {
     const player = this._playersByID.get(playerID);
     if (!player) {
       return;
@@ -99,7 +105,13 @@ export class RoomRace {
         input.publish(player.racer.name, {type: "keyup", code});
       }
     }
-    Object.assign(player, {ship, ready: !!ready, keys: held, wants: Number(race) || 0});
+    Object.assign(player, {
+      ship,
+      ready: !!ready,
+      keys: held,
+      wants: Number(race) || 0,
+    });
+    player.heard.push({seq: Number(seq) || 0, at: performance.now()});
   }
 
   // leave takes playerID out of the room, and their racer out of the race.
@@ -246,8 +258,31 @@ export class RoomRace {
       race: this._runner.race(),
       ships,
     };
-    for (const {send, racer} of players) {
-      send({...snapshot, you: racer && {name: racer.name, id: racer.shipNodeID}});
+    // What a player's ship is doing is as of the race's last frame, which
+    // what they said before it went into: the last of that is the one this
+    // answers, and the others before it are done with.
+    const {sceneManager, frameAt} = this._runner;
+    for (const player of players) {
+      const {send, racer, heard} = player;
+      const applied = heard.findLastIndex(({at}) => at <= frameAt);
+      const ack = heard[applied];
+      player.heard = heard.slice(Math.max(0, applied));
+      const state = ack && racer && sceneManager.getNodeStateByID(racer.shipNodeID);
+      send({
+        ...snapshot,
+        you: state && {
+          name: racer.name,
+          id: racer.shipNodeID,
+          ack: ack.seq,
+          ackAge: frameAt - ack.at,
+          ship: {
+            transform: state.transform,
+            held: !!state.held,
+            lap: state.lap ?? 0,
+            settings: state.script.settings,
+          },
+        },
+      });
     }
   }
 }

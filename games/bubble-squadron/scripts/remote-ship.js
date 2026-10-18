@@ -9,14 +9,6 @@
 // there for the first one, so it never glides in from where the ship
 // started.
 //
-// The player's own ship can fly this way too, with the race run on the
-// server: its keys go to the server, and it shows where the server says it
-// is. With "network" in its node's state, such as {"network": "player"}, it
-// publishes the keys held on its input channel there every frame, as
-// {keys}, for the app to send on, and with "hud", such as {"hud":
-// "booster"}, it tells the app's UI about its booster, as the messages
-// have it, the way fly.js does.
-//
 // Its settings come from "script.settings" in the node's config, and all are
 // optional:
 // - smoothing: how long, in seconds, the ship takes to get most of the way
@@ -55,21 +47,14 @@ function turnToward(rotation, target, ease) {
 
 module.exports = function createRemoteShipScript(node) {
   return {
-    update({seconds = 0, keys = new Set(), messages = [], sceneManager}) {
+    update({seconds = 0, messages = [], sceneManager}) {
       const state = sceneManager.getNodeStateByID(node.id);
       const settings = state.script.settings || {};
       const {smoothing = 0.1} = settings;
 
-      if (state.network) {
-        sceneManager.network.publish(state.network, {keys: [...keys]});
-      }
-
       const target = messages.at(-1) ?? settings.target;
       if (!target) {
         return;
-      }
-      if (state.hud && target.booster) {
-        sceneManager.ui.publish(state.hud, target.booster);
       }
 
       // How far to go toward the target this frame, the same each second

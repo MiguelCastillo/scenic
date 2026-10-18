@@ -58,6 +58,8 @@
 // - throttle: how hard the engine burns, 0 to 1. cruiseThrottle by default.
 // - boosterLap: the lap the booster was fired on, or null.
 // - boosterLeft: how many seconds of the booster are left, 0 when it is off.
+// - clock and history: in a race the server runs, how long it has flown, in
+//   seconds, and where it was when, over the last second (see above).
 // - boost: how hard the booster burns, 0 to 1, which the flames follow to
 //   burn bigger (see flame.js). It eases up when the booster fires and back
 //   down when it runs out, as quickly as the throttle does.
@@ -66,9 +68,24 @@
 //
 // In a network game, the other players see it when its node names a channel
 // of sceneManager.network in its state, such as {"network": "player"}: every
-// frame it publishes {position, rotation, throttle, boost, booster} there,
-// with booster as the HUD has it (see below), for the copies of it on the
-// other players' screens (see remote-ship.js).
+// frame it publishes {position, rotation, throttle, boost, booster, keys}
+// there, with booster as the HUD has it (see below), and the keys held, for
+// the copies of it on the other players' screens (see remote-ship.js), and
+// for the app to send on to a server.
+//
+// In a race the server runs, the player's rocket flies here from their keys
+// at once, and on the server from the same keys, which get there a little
+// later, and the server's is the one that counts. The rocket hears about the
+// server's as network messages on its input channel, {ship, ago}: the
+// server's rocket's node state, {transform, held, lap, settings}, and how
+// many seconds before the last frame, the one before this, the rocket here
+// had flown from the same keys as that, which the app works out (see
+// arcade-main.js). It remembers where it was
+// over the last second, as history in its settings, and moves by how far
+// it was then from the server's, as does everything it remembers since, so
+// that the next message doesn't count the same difference again. Without
+// a history that far back, such as at first, it goes where the server's
+// is. Whether it is held, and the lap it is on, come from the server too.
 //
 // It flies from wherever the node's state puts it, so moving the node, such
 // as in the editor, moves the rocket. While its node's state has "held" set,
@@ -175,10 +192,78 @@ function bounce(sceneManager, node, state, position, matrix, flight) {
   return true;
 }
 
+// How far back a rocket in a race the server runs remembers where it was, in
+// seconds, which is as late as the server's answers can be.
+const historySeconds = 1;
+
+// The parts of how a rocket flies that the server corrects, besides where it
+// is, which history keeps.
+const corrected = ["heading", "climb", "roll", "throttle", "boost", "boosterLeft"];
+
+// between is where the rocket was at, from a and b, where it was either side
+// of then in its history, part of the way from one to the other.
+function between(a, b, at) {
+  const t = b.at > a.at ? (at - a.at) / (b.at - a.at) : 0;
+  const mix = (from, to) => from + (to - from) * t;
+  return {
+    at,
+    position: a.position.map((v, i) => mix(v, b.position[i])),
+    ...Object.fromEntries(corrected.map((key) => [key, mix(a[key], b[key])])),
+  };
+}
+
+// reconcile moves the rocket by how far it was, ago seconds before
+// lastFrame, the clock of the last frame, from the server's, ship (see
+// above): position and flight, where it is now and how it flies, which it
+// changes, and history, where it was before, until clock, the clock now. It
+// returns where it is now, and its history, moved the same way.
+function reconcile({ship, ago}, history, lastFrame, clock, position, flight) {
+  flight.boosterLap = ship.settings.boosterLap ?? null;
+
+  // Where it was then, between the two frames it remembers either side.
+  const at = lastFrame - ago;
+  const after = history?.findIndex((entry) => entry.at >= at) ?? -1;
+  const was = after > 0 ? between(history[after - 1], history[after], at) : null;
+
+  // With nothing to go by, it goes where the server's is: at first, and when
+  // the answer is from before all it remembers. An answer from before it
+  // has remembered that long waits until it has.
+  if (!was) {
+    const tooLate = !history || (after === 0 && history[0].at <= clock - historySeconds + 0.05);
+    if (!tooLate) {
+      return {position, history};
+    }
+    for (const key of corrected) {
+      flight[key] = ship.settings[key] ?? flight[key];
+    }
+    return {position: ship.transform.position, history: []};
+  }
+
+  // The heading turns the short way, since the server's can be whole turns
+  // apart from the one here.
+  const moved = ship.transform.position.map((v, i) => v - was.position[i]);
+  const changed = Object.fromEntries(
+    corrected.map((key) => [key, (ship.settings[key] ?? was[key]) - was[key]])
+  );
+  changed.heading = (((changed.heading % 360) + 540) % 360) - 180;
+  for (const key of corrected) {
+    flight[key] += changed[key];
+  }
+  flight.throttle = Math.max(0, Math.min(1, flight.throttle));
+  flight.boost = Math.max(0, Math.min(1, flight.boost));
+  flight.boosterLeft = Math.max(0, flight.boosterLeft);
+  const move = (entry) => ({
+    ...entry,
+    position: entry.position.map((v, i) => v + moved[i]),
+    ...Object.fromEntries(corrected.map((key) => [key, entry[key] + changed[key]])),
+  });
+  return {position: position.map((v, i) => v + moved[i]), history: history.map(move)};
+}
+
 module.exports = function createFlyScript(node) {
   return {
-    update({seconds = 0, keys = new Set(), mouse = {x: 0, y: 0}, sceneManager}) {
-      const state = sceneManager.getNodeStateByID(node.id);
+    update({seconds = 0, keys = new Set(), mouse = {x: 0, y: 0}, messages = [], sceneManager}) {
+      let state = sceneManager.getNodeStateByID(node.id);
       const settings = {...defaults, ...state.script.settings};
       const flight = {
         heading: settings.heading ?? state.transform.rotation[1],
@@ -189,6 +274,45 @@ module.exports = function createFlyScript(node) {
         boosterLeft: Math.max(0, settings.boosterLeft - seconds),
         boost: settings.boost,
       };
+
+      // In a race the server runs, it goes where the server says it was,
+      // held and on the lap it says.
+      const server = messages.at(-1);
+      const clock = (settings.clock ?? 0) + seconds;
+      let start = state.transform.position;
+      let history = settings.history;
+      if (server?.ship) {
+        ({position: start, history} = reconcile(
+          server,
+          history,
+          clock - seconds,
+          clock,
+          start,
+          flight
+        ));
+        const {held = false, lap = 0} = server.ship;
+        if (!!state.held !== held || (state.lap ?? 0) !== lap) {
+          sceneManager.updateNodeStateByID(node.id, {held, lap});
+          state = sceneManager.getNodeStateByID(node.id);
+        }
+      }
+      // remember is what it writes to its settings: how it flies, and in a
+      // race the server runs, where it was when, as of position.
+      const remember = (position) => ({
+        ...state.script.settings,
+        ...flight,
+        ...(history && {
+          clock,
+          history: [
+            ...history.filter((entry) => entry.at > clock - historySeconds),
+            {
+              at: clock,
+              position,
+              ...Object.fromEntries(corrected.map((key) => [key, flight[key]])),
+            },
+          ],
+        }),
+      });
 
       const held = (code) => (keys.has(code) ? 1 : 0);
       const turn = held("ArrowLeft") - held("ArrowRight");
@@ -211,6 +335,7 @@ module.exports = function createFlyScript(node) {
             throttle: flight.throttle,
             boost: flight.boost,
             booster,
+            keys: [...keys],
           });
         }
       };
@@ -231,9 +356,10 @@ module.exports = function createFlyScript(node) {
 
       if (state.held) {
         sceneManager.updateNodeStateByID(node.id, {
-          script: {...state.script, settings: {...state.script.settings, ...flight}},
+          transform: {...state.transform, position: start},
+          script: {...state.script, settings: remember(start)},
         });
-        publish(state.transform.position, state.transform.rotation);
+        publish(start, state.transform.rotation);
         return;
       }
 
@@ -268,7 +394,7 @@ module.exports = function createFlyScript(node) {
       // minHeight. It shrinks gently at first, so a full dive bends into the
       // pull-up rather than snapping, and in proportion to height at the end,
       // so the rocket eases onto minHeight rather than landing on it.
-      const [x, y, z] = state.transform.position;
+      const [x, y, z] = start;
       const above = y - groundAt(x, z) - settings.minHeight;
       const t = Math.max(0, Math.min(1, above / (settings.pullUpHeight || 1)));
       flight.climb = Math.max(flight.climb, -settings.maxClimb * t * (2 - t));
@@ -285,7 +411,7 @@ module.exports = function createFlyScript(node) {
       // rotation, since Matrix4 data is row-major.
       let matrix = rotation(flight.heading, flight.climb, flight.roll);
       const nose = [matrix[2], matrix[6], matrix[10]];
-      const position = state.transform.position.map((v, i) => v + nose[i] * speed * seconds);
+      const position = start.map((v, i) => v + nose[i] * speed * seconds);
 
       // Never go below minHeight, such as when the rocket is moved below it
       // in the editor, or the ground rises under it.
@@ -301,7 +427,7 @@ module.exports = function createFlyScript(node) {
 
       sceneManager.updateNodeStateByID(node.id, {
         transform: {...state.transform, position, rotation: mat4.rotationAngles(matrix)},
-        script: {...state.script, settings: {...state.script.settings, ...flight}},
+        script: {...state.script, settings: remember(position)},
       });
       publish(position, mat4.rotationAngles(matrix));
     },

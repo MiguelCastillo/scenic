@@ -66,6 +66,19 @@ describe("RoomRace", () => {
     expect(again.you).toMatchObject({name: "p1"});
   });
 
+  test("answers with the last thing the player said, and where their ship is", async () => {
+    server = await startServer({root: path.resolve(__dirname, "../..")});
+    const code = await newRace(server);
+    const {player} = await join(server, code);
+    player.say({ship: "saucer", ready: true, seq: 7});
+
+    const {you} = await player.nextWhere(({you}) => you?.ack === 7);
+    expect(you.ackAge).toBeGreaterThanOrEqual(0);
+    expect(you.ship).toMatchObject({held: true, lap: 0});
+    expect(you.ship.transform.position).toHaveLength(3);
+    expect(you.ship.settings.boostSpeed).toBeGreaterThan(0);
+  });
+
   test("gives a player's keys to their ship", async () => {
     server = await startServer({root: path.resolve(__dirname, "../..")});
     const code = await newRace(server);

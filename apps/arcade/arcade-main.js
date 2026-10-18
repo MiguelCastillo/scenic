@@ -487,6 +487,14 @@ domReady.onReady(async () => {
   let snapshot = null;
   let wantedRace = 0;
   let remotePlayers = null;
+  // The number of the last message sent to the server, and when each of the
+  // latest ones was sent, by its number, to match the server's answers to
+  // where the player's ship was here (see fly.js).
+  let seq = 0;
+  const sentAtBySeq = new Map();
+  // The server's latest answer about the player's own ship, until it goes
+  // to the ship.
+  let answer = null;
 
   let game = params.get("game");
   try {
@@ -521,13 +529,13 @@ domReady.onReady(async () => {
     const racedOnServer = (file) =>
       !!manifest.multiplayer && !!manifest.npcs?.scenes?.includes(file);
 
-    // flyFromServer has the player's node in a scene config, the one the
-    // manifest names in "player", run the game's remote script instead of
-    // its own, so that it flies where the server says (see RemotePlayers).
-    const flyFromServer = (config) => {
+    // heldByServer holds the player's node in a scene config, the one the
+    // manifest names in "player", until the server, which runs the race,
+    // says to let it go (see fly.js).
+    const heldByServer = (config) => {
       const visit = (node) => {
         if ((node.id ?? node.name) === manifest.player) {
-          node.script = {src: manifest.multiplayer.remote};
+          node.held = true;
         }
         node.items?.forEach(visit);
       };
@@ -537,9 +545,9 @@ domReady.onReady(async () => {
 
     // loadGame loads one of the game's scenes to play, by its file, with the
     // player's node, the one the manifest names in "player", flying the ship
-    // they chose, if they chose one, where the server says, in a race.
+    // they chose, if they chose one, held until the server says, in a race.
     const loadGame = async (file) => {
-      const loaded = await load(file, racedOnServer(file) ? {edit: flyFromServer} : {});
+      const loaded = await load(file, racedOnServer(file) ? {edit: heldByServer} : {});
       if (shipID) {
         await replaceShip(loaded.scene, manifest.player, await ships.shipConfig(shipID));
       }
@@ -767,15 +775,25 @@ domReady.onReady(async () => {
         );
     // In a race, the server says how it is going, which its scene follows,
     // from its "room" input channel (see race.js), and whose ship is the
-    // player's, every frame.
+    // player's, every frame, and where the player's ship is on the server,
+    // which the ship here goes by (see fly.js).
     receiveEveryFrame(() => {
       if (!remotePlayers) {
         return;
       }
-      playing.scene.sceneManager.input.publish("room", {
+      const {sceneManager} = playing.scene;
+      sceneManager.input.publish("room", {
         type: "network",
         message: {race: snapshot?.race ?? null, you: snapshot?.you?.id ?? null},
       });
+      // This runs just after the scene's frame, so how long ago the ship
+      // here flew as the server's did is measured from it.
+      if (answer) {
+        const ago = (performance.now() - sentAtBySeq.get(answer.ack) - answer.ackAge) / 1000;
+        const channel = sceneManager.getNodeStateByID(manifest.player)?.input ?? "player";
+        sceneManager.input.publish(channel, {type: "network", message: {ship: answer.ship, ago}});
+        answer = null;
+      }
       tellPlayer();
     });
 
@@ -783,9 +801,13 @@ domReady.onReady(async () => {
     // player racing alone, a new one of their own, and tells the server 20
     // times a second what the player does: the ship they fly, whether they
     // play, rather than wait or pause, the keys their ship's script says
-    // they hold, on its node's network channel (see remote-ship.js), and
-    // the race they want to race. What the server says about the race shows
-    // in the scene (see RemotePlayers).
+    // they hold, on its node's network channel (see fly.js), and the race
+    // they want to race, numbered. What the server says about the race shows
+    // in the scene: the other racers (see RemotePlayers), and to the
+    // player's own ship, which flies here from their keys too, the server's
+    // ship, and how long ago the ship here had flown from the same keys:
+    // when the last message the server heard was sent, and then as long as
+    // the server has flown since it heard it.
     if (remotePlayers) {
       const code = roomName ?? (await newRace(game, gameFile));
       const label = roomName ? `Race ${roomName}` : "Race";
@@ -805,19 +827,40 @@ domReady.onReady(async () => {
         onRace: (message) => {
           snapshot = message;
           remotePlayers?.show(message);
+          if (message.you && sentAtBySeq.has(message.you.ack)) {
+            answer = message.you;
+          }
         },
       });
       domEvents.Subscription.create(roomConnectEl).on("click", () => room.connect());
-      setInterval(() => {
+      // The keys the player holds, as the ship's script last said them, and
+      // as they were last sent, which are sent again at once when they
+      // change, since the ship here flies from them at once.
+      const keysHeld = () => {
         const {sceneManager} = playing.scene;
         const channel = sceneManager.getNodeStateByID(manifest.player)?.network;
+        return sceneManager.network.latest(channel)?.keys ?? [];
+      };
+      let keysSent = [];
+      const tellServer = () => {
+        seq += 1;
+        sentAtBySeq.set(seq, performance.now());
+        sentAtBySeq.delete(seq - 100);
+        keysSent = keysHeld();
         room.send({
           ship: shipID,
           ready: playingNow && !pausedNow,
-          keys: sceneManager.network.latest(channel)?.keys ?? [],
+          keys: keysSent,
           race: wantedRace,
+          seq,
         });
-      }, 50);
+      };
+      setInterval(tellServer, 50);
+      receiveEveryFrame(() => {
+        if (keysHeld().join() !== keysSent.join()) {
+          tellServer();
+        }
+      });
     }
 
     let wasUnderWay = null;

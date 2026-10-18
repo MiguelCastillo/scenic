@@ -70,11 +70,14 @@ games/bubble-squadron/
   channel of its own, such as `"p2"`, which their keys go to, and one for
   each NPC. Each one publishes where it is on a network channel of the same
   name, such as fly.js does, which the server sends to everyone 20 times a
-  second, with how the race is going. In the page, the `player` node runs
-  the remote script instead of its own, flying where the server says, and
-  publishing the keys the player holds on the channel its `network` names,
-  for the arcade to send on, and every other racer is a copy of it, running
-  the same script (see `RemotePlayers` in `apps/arcade`), with the `player`
+  second, with how the race is going. In the page, the `player` node flies
+  from the player's keys at once, with its own script, held until the
+  server lets it go, and publishes the keys held on the channel its
+  `network` names, for the arcade to send on with a number; the server
+  answers with where its copy of the ship is, and which message it had
+  heard last, and the ship goes by the difference between them (see
+  `fly.js`). Every other racer is a copy of the `player` node running the
+  remote script (see `RemotePlayers` in `apps/arcade`), with the `player`
   node's collider. The page's race follows the server's: the arcade
   publishes `{race, you}` every frame, as a network message on the scene's
   `room` input channel, which the race node reads by naming that channel
