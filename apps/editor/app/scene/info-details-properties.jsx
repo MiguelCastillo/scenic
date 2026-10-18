@@ -50,6 +50,12 @@ export class InfoDetailsProperties extends WithNodeState {
     this.context.updateScene();
   };
 
+  // handleChangeVisible shows or hides the node, and everything under it.
+  handleChangeVisible = (evt) => {
+    this.updateNodeState({visible: evt.target.checked});
+    this.context.updateScene();
+  };
+
   // handleLookThrough makes the viewport look through camera.
   handleLookThrough = (camera) => {
     const {cameras, updateScene} = this.context;
@@ -93,6 +99,14 @@ export class InfoDetailsProperties extends WithNodeState {
             type="text"
             onChange={(evt) => this.handleChange("type", evt)}
             value={node.type}
+          />
+        </div>
+        <div className="visible">
+          <label>Visible</label>
+          <input
+            type="checkbox"
+            onChange={this.handleChangeVisible}
+            checked={nodeState.visible !== false}
           />
         </div>
         {isRunCamera ? (

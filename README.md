@@ -1119,6 +1119,12 @@ moved. It is where the camera is needed:
 
 Nothing is drawn in it.
 
+A node whose state has `"visible": false` is skipped, with everything under
+it, so none of it is drawn, and a hidden viewport draws nothing. It is still
+in the scene: `preRender` still works out where it is, and its scripts and
+collider still work, so it can be hidden and shown at any time, such as from
+the editor's info tab.
+
 **`render` draws what `prepareForView` decided.** Each viewport draws the
 renderables in its draw list, `renderablesInView`, in their `renderOrder`:
 the background, then solid renderables grouped by shader program, then

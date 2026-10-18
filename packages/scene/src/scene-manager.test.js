@@ -64,6 +64,30 @@ describe("scripts", () => {
     expect(calls).toEqual(["parent.prepareForView", "child.prepareForView"]);
   });
 
+  test("prepare for the view skips hidden nodes and everything under them", () => {
+    const calls = [];
+    const parent = createTrackedNode("parent", calls);
+    const hidden = createTrackedNode("hidden", calls);
+    hidden.add(createTrackedNode("under hidden", calls));
+    parent.add(hidden);
+    parent.add(createTrackedNode("shown", calls));
+    const sceneManager = new SceneManager(
+      new StateManager([{id: "hidden", name: "hidden", visible: false}])
+    ).withNodes([parent]);
+
+    sceneManager.prepareForView(0, null);
+    sceneManager.preRender(0, null);
+
+    expect(calls).toEqual([
+      "parent.prepareForView",
+      "shown.prepareForView",
+      "parent.preRender",
+      "hidden.preRender",
+      "under hidden.preRender",
+      "shown.preRender",
+    ]);
+  });
+
   test("aren't run by render, which only asks each viewport to render", () => {
     const calls = [];
     const viewport = new Viewport({name: "world", id: "world"}).add(

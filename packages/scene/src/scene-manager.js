@@ -216,16 +216,23 @@ export class SceneManager {
   // the camera has moved, so that it never prepares for where the camera
   // was. frame holds anything else the app wants every node to see, and it
   // is added to the context that prepareForView gets.
+  //
+  // A node whose state has "visible": false isn't drawn, nor is anything
+  // under it, so it skips them all. It is still in the scene: preRender
+  // still works out where it is, and its scripts and collider still work, so
+  // it can be hidden and shown again at any time, such as a player's ship
+  // while they watch others race. A hidden viewport draws nothing (see
+  // render).
   prepareForView(ms, gl, frame = {}) {
     const context = {...frame, gl, ms, sceneManager: this};
-    const prepareForViewPass = bubbleTraversal(
-      (node) => {
-        node.prepareForView(context);
-        return node;
-      },
-      () => {}
-    );
-    this.scene.items.forEach(prepareForViewPass);
+    const prepare = (node) => {
+      if (this.getNodeStateByID(node.id)?.visible === false) {
+        return;
+      }
+      node.prepareForView(context);
+      node.items.forEach(prepare);
+    };
+    this.scene.items.forEach(prepare);
   }
 
   // render draws the scene where preRender worked out everything is, at ms,
@@ -242,7 +249,11 @@ export class SceneManager {
   render(ms, gl, frame = {}) {
     const context = {...frame, gl, ms, sceneManager: this};
     for (const viewport of Node.findChildrenByType(this.scene, Viewport)) {
-      viewport.render(context);
+      // A hidden viewport's draw list is the last it had, which it doesn't
+      // draw (see prepareForView).
+      if (this.getNodeStateByID(viewport.id)?.visible !== false) {
+        viewport.render(context);
+      }
     }
   }
 }
