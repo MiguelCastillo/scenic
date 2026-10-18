@@ -206,6 +206,32 @@ describe("ShaderProgram sending to WebGL", () => {
     ]);
   });
 
+  test("sends only the uniforms set last", () => {
+    const gl = fakeGL();
+    const program = new ShaderProgram(gl, {name: "a"});
+    program.setUniforms([
+      uniform("opacity", "uniform1f", 1),
+      uniform("color", "uniform3fv", [1, 1, 1]),
+    ]);
+    program.use();
+    program.setUniforms([uniform("opacity", "uniform1f", 0.5)]);
+    program.use();
+    expect(gl.calls.slice(3)).toEqual([["uniform1f", "opacity", 0.5]]);
+  });
+
+  test("keeps the uniforms a clone adds to itself", () => {
+    const gl = fakeGL();
+    const program = new ShaderProgram(gl, {name: "a"});
+    program.addUniforms([uniform("opacity", "uniform1f", 1)]);
+    const clone = program.clone();
+    clone.addUniforms([uniform("opacity", "uniform1f", 0.5)]);
+    program.use();
+    expect(gl.calls).toEqual([
+      ["useProgram", "a"],
+      ["uniform1f", "opacity", 1],
+    ]);
+  });
+
   test("sends only the uniforms named", () => {
     const gl = fakeGL();
     const program = new ShaderProgram(gl, {name: "a"}).addUniforms([

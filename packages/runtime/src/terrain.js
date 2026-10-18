@@ -198,8 +198,15 @@ export class Terrain extends Mesh {
   // children, and are checked against the view one by one (see below).
   prepareForView(context) {
     const {gl, sceneManager} = context;
-    // Nothing is drawn until there is a camera to choose tiles for.
-    this.tilesToRender.length = 0;
+    // Performance: tilesToRender is refilled by index, counting the tiles in
+    // view in tilesInView, and its length is set once, after they are chosen (see
+    // below). It isn't emptied with tilesToRender.length = 0 and refilled
+    // with push, the usual way: setting an array's length to 0 makes the
+    // JavaScript engine free the block of memory the array keeps its items
+    // in, so the next push allocates a new block, every frame. See
+    // "Refilling an array" in the README.
+    const {tilesToRender} = this;
+    let tilesInView = 0;
 
     // The tiles are kept from frame to frame, built for the ground's shape
     // (see preRender), and built again when it changes.
@@ -215,6 +222,7 @@ export class Terrain extends Mesh {
     const viewport = this.getViewport();
     const camera = viewport?.activeCamera;
     if (!camera) {
+      tilesToRender.length = 0;
       return;
     }
     const far = sceneManager.getNodeStateByID(camera.id).projection?.far || 10000;
@@ -278,13 +286,15 @@ export class Terrain extends Mesh {
     // buildTile).
     //
     // Performance: this checks every tile, every frame, so it refills the
-    // same list rather than filtering into a new one. See "Best practices
-    // for the hot path" in the README.
+    // same list by index rather than filtering into a new one. See "Best
+    // practices for the hot path" in the README.
     for (const tile of this.tiles.values()) {
       if (viewport.canSeeBoundingVolume(tile.boundingVolume, this.worldMatrix)) {
-        this.tilesToRender.push(tile);
+        tilesToRender[tilesInView++] = tile;
       }
     }
+    // Drops last frame's tiles past this frame's, when fewer are in view.
+    tilesToRender.length = tilesInView;
     // With tiles in view, it is drawn by its viewport, like any mesh (see
     // render in Viewport).
     if (this.tilesToRender.length && this.shaderProgram) {

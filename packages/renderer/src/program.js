@@ -20,44 +20,52 @@ const programsInUse = new WeakMap();
 const uniformNames = new WeakMap();
 const uniformValuesByProgram = new WeakMap();
 
-// sameValues is whether last, an array, holds the same numbers as values,
-// numbers or arrays of them.
-function sameValues(last, values) {
-  let i = 0;
-  for (const value of values) {
-    if (typeof value === "object") {
-      for (let j = 0; j < value.length; j++, i++) {
-        if (last[i] !== value[j]) {
-          return false;
-        }
-      }
-    } else if (last[i++] !== Number(value)) {
-      return false;
-    }
+// matchValue is the index in sentValues after value, a number or an array
+// of them, when sentValues holds it from index, or -1 when it doesn't. An
+// undefined value is no value, and a negative index is no match already.
+function matchValue(sentValues, index, value) {
+  if (index < 0 || value === undefined) {
+    return index;
   }
-  return i === last.length;
+  if (typeof value === "object") {
+    for (let j = 0; j < value.length; j++, index++) {
+      if (sentValues[index] !== value[j]) {
+        return -1;
+      }
+    }
+    return index;
+  }
+  return sentValues[index] === Number(value) ? index + 1 : -1;
 }
 
-// storeValues writes values, numbers or arrays of them, into last, an array,
-// reusing it, and returns it.
-function storeValues(last, values) {
-  let i = 0;
-  for (const value of values) {
-    if (typeof value === "object") {
-      for (let j = 0; j < value.length; j++) {
-        last[i++] = value[j];
-      }
-    } else {
-      last[i++] = Number(value);
-    }
+// storeValue writes value, a number or an array of them, into sentValues
+// from index, and returns the index after it. An undefined value is no
+// value.
+function storeValue(sentValues, index, value) {
+  if (value === undefined) {
+    return index;
   }
-  last.length = i;
-  return last;
+  if (typeof value === "object") {
+    for (let j = 0; j < value.length; j++) {
+      sentValues[index++] = value[j];
+    }
+    return index;
+  }
+  sentValues[index] = Number(value);
+  return index + 1;
 }
 
 // The stand-ins for WebGL contexts that uniforms' updates get, by context:
 // the context, except that its uniform calls skip values the program in use
 // already has.
+//
+// Performance: a uniform call runs for every uniform of every mesh drawn,
+// every frame, so it must not allocate. It takes the arguments after the
+// location as four, arg1 to arg4, enough for every WebGL uniform call, such
+// as uniform4f(location, x, y, z, w), rather than as a rest parameter
+// (...args), which would make an array on every call.
+// WebGL ignores the arguments left undefined. See "Best practices for the
+// hot path" in the README.
 const uniformSenders = new WeakMap();
 
 function uniformSender(gl) {
@@ -75,20 +83,39 @@ function uniformSender(gl) {
           methods.set(
             property,
             typeof property === "string" && property.startsWith("uniform")
-              ? (location, ...values) => {
+              ? (location, arg1, arg2, arg3, arg4) => {
                   const program = programsInUse.get(target);
                   const name = location && uniformNames.get(program)?.get(location);
                   if (name == null) {
-                    send(location, ...values);
+                    send(location, arg1, arg2, arg3, arg4);
                     return;
                   }
-                  const valuesByName = uniformValuesByProgram.get(program);
-                  const last = valuesByName.get(name);
-                  if (last && sameValues(last, values)) {
-                    return;
+                  const sentValuesByName = uniformValuesByProgram.get(program);
+                  // Performance: arg1 to arg4 are compared and stored one at
+                  // a time, by matchValue and storeValue, rather than in a
+                  // loop over them, which would need them in an array, made
+                  // on every call. sentValues is refilled by index, and its
+                  // length set at the end, rather than emptied first (see
+                  // "Refilling an array" in the README).
+                  let sentValues = sentValuesByName.get(name);
+                  if (sentValues) {
+                    let index = matchValue(sentValues, 0, arg1);
+                    index = matchValue(sentValues, index, arg2);
+                    index = matchValue(sentValues, index, arg3);
+                    index = matchValue(sentValues, index, arg4);
+                    if (index === sentValues.length) {
+                      return;
+                    }
+                  } else {
+                    sentValues = [];
+                    sentValuesByName.set(name, sentValues);
                   }
-                  valuesByName.set(name, storeValues(last ?? [], values));
-                  send(location, ...values);
+                  let index = storeValue(sentValues, 0, arg1);
+                  index = storeValue(sentValues, index, arg2);
+                  index = storeValue(sentValues, index, arg3);
+                  index = storeValue(sentValues, index, arg4);
+                  sentValues.length = index;
+                  send(location, arg1, arg2, arg3, arg4);
                 }
               : send
           );
@@ -110,49 +137,51 @@ export class ShaderProgram {
     this.gl = gl;
     this.program = program;
     this._attributes = [];
-    this._uniformsByName = {};
-    this._uniformsUpdates = {};
+    // The program's uniform updates, as {uniform, update}: each uniform,
+    // made the first time it is added, with the function that sends its
+    // value, the last one added, or null after setUniforms leaves it out.
+    // They are kept in a list, to send them all, and by the uniform's name,
+    // to change them.
+    //
+    // Performance: uniforms are added for every mesh drawn, every frame, so
+    // each uniform update is made once and its update replaced, and the list
+    // is looped by index, without making arrays of names or iterators. See
+    // "Best practices for the hot path" in the README.
+    this._uniformUpdates = [];
+    this._uniformUpdatesByName = new Map();
     // The buffers the last draw drew, and the vertex attributes it enabled
-    // for them, until the program is released (see draw and release).
+    // for them, the first _enabledAttributeCount of _enabledAttributeIndexes,
+    // until the program is released (see draw and release).
     this._boundVertexBuffers = null;
     this._enabledAttributeIndexes = [];
+    this._enabledAttributeCount = 0;
   }
 
+  // setUniforms makes uniforms the only ones the program sends, each as
+  // {name, update}, with update(gl, uniform) sending its value.
   setUniforms(uniforms) {
-    this._uniformsUpdates = {};
-    for (const uniform of uniforms) {
-      this._uniformsUpdates[uniform.name] = uniform.update;
+    for (let i = 0; i < this._uniformUpdates.length; i++) {
+      this._uniformUpdates[i].update = null;
     }
-
-    // NOTE: Cache can stay in memory forever to avoid recreating uniform
-    // objects each frame. If this becomes a memory issue, then we can
-    // perhaps implement LRU.
-    const newUniforms = uniforms
-      .filter((uniform) => !this._uniformsByName[uniform.name])
-      .map((uniform) => this._createUniform(uniform));
-
-    for (const uniform of newUniforms) {
-      this._uniformsByName[uniform.name] = uniform;
-    }
-
-    return this;
+    return this.addUniforms(uniforms);
   }
 
+  // addUniforms adds uniforms to those the program sends, each as
+  // {name, update}, replacing the update of one already added by its name.
   addUniforms(uniforms) {
-    for (const uniform of uniforms) {
-      this._uniformsUpdates[uniform.name] = uniform.update;
-    }
-
-    const newUniforms = uniforms
-      .filter((uniform) => !this._uniformsByName[uniform.name])
-      .map((uniform) => this._createUniform(uniform));
-
-    if (newUniforms.length) {
-      for (const uniform of newUniforms) {
-        this._uniformsByName[uniform.name] = uniform;
+    for (let i = 0; i < uniforms.length; i++) {
+      const {name, update} = uniforms[i];
+      let uniformUpdate = this._uniformUpdatesByName.get(name);
+      if (!uniformUpdate) {
+        // NOTE: uniforms stay forever, to avoid making them again every
+        // frame. If this becomes a memory issue, then we can perhaps
+        // implement LRU.
+        uniformUpdate = {uniform: this._createUniform(uniforms[i]), update};
+        this._uniformUpdates.push(uniformUpdate);
+        this._uniformUpdatesByName.set(name, uniformUpdate);
       }
+      uniformUpdate.update = update;
     }
-
     return this;
   }
 
@@ -209,8 +238,11 @@ export class ShaderProgram {
   clone() {
     const shaderProgram = new ShaderProgram(this.gl, this.program);
     shaderProgram._attributes = [...this._attributes];
-    shaderProgram._uniformsByName = {...this._uniformsByName};
-    shaderProgram._uniformsUpdates = {...this._uniformsUpdates};
+    for (const {uniform, update} of this._uniformUpdates) {
+      const uniformUpdate = {uniform, update};
+      shaderProgram._uniformUpdates.push(uniformUpdate);
+      shaderProgram._uniformUpdatesByName.set(uniform.name, uniformUpdate);
+    }
     return shaderProgram;
   }
 
@@ -246,16 +278,27 @@ export class ShaderProgram {
       gl.useProgram(this.program);
       programsInUse.set(gl, this.program);
     }
-    this.sendUniforms(Object.keys(this._uniformsUpdates));
+    const sender = uniformSender(gl);
+    for (let i = 0; i < this._uniformUpdates.length; i++) {
+      const {uniform, update} = this._uniformUpdates[i];
+      if (update) {
+        update(sender, uniform);
+      }
+    }
     return this;
   }
 
   // sendUniforms sends the program, which must be in use, the values of the
   // uniforms with names, those it doesn't have yet.
+  //
+  // Performance: it can run for every copy of a mesh drawn, such as each
+  // tree of a forest, so pass names that are made once, such as a constant
+  // array, rather than a new array each time.
   sendUniforms(names) {
     const sender = uniformSender(this.gl);
-    for (const name of names) {
-      this._uniformsUpdates[name](sender, this._uniformsByName[name]);
+    for (let i = 0; i < names.length; i++) {
+      const {uniform, update} = this._uniformUpdatesByName.get(names[i]);
+      update(sender, uniform);
     }
     return this;
   }
@@ -264,24 +307,30 @@ export class ShaderProgram {
   // vertex attributes stay enabled until the program is released, or draws
   // other buffers, so drawing the same buffers again, such as a forest's
   // trees, doesn't set them up again.
+  //
+  // Performance: it runs for every buffer drawn, every frame, so it loops by
+  // index, and finds each attribute's vertex buffer by a name made once
+  // (see vertexBufferName in ShaderAttribute), rather than making a string
+  // or iterator per draw.
   draw(vertexBuffers, primitiveType = this.gl.TRIANGLES) {
     const gl = this.gl;
     if (this._boundVertexBuffers !== vertexBuffers) {
       this.release();
       this._boundVertexBuffers = vertexBuffers;
-      for (const attr of this._attributes) {
-        // We add `s` because the attribure in the shader is singular and the
-        // buffer is plurar.  E.g. the vertex shader has `position` and the
-        // buffer has `positions`.
-        const ubo = vertexBuffers[`${attr.name}s`];
-        if (ubo) {
-          const {index, size, type, normalized, stride, offset} = attr;
+      for (let i = 0; i < this._attributes.length; i++) {
+        const attribute = this._attributes[i];
+        const vertexBuffer = vertexBuffers[attribute.vertexBufferName];
+        if (vertexBuffer) {
+          const {index, size, type, normalized, stride, offset} = attribute;
 
-          ubo.bind(gl);
+          vertexBuffer.bind(gl);
 
           // Enable this shader attribute.
           gl.enableVertexAttribArray(index);
-          this._enabledAttributeIndexes.push(index);
+          // Performance: written by index, up to _enabledAttributeCount,
+          // rather than pushed, since release empties the list by setting
+          // the count to 0, not its length (see release).
+          this._enabledAttributeIndexes[this._enabledAttributeCount++] = index;
 
           // enableVertexAttribArray binds this shader attribute and the
           // currently bound ARRAY_BUFFER we are rendering. So before calling
@@ -327,11 +376,21 @@ export class ShaderProgram {
   // Enabled attributes are global WebGL state, and an attribute left enabled
   // after its buffer is deleted makes every later draw fail with
   // INVALID_OPERATION, even draws whose shaders never read it.
+  //
+  // Performance: it runs for every mesh drawn, every frame. The enabled
+  // attributes are the first _enabledAttributeCount of
+  // _enabledAttributeIndexes, not all of it: the list's length is never set
+  // to 0 or shortened, only its count set to 0. Setting an array's length
+  // to 0 makes the JavaScript engine free the block of memory the array
+  // keeps its items in, so the next draw would allocate a new block. Read
+  // it up to the count, never its length. See "Refilling an array" in the
+  // README.
   release() {
-    for (const index of this._enabledAttributeIndexes) {
-      this.gl.disableVertexAttribArray(index);
+    const enabledAttributeIndexes = this._enabledAttributeIndexes;
+    for (let i = 0; i < this._enabledAttributeCount; i++) {
+      this.gl.disableVertexAttribArray(enabledAttributeIndexes[i]);
     }
-    this._enabledAttributeIndexes = [];
+    this._enabledAttributeCount = 0;
     this._boundVertexBuffers = null;
     return this;
   }

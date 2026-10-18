@@ -1256,10 +1256,59 @@ frame, collected about ten times a second.
 - **Read arrays by index**, with `for (let i = 0; ...)` loops, rather than
   with array destructuring, `map`, `filter`, `reduce` or `forEach` with a new
   closure, which each make something new.
-- **Keep arrays on the object and refill them** (`list.length = 0`), rather
-  than making a new one each frame.
+- **Keep arrays on the object and refill them by index**, rather than
+  making a new one each frame, and never empty them with `length = 0` (see
+  [Refilling an array](#refilling-an-array)).
 - **No spreads** (`[...list]`, `{...object}`), and no strings, such as
   `JSON.stringify` or `toFixed`, made to compare or round numbers.
+
+##### Refilling an array
+
+A list rebuilt every frame, such as the copies of a mesh in view, is kept on
+its object and refilled. How it is refilled matters: **emptying it with
+`list.length = 0` makes garbage every time it is refilled**, even though it
+keeps the same array.
+
+```js
+// Don't: every frame, the push allocates the list's storage again.
+list.length = 0;
+for (...) {
+  list.push(item);
+}
+
+// Do: write over last frame's items, and set the length once, at the end.
+let count = 0;
+for (...) {
+  list[count++] = item;
+}
+list.length = count;
+```
+
+An array is two things: the array object, and a block of memory that holds
+its items. Setting `list.length = 0` keeps the array object, but makes V8,
+the JavaScript engine in Chrome and Node, free the block and point the
+array at a shared empty one. So the next `push` allocates a new block, and
+grows it by allocating bigger ones as it fills. Writing by index reuses the block from last frame, and setting
+`length` to what it already is does nothing.
+
+Shortening an array also costs a little, when its count drops from one
+frame to the next. A list whose count changes all the time, or one only its
+own object reads, can keep its count beside it instead, and never change its
+length, such as `_enabledAttributeIndexes` and `_enabledAttributeCount` in
+`program.js`:
+
+```js
+// Refilling, from the start: the count, not the length, says what is in it.
+this.count = 0;
+this.list[this.count++] = item;
+
+// Reading: up to the count, not the length.
+for (let i = 0; i < this.count; i++) { ... }
+```
+
+Measured in Node, refilling a list of three: `length = 0` and `push` made
+about 200 bytes each time, writing by index and setting the same length
+made nothing, and writing by index and shortening it made about 20 bytes.
 
 **Make few WebGL calls.** Each call costs about as much as a draw.
 

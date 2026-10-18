@@ -302,15 +302,16 @@ export class Mesh extends Renderable {
   //
   // Performance: this runs for every mesh, and every copy of one, such as
   // each tree of a forest, every frame. It must not allocate: it loops by
-  // index, and fills in the copies kept from the last frame. See "Best
-  // practices for the hot path" in the README.
+  // index, fills in the copies kept from the last frame, and refills
+  // copiesToRender by index. See "Best practices for the hot path" in the
+  // README.
   prepareForView(context) {
     const {vertexBuffers, worldMatrices, copiesToRender, copies} = this;
-    copiesToRender.length = 0;
 
     // With nothing to draw, such as before its model has loaded, there is
     // nothing to check against the view either.
     if (!vertexBuffers.length) {
+      copiesToRender.length = 0;
       return;
     }
 
@@ -325,6 +326,14 @@ export class Mesh extends Renderable {
     }
 
     const count = worldMatrices ? worldMatrices.length : 1;
+    // Performance: copiesToRender is refilled by index, counting the copies
+    // in view in copiesInView, and its length is set once, after the loop. It
+    // isn't emptied with copiesToRender.length = 0 and refilled with push,
+    // the usual way: setting an array's length to 0 makes the JavaScript
+    // engine free the block of memory the array keeps its items in, so the
+    // next push allocates a new block, for every mesh, every frame. See
+    // "Refilling an array" in the README.
+    let copiesInView = 0;
     for (let i = 0; i < count; i++) {
       const worldMatrix = worldMatrices ? worldMatrices[i] : this.worldMatrix;
       if (!this.isBoundingVolumeInView(worldMatrix)) {
@@ -338,14 +347,19 @@ export class Mesh extends Renderable {
         continue;
       }
 
-      if (copies.length === copiesToRender.length) {
+      // Performance: each copy is an object kept in copies from frame to
+      // frame and written over, rather than a new {worldMatrix, lod} each
+      // frame. copies only grows, the first time this many are in view.
+      if (copies.length === copiesInView) {
         copies.push({worldMatrix: null, lod: null});
       }
-      const copy = copies[copiesToRender.length];
+      const copy = copies[copiesInView];
       copy.worldMatrix = worldMatrix;
       copy.lod = lod;
-      copiesToRender.push(copy);
+      copiesToRender[copiesInView++] = copy;
     }
+    // Drops last frame's copies past this frame's, when fewer are in view.
+    copiesToRender.length = copiesInView;
 
     // A mesh with copies in view, and a program to draw them with, is drawn
     // by its viewport (see render in Viewport), after everything solid when

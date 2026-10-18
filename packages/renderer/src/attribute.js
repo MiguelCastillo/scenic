@@ -33,5 +33,13 @@ export class ShaderAttribute {
       },
       options
     );
+
+    // vertexBufferName is the name of the vertex buffer the attribute reads,
+    // in the VertexBuffer drawn: its name in the shader, which is singular,
+    // such as `position`, with an s, such as `positions`.
+    //
+    // Performance: it is made once, here, rather than by every draw of every
+    // mesh (see draw in ShaderProgram).
+    this.vertexBufferName = `${this.name}s`;
   }
 }
