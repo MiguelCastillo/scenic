@@ -1323,10 +1323,29 @@ made nothing, and writing by index and shortening it made about 20 bytes.
 
 **Mark it, and measure it.** Code written this way for speed says so in its
 comment, starting with "Performance:", and says what it must not do, so that
-it isn't undone by accident: search for it before changing hot code. To check
-a change, record the game in Chrome's DevTools, in the Memory tab's
-"Allocations on timeline", before and after: its Allocation view shows what
-made garbage, and how much.
+it isn't undone by accident: search for it before changing hot code.
+
+To check a change, run `npm run perf` before and after. It measures, in
+Node, how much garbage parts of the hot path make, such as `ShaderProgram`
+drawing 300 meshes, and fails when any of them makes more than its budget
+(see `perf/run.js`):
+
+```
+Garbage made                                            Measured  Budget
+Check: 1000 objects of two fields                       39.9 KB   40.0 KB  ok
+ShaderProgram draws 300 meshes, 2 copies each, a frame  0.0 B     1.0 KB   ok
+Refill an array of 100 by index, a refill               0.0 B     1.0 B    ok
+```
+
+It measures garbage, not time, since the same code makes the same garbage
+on every run, on any machine. Hot code that has no case yet gets one in
+`perf/`, alongside the change that makes it fast.
+
+Don't measure garbage in the page with `performance.memory`: Chrome updates
+it only every so often, so it doesn't change across a loop, and reads about
+0 for anything. To find what makes garbage in the page, record the game in
+Chrome's DevTools, in the Memory tab's "Allocations on timeline": its
+Allocation view shows what made it, and how much.
 
 ### Disposing a scene
 

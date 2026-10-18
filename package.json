@@ -6,6 +6,7 @@
   "scripts": {
     "test": "npm run test --workspaces",
     "lint": "npm run lint --workspaces",
+    "perf": "node --expose-gc --min-semi-space-size=256 --max-semi-space-size=256 perf/run.js",
     "start": "npm start --workspace server",
     "start-dev": "pm2 start dev.config.js",
     "stop-dev": "pm2 delete server build fingerprint versions",
