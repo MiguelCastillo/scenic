@@ -1314,7 +1314,7 @@ by a name with a hash of what is in it, such as `dist/arcade.3f9a2c41d0.js`
 browsers keep fingerprinted bundles for good, since a bundle that changes
 gets a new name, never keeps pages, so they always name the latest bundles,
 and has browsers check everything else, such as scenes and models, is still
-current before using it (see `server/files.go`).
+current before using it (see `server/src/files.js`).
 
 The usual `npm run test` will run all the tests.
 
@@ -1356,20 +1356,21 @@ Players who open the arcade with the same `?room=`, such as
 `/ws` on the same server as the page. The relay doesn't run the game: each
 player's browser runs it and owns its own ship, and the relay passes what
 each one sends to the others in the room, and tells them who joins and
-leaves (see `server/relay.go` and `apps/arcade/room.js`). The arcade shows
+leaves (see `server/src/relay.js` and `apps/arcade/room.js`). The arcade shows
 the room and how many are playing in it. Rooms for races, at most 6
 players each, are made and found at `/rooms/`, by code (see
-`server/rooms.go`): in Bubble Squadron, Race with friends in the hangar
+`server/src/rooms.js`): in Bubble Squadron, Race with friends in the hangar
 offers Auto join, Join by code and Start new race. A race starts once
 everyone in its scene has clicked to join it (see `apps/arcade/lobby.js`
 and `games/README.md`).
 
-One server serves it all: `server/`, a small Go program that serves the
-pages and every file they load, and the rooms (see `server/main.go`). `npm run start-dev` runs it on port 3000, restarting it when its Go code
+One server serves it all: `server/`, a small Node program that serves the
+pages and every file they load, and the rooms (see `server/src/main.js`).
+`npm run start-dev` runs it on port 3000, restarting it when its code
 changes, and `npm start` runs it on its own. It listens on every network
 address, so a tablet on the same network can play at
-`http://<host>:3000/apps/arcade/index.html`. `go test ./...` in `server/`
-runs its tests.
+`http://<host>:3000/apps/arcade/index.html`. `npm run test` runs its tests
+with everything else's.
 
 The engine itself lives in the `@scenic/*` packages under `packages/`. See
 [`packages/README.md`](packages/README.md).

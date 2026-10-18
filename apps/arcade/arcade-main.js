@@ -361,7 +361,7 @@ domReady.onReady(async () => {
   // chooseRace shows Race with friends, over the hangar, for a race of
   // game's scene, and resolves with the race the player chose, as {code,
   // scene}, its room's code and its scene, or null for Back (see ServeRooms
-  // in server/rooms.go):
+  // in server/src/rooms.js):
   // - Auto join puts them in a race on the same track with a seat free, or
   //   a new one others can be put in.
   // - Join by code joins a friend's race, on whatever track it is. A code

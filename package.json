@@ -6,7 +6,7 @@
   "scripts": {
     "test": "npm run test --workspaces",
     "lint": "npm run lint --workspaces",
-    "start": "cd server && go run . -addr :3000 -static ..",
+    "start": "npm start --workspace server",
     "start-dev": "pm2 start dev.config.js",
     "stop-dev": "pm2 delete server build fingerprint",
     "monit": "pm2 monit",
@@ -49,6 +49,7 @@
     "packages/math",
     "packages/encoding/*",
     "packages/*",
-    "apps/*"
+    "apps/*",
+    "server"
   ]
 }

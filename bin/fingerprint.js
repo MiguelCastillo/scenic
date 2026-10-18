@@ -2,7 +2,7 @@
 // fingerprint gives an app's bundle a name with a hash of what is in it, such
 // as dist/arcade.3f9a2c41d0.js, and writes the app's page to load it, so that
 // browsers can keep a bundle for good: a bundle that changes gets a new name,
-// and the page, which browsers never keep (see server/files.go), always names
+// and the page, which browsers never keep (see server/src/files.js), always names
 // the latest.
 //
 //   bin/fingerprint.js [--watch] apps/arcade/dist/arcade.js [...]

@@ -28,7 +28,7 @@ export const connected = "connected";
 export const disconnected = "disconnected";
 
 // RoomConnection joins a room on the relay, at /ws on the server the page
-// came from (see server/relay.go), so that players who open the arcade with
+// came from (see server/src/relay.js), so that players who open the arcade with
 // the same ?room= play together. Each player's browser runs the game and
 // owns its own player, sends the others messages about it with send, and
 // hears theirs. What the messages hold is the game's business.

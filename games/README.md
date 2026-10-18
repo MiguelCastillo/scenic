@@ -56,7 +56,7 @@ games/bubble-squadron/
   asks which race to join, with Auto join, which puts the player in a race
   on the same track with a seat free, Join by code, to join a friend's
   race, on whatever track it is, and Start new race, whose code the lobby
-  shows, to read out to friends (see `ServeRooms` in `server/rooms.go`). Back,
+  shows, to read out to friends (see `rooms` in `server/src/rooms.js`). Back,
   or Escape, goes back to the tracks. The chosen ship then replaces the parts of the
   `player` node in the track, and leaving the race comes back to the
   hangar.

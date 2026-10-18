@@ -2,16 +2,16 @@ module.exports = {
   apps: [
     {
       // The server for the pages, the files they load and the rooms players
-      // play together in (see server/main.go), restarted when its Go code
+      // play together in (see server/src/main.js), restarted when its code
       // changes.
       name: "server",
-      script: "go",
-      args: "run . -addr :3000 -static ..",
+      script: "node",
+      args: "src/main.js --addr :3000 --static ..",
       cwd: "server",
       interpreter: "none",
       // Watched paths are relative to cwd.
-      watch: ["."],
-      ignore_watch: ["*_test.go"],
+      watch: ["src"],
+      ignore_watch: ["src/*.test.js"],
     },
     {
       // Bundles the apps, and the web worker's file formats, from the

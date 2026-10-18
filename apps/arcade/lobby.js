@@ -27,7 +27,7 @@ export const racing = "racing";
 // to.
 //
 // Players are known by the ids the relay gives them, such as "p2", which it
-// numbers in the order they join (see server/relay.go), so the player who
+// numbers in the order they join (see server/src/relay.js), so the player who
 // joined first comes first.
 //
 // The player who joined the room first is its host, who fills the seats no

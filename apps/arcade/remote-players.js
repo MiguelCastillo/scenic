@@ -37,7 +37,7 @@ const maxMessages = 256;
 //
 // Its API: publishToScene(playerID, {scene, ship, message, npcs}),
 // keep(otherPlayerIDs) and dispose(). Players are known by the ids the relay
-// gives them, such as "p2" (see server/relay.go).
+// gives them, such as "p2" (see server/src/relay.js).
 export class RemotePlayers {
   // scene is the loaded scene playing (see loadScene), and sceneFile its
   // file, such as "race.json".
