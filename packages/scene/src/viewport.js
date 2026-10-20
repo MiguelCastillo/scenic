@@ -1,6 +1,9 @@
 import {Camera} from "./camera.js";
 import {Node} from "./node.js";
 
+// The fog color of fog that doesn't set one.
+const black = [0, 0, 0];
+
 // RenderOrder is when a viewport renders a renderable in view, by what it
 // needs from what is rendered before it (see render in Viewport). A
 // renderable's renderOrder is solid unless it says otherwise.
@@ -42,6 +45,10 @@ export class Viewport extends Node {
     //   is exactly what a frame draws.
     // See "The draw list" in the README for more.
     this.renderablesInView = [];
+    // Performance: where the active camera is, filled in each time it is
+    // sent to a program, rather than made new for every renderable drawn
+    // (see setUniforms).
+    this._cameraPosition = new Float32Array(3);
   }
 
   // Cameras are still added as regular children so that they are part of the
@@ -106,7 +113,6 @@ export class Viewport extends Node {
     // then.
     this._viewProjectionMatrix = null;
     this._frustumPlanes = null;
-    this._viewUniforms = null;
     const fog = context.sceneManager.getNodeStateByID(this.id)?.fog;
     this._fog = fog && fog.enabled !== false ? fog : null;
   }
@@ -235,58 +241,37 @@ export class Viewport extends Node {
     return !boundingVolume.isOutsideView(this.frustumPlanes, worldMatrix);
   }
 
-  // viewUniforms are the shader uniforms that describe how this viewport is
-  // seen: where the active camera is, which lighting uses for specular
-  // highlights, and the fog that fades what is far from the camera. Fog is
-  // the viewport's `fog` state, `{color, near, far}`, and is off when the
-  // state has none or its `enabled` is false.
-  get viewUniforms() {
-    if (!this._viewUniforms) {
-      // Matrix4 data is row-major, so the camera's position is the last
-      // column of its world matrix.
-      const m = this.activeCamera.worldMatrix.data;
-      const cameraPosition = [m[3], m[7], m[11]];
-      const fog = this._fog;
+  // setUniforms sets the uniforms of program, which must be in use, that
+  // describe how this viewport is seen, for the renderables it draws: its
+  // view-projection matrix, where the active camera is, which lighting uses
+  // for specular highlights, and the fog that fades what is far from the
+  // camera. Fog is the viewport's `fog` state, `{color, near, far}`, and is
+  // off when the state has none or its `enabled` is false. It is called
+  // with context too, like every setUniforms, and leaves it out, since it
+  // doesn't need it.
+  //
+  // It is part of render: only a renderable's render calls it, after use(),
+  // itself or through another setUniforms, with render's context; anywhere
+  // else its values go missing (see "Where setUniforms is called" in
+  // drawing.md, at the top of the repo).
+  setUniforms(program) {
+    program.uniform("projectionMatrix").setMatrix4fv(false, this.viewProjectionMatrix.data);
 
-      this._viewUniforms = [
-        {
-          name: "cameraPosition",
-          update: (gl, {index}) => {
-            gl.uniform3fv(index, cameraPosition);
-          },
-        },
-        {
-          name: "fogEnabled",
-          update: (gl, {index}) => {
-            gl.uniform1i(index, !!fog);
-          },
-        },
-      ];
+    // Matrix4 data is row-major, so the camera's position is the last column
+    // of its world matrix.
+    const m = this.activeCamera.worldMatrix.data;
+    const cameraPosition = this._cameraPosition;
+    cameraPosition[0] = m[3];
+    cameraPosition[1] = m[7];
+    cameraPosition[2] = m[11];
+    program.uniform("cameraPosition").set3fv(cameraPosition);
 
-      if (fog) {
-        this._viewUniforms.push(
-          {
-            name: "fogColor",
-            update: (gl, {index}) => {
-              gl.uniform3fv(index, fog.color || [0, 0, 0]);
-            },
-          },
-          {
-            name: "fogNear",
-            update: (gl, {index}) => {
-              gl.uniform1f(index, fog.near);
-            },
-          },
-          {
-            name: "fogFar",
-            update: (gl, {index}) => {
-              gl.uniform1f(index, fog.far);
-            },
-          }
-        );
-      }
+    const fog = this._fog;
+    program.uniform("fogEnabled").set1i(!!fog);
+    if (fog) {
+      program.uniform("fogColor").set3fv(fog.color || black);
+      program.uniform("fogNear").set1f(fog.near);
+      program.uniform("fogFar").set1f(fog.far);
     }
-
-    return this._viewUniforms;
   }
 }

@@ -29,7 +29,7 @@
 // everything would pass every budget.
 import {measureGarbage} from "./measure.js";
 
-const caseFiles = ["./shader-program.js", "./arrays.js"];
+const caseFiles = ["./shader-program.js", "./mesh.js", "./arrays.js"];
 
 // The check: checkObjectCount objects of two fields, which take
 // bytesPerObject each on 64 bit Node, and half that with compressed

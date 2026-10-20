@@ -4,6 +4,9 @@ import {Renderable} from "@scenic/scene";
 
 import {shaderRegistry} from "./shader-registry.js";
 
+// The fill color of a grid that doesn't set one.
+const black = [0, 0, 0];
+
 // Grid draws a flat grid of lines across its local X/Z plane, centered on its
 // origin, such as a floor to see things move against. It draws unlit.
 //
@@ -45,8 +48,38 @@ export class Grid extends Renderable {
     }
   }
 
+  // render draws the grid's square, with its own uniforms and its
+  // viewport's (see setUniforms).
   render(context) {
     const {gl, sceneManager} = context;
+    const {fillColor} = sceneManager.getNodeStateByID(this.id).grid;
+    const program = this.shaderProgram.use();
+    this.setUniforms(program, context);
+    this.getViewport().setUniforms(program, context);
+
+    // The grid is seen from both sides, like a sheet of paper. Without a fill,
+    // its shader gives each line pixel how much of it the line covers as its
+    // alpha, to blend the line over what is behind it.
+    gl.disable(gl.CULL_FACE);
+    if (!fillColor) {
+      gl.enable(gl.BLEND);
+      // Only colors are blended, so the canvas keeps its own alpha.
+      gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ZERO, gl.ONE);
+    }
+    program.draw(this.square);
+    gl.disable(gl.BLEND);
+    gl.enable(gl.CULL_FACE);
+  }
+
+  // setUniforms sets the uniforms of program, which must be in use, whose
+  // values the grid has: where its square is drawn, its lines and its fill.
+  //
+  // It is part of render: only a renderable's render calls it, after use(),
+  // itself or through another setUniforms, with render's context; anywhere
+  // else its values go missing (see "Where setUniforms is called" in
+  // drawing.md, at the top of the repo).
+  setUniforms(program, context) {
+    const {sceneManager} = context;
     const state = sceneManager.getNodeStateByID(this.id);
     const {size, spacing, lineWidth = 1, fillColor} = state.grid;
     const lineColor = state.material.color;
@@ -80,38 +113,14 @@ export class Grid extends Renderable {
       coordOffset = [c[3] - o[3], c[11] - o[11]];
     }
 
-    this.shaderProgram.setUniforms([
-      {
-        name: "projectionMatrix",
-        update: (gl, {index}) =>
-          gl.uniformMatrix4fv(index, false, this.getViewProjectionMatrix().data),
-      },
-      {
-        name: "planeMatrix",
-        update: (gl, {index}) => gl.uniformMatrix4fv(index, true, plane),
-      },
-      {name: "coordScale", update: (gl, {index}) => gl.uniform1f(index, coordScale)},
-      {name: "coordOffset", update: (gl, {index}) => gl.uniform2fv(index, coordOffset)},
-      {name: "spacing", update: (gl, {index}) => gl.uniform1f(index, spacing)},
-      {name: "lineWidth", update: (gl, {index}) => gl.uniform1f(index, lineWidth)},
-      {name: "lineColor", update: (gl, {index}) => gl.uniform4fv(index, lineColor)},
-      {name: "filled", update: (gl, {index}) => gl.uniform1i(index, !!fillColor)},
-      {name: "fillColor", update: (gl, {index}) => gl.uniform3fv(index, fillColor || [0, 0, 0])},
-      ...this.getViewUniforms(),
-    ]);
-
-    // The grid is seen from both sides, like a sheet of paper. Without a fill,
-    // its shader gives each line pixel how much of it the line covers as its
-    // alpha, to blend the line over what is behind it.
-    gl.disable(gl.CULL_FACE);
-    if (!fillColor) {
-      gl.enable(gl.BLEND);
-      // Only colors are blended, so the canvas keeps its own alpha.
-      gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ZERO, gl.ONE);
-    }
-    this.shaderProgram.render(this.square);
-    gl.disable(gl.BLEND);
-    gl.enable(gl.CULL_FACE);
+    program.uniform("planeMatrix").setMatrix4fv(true, plane);
+    program.uniform("coordScale").set1f(coordScale);
+    program.uniform("coordOffset").set2fv(coordOffset);
+    program.uniform("spacing").set1f(spacing);
+    program.uniform("lineWidth").set1f(lineWidth);
+    program.uniform("lineColor").set4fv(lineColor);
+    program.uniform("filled").set1i(!!fillColor);
+    program.uniform("fillColor").set3fv(fillColor || black);
   }
 
   dispose(gl) {

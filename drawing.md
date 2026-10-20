@@ -108,9 +108,11 @@ A program is made from a shader's two compiled shaders, by
 3. It links and validates the program, and throws with WebGL's log when it
    doesn't link.
 
+4. It makes the program's uniforms (see [Uniforms](#uniforms)).
+
 Each call links a new WebGL program. `applyShaders` asks for one for each
-renderable, so each renderable has a WebGL program of its own, and keeps a
-clone of the `ShaderProgram` it is given (`withShaderProgram` in
+renderable, so each renderable has a WebGL program of its own, given to it
+with `withShaderProgram` (see
 [`renderable.js`](packages/scene/src/renderable.js)). The renderable owns its
 program, and deletes it when it is disposed. The compiled shaders are kept,
 since other programs are made from them.
@@ -121,63 +123,140 @@ A uniform is a value a shader reads that is the same for every vertex of a
 draw, such as `projectionMatrix`, `worldMatrix` or `materialColor`. A
 program keeps each uniform's value until it is sent another one.
 
-A renderable gives its program its uniforms as `{name, update}`: the
-uniform's name in the shader, and a function that sends its value, given a
-context and the uniform:
+When a program is made, it asks WebGL for every uniform its shaders have,
+and makes a `ShaderUniform` for each (see
+[`uniform.js`](packages/renderer/src/uniform.js)), with the uniform's name,
+its location, and the values last sent to it. They are kept in the
+program's `uniforms`, by name, as WebGL names them: `materialColor`, or, for
+a field of an array of structs, `lights[0].position`.
+
+`program.uniform(name)` is the uniform named `name`. A name the program's
+shaders don't have gets a uniform whose setters do nothing, the way WebGL
+does nothing with a uniform that has no location, so a renderable can set
+every uniform it has a value for, such as fog, whichever shader it draws
+with.
+
+### Using a program, and setting uniforms
+
+`use()` makes the program the one WebGL draws with, with `useProgram`,
+unless it already is. Which program each context has in use is kept in
+`programsInUse`.
+
+Once its program is in use, a renderable sets its uniforms, with each
+uniform's setter, one for each kind of value: `set1f` for a number, `set1i`
+for an integer or a boolean, such as a texture unit, `set2fv`, `set3fv` and
+`set4fv` for two, three or four numbers, such as a color, and
+`setMatrix4fv(transpose, values)` for a matrix:
 
 ```js
-shaderProgram.addUniforms([
-  {
-    name: "materialColor",
-    update: (gl, {index}) => gl.uniform4fv(index, material.color),
-  },
-]);
+program.use();
+program.uniform("materialColor").set4fv(material.color);
+program.uniform("projectionMatrix").setMatrix4fv(false, viewProjection.data);
 ```
 
-- `addUniforms` adds uniforms to those the program sends, and replaces the
-  `update` of one it already has by name.
-- `setUniforms` makes the uniforms given the only ones the program sends.
+A setter sends its value only when the program doesn't have it already:
+each uniform keeps the values it last sent, and a setter given the same
+values returns without calling WebGL. Lights, fog and materials, which are
+the same frame after frame, are sent once, and after that only what
+changes is.
 
-The first time a program is given a uniform, it looks up the uniform's
-location (`ShaderUniform`, in
-[`uniform.js`](packages/renderer/src/uniform.js), whose `index` is the
-location), and keeps it from then on. A name the shader doesn't have gets
-no location, and sending it does nothing.
+Uniforms are set by whatever has their values, each with
+`setUniforms(program, context)`, which writes its values into `program`, the
+program being set up to draw, not into a program of its own. The viewport,
+for one, has no program: `this.getViewport().setUniforms(program, context)`
+in the terrain's `render` puts the viewport's view-projection, camera and
+fog into the terrain's program.
 
-### Using a program, and sending uniforms
+`setUniforms` is part of `render`. It is only ever called while a
+renderable draws, right after its `use()`, from its `render` (see
+[Where `setUniforms` is called](#where-setuniforms-is-called)), and it is
+split out of `render` only so that each owner sets its own
+values: a renderable its own, and its viewport the view's. So it runs at
+the same moment as the `render` that calls it, with the same `context`,
+and it can do what `render` does: read state through
+`context.sceneManager`, such as a mesh's material, and use the WebGL
+context, `context.gl`, such as to bind a texture, the same way `render`
+uses it for depth and blending.
 
-`use()` gets a program ready to draw with:
+Every `setUniforms` is called with both, so that they are all called the
+same way, and one that doesn't need `context`, such as the viewport's,
+leaves it out, the way a node's `prepareForView()` can.
 
-1. It makes the program the one WebGL draws with, with `useProgram`, unless
-   it already is. Which program each context has in use is kept in
-   `programsInUse`.
-2. It calls every uniform's `update`.
-
-Each `update` is given a stand-in for the context (`uniformSender`), not the
-context itself. Its `uniform…` calls, such as `uniform3fv` or
-`uniformMatrix4fv`, send a value only when the program doesn't have it
-already: each value sent is kept, by WebGL program and uniform name, and a
-call with the same value returns without calling WebGL. Its other calls,
-such as binding a texture, go straight to the context. Values are kept by
-name rather than location, since programs cloned from one another share a
-WebGL program but look up their own locations.
-
-`sendUniforms(names)` calls only the `update` of the uniforms named, for a
-program already in use. A mesh drawn at many places, such as a forest's
-trees, uses its program for the first copy, and for each copy after it
-sends only its world matrix:
+A renderable's `render` uses its program, sets its own uniforms and its
+viewport's, and draws:
 
 ```js
-for (let i = 0; i < copiesToRender.length; i++) {
-  // …give the program this copy's worldMatrix uniform…
-  if (i === 0) {
-    shaderProgram.use();
-  } else {
-    shaderProgram.sendUniforms(["worldMatrix"]);
-  }
-  shaderProgram.draw(vertexBuffer);
+render(context) {
+  const program = this.shaderProgram.use();
+  this.setUniforms(program, context);
+  this.getViewport().setUniforms(program, context);
+  program.draw(this.vertexBuffer);
 }
 ```
+
+- **The viewport** sets how it is seen: its
+  view-projection matrix, where its camera is, and its fog (see
+  [`viewport.js`](packages/scene/src/viewport.js)).
+- **A renderable** sets the values it has, such as a sky's colors or a
+  grid's lines. A mesh's are its lights, by their index in the shader's
+  lights, and its material (see [`mesh.js`](packages/scene/src/mesh.js)).
+  The terrain, a mesh, adds its textures and their settings to a mesh's,
+  and an fbx mesh adds those of the fbx nodes under it.
+- **A `Material` node** holds a mesh's material: its color, its ambient
+  color, how much light it reflects, and its specular highlights. The mesh
+  reads it, under its own state's material and ambient, which win, and
+  over `specularDefaults`, and sets each uniform once, from whichever
+  layer has a value (see `setMaterialUniforms` in `mesh.js`).
+- **An fbx model's nodes** that have uniforms of their own have
+  `setUniforms(program, context)` too, which the fbx mesh's calls: each
+  `Texture` under its `Material`, which binds itself to its unit and turns
+  itself on, and its skinned `Geometry`, which uploads its bone matrices
+  and turns skinning on (see `Mesh` in
+  [`scene-node.js`](packages/runtime/src/loaders/fbx/scene-node.js)).
+
+A mesh drawn at many places, such as a forest's trees, sets its uniforms
+once, then each copy's world matrix before drawing the copy, in its
+`render`, since it changes from copy to copy:
+
+```js
+const worldMatrix = program.uniform("worldMatrix");
+for (const {worldMatrix: copyWorldMatrix} of copiesToRender) {
+  worldMatrix.setMatrix4fv(true, copyWorldMatrix.data);
+  program.draw(vertexBuffer);
+}
+```
+
+### Where `setUniforms` is called
+
+`setUniforms` is part of `render`, and is only called from it, through
+the places below.
+
+Called anywhere else, such as in `preRender` or `prepareForView`, a
+`setUniforms` sets nothing, and its values can go missing for good: the
+renderable draws with old ones, such as last frame's material color, and
+the browser logs `INVALID_OPERATION` warnings. WebGL only sets a
+program's uniform while that program is in use, and outside `render`,
+another program, or none, is. The uniform still keeps the value as sent,
+so its setter skips it from then on, while the program never had it.
+
+So `setUniforms` is only ever called from these places, all of them while
+a renderable draws, after its `use()`:
+
+1. **A renderable's `render`**, right after `use()`, calls its own
+   `this.setUniforms(program, context)` and its viewport's
+   `this.getViewport().setUniforms(program, context)`. Mesh, Light, Sky, Grid,
+   Terrain and the fbx `Armature` do.
+2. **A renderable's `setUniforms`** calls the one it adds to, with
+   `super.setUniforms(program, context)`: the terrain's and the fbx mesh's
+   call Mesh's.
+3. **The fbx mesh's `setUniforms`** calls those of the fbx nodes under it:
+   its skinned `Geometry`'s, and each `Texture`'s under its `Material`.
+
+A new kind of value goes in the `setUniforms` of whatever has it, which
+`render` reaches through one of these. A node under a renderable that has
+uniforms of its own gets a `setUniforms`, called from its renderable's
+`setUniforms`, the way the fbx mesh calls its textures'. Nothing walks the
+scene looking for nodes with a `setUniforms`.
 
 ### Drawing
 
@@ -185,8 +264,7 @@ for (let i = 0; i < copiesToRender.length; i++) {
 use: it binds the buffer's vertex array, then calls `drawElements` with its
 indexes, or, without indexes, `drawArrays` with its positions. It draws
 triangles unless told otherwise, such as `gl.LINES` for an fbx model's
-bones. `render(vertexBuffer, primitiveType)` is `use()` and `draw()` in
-one, for a renderable drawn once.
+bones.
 
 Every draw is counted in `renderStats`, with the triangles it drew, for
 apps to show what a frame costs. The render loop starts a new count each
@@ -194,13 +272,18 @@ frame (see `render-loop.js`).
 
 ### Rules for shader programs
 
-- **Send uniforms through `update`, with the context it is given.** The
-  values kept for skipping are only right if every uniform value a program
-  gets goes through them. A uniform sent with the context itself would leave
-  them stale, and a later value the program needs could be skipped.
-- **A program must be in use for `sendUniforms` and `draw`.** `use()`
-  makes it so.
-- **Only a program's owner disposes it.** A clone shares its WebGL program.
+- **Use the program, then set its uniforms, then draw,** all in `render`.
+  WebGL only sets a uniform of the program in use, so a uniform set before
+  `use()`, or outside `render`, is never set (see
+  [Where `setUniforms` is called](#where-setuniforms-is-called)).
+- **Set uniforms only with their setters.** The values each uniform keeps
+  are only right if every value its program gets goes through them. A
+  value sent with the WebGL context itself would leave them stale, and a
+  later value the program needs could be skipped.
+- **Set a value once a frame.** A uniform set to two different values in
+  one frame, such as a default and then a material's, sends both, every
+  frame. Work the value out first, then set it, the way
+  `setMaterialUniforms` does.
 
 ## Vertex buffers
 
@@ -299,7 +382,7 @@ Everything else belongs to the program, to the context, or to the draw call.
 | What is in each buffer                                                                      | the buffer                                                                     | A vertex array points at buffers, not their data, so data uploaded again with `update`, such as an fbx bone's line every frame, draws without recording anything again, and vertex arrays can share a buffer, such as the terrain's tiles' index buffers. A deleted buffer leaves the vertex arrays pointing at it unable to draw (see [Rules](#rules-for-vertex-arrays)). |
 | Which shader input is at each location                                                      | the program                                                                    | Set when the program is linked, which is why every program binds the same locations (see [Attribute locations](#attribute-locations-vertexattributes)).                                                                                                                                                                                                                    |
 | The value of an attribute a vertex array doesn't enable                                     | the context, set with `vertexAttrib4f` and the like, `(0, 0, 0, 1)` unless set | A shader reading an attribute the geometry has no buffer for, such as `color`, gets that value. The engine never sets it.                                                                                                                                                                                                                                                  |
-| Uniform values                                                                              | the program                                                                    | Each program keeps the values it was sent until it is sent others, whichever vertex array is bound, which is what lets `use()` skip values a program has.                                                                                                                                                                                                                  |
+| Uniform values                                                                              | the program                                                                    | Each program keeps the values it was sent until it is sent others, whichever vertex array is bound, which is what lets its uniforms skip values it has.                                                                                                                                                                                                                    |
 | Which texture each texture unit has                                                         | the context, set with `activeTexture` and `bindTexture`                        | A renderable that draws with a texture binds it to its unit before drawing; a sampler uniform only says which unit to read.                                                                                                                                                                                                                                                |
 | Blending, the depth test and depth writes, face culling, the viewport size, the framebuffer | the context                                                                    | Set around draws: the viewport turns on blending and turns off depth writes for translucent meshes, the grid turns off culling, and an fbx armature turns off the depth test.                                                                                                                                                                                              |
 | How many vertices to draw, the index type, the primitive                                    | the draw call                                                                  | Arguments to `drawElements` or `drawArrays`, given with each draw (see [Drawing](#drawing)).                                                                                                                                                                                                                                                                               |
@@ -409,12 +492,13 @@ viewport (see "The draw list" in the [README](README.md)):
 1. `prepareForView` chooses the copies of the mesh in view, and adds the
    mesh to its viewport's draw list.
 2. The viewport calls the mesh's `render`, in the mesh's render order.
-3. `render` gives the program the mesh's lights, material, view and
-   projection uniforms, with `addUniforms`.
-4. For the first copy, it gives the program the copy's world matrix and
-   calls `use()`, which makes the program the one in use if it isn't, and
-   sends every uniform the program doesn't have yet.
-5. For each copy after it, it gives the program the copy's world matrix and
-   sends only that, with `sendUniforms`.
-6. For each copy, it draws each of the mesh's vertex buffers for the copy's
-   level of detail: `bindVertexArray`, then the draw call.
+3. `render` calls `use()`, which makes the mesh's program the one in use,
+   if it isn't.
+4. Its `setUniforms` sets the program's uniforms for the mesh's lights,
+   its material, from its `Material` node and its state, and, for an fbx
+   mesh, its textures and bones. Then its
+   viewport's `setUniforms` sets its projection, camera and fog. Each is
+   sent only if the program doesn't have it.
+5. For each copy, it sets the copy's world matrix, then draws each of the
+   mesh's vertex buffers for the copy's level of detail: `bindVertexArray`,
+   then the draw call.

@@ -16,7 +16,7 @@
 // means the runs made more garbage than that, and bytesPerRun is too low.
 import {PerformanceObserver, performance} from "node:perf_hooks";
 
-export async function measureGarbage(run, {runs = 200, warmUpRuns = 300, rounds = 3} = {}) {
+export async function measureGarbage(run, {runs = 200, warmUpRuns = 300, rounds = 5} = {}) {
   for (let i = 0; i < warmUpRuns; i++) {
     run();
   }
@@ -40,6 +40,13 @@ export async function measureGarbage(run, {runs = 200, warmUpRuns = 300, rounds 
 // measureRound collects the garbage, then runs run runs times, and measures
 // how much the heap grew by each run, as measureGarbage returns it.
 async function measureRound(run, runs) {
+  // Node compiles code that runs often into faster code in the background,
+  // and starts using it on a later call. Until then, code reading a number
+  // that isn't a whole number, such as a field holding 0.25, makes an
+  // object for it each time, which would be measured as garbage. A moment
+  // before each round lets that compiling finish.
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  run();
   global.gc();
   global.gc();
 

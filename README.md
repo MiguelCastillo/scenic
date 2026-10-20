@@ -663,9 +663,9 @@ the active camera, starting at `near` and fully fogged at `far`. Every scene's
 Without `fog`, or with `"enabled": false`, a viewport has none.
 
 Both can be adjusted live in the editor: specular and shininess on a lit
-material's Material tab, and fog on a viewport's Fog tab. The viewport gives renderables the camera
-position and fog settings as view uniforms (`getViewUniforms`), next to their
-view-projection matrix.
+material's Material tab, and fog on a viewport's Fog tab. The viewport sets
+the camera position and fog uniforms of each renderable's program as it
+draws, with its view-projection matrix (`setUniforms` in `viewport.js`).
 
 ### Sky
 
@@ -1114,8 +1114,9 @@ moved. It is where the camera is needed:
   viewport's draw list, with its `renderOrder`.
 - Nodes that build around the camera do it here, such as the terrain
   building its tiles and the forest planting its trees.
-- Children that set up their renderable's shader program do it here, such
-  as a `Material`'s colors, a `Texture`, or an fbx `Geometry`'s bones.
+- Children that add to how their renderable draws work out what they need
+  here, such as an fbx `Geometry`'s bone matrices. They set their
+  uniforms later, when their renderable draws (see `render` below).
 - Nodes that need a GPU buffer to draw, such as the sky's triangle or the
   grid's square, create it the first time.
 
@@ -1132,8 +1133,10 @@ renderables in its draw list, `renderablesInView`, in their `renderOrder`:
 the background, then solid renderables grouped by shader program, then
 translucent ones farthest first, then overlays (see
 [The draw list](#the-draw-list)). Each renderable's `render` draws only what
-its `prepareForView` chose, such as a mesh's `copiesToRender`, with the
-program its children set up. `SceneManager.render` asks each viewport to
+its `prepareForView` chose, such as a mesh's `copiesToRender`: it uses its
+program, sets its own uniforms and its viewport's, each with
+`setUniforms`, and draws (see
+[Drawing](drawing.md#using-a-program-and-setting-uniforms)). `SceneManager.render` asks each viewport to
 render, rather than walking the scene, since the draw list already holds
 everything to draw. Drawing only reads the scene's state, so the same frame
 can be drawn again, as often as needed.
@@ -1194,13 +1197,14 @@ sequenceDiagram
   SM->>Mesh: prepareForView()
   Mesh->>Mesh: choose copiesToRender
   Mesh->>VP: add itself to renderablesInView
-  SM->>Mat: prepareForView()
-  Mat->>SP: set material uniforms
 
   Note over SM,SP: render, from the draw list
   SM->>VP: render()
   VP->>Mesh: render(), in its renderOrder
-  Mesh->>SP: set lighting and matrix uniforms, draw each copy
+  Mesh->>SP: use()
+  Mesh->>Mat: read its colors, under the mesh's own state
+  Mesh->>SP: set lighting, material and view uniforms
+  Mesh->>SP: set each copy's world matrix, and draw it
 ```
 
 #### The draw list
@@ -1218,8 +1222,8 @@ terrain, the sky or a light, adds itself to the viewport's
   grouped by WebGL program instead, so each program is made the one in use
   once a frame, and the meshes after the first only send what is their
   own, such as their material and world matrix. Values a program already
-  has aren't sent again (see `use` in `program.js`), and with meshes
-  grouped, most of them already are.
+  has aren't sent again (see `ShaderUniform` in `uniform.js`), and with
+  meshes grouped, most of them already are.
 - **Each renderable drawn when it needs to be.** Some renderables depend
   on what is drawn before them: translucent meshes go after everything
   solid, farthest first, so they blend over what is behind them, and an
@@ -1324,9 +1328,10 @@ made nothing, and writing by index and shortening it made about 20 bytes.
 - **Draw from the viewport's draw list**, which groups renderables by shader
   program, so each program is set up once a frame (see
   [The draw list](#the-draw-list)).
-- **Send uniforms through the shader program**, which skips values it
-  already has, and makes a program the one in use only when it isn't
-  already (see `program.js`).
+- **Set uniforms with the program's uniforms**, `program.uniform(name)`,
+  whose setters skip values the program already has, after `use()`, which
+  makes the program the one in use only when it isn't already (see
+  [Drawing](drawing.md#using-a-program-and-setting-uniforms)).
 - **Draw copies of a mesh with `worldMatrices`**, which sends only each
   copy's world matrix, rather than a scene node for each.
 

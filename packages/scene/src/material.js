@@ -1,7 +1,9 @@
-import {Mesh} from "./mesh.js";
 import {Node} from "./node.js";
-import {Renderable} from "./renderable.js";
 
+// Material is the material of the mesh it is under: its color, its ambient
+// color, how much light it reflects, and its specular highlights, from its
+// state. The mesh draws with it, under its own state's material, which wins
+// (see setMaterialUniforms in Mesh).
 export class Material extends Node {
   constructor(
     options = {},
@@ -54,38 +56,6 @@ export class Material extends Node {
       // sets them.
       this.specular = state.material?.specular;
       this.shininess = state.material?.shininess;
-    }
-  }
-
-  // prepareForView sets the material up on its renderable's shader program,
-  // before the renderable is drawn.
-  prepareForView() {
-    const renderable = Node.findParentByType(this, Renderable);
-
-    // A renderable can be waiting for its shader program to load, and then
-    // there is nothing to configure yet.
-    if (renderable?.shaderProgram) {
-      renderable.shaderProgram.addUniforms([
-        {
-          name: "ambientColor",
-          update: (gl, {index}) => {
-            gl.uniform3fv(index, this.ambientColor);
-          },
-        },
-        {
-          name: "materialReflectiveness",
-          update: (gl, {index}) => {
-            gl.uniform1f(index, this.reflectionFactor);
-          },
-        },
-        {
-          name: "materialColor",
-          update: (gl, {index}) => {
-            gl.uniform4fv(index, this.materialColor);
-          },
-        },
-        ...Mesh.specularUniforms(this),
-      ]);
     }
   }
 }

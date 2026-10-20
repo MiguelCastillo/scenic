@@ -13,37 +13,28 @@ export class Light extends Renderable {
     }
   }
 
+  // render draws the light's marker shape, with its own uniforms and its
+  // viewport's (see setUniforms).
   render(context) {
-    const {shaderProgram, worldMatrix, vertexBuffers} = this;
-    const {sceneManager} = context;
+    const program = this.shaderProgram.use();
+    this.setUniforms(program, context);
+    this.getViewport().setUniforms(program, context);
+    const {vertexBuffers} = this;
+    for (let i = 0; i < vertexBuffers.length; i++) {
+      program.draw(vertexBuffers[i]);
+    }
+  }
 
-    const projectionMatrix = this.getViewProjectionMatrix();
-
-    // State of the thing we are rendering.
-    const renderableState = sceneManager.getNodeStateByID(this.id);
-
-    const sp = shaderProgram.setUniforms([
-      {
-        name: "projectionMatrix",
-        update: (gl, {index}) => {
-          gl.uniformMatrix4fv(index, false, projectionMatrix.data);
-        },
-      },
-      {
-        name: "worldMatrix",
-        update: (gl, {index}) => {
-          gl.uniformMatrix4fv(index, true, worldMatrix.data);
-        },
-      },
-      {
-        name: "materialColor",
-        update: (gl, {index}) => {
-          gl.uniform4fv(index, renderableState.material.color);
-        },
-      },
-      ...this.getViewUniforms(),
-    ]);
-
-    vertexBuffers.forEach((vb) => sp.render(vb));
+  // setUniforms sets the uniforms of program, which must be in use, whose
+  // values the light's marker has: where it is, and its material's color.
+  //
+  // It is part of render: only a renderable's render calls it, after use(),
+  // itself or through another setUniforms, with render's context; anywhere
+  // else its values go missing (see "Where setUniforms is called" in
+  // drawing.md, at the top of the repo).
+  setUniforms(program, context) {
+    const {material} = context.sceneManager.getNodeStateByID(this.id);
+    program.uniform("worldMatrix").setMatrix4fv(true, this.worldMatrix.data);
+    program.uniform("materialColor").set4fv(material.color);
   }
 }

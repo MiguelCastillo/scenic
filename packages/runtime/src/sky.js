@@ -92,49 +92,13 @@ export class Sky extends Renderable {
     }
   }
 
+  // render draws the sky's triangle, with its own uniforms and its
+  // viewport's (see setUniforms).
   render(context) {
-    const {gl, ms, sceneManager} = context;
-    const state = {...Sky.defaults, ...sceneManager.getNodeStateByID(this.id).sky};
-
-    // The shader turns each pixel back into the direction it looks in, with
-    // the inverse of the view-projection. Inverting the uploaded data as it
-    // is works whichever way it is laid out, since the inverse of a transpose
-    // is the transpose of the inverse.
-    const inverseViewProjection = mat4.invert(mat4.identity(), this.getViewProjectionMatrix().data);
-
-    const sunDirection = this.getSunDirection(sceneManager, state);
-
-    const vec3Uniform = (name, value) => ({
-      name,
-      update: (gl, {index}) => gl.uniform3fv(index, value),
-    });
-    const floatUniform = (name, value) => ({
-      name,
-      update: (gl, {index}) => gl.uniform1f(index, value),
-    });
-
-    this.shaderProgram.setUniforms([
-      {
-        name: "inverseViewProjection",
-        update: (gl, {index}) => gl.uniformMatrix4fv(index, false, inverseViewProjection),
-      },
-      floatUniform("time", ms / 1000),
-      vec3Uniform("zenithColor", state.zenithColor),
-      vec3Uniform("horizonColor", state.horizonColor),
-      vec3Uniform("groundColor", state.groundColor),
-      vec3Uniform("sunColor", state.sunColor),
-      vec3Uniform("sunDirection", sunDirection),
-      floatUniform("cloudStyle", state.cloudStyle),
-      floatUniform("cloudCover", state.cloudCover),
-      floatUniform("cloudScale", state.cloudScale),
-      floatUniform("cloudSpeed", state.cloudSpeed),
-      vec3Uniform("cloudColor", state.cloudColor),
-      vec3Uniform("cloudShadeColor", state.cloudShadeColor),
-      floatUniform("mountainHeight", Math.sin((state.mountainHeight * Math.PI) / 180)),
-      vec3Uniform("farMountainColor", state.farMountainColor),
-      vec3Uniform("nearMountainColor", state.nearMountainColor),
-      ...this.getViewUniforms(),
-    ]);
+    const {gl} = context;
+    const program = this.shaderProgram.use();
+    this.setUniforms(program, context);
+    this.getViewport().setUniforms(program, context);
 
     // The triangle is at the far plane, so it is drawn where the depth
     // buffer is still clear, whether the sky renders before or after the
@@ -142,14 +106,51 @@ export class Sky extends Renderable {
     // anything drawn after it.
     gl.depthFunc(gl.LEQUAL);
     gl.depthMask(false);
-    this.shaderProgram.render(this.triangle);
+    program.draw(this.triangle);
     gl.depthMask(true);
     gl.depthFunc(gl.LESS);
   }
 
+  // setUniforms sets the uniforms of program, which must be in use, whose
+  // values the sky has: its colors, sun, clouds and mountains, from its
+  // state over Sky.defaults, and the inverse of the view-projection, which
+  // turns each pixel back into the direction it looks in.
+  //
+  // It is part of render: only a renderable's render calls it, after use(),
+  // itself or through another setUniforms, with render's context; anywhere
+  // else its values go missing (see "Where setUniforms is called" in
+  // drawing.md, at the top of the repo).
+  setUniforms(program, context) {
+    const {ms, sceneManager} = context;
+    const state = {...Sky.defaults, ...sceneManager.getNodeStateByID(this.id).sky};
+
+    // Inverting the uploaded data as it is works whichever way it is laid
+    // out, since the inverse of a transpose is the transpose of the inverse.
+    const inverseViewProjection = mat4.invert(mat4.identity(), this.getViewProjectionMatrix().data);
+
+    const sunDirection = this.getSunDirection(sceneManager, state);
+
+    program.uniform("inverseViewProjection").setMatrix4fv(false, inverseViewProjection);
+    program.uniform("time").set1f(ms / 1000);
+    program.uniform("zenithColor").set3fv(state.zenithColor);
+    program.uniform("horizonColor").set3fv(state.horizonColor);
+    program.uniform("groundColor").set3fv(state.groundColor);
+    program.uniform("sunColor").set3fv(state.sunColor);
+    program.uniform("sunDirection").set3fv(sunDirection);
+    program.uniform("cloudStyle").set1f(state.cloudStyle);
+    program.uniform("cloudCover").set1f(state.cloudCover);
+    program.uniform("cloudScale").set1f(state.cloudScale);
+    program.uniform("cloudSpeed").set1f(state.cloudSpeed);
+    program.uniform("cloudColor").set3fv(state.cloudColor);
+    program.uniform("cloudShadeColor").set3fv(state.cloudShadeColor);
+    program.uniform("mountainHeight").set1f(Math.sin((state.mountainHeight * Math.PI) / 180));
+    program.uniform("farMountainColor").set3fv(state.farMountainColor);
+    program.uniform("nearMountainColor").set3fv(state.nearMountainColor);
+  }
+
   // getSunDirection is the direction the sun is in: toward the position of
   // the sky's light marked as the sun, the same way lights shine (see
-  // Mesh.configureLighting), or from the sky's elevation and azimuth without
+  // setLightUniforms in Mesh), or from the sky's elevation and azimuth without
   // one.
   getSunDirection(sceneManager, state) {
     const sun = (this.childrenByTypeName.light || [])

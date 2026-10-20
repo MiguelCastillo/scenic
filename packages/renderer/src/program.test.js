@@ -143,30 +143,30 @@ in vec3 position;
 
 describe("ShaderProgram sending to WebGL", () => {
   // A fake WebGL context that keeps the calls programs make: which program
-  // is used, and the uniforms sent, by name.
+  // is used, and the uniforms sent, by name. A program is {name, uniforms},
+  // with the names of the uniforms its shaders have.
   const fakeGL = () => {
     const calls = [];
     return {
       calls,
       TRIANGLES: 4,
+      ACTIVE_UNIFORMS: 35718,
+      getProgramParameter: (program) => program.uniforms.length,
+      getActiveUniform: (program, i) => ({name: program.uniforms[i]}),
       getUniformLocation: (program, name) => ({name}),
       useProgram: (program) => calls.push(["useProgram", program.name]),
       uniform1f: (location, value) => calls.push(["uniform1f", location.name, value]),
+      uniform1i: (location, value) => calls.push(["uniform1i", location.name, value]),
       uniform3fv: (location, value) => calls.push(["uniform3fv", location.name, [...value]]),
       uniformMatrix4fv: (location, transpose, value) =>
-        calls.push(["uniformMatrix4fv", location.name, [...value]]),
+        calls.push(["uniformMatrix4fv", location.name, transpose, [...value]]),
     };
   };
-  const uniform = (name, method, value) => ({
-    name,
-    update: (gl, {index}) =>
-      method === "uniformMatrix4fv" ? gl[method](index, false, value) : gl[method](index, value),
-  });
 
   test("uses a program only when another one is in use", () => {
     const gl = fakeGL();
-    const a = new ShaderProgram(gl, {name: "a"});
-    const b = new ShaderProgram(gl, {name: "b"});
+    const a = new ShaderProgram(gl, {name: "a", uniforms: []});
+    const b = new ShaderProgram(gl, {name: "b", uniforms: []});
     a.use();
     a.use();
     b.use();
@@ -178,70 +178,78 @@ describe("ShaderProgram sending to WebGL", () => {
     ]);
   });
 
+  test("has a uniform for each one its shaders have", () => {
+    const gl = fakeGL();
+    const program = new ShaderProgram(gl, {name: "a", uniforms: ["color", "lights[0].color"]});
+    expect([...program.uniforms.keys()]).toEqual(["color", "lights[0].color"]);
+    expect(program.uniform("lights[0].color").location).toEqual({name: "lights[0].color"});
+  });
+
   test("sends a uniform only when its value changes", () => {
     const gl = fakeGL();
-    const program = new ShaderProgram(gl, {name: "a"});
-    program.addUniforms([uniform("color", "uniform3fv", [1, 0.5, 0])]).use();
-    program.addUniforms([uniform("color", "uniform3fv", [1, 0.5, 0])]).use();
-    program.addUniforms([uniform("color", "uniform3fv", [0, 0, 1])]).use();
+    const program = new ShaderProgram(gl, {name: "a", uniforms: ["color", "opacity"]}).use();
+    program.uniform("color").set3fv([1, 0.5, 0]);
+    program.uniform("color").set3fv([1, 0.5, 0]);
+    program.uniform("color").set3fv([0, 0, 1]);
+    program.uniform("opacity").set1f(1);
+    program.uniform("opacity").set1f(1);
     expect(gl.calls).toEqual([
       ["useProgram", "a"],
       ["uniform3fv", "color", [1, 0.5, 0]],
       ["uniform3fv", "color", [0, 0, 1]],
-    ]);
-  });
-
-  test("keeps values by program, shared by its clones", () => {
-    const gl = fakeGL();
-    const program = new ShaderProgram(gl, {name: "a"});
-    const clone = program.clone();
-    program.addUniforms([uniform("opacity", "uniform1f", 0.5)]).use();
-    clone.addUniforms([uniform("opacity", "uniform1f", 1)]).use();
-    program.addUniforms([uniform("opacity", "uniform1f", 0.5)]).use();
-    expect(gl.calls).toEqual([
-      ["useProgram", "a"],
-      ["uniform1f", "opacity", 0.5],
-      ["uniform1f", "opacity", 1],
-      ["uniform1f", "opacity", 0.5],
-    ]);
-  });
-
-  test("sends only the uniforms set last", () => {
-    const gl = fakeGL();
-    const program = new ShaderProgram(gl, {name: "a"});
-    program.setUniforms([
-      uniform("opacity", "uniform1f", 1),
-      uniform("color", "uniform3fv", [1, 1, 1]),
-    ]);
-    program.use();
-    program.setUniforms([uniform("opacity", "uniform1f", 0.5)]);
-    program.use();
-    expect(gl.calls.slice(3)).toEqual([["uniform1f", "opacity", 0.5]]);
-  });
-
-  test("keeps the uniforms a clone adds to itself", () => {
-    const gl = fakeGL();
-    const program = new ShaderProgram(gl, {name: "a"});
-    program.addUniforms([uniform("opacity", "uniform1f", 1)]);
-    const clone = program.clone();
-    clone.addUniforms([uniform("opacity", "uniform1f", 0.5)]);
-    program.use();
-    expect(gl.calls).toEqual([
-      ["useProgram", "a"],
       ["uniform1f", "opacity", 1],
     ]);
   });
 
-  test("sends only the uniforms named", () => {
+  test("sends a boolean as an integer, only when it changes", () => {
     const gl = fakeGL();
-    const program = new ShaderProgram(gl, {name: "a"}).addUniforms([
-      uniform("opacity", "uniform1f", 1),
-      uniform("worldMatrix", "uniformMatrix4fv", new Float32Array(16)),
+    const program = new ShaderProgram(gl, {name: "a", uniforms: ["fogEnabled"]}).use();
+    program.uniform("fogEnabled").set1i(true);
+    program.uniform("fogEnabled").set1i(1);
+    program.uniform("fogEnabled").set1i(false);
+    expect(gl.calls.slice(1)).toEqual([
+      ["uniform1i", "fogEnabled", 1],
+      ["uniform1i", "fogEnabled", 0],
     ]);
-    program.use();
-    program.addUniforms([uniform("opacity", "uniform1f", 0.5)]);
-    program.addUniforms([uniform("worldMatrix", "uniformMatrix4fv", new Float32Array(16).fill(1))]);
-    program.sendUniforms(["worldMatrix"]);
-    expect(gl.calls.slice(3)).toEqual([["uniformMatrix4fv", "worldMatrix", Array(16).fill(1)]]);
+  });
+
+  test("sends a matrix again when how to read it changes", () => {
+    const gl = fakeGL();
+    const program = new ShaderProgram(gl, {name: "a", uniforms: ["worldMatrix"]}).use();
+    const matrix = new Float32Array(16).fill(1);
+    program.uniform("worldMatrix").setMatrix4fv(true, matrix);
+    program.uniform("worldMatrix").setMatrix4fv(true, matrix);
+    program.uniform("worldMatrix").setMatrix4fv(false, matrix);
+    matrix[5] = 2;
+    program.uniform("worldMatrix").setMatrix4fv(false, matrix);
+    expect(gl.calls.slice(1).map(([call, name, transpose]) => [call, name, transpose])).toEqual([
+      ["uniformMatrix4fv", "worldMatrix", true],
+      ["uniformMatrix4fv", "worldMatrix", false],
+      ["uniformMatrix4fv", "worldMatrix", false],
+    ]);
+  });
+
+  test("keeps the values sent by program", () => {
+    const gl = fakeGL();
+    const a = new ShaderProgram(gl, {name: "a", uniforms: ["opacity"]});
+    const b = new ShaderProgram(gl, {name: "b", uniforms: ["opacity"]});
+    a.use().uniform("opacity").set1f(0.5);
+    b.use().uniform("opacity").set1f(0.5);
+    a.use().uniform("opacity").set1f(0.5);
+    expect(gl.calls).toEqual([
+      ["useProgram", "a"],
+      ["uniform1f", "opacity", 0.5],
+      ["useProgram", "b"],
+      ["uniform1f", "opacity", 0.5],
+      ["useProgram", "a"],
+    ]);
+  });
+
+  test("does nothing with a uniform its shaders don't have", () => {
+    const gl = fakeGL();
+    const program = new ShaderProgram(gl, {name: "a", uniforms: []}).use();
+    program.uniform("fogColor").set3fv([1, 1, 1]);
+    program.uniform("fogNear").set1f(1);
+    expect(gl.calls).toEqual([["useProgram", "a"]]);
   });
 });

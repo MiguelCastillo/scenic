@@ -8,6 +8,15 @@ import {BoundingBox, Mesh} from "@scenic/scene";
 
 import {shaderRegistry} from "./shader-registry.js";
 
+// The terrain's textures, each with the name of its sampler in the shader,
+// the setting that names its file (see settings), and the [r, g, b, a] pixel
+// that stands in for it until it has loaded.
+const samplers = [
+  {name: "grassTexture", setting: "grassTexture", placeholder: [204, 204, 204, 255]},
+  {name: "dirtTexture", setting: "dirtTexture", placeholder: [204, 204, 204, 255]},
+  {name: "blendTexture", setting: "blendTexture", placeholder: [255, 255, 255, 0]},
+];
+
 // Terrain is ground that goes on forever: gentle, rounded hills rising out of
 // flat meadows, grassy with patches of dirt, lit like any other mesh (see
 // shaders/terrain.frag). Its height anywhere comes from a
@@ -423,59 +432,48 @@ export class Terrain extends Mesh {
     };
   }
 
-  // draw draws the tiles in tilesToRender, all at the terrain's world
-  // matrix, since each tile's positions are already where it goes in the
-  // terrain. It draws with the terrain's textures, loading them the first
-  // time they are needed. Its viewport calls it, like a mesh's render.
+  // render draws the tiles in tilesToRender, with its own uniforms and its
+  // viewport's (see setUniforms). Its viewport calls it, like a mesh's
+  // render.
   render(context) {
-    const {settings, shaderProgram, tilesToRender} = this;
-
-    const samplers = [
-      ["grassTexture", settings.grassTexture, [204, 204, 204, 255]],
-      ["dirtTexture", settings.dirtTexture, [204, 204, 204, 255]],
-      ["blendTexture", settings.blendTexture, [255, 255, 255, 0]],
-    ];
-    const floatUniform = (name, value) => ({
-      name,
-      update: (gl, {index}) => gl.uniform1f(index, value),
-    });
-    const lightsState = this.getLightsState(context);
-    if (lightsState) {
-      Mesh.configureLighting(shaderProgram, lightsState);
+    const program = this.shaderProgram.use();
+    this.setUniforms(program, context);
+    this.getViewport().setUniforms(program, context);
+    const {tilesToRender} = this;
+    for (let i = 0; i < tilesToRender.length; i++) {
+      program.draw(tilesToRender[i].vertexBuffer);
     }
-    const {material, ambient} = this.getMaterialsState(context);
-    Mesh.configureMaterial(shaderProgram, material, ambient);
+  }
 
-    const projectionMatrix = this.getViewProjectionMatrix();
-    const worldMatrix = this.worldMatrix;
-    const program = shaderProgram.addUniforms([
-      {
-        name: "projectionMatrix",
-        update: (gl, {index}) => gl.uniformMatrix4fv(index, false, projectionMatrix.data),
-      },
-      {
-        name: "worldMatrix",
-        update: (gl, {index}) => gl.uniformMatrix4fv(index, true, worldMatrix.data),
-      },
-      ...this.getViewUniforms(),
-      ...samplers.map(([name, url, placeholder], unit) => ({
-        name,
-        update: (gl, {index}) => {
-          gl.activeTexture(gl.TEXTURE0 + unit);
-          gl.bindTexture(gl.TEXTURE_2D, this.getTexture(gl, url, placeholder));
-          gl.uniform1i(index, unit);
-        },
-      })),
-      floatUniform("grassSize", settings.grassSize),
-      floatUniform("dirtSize", settings.dirtSize),
-      floatUniform("blendSize", settings.blendSize),
-      floatUniform("tileSize", settings.tileSize),
-      {name: "showTiles", update: (gl, {index}) => gl.uniform1i(index, !!settings.showTiles)},
-      {name: "dirtColor", update: (gl, {index}) => gl.uniform3fv(index, settings.dirtColor)},
-    ]);
+  // setUniforms sets the uniforms of program, which must be in use, whose
+  // values the terrain has: its lights and material, like a mesh's (see
+  // setUniforms in Mesh), its world matrix, since each tile's positions are
+  // already where it goes in the terrain, and its textures, loading them
+  // the first time they are needed, with their settings.
+  //
+  // It is part of render: only a renderable's render calls it, after use(),
+  // itself or through another setUniforms, with render's context; anywhere
+  // else its values go missing (see "Where setUniforms is called" in
+  // drawing.md, at the top of the repo).
+  setUniforms(program, context) {
+    super.setUniforms(program, context);
+    const {gl} = context;
+    const {settings} = this;
+    program.uniform("worldMatrix").setMatrix4fv(true, this.worldMatrix.data);
 
-    program.use();
-    tilesToRender.forEach((tile) => program.draw(tile.vertexBuffer));
+    // Each texture is bound to its own unit, which its sampler reads.
+    for (let unit = 0; unit < samplers.length; unit++) {
+      const {name, setting, placeholder} = samplers[unit];
+      gl.activeTexture(gl.TEXTURE0 + unit);
+      gl.bindTexture(gl.TEXTURE_2D, this.getTexture(gl, settings[setting], placeholder));
+      program.uniform(name).set1i(unit);
+    }
+    program.uniform("grassSize").set1f(settings.grassSize);
+    program.uniform("dirtSize").set1f(settings.dirtSize);
+    program.uniform("blendSize").set1f(settings.blendSize);
+    program.uniform("tileSize").set1f(settings.tileSize);
+    program.uniform("showTiles").set1i(!!settings.showTiles);
+    program.uniform("dirtColor").set3fv(settings.dirtColor);
   }
 
   // getTexture is the texture at url, which repeats, with placeholder, an

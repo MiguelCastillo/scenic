@@ -66,13 +66,13 @@ export const RenderableInterface = (superclass) =>
       return this;
     }
 
+    // withShaderProgram gives the renderable the shader program it draws
+    // with, which it owns from then on, and deletes when it is disposed.
     withShaderProgram(shaderProgram) {
-      this.shaderProgram = shaderProgram.clone();
+      this.shaderProgram = shaderProgram;
       return this;
     }
 
-    // The renderable owns its shader program, since withShaderProgram keeps a
-    // clone of what it is given.
     dispose(gl) {
       if (this.shaderProgram) {
         this.shaderProgram.dispose();
@@ -87,13 +87,6 @@ export const RenderableInterface = (superclass) =>
     getViewProjectionMatrix() {
       const viewport = this.getViewport();
       return viewport ? viewport.viewProjectionMatrix : _identity;
-    }
-
-    // getViewUniforms are the view uniforms of the closest parent Viewport,
-    // such as the camera position and fog. See Viewport.viewUniforms.
-    getViewUniforms() {
-      const viewport = this.getViewport();
-      return viewport ? viewport.viewUniforms : [];
     }
 
     getViewport() {

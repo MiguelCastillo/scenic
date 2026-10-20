@@ -24,8 +24,11 @@ export function makeStandInGL() {
     ELEMENT_ARRAY_BUFFER: 34963,
     STATIC_DRAW: 35044,
     LINK_STATUS: 35714,
+    ACTIVE_UNIFORMS: 35718,
     TEXTURE0: 33984,
     TEXTURE_2D: 3553,
+    // The canvas it draws into, for its size.
+    canvas: {width: 800, height: 600},
   };
   // The calls that answer nothing.
   const calls = [
@@ -64,13 +67,17 @@ export function makeStandInGL() {
     createVertexArray: () => ({}),
     getAttribLocation: () => 0,
     getProgramInfoLog: () => "",
-    getProgramParameter: () => true,
+    // A program made for measuring is {activeUniforms}, the names of the
+    // uniforms its shaders have, as WebGL lists them.
+    getActiveUniform: (program, i) => ({name: program.activeUniforms[i]}),
+    getProgramParameter: (program, parameter) =>
+      parameter === gl.ACTIVE_UNIFORMS ? program.activeUniforms?.length ?? 0 : true,
     getUniformLocation: () => ({}),
   };
   for (const [call, answer] of Object.entries(answers)) {
-    gl[call] = () => {
+    gl[call] = (first, second) => {
       counter.calls++;
-      return answer();
+      return answer(first, second);
     };
   }
   return {gl, callCount: () => counter.calls};

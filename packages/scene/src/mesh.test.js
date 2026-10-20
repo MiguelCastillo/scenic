@@ -198,7 +198,8 @@ describe("Mesh prepareForView", () => {
 describe("Mesh render at worldMatrices", () => {
   // A mesh in a viewport whose camera is at z 300 looking down -Z, with one
   // buffer around its origin, and a program that keeps what it was asked to
-  // do: [use], [send, names] and [draw].
+  // do: [use], [set, uniform name] for the world matrix, and [draw]. Other
+  // uniforms are set, and not kept.
   const callsAt = (positions) => {
     const camera = new Camera({name: "camera"})
       .withWorldMatrix(mat4.Matrix4.trs([0, 0, 300], [0, 0, 0], [1, 1, 1]))
@@ -216,10 +217,18 @@ describe("Mesh render at worldMatrices", () => {
     mesh.worldMatrices =
       positions && positions.map((p) => mat4.Matrix4.trs(p, [0, 0, 0], [1, 1, 1]));
     const calls = [];
+    const setNothing = {set1f() {}, set1i() {}, set3fv() {}, set4fv() {}, setMatrix4fv() {}};
+    const worldMatrix = {
+      ...setNothing,
+      setMatrix4fv: () => calls.push(["set", "worldMatrix"]),
+    };
+    // use returns the program, as ShaderProgram's does.
     mesh.shaderProgram = {
-      addUniforms: () => mesh.shaderProgram,
-      use: () => calls.push(["use"]),
-      sendUniforms: (names) => calls.push(["send", names]),
+      use() {
+        calls.push(["use"]);
+        return this;
+      },
+      uniform: (name) => (name === "worldMatrix" ? worldMatrix : setNothing),
       draw: () => calls.push(["draw"]),
     };
     mesh.prepareForView(contextWith());
@@ -247,12 +256,12 @@ describe("Mesh render at worldMatrices", () => {
     expect(drawsAt([])).toBe(0);
   });
 
-  test("sets the program up once, and sends only the world matrix after", () => {
+  test("uses the program once, and sets each copy's world matrix before drawing it", () => {
     expect(
       callsAt([
         [0, 0, 0],
         [50, 0, -100],
       ])
-    ).toEqual([["use"], ["draw"], ["send", ["worldMatrix"]], ["draw"]]);
+    ).toEqual([["use"], ["set", "worldMatrix"], ["draw"], ["set", "worldMatrix"], ["draw"]]);
   });
 });

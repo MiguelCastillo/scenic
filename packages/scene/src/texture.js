@@ -1,5 +1,4 @@
 import {Node} from "./node.js";
-import {Renderable} from "./renderable.js";
 
 // The code in the Texture is basically all lifted from:
 // https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/Tutorial/Using_textures_in_WebGL
@@ -8,6 +7,11 @@ export class Texture extends Node {
     super({...options, type: "texture"});
     this.textureID = textureID;
     this.textureType = type;
+    // The names of the uniforms that turn the texture on and name its unit:
+    // a normal map's own, or those of its place among the textures.
+    const uniformName = type === "normalmap" ? "normalmap" : `textures[${textureID}]`;
+    this._enabledUniformName = `${uniformName}.enabled`;
+    this._unitUniformName = `${uniformName}.id`;
   }
 
   load(gl, filepath) {
@@ -83,42 +87,22 @@ export class Texture extends Node {
     return newtexturenode;
   }
 
-  // prepareForView sets the texture up on its renderable's shader program,
-  // before the renderable is drawn.
-  prepareForView() {
-    const renderable = Node.findParentByType(this, Renderable);
-
-    // A renderable can be waiting for its shader program to load, and then
-    // there is nothing to configure yet.
-    if (renderable?.shaderProgram) {
-      const {textureID, textureType} = this;
-      let enabledName, enabledId;
-
-      if (textureType === "normalmap") {
-        enabledName = `${textureType}.enabled`;
-        enabledId = `${textureType}.id`;
-      } else {
-        enabledName = `textures[${textureID}].enabled`;
-        enabledId = `textures[${textureID}].id`;
-      }
-
-      renderable.shaderProgram.addUniforms([
-        {
-          name: enabledName,
-          update: (gl, {index}) => {
-            gl.uniform1i(index, 1);
-          },
-        },
-        {
-          name: enabledId,
-          update: (gl, {index}) => {
-            gl.activeTexture(gl.TEXTURE0 + textureID);
-            gl.bindTexture(gl.TEXTURE_2D, this.texture);
-            gl.uniform1i(index, textureID);
-          },
-        },
-      ]);
-    }
+  // setUniforms binds the texture to its unit, its textureID, and sets the
+  // uniforms of program, the program of the renderable it is under, which
+  // must be in use, that turn it on and name its unit. The fbx mesh it is
+  // under calls it as it draws (see setUniforms in Mesh in
+  // loaders/fbx/scene-node.js, in @scenic/runtime).
+  //
+  // It is part of render: only a renderable's render calls it, after use(),
+  // itself or through another setUniforms, with render's context; anywhere
+  // else its values go missing (see "Where setUniforms is called" in
+  // drawing.md, at the top of the repo).
+  setUniforms(program, context) {
+    const {gl} = context;
+    gl.activeTexture(gl.TEXTURE0 + this.textureID);
+    gl.bindTexture(gl.TEXTURE_2D, this.texture);
+    program.uniform(this._enabledUniformName).set1i(true);
+    program.uniform(this._unitUniformName).set1i(this.textureID);
   }
 }
 

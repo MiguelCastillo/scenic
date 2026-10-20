@@ -1,13 +1,10 @@
 // ShaderProgram drawing a frame the way Mesh.render does (see render in
-// Mesh, in @scenic/scene): for each mesh, add its uniforms, then for each
-// copy of it, add its world matrix, use the program for the first copy and
-// send only the world matrix for the others, and draw. It draws
-// with a stand-in WebGL context, whose calls do nothing.
-//
-// Each mesh's uniforms are made once, ahead, so that what is measured is
-// ShaderProgram's own garbage, not its callers': Mesh.render makes new
-// arrays of uniforms, and closures, every frame, which this doesn't
-// measure.
+// Mesh, in @scenic/scene): for each mesh, use its program, set its
+// uniforms, then for each copy of it, set its world matrix and draw. It
+// draws with a stand-in WebGL context, whose calls do nothing (see
+// stand-in-gl.js). The meshes and their values are made once, ahead, so
+// that what is measured is ShaderProgram's own work, not its callers' (see
+// mesh.js for theirs).
 import {
   ShaderProgram,
   VertexBuffer,
@@ -29,7 +26,7 @@ const vertexBuffersPerMesh = 2;
 function makeMeshes(gl) {
   const shaderPrograms = Array.from(
     {length: programCount},
-    (_, i) => new ShaderProgram(gl, {name: `program ${i}`})
+    () => new ShaderProgram(gl, {activeUniforms: uniformNames})
   );
   const makeVertexBuffer = () =>
     new VertexBuffer({
@@ -38,45 +35,35 @@ function makeMeshes(gl) {
       colors: new VertexBufferData(gl, new Float32Array(30)),
       indexes: new VertexBufferIndexes(gl, new Uint32Array(30)),
     });
-  const matrix = () => ({data: new Float32Array(16)});
-  const projectionMatrix = matrix();
-  const lightPosition = [1, 2, 3];
-
-  return Array.from({length: meshCount}, (_, i) => {
-    const color = [i / meshCount, 1, 1];
-    const shininess = i / meshCount;
-    return {
-      shaderProgram: shaderPrograms[i % programCount],
-      vertexBuffers: Array.from({length: vertexBuffersPerMesh}, makeVertexBuffer),
-      uniforms: [
-        {name: "lightPosition", update: (gl, {index}) => gl.uniform3fv(index, lightPosition)},
-        {name: "lightIntensity", update: (gl, {index}) => gl.uniform1f(index, 1)},
-        {name: "lightCount", update: (gl, {index}) => gl.uniform1i(index, 1)},
-        {name: "materialColor", update: (gl, {index}) => gl.uniform3fv(index, color)},
-        {name: "shininess", update: (gl, {index}) => gl.uniform1f(index, shininess)},
-        {
-          name: "projectionMatrix",
-          update: (gl, {index}) => gl.uniformMatrix4fv(index, false, projectionMatrix.data),
-        },
-      ],
-      worldMatrixUniformsByCopy: Array.from({length: copiesPerMesh}, (_, copy) => {
-        const worldMatrix = matrix();
-        worldMatrix.data[0] = copy;
-        return [
-          {
-            name: "worldMatrix",
-            update: (gl, {index}) => gl.uniformMatrix4fv(index, true, worldMatrix.data),
-          },
-        ];
-      }),
-    };
-  });
+  return Array.from({length: meshCount}, (_, i) => ({
+    shaderProgram: shaderPrograms[i % programCount],
+    vertexBuffers: Array.from({length: vertexBuffersPerMesh}, makeVertexBuffer),
+    color: [i / meshCount, 1, 1],
+    // A whole number: until Node optimizes the frame's function, reading a
+    // field holding a fraction, such as 0.25, makes an object for it each
+    // time, which would be measured as ShaderProgram's garbage (see
+    // measure.js).
+    shininess: 8 + (i % 32),
+    worldMatrices: Array.from({length: copiesPerMesh}, (_, copy) => {
+      const data = new Float32Array(16);
+      data[0] = copy;
+      return data;
+    }),
+  }));
 }
 
-// What a copy after the first sends, made once, as sendUniforms asks for.
-// Mesh.render still makes a new one for each copy, which is its callers'
-// garbage, not ShaderProgram's.
-const worldMatrixNames = ["worldMatrix"];
+// The uniforms the meshes' programs have.
+const uniformNames = [
+  "lightPosition",
+  "lightIntensity",
+  "lightCount",
+  "materialColor",
+  "shininess",
+  "projectionMatrix",
+  "worldMatrix",
+];
+const lightPosition = [1, 2, 3];
+const projectionMatrix = new Float32Array(16);
 
 // makeFrame makes the meshes, with gl, and returns a function that draws
 // them all, once: a frame.
@@ -84,17 +71,25 @@ function makeFrame(gl) {
   const meshesInFrame = makeMeshes(gl);
   return () => {
     for (let m = 0; m < meshesInFrame.length; m++) {
-      const {shaderProgram, vertexBuffers, uniforms, worldMatrixUniformsByCopy} = meshesInFrame[m];
-      shaderProgram.addUniforms(uniforms);
-      for (let i = 0; i < worldMatrixUniformsByCopy.length; i++) {
-        shaderProgram.addUniforms(worldMatrixUniformsByCopy[i]);
-        if (i === 0) {
-          shaderProgram.use();
-        } else {
-          shaderProgram.sendUniforms(worldMatrixNames);
-        }
+      const {
+        shaderProgram: program,
+        vertexBuffers,
+        color,
+        shininess,
+        worldMatrices,
+      } = meshesInFrame[m];
+      program.use();
+      program.uniform("lightPosition").set3fv(lightPosition);
+      program.uniform("lightIntensity").set1f(1);
+      program.uniform("lightCount").set1i(1);
+      program.uniform("materialColor").set3fv(color);
+      program.uniform("shininess").set1f(shininess);
+      program.uniform("projectionMatrix").setMatrix4fv(false, projectionMatrix);
+      const worldMatrix = program.uniform("worldMatrix");
+      for (let i = 0; i < worldMatrices.length; i++) {
+        worldMatrix.setMatrix4fv(true, worldMatrices[i]);
         for (let j = 0; j < vertexBuffers.length; j++) {
-          shaderProgram.draw(vertexBuffers[j]);
+          program.draw(vertexBuffers[j]);
         }
       }
     }

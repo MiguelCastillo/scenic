@@ -13,6 +13,7 @@ import {
   Animation as AnimationSceneNode,
   Geometry as GeometrySceneNode,
   Texture as TextureSceneNode,
+  Material as MaterialSceneNode,
 } from "@scenic/scene";
 
 import {shaderRegistry} from "../../shader-registry.js";
@@ -106,6 +107,31 @@ export class Mesh extends AnimatableInterface(MeshSceneNode) {
     return super.isBoundingVolumeInView(worldMatrix);
   }
 
+  // setUniforms sets the uniforms of program, which must be in use, whose
+  // values the mesh has: a mesh's (see setUniforms in Mesh in
+  // @scenic/scene), and those of the nodes under it that only fbx models
+  // have: its skinned Geometry's bones, and its Material's textures.
+  //
+  // It is part of render: only a renderable's render calls it, after use(),
+  // itself or through another setUniforms, with render's context; anywhere
+  // else its values go missing (see "Where setUniforms is called" in
+  // drawing.md, at the top of the repo).
+  setUniforms(program, context) {
+    super.setUniforms(program, context);
+    for (let i = 0; i < this.items.length; i++) {
+      const child = this.items[i];
+      if (child instanceof Geometry) {
+        child.setUniforms(program, context);
+      } else if (child instanceof MaterialSceneNode) {
+        for (let j = 0; j < child.items.length; j++) {
+          if (child.items[j] instanceof TextureSceneNode) {
+            child.items[j].setUniforms(program, context);
+          }
+        }
+      }
+    }
+  }
+
   getMaterialsState(context) {
     // because we want to read the settings from relative root for the
     // material, we override the getMaterials method
@@ -145,73 +171,77 @@ export class Geometry extends GeometrySceneNode {
     super.dispose(gl);
   }
 
-  // prepareForView sets the bones' matrices up on its renderable's shader
-  // program, before the renderable is drawn, in a texture made the first
-  // time.
+  // prepareForView works out the bones' matrices for this frame, as the
+  // data of a texture, one row of 4 RGBA pixels for each bone's matrix, for
+  // setUniforms to upload as its mesh draws. The texture is made the
+  // first time.
   prepareForView(context) {
     // The parent renderable has no shader program until the shader registry
     // gives it one, which can be a few frames after the model is built, and
-    // then there is nothing to configure yet.
-    let renderable = SceneNode.findParentByType(this, RenderableSceneNode);
-    if (!renderable?.shaderProgram) {
+    // then there is nothing to draw yet.
+    const renderable = SceneNode.findParentByType(this, RenderableSceneNode);
+    this._boneMatrixData = null;
+    if (!renderable?.shaderProgram || !this.skinningEnabled) {
       return;
     }
 
-    if (this.skinningEnabled) {
-      if (!this._boneMatrixTexture) {
-        const {gl} = context;
-        this._boneMatrixTexture = gl.createTexture();
-        gl.bindTexture(gl.TEXTURE_2D, this._boneMatrixTexture);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-      }
-      let boneMatrices = [];
+    if (!this._boneMatrixTexture) {
+      const {gl} = context;
+      this._boneMatrixTexture = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, this._boneMatrixTexture);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    }
+    const boneMatrices = [];
 
-      // Skin deformers deform the mesh for the model we are processing.
-      for (const skin of this.skinDeformers) {
-        for (const cluster of skin.items) {
-          boneMatrices[cluster.boneIndex] = cluster.worldMatrix.transpose().data;
-        }
-      }
-
-      if (boneMatrices.length) {
-        renderable.shaderProgram.addUniforms([
-          {
-            name: "boneMatrixTexture",
-            update: (gl, {index}) => {
-              gl.activeTexture(gl.TEXTURE0);
-              gl.bindTexture(gl.TEXTURE_2D, this._boneMatrixTexture);
-              gl.texImage2D(
-                gl.TEXTURE_2D,
-                0,
-                gl.RGBA32F,
-                4,
-                boneMatrices.length,
-                0,
-                gl.RGBA,
-                gl.FLOAT,
-                // NOTE(miguel): we flip images with UNPACK_FLIP_Y_WEBGL so that
-                // textures can render correctly. But that affects the order
-                // of every texture, including the texture we are creating
-                // with bone matrices. But all we have to do is reverse the
-                // list of matrices, since the matrix increments along the
-                // Y axis.  So reversing the list matrices basically flips
-                // the texture on it Y axis.
-                new Float32Array(boneMatrices.reverse().flat())
-              );
-
-              gl.uniform1i(index, this._boneMatrixTexture);
-            },
-          },
-          {
-            name: "enabledSkinAnimation",
-            update: (gl, {index}) => {
-              gl.uniform1i(index, 1);
-            },
-          },
-        ]);
+    // Skin deformers deform the mesh for the model we are processing.
+    for (const skin of this.skinDeformers) {
+      for (const cluster of skin.items) {
+        boneMatrices[cluster.boneIndex] = cluster.worldMatrix.transpose().data;
       }
     }
+
+    if (boneMatrices.length) {
+      // NOTE(miguel): we flip images with UNPACK_FLIP_Y_WEBGL so that
+      // textures can render correctly. But that affects the order of every
+      // texture, including the texture we are creating with bone matrices.
+      // But all we have to do is reverse the list of matrices, since the
+      // matrix increments along the Y axis. So reversing the list matrices
+      // basically flips the texture on it Y axis.
+      this._boneMatrixData = new Float32Array(boneMatrices.reverse().flat());
+      this._boneCount = boneMatrices.length;
+    }
+  }
+
+  // setUniforms uploads this frame's bone matrices to their texture, on
+  // texture unit 0, and sets the uniforms of program, its renderable's
+  // program, which must be in use, that turn skinning on and read the
+  // texture. Its mesh calls it as it draws (see setUniforms in Mesh).
+  //
+  // It is part of render: only a renderable's render calls it, after use(),
+  // itself or through another setUniforms, with render's context; anywhere
+  // else its values go missing (see "Where setUniforms is called" in
+  // drawing.md, at the top of the repo).
+  setUniforms(program, context) {
+    if (!this._boneMatrixData) {
+      return;
+    }
+    const {gl} = context;
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, this._boneMatrixTexture);
+    gl.texImage2D(
+      gl.TEXTURE_2D,
+      0,
+      gl.RGBA32F,
+      4,
+      this._boneCount,
+      0,
+      gl.RGBA,
+      gl.FLOAT,
+      this._boneMatrixData
+    );
+    program.uniform("boneMatrixTexture").set1i(0);
+    program.uniform("enabledSkinAnimation").set1i(true);
   }
 }
 
@@ -271,36 +301,20 @@ export class Armature extends AnimatableInterface(RenderableSceneNode) {
     }
   }
 
-  render() {
-    const shaderProgram = this.shaderProgram;
-    const gl = shaderProgram.gl;
-    const projectionMatrix = this.getViewProjectionMatrix();
+  // render draws each bone of the skeleton, with its viewport's uniforms,
+  // and each bone's world matrix before drawing the bone.
+  render(context) {
+    const {gl} = context;
+    const program = this.shaderProgram.use();
+    this.getViewport().setUniforms(program, context);
 
     gl.disable(gl.DEPTH_TEST);
-
-    // Configure shader program with its current state.
-    shaderProgram.addUniforms([
-      {
-        name: "projectionMatrix",
-        update: (gl, {index}) => {
-          gl.uniformMatrix4fv(index, false, projectionMatrix.data);
-        },
-      },
-    ]);
-
-    this.renderables.forEach(({vertexBuffer, worldMatrix, primitiveType}) => {
-      shaderProgram
-        .addUniforms([
-          {
-            name: "worldMatrix",
-            update: (gl, {index}) => {
-              gl.uniformMatrix4fv(index, true, worldMatrix.data);
-            },
-          },
-        ])
-        .render(vertexBuffer, primitiveType);
-    });
-
+    const worldMatrix = program.uniform("worldMatrix");
+    for (let i = 0; i < this.renderables.length; i++) {
+      const {vertexBuffer, worldMatrix: boneWorldMatrix, primitiveType} = this.renderables[i];
+      worldMatrix.setMatrix4fv(true, boneWorldMatrix.data);
+      program.draw(vertexBuffer, primitiveType);
+    }
     gl.enable(gl.DEPTH_TEST);
   }
 }

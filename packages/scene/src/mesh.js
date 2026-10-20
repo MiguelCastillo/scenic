@@ -1,5 +1,4 @@
-import {vec3} from "@scenic/math";
-
+import {Material} from "./material.js";
 import {Renderable} from "./renderable.js";
 import {RenderOrder} from "./viewport.js";
 
@@ -27,6 +26,32 @@ const findLights = (node) => {
 // specularDefaults are the specular settings of a material that does not set
 // its own: a moderate shine.
 export const specularDefaults = {specular: 0.5, shininess: 32};
+
+// The names of each light's uniforms, by the light's index in the shader's
+// lights, such as `lights[0].position`.
+//
+// Performance: the names are made once, the first time a light at that
+// index is drawn, rather than made as new strings for every light of every
+// mesh drawn, every frame (see setLightUniforms).
+const lightUniformNamesByIndex = [];
+
+function lightUniformNames(index) {
+  while (lightUniformNamesByIndex.length <= index) {
+    const i = lightUniformNamesByIndex.length;
+    lightUniformNamesByIndex.push({
+      position: `lights[${i}].position`,
+      color: `lights[${i}].color`,
+      intensity: `lights[${i}].intensity`,
+      enabled: `lights[${i}].enabled`,
+    });
+  }
+  return lightUniformNamesByIndex[index];
+}
+
+// Performance: a light's direction, worked out into the same numbers for
+// every light, rather than into a new array for each (see
+// setLightUniforms). The uniform keeps its own copy of what it sends.
+const lightDirection = new Float32Array(3);
 
 export class Mesh extends Renderable {
   constructor(options) {
@@ -57,69 +82,134 @@ export class Mesh extends Renderable {
     this.copies = [];
   }
 
-  // Specular defaults are set once, when the mesh gets its program, and a
-  // program keeps uniform values between frames. A Material node under the
-  // mesh can then override them as it renders, and the mesh's own material
-  // state overrides both when the mesh renders.
-  withShaderProgram(shaderProgram) {
-    super.withShaderProgram(shaderProgram);
-    this.shaderProgram.addUniforms(Mesh.specularUniforms(specularDefaults));
-    return this;
-  }
-
   // render draws copiesToRender, each copy of the mesh in view, with its
   // level of detail and the buffers that aren't one. Its viewport calls it,
-  // when the mesh is in view (see render in Viewport).
+  // when the mesh is in view (see render in Viewport). It uses its program,
+  // sets its own uniforms and its viewport's (see setUniforms), then each
+  // copy's world matrix before drawing the copy.
   //
-  // Performance: the program is set up once, with the mesh's lights,
-  // material and view, and each copy after the first only sends its world
-  // matrix before drawing, since every WebGL call costs about as much as a
-  // draw, and a forest draws hundreds of copies.
+  // Performance: every copy is drawn with the same program and uniforms but
+  // its world matrix, since every WebGL call costs about as much as a draw,
+  // and a forest draws hundreds of copies. The uniforms skip values the
+  // program already has (see ShaderUniform in @scenic/renderer).
   render(context) {
-    const {shaderProgram} = this;
-    const lightsState = this.getLightsState(context);
-    if (lightsState) {
-      Mesh.configureLighting(shaderProgram, lightsState);
-    }
+    const program = this.shaderProgram.use();
+    this.setUniforms(program, context);
+    this.getViewport().setUniforms(program, context);
 
-    const materialState = this.getMaterialsState(context);
-    if (materialState) {
-      Mesh.configureMaterial(shaderProgram, materialState.material, materialState.ambient);
-    }
-
-    const projectionMatrix = this.getViewProjectionMatrix();
-    shaderProgram.addUniforms([
-      {
-        name: "projectionMatrix",
-        update: (gl, {index}) => {
-          gl.uniformMatrix4fv(index, false, projectionMatrix.data);
-        },
-      },
-      ...this.getViewUniforms(),
-    ]);
-
+    const worldMatrix = program.uniform("worldMatrix");
     const {vertexBuffers, copiesToRender} = this;
     for (let i = 0; i < copiesToRender.length; i++) {
-      const {worldMatrix, lod} = copiesToRender[i];
-      shaderProgram.addUniforms([
-        {
-          name: "worldMatrix",
-          update: (gl, {index}) => {
-            gl.uniformMatrix4fv(index, true, worldMatrix.data);
-          },
-        },
-      ]);
-      if (i === 0) {
-        shaderProgram.use();
-      } else {
-        shaderProgram.sendUniforms(["worldMatrix"]);
-      }
+      const copy = copiesToRender[i];
+      worldMatrix.setMatrix4fv(true, copy.worldMatrix.data);
       for (let j = 0; j < vertexBuffers.length; j++) {
         const vb = vertexBuffers[j];
-        if (vb.lodDistance == null || vb === lod) {
-          shaderProgram.draw(vb);
+        if (vb.lodDistance == null || vb === copy.lod) {
+          program.draw(vb);
         }
       }
+    }
+  }
+
+  // setUniforms sets the uniforms of program, which must be in use, whose
+  // values the mesh has: its lights and its material. Each copy's world
+  // matrix is set by render, as it draws the copy.
+  //
+  // It is part of render: only a renderable's render calls it, after use(),
+  // itself or through another setUniforms, with render's context; anywhere
+  // else its values go missing (see "Where setUniforms is called" in
+  // drawing.md, at the top of the repo).
+  setUniforms(program, context) {
+    this.setLightUniforms(program, context);
+    this.setMaterialUniforms(program, context);
+  }
+
+  // setLightUniforms sets the uniforms of program for each light that shines
+  // on the mesh (see getLightsState), by its index in the shader's lights:
+  // its direction, toward its position, its color, its intensity, and that
+  // it is on.
+  setLightUniforms(program, context) {
+    const lights = this.getLightsState(context);
+    for (let i = 0; i < lights.length; i++) {
+      const names = lightUniformNames(i);
+      const lightState = lights[i];
+
+      const position = lightState.transform?.position;
+      if (position != null) {
+        const length = Math.hypot(position[0], position[1], position[2]) || 1;
+        lightDirection[0] = position[0] / length;
+        lightDirection[1] = position[1] / length;
+        lightDirection[2] = position[2] / length;
+        program.uniform(names.position).set3fv(lightDirection);
+      }
+      const color = lightState.light?.color;
+      if (color != null) {
+        program.uniform(names.color).set3fv(color);
+      }
+      const intensity = lightState.light?.intensity;
+      if (intensity != null) {
+        program.uniform(names.intensity).set1f(intensity);
+      }
+      program.uniform(names.enabled).set1i(true);
+    }
+  }
+
+  // setMaterialUniforms sets the uniforms of program for the mesh's
+  // material, from three layers, each over the one before:
+  // specularDefaults, the mesh's Material node, if it has one, the last of
+  // its children that is one, and its state's material and ambient (see
+  // getMaterialsState), which win. A value no layer has isn't set, and the
+  // program keeps the one it has.
+  //
+  // Performance: each value is worked out from the layers before it is set,
+  // so that it is set once, rather than once for each layer, which would
+  // send a value the program doesn't have on every frame for a mesh whose
+  // layers differ.
+  setMaterialUniforms(program, context) {
+    const {material, ambient} = this.getMaterialsState(context);
+    let materialNode = null;
+    for (let i = 0; i < this.items.length; i++) {
+      if (this.items[i] instanceof Material) {
+        materialNode = this.items[i];
+      }
+    }
+
+    const color = material?.color ?? materialNode?.materialColor;
+    if (color != null) {
+      program.uniform("materialColor").set4fv(color);
+    }
+    const reflectiveness = material?.reflectiveness ?? materialNode?.reflectionFactor;
+    if (reflectiveness != null) {
+      program.uniform("materialReflectiveness").set1f(reflectiveness);
+    }
+    if (material?.bumpLighting != null) {
+      program.uniform("bumpLighting").set1i(!!material.bumpLighting);
+    }
+
+    // Specular highlights are scaled by reflectiveness like diffuse light,
+    // so a material that does not reflect light has none.
+    program
+      .uniform("materialSpecular")
+      .set1f(material?.specular ?? materialNode?.specular ?? specularDefaults.specular);
+    program
+      .uniform("materialShininess")
+      .set1f(material?.shininess ?? materialNode?.shininess ?? specularDefaults.shininess);
+
+    // Opacity is always set, since a program keeps uniform values between
+    // meshes, and a translucent mesh drawn before a solid one would
+    // otherwise leave it translucent.
+    program.uniform("materialOpacity").set1f(material?.opacity ?? 1);
+
+    const ambientColor = ambient?.color ?? materialNode?.ambientColor;
+    if (ambientColor != null) {
+      program.uniform("ambientColor").set3fv(ambientColor);
+    }
+    // Ambient light from below is groundColor, which blends with color by
+    // which way surfaces face, or the same as color for flat ambient light.
+    // It is always set with color, since programs keep uniform values
+    // between meshes.
+    if (ambient?.color != null) {
+      program.uniform("ambientGroundColor").set3fv(ambient.groundColor || ambient.color);
     }
   }
 
@@ -139,153 +229,6 @@ export class Mesh extends Renderable {
   // you need a mesh to provide lights state differently.
   getLightsState(context) {
     return findLights(this).map(({id}) => context.sceneManager.getNodeStateByID(id));
-  }
-
-  static configureLighting(shaderProgram, lights) {
-    const uniforms = [];
-
-    for (let i = 0; i < lights.length; i++) {
-      let lightState = lights[i];
-
-      const lightPosition = lightState.transform?.position;
-      if (lightPosition != null) {
-        uniforms.push({
-          name: `lights[${i}].position`,
-          update: (gl, {index}) => {
-            gl.uniform3fv(
-              index,
-              vec3.normalize(lightPosition[0], lightPosition[1], lightPosition[2])
-            );
-          },
-        });
-      }
-
-      const lightColors = lightState.light?.color;
-      if (lightColors != null) {
-        uniforms.push({
-          name: `lights[${i}].color`,
-          update: (gl, {index}) => {
-            gl.uniform3fv(index, lightColors);
-          },
-        });
-      }
-
-      const lightIntensities = lightState.light?.intensity;
-      if (lightIntensities != null) {
-        uniforms.push({
-          name: `lights[${i}].intensity`,
-          update: (gl, {index}) => {
-            gl.uniform1f(index, lightIntensities);
-          },
-        });
-      }
-
-      uniforms.push({
-        name: `lights[${i}].enabled`,
-        update: (gl, {index}) => {
-          gl.uniform1i(index, true);
-        },
-      });
-    }
-
-    shaderProgram.addUniforms(uniforms);
-  }
-
-  static configureMaterial(shaderProgram, material, ambient) {
-    const uniforms = [];
-
-    if (material) {
-      if (material.bumpLighting != null) {
-        uniforms.push({
-          name: "bumpLighting",
-          update: (gl, {index}) => {
-            gl.uniform1i(index, !!material.bumpLighting);
-          },
-        });
-      }
-      if (material.reflectiveness != null) {
-        uniforms.push({
-          name: "materialReflectiveness",
-          update: (gl, {index}) => {
-            gl.uniform1f(index, material.reflectiveness == null ? 1 : material.reflectiveness);
-          },
-        });
-      }
-      if (material.color != null) {
-        uniforms.push({
-          name: "materialColor",
-          update: (gl, {index}) => {
-            gl.uniform4fv(index, material.color || [1, 1, 1, 1]);
-          },
-        });
-      }
-    }
-
-    if (material) {
-      uniforms.push(...Mesh.specularUniforms(material));
-    }
-
-    // Opacity is always set, since a program keeps uniform values between
-    // meshes, and a translucent mesh drawn before a solid one would
-    // otherwise leave it translucent.
-    uniforms.push({
-      name: "materialOpacity",
-      update: (gl, {index}) => {
-        gl.uniform1f(index, material?.opacity ?? 1);
-      },
-    });
-
-    if (ambient) {
-      if (ambient.color != null) {
-        uniforms.push({
-          name: "ambientColor",
-          update: (gl, {index}) => {
-            const color = ambient.color || [0, 0, 0];
-            gl.uniform3fv(index, color);
-          },
-        });
-
-        // Ambient light from below is groundColor, which blends with color
-        // by which way surfaces face, or the same as color for flat ambient
-        // light. It is always set with color, since programs keep uniform
-        // values between meshes.
-        uniforms.push({
-          name: "ambientGroundColor",
-          update: (gl, {index}) => {
-            gl.uniform3fv(index, ambient.groundColor || ambient.color);
-          },
-        });
-      }
-    }
-
-    if (uniforms.length) {
-      shaderProgram.addUniforms(uniforms);
-    }
-  }
-
-  // specularUniforms configures specular highlights from a material's
-  // `specular` and `shininess`, for the ones it sets. Highlights are scaled
-  // by reflectiveness like diffuse light, so a material that does not reflect
-  // light has none.
-  static specularUniforms({specular, shininess}) {
-    const uniforms = [];
-    if (specular != null) {
-      uniforms.push({
-        name: "materialSpecular",
-        update: (gl, {index}) => {
-          gl.uniform1f(index, specular);
-        },
-      });
-    }
-    if (shininess != null) {
-      uniforms.push({
-        name: "materialShininess",
-        update: (gl, {index}) => {
-          gl.uniform1f(index, shininess);
-        },
-      });
-    }
-    return uniforms;
   }
 
   // prepareForView chooses what the mesh draws this frame into
