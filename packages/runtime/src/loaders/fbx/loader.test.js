@@ -43,6 +43,12 @@ function createSceneContextForTests(...sceneConfigItems) {
   const sceneManager = createScene(sceneNodeConfig);
   const canvas = new HTMLCanvasElement(500, 500);
   const gl = canvas.getContext("webgl");
+  // webgl-mock is a WebGL1 context, and the engine draws with WebGL2's
+  // vertex arrays (see VertexBuffer in @scenic/renderer), so the test's
+  // context gets them, doing nothing, like the mock's other calls.
+  gl.createVertexArray = () => ({});
+  gl.bindVertexArray = () => {};
+  gl.deleteVertexArray = () => {};
   return {
     gl,
     sceneManager,

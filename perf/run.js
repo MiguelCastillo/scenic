@@ -1,21 +1,28 @@
-// run measures the garbage the engine's hot path makes (see "Best practices
-// for the hot path" in the README), and fails when any of it is over its
-// budget, so that a change that undoes the work to make none is caught:
+// run measures the garbage the engine's hot path makes, and the WebGL calls
+// it makes (see "Best practices for the hot path" in the README), and fails
+// when any of it is over its budget, so that a change that undoes the work
+// to make few is caught:
 //
 //   npm run perf
 //
-// It measures garbage, in bytes, rather than time: the same code makes the
-// same garbage on every run, on any machine, so a budget can be close to
-// what is measured, where a time would change with the machine and what
-// else it is doing.
+// It measures garbage, in bytes, and calls, rather than time: the same code
+// makes the same garbage and the same calls on every run, on any machine,
+// so a budget can be close to what is measured, where a time would change
+// with the machine and what else it is doing.
 //
 // Each file listed in caseFiles exports cases, each as {name, per,
 // budgetBytes, setUp}: what it measures, what one run is, such as a
 // "frame", the most garbage one run may make, and a function that sets the
-// case up and returns the function to run. A budget is about twice what was
-// measured when it was set, so that small changes don't trip it, or, for
-// code that makes none, a little over nothing. A change that lowers what a
-// case makes, on purpose, lowers its budget too.
+// case up and returns the function to run. A case that counts WebGL calls
+// instead is {name, per, budgetCalls, countCalls}: the most calls one run
+// may make, and a function that makes one run and returns how many calls it
+// made (see stand-in-gl.js).
+//
+// A garbage budget is about twice what was measured when it was set, so
+// that small changes don't trip it, or, for code that makes none, a little
+// over nothing. A calls budget is what was measured, since calls are exact.
+// A change that lowers what a case makes, on purpose, lowers its budget
+// too, and one that adds calls on purpose raises it, saying why.
 //
 // Before any case, it checks that it measures right, by measuring something
 // whose size is known, and stops if it doesn't: a measure that reads 0 for
@@ -76,7 +83,19 @@ rows.push([
 
 for (const file of caseFiles) {
   const {cases} = await import(file);
-  for (const {name, per, budgetBytes, setUp} of cases) {
+  for (const {name, per, budgetBytes, setUp, budgetCalls, countCalls} of cases) {
+    if (countCalls) {
+      const calls = countCalls();
+      const overBudget = calls > budgetCalls;
+      anyOverBudget ||= overBudget;
+      rows.push([
+        `${name}, a ${per}`,
+        `${calls} calls`,
+        `${budgetCalls} calls`,
+        overBudget ? "OVER BUDGET" : "ok",
+      ]);
+      continue;
+    }
     const {bytesPerRun, collectedDuringRuns} = await measureGarbage(setUp());
     const overBudget = collectedDuringRuns || bytesPerRun > budgetBytes;
     anyOverBudget ||= overBudget;
@@ -89,7 +108,7 @@ for (const file of caseFiles) {
   }
 }
 
-const header = ["Garbage made", "Measured", "Budget", ""];
+const header = ["What it makes", "Measured", "Budget", ""];
 const widths = header.map((_, column) =>
   Math.max(...[header, ...rows].map((row) => row[column].length))
 );
@@ -103,7 +122,7 @@ console.log(formatRow(header));
 rows.forEach((row) => console.log(formatRow(row)));
 if (anyOverBudget) {
   console.log(
-    '\nSomething makes more garbage than its budget: see "Best practices for the hot path" in the README.'
+    '\nSomething is over its budget: see "Best practices for the hot path" in the README.'
   );
   process.exit(1);
 }

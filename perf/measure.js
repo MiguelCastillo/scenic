@@ -4,6 +4,11 @@
 // anything made only once, such as caches, is made, then collects the
 // garbage, runs run runs times, and divides how much the heap grew by them.
 //
+// It measures rounds times, and keeps the round that grew the heap least.
+// The garbage run makes is the same in every round, but Node now and then
+// grows the heap on its own while run runs, such as by compiling run into
+// faster code, which shows up in one round as garbage run didn't make.
+//
 // The heap's growth is only the garbage made if nothing is collected while
 // run runs, so Node must run with a young generation bigger than the runs
 // make, such as --min-semi-space-size=256 --max-semi-space-size=256 (see
@@ -11,10 +16,30 @@
 // means the runs made more garbage than that, and bytesPerRun is too low.
 import {PerformanceObserver, performance} from "node:perf_hooks";
 
-export async function measureGarbage(run, {runs = 200, warmUpRuns = 300} = {}) {
+export async function measureGarbage(run, {runs = 200, warmUpRuns = 300, rounds = 3} = {}) {
   for (let i = 0; i < warmUpRuns; i++) {
     run();
   }
+  let least = null;
+  for (let round = 0; round < rounds; round++) {
+    const measured = await measureRound(run, runs);
+    // A round with a collection reads too low, so it is only kept when
+    // every round had one.
+    if (
+      !least ||
+      (least.collectedDuringRuns && !measured.collectedDuringRuns) ||
+      (least.collectedDuringRuns === measured.collectedDuringRuns &&
+        measured.bytesPerRun < least.bytesPerRun)
+    ) {
+      least = measured;
+    }
+  }
+  return least;
+}
+
+// measureRound collects the garbage, then runs run runs times, and measures
+// how much the heap grew by each run, as measureGarbage returns it.
+async function measureRound(run, runs) {
   global.gc();
   global.gc();
 

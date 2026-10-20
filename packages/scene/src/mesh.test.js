@@ -198,7 +198,7 @@ describe("Mesh prepareForView", () => {
 describe("Mesh render at worldMatrices", () => {
   // A mesh in a viewport whose camera is at z 300 looking down -Z, with one
   // buffer around its origin, and a program that keeps what it was asked to
-  // do: [use], [send, names], [draw] and [release].
+  // do: [use], [send, names] and [draw].
   const callsAt = (positions) => {
     const camera = new Camera({name: "camera"})
       .withWorldMatrix(mat4.Matrix4.trs([0, 0, 300], [0, 0, 0], [1, 1, 1]))
@@ -221,7 +221,6 @@ describe("Mesh render at worldMatrices", () => {
       use: () => calls.push(["use"]),
       sendUniforms: (names) => calls.push(["send", names]),
       draw: () => calls.push(["draw"]),
-      release: () => calls.push(["release"]),
     };
     mesh.prepareForView(contextWith());
     mesh.render(contextWith());
@@ -254,6 +253,6 @@ describe("Mesh render at worldMatrices", () => {
         [0, 0, 0],
         [50, 0, -100],
       ])
-    ).toEqual([["use"], ["draw"], ["send", ["worldMatrix"]], ["draw"], ["release"]]);
+    ).toEqual([["use"], ["draw"], ["send", ["worldMatrix"]], ["draw"]]);
   });
 });

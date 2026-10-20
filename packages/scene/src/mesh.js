@@ -121,7 +121,6 @@ export class Mesh extends Renderable {
         }
       }
     }
-    shaderProgram.release();
   }
 
   // getMaterialsState provides the current state of the material for this

@@ -28,21 +28,16 @@ export function buildSceneNode(gl, model, sceneNode, sceneManager, lodDistance) 
   }
   let {vertices, normals, colors} = model;
 
-  const vertexBuffer = VertexBuffer.create({
+  const hasNormals = normals.byteLength || normals.length;
+  const hasColors = colors.byteLength || colors.length;
+  const vertexBuffer = new VertexBuffer({
     positions: new VertexBufferData(gl, vertices),
+    normals: new VertexBufferData(
+      gl,
+      hasNormals ? normals : geo.normalizeTriangleVertices(new Float32Array(vertices))
+    ),
+    colors: hasColors ? new VertexBufferData(gl, colors) : undefined,
   });
-
-  if (!normals.byteLength && !normals.length) {
-    vertexBuffer.withNormals(
-      new VertexBufferData(gl, geo.normalizeTriangleVertices(new Float32Array(vertices)))
-    );
-  } else {
-    vertexBuffer.withNormals(new VertexBufferData(gl, normals));
-  }
-
-  if (colors.byteLength || colors.length) {
-    vertexBuffer.withColors(new VertexBufferData(gl, colors));
-  }
 
   if (!isStaticMesh(sceneNode) && !isSkinnedMesh(sceneNode) && !isLight(sceneNode)) {
     throw new Error("OBJ files can only be loaded into a static-mesh, skinned-mesh or light");

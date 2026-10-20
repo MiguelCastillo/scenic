@@ -932,7 +932,9 @@ tuned live from its Forest tab.
 
 ### Renderable, Mesh and Geometry
 
-Drawing is split across three kinds of nodes:
+Drawing is split across three kinds of nodes. How shader programs and
+vertex buffers work underneath them, from loading shaders to the draw call,
+is in [Drawing: shader programs and vertex buffers](drawing.md).
 
 - A **`Renderable`** is a node that can draw. It owns a shader program, and
   keeps the bounding volume around its geometries.
@@ -1312,6 +1314,13 @@ made nothing, and writing by index and shortening it made about 20 bytes.
 
 **Make few WebGL calls.** Each call costs about as much as a draw.
 
+- **Set things up when they are made, not when they are drawn.** Anything
+  that stays the same from frame to frame, such as which buffer each
+  vertex attribute reads, is set up once, when a shader, a geometry or a
+  texture is loaded or changes, and drawing only uses it. A geometry's
+  `VertexBuffer` records its buffers in a vertex array when it is made, so
+  drawing it is `bindVertexArray` and the draw call (see
+  [Vertex arrays](drawing.md#vertex-arrays) in drawing.md).
 - **Draw from the viewport's draw list**, which groups renderables by shader
   program, so each program is set up once a frame (see
   [The draw list](#the-draw-list)).
@@ -1326,19 +1335,21 @@ comment, starting with "Performance:", and says what it must not do, so that
 it isn't undone by accident: search for it before changing hot code.
 
 To check a change, run `npm run perf` before and after. It measures, in
-Node, how much garbage parts of the hot path make, such as `ShaderProgram`
-drawing 300 meshes, and fails when any of them makes more than its budget
-(see `perf/run.js`):
+Node, how much garbage parts of the hot path make, and how many WebGL calls,
+such as `ShaderProgram` drawing 300 meshes with a stand-in WebGL context
+that counts them, and fails when any of them is over its budget (see
+`perf/run.js`):
 
 ```
-Garbage made                                            Measured  Budget
-Check: 1000 objects of two fields                       39.9 KB   40.0 KB  ok
-ShaderProgram draws 300 meshes, 2 copies each, a frame  0.0 B     1.0 KB   ok
-Refill an array of 100 by index, a refill               0.0 B     1.0 B    ok
+What it makes                                                                  Measured    Budget
+Check: 1000 objects of two fields                                              39.9 KB     40.0 KB     ok
+ShaderProgram draws 300 meshes, 2 copies each, 2 vertex buffers each, a frame  0.0 B       1.0 KB      ok
+WebGL calls to draw 300 meshes, 2 copies each, 2 vertex buffers each, a frame  3900 calls  3900 calls  ok
+Refill an array of 100 by index, a refill                                      0.0 B       1.0 B       ok
 ```
 
-It measures garbage, not time, since the same code makes the same garbage
-on every run, on any machine. Hot code that has no case yet gets one in
+It measures garbage and calls, not time, since the same code makes the same
+garbage and calls on every run, on any machine. Hot code that has no case yet gets one in
 `perf/`, alongside the change that makes it fast.
 
 Don't measure garbage in the page with `performance.memory`: Chrome updates

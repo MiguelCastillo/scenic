@@ -5,7 +5,7 @@ import {
   VertexBufferIndexes,
 } from "./vertexbuffer.js";
 
-import {ShaderProgram, compileShaderSource, parseVertexShaderAttributes} from "./program.js";
+import {ShaderProgram, compileShaderSource} from "./program.js";
 
 import {ShaderRegistry} from "./shader-registry.js";
 
@@ -20,7 +20,6 @@ export {
   VertexBufferIndexes,
   ShaderProgram,
   compileShaderSource,
-  parseVertexShaderAttributes,
   ShaderRegistry,
   renderStats,
   webgl,

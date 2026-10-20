@@ -807,12 +807,10 @@ export function buildSkinAnimation(gl, sceneNode) {
         mappedboneids[idx] = bonedata[polygonVertexIndex].boneids;
       });
 
-      geometry.vertexBuffer.withWeights(
-        new VertexBufferData(gl, mappedweights.flat(), MAX_BONES_PER_VERTEX)
-      );
-      geometry.vertexBuffer.withBoneIDs(
-        new VertexBufferData(gl, mappedboneids.flat(), MAX_BONES_PER_VERTEX)
-      );
+      geometry.vertexBuffer.addBuffers({
+        weights: new VertexBufferData(gl, mappedweights.flat(), MAX_BONES_PER_VERTEX),
+        boneids: new VertexBufferData(gl, mappedboneids.flat(), MAX_BONES_PER_VERTEX),
+      });
     }
   }
 }

@@ -1,9 +1,9 @@
 // Awesome information about vertex and fragment shaders
 // https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/Tutorial/Adding_2D_content_to_a_WebGL_context
 
-import {ShaderAttribute} from "./attribute.js";
 import {renderStats} from "./render-stats.js";
 import {ShaderUniform} from "./uniform.js";
+import {vertexAttributes} from "./vertexbuffer.js";
 
 // Performance: the program each WebGL context draws with now, so that a
 // program already in use isn't made the one in use again, which costs as
@@ -136,7 +136,6 @@ export class ShaderProgram {
 
     this.gl = gl;
     this.program = program;
-    this._attributes = [];
     // The program's uniform updates, as {uniform, update}: each uniform,
     // made the first time it is added, with the function that sends its
     // value, the last one added, or null after setUniforms leaves it out.
@@ -149,12 +148,6 @@ export class ShaderProgram {
     // "Best practices for the hot path" in the README.
     this._uniformUpdates = [];
     this._uniformUpdatesByName = new Map();
-    // The buffers the last draw drew, and the vertex attributes it enabled
-    // for them, the first _enabledAttributeCount of _enabledAttributeIndexes,
-    // until the program is released (see draw and release).
-    this._boundVertexBuffers = null;
-    this._enabledAttributeIndexes = [];
-    this._enabledAttributeCount = 0;
   }
 
   // setUniforms makes uniforms the only ones the program sends, each as
@@ -185,49 +178,6 @@ export class ShaderProgram {
     return this;
   }
 
-  // setAttributes sets a new list of attributes in the vertex shader to be
-  // bound to buffer objects.
-  // In the process of adding the attributes, we will determine the attribute
-  // index, which we will use to bind the correct buffer in the render function.
-  // This will replace any already existing attributes in the shader program.
-  setAttributes(attributes) {
-    const attrs = attributes.map((attr) => new ShaderAttribute(attr, this));
-
-    attrs.forEach((attr) => {
-      if (attr.index === -1) {
-        // eslint-disable-next-line no-console
-        console.warn(`shader attribute ${attr.name} is declared but not used`);
-      }
-    });
-
-    // Attributes that are not used in the vertex shader do not get an index,
-    // so we filter them out to avoid unnecessary processing of attributes
-    // in the render function
-    this._attributes = attrs.filter(({index}) => index !== -1);
-    return this;
-  }
-
-  // addAttributes adds new attributes in the vertex shader to be bound to
-  // buffer objects.
-  // In the process of adding the attributes, we will determine the attribute
-  // index, which we will use to bind the correct buffer in the render function.
-  addAttributes(attributes) {
-    const attrs = attributes.map((attr) => new ShaderAttribute(attr, this));
-
-    attrs.forEach((attr) => {
-      if (attr.index === -1) {
-        // eslint-disable-next-line no-console
-        console.warn(`shader attribute "${attr.name}" is declared but not used`);
-      }
-    });
-
-    // Attributes that are not used in the vertex shader do not get an index,
-    // so we filter them out to avoid unnecessary processing of attributes
-    // in the render function
-    this._attributes = this._attributes.concat(attrs.filter(({index}) => index !== -1));
-    return this;
-  }
-
   // dispose deletes the linked WebGL program. Clones share that program, so
   // only its owner should call this. The compiled shaders are left alone
   // because they can be shared by other programs.
@@ -237,7 +187,6 @@ export class ShaderProgram {
 
   clone() {
     const shaderProgram = new ShaderProgram(this.gl, this.program);
-    shaderProgram._attributes = [...this._attributes];
     for (const {uniform, update} of this._uniformUpdates) {
       const uniformUpdate = {uniform, update};
       shaderProgram._uniformUpdates.push(uniformUpdate);
@@ -260,14 +209,13 @@ export class ShaderProgram {
     return uniform;
   }
 
-  // render draws vertexBuffers with the program: it uses it, draws, and
-  // releases it. To draw many times with the same uniforms, such as a forest's
-  // trees, use, draw and release instead, sending only the uniforms that
-  // change in between, such as each tree's world matrix.
-  render(vertexBuffers, primitiveType = this.gl.TRIANGLES) {
+  // render draws vertexBuffer with the program: it uses it, and draws. To
+  // draw many times with the same uniforms, such as a forest's trees, use and
+  // draw instead, sending only the uniforms that change in between, such as
+  // each tree's world matrix.
+  render(vertexBuffer, primitiveType = this.gl.TRIANGLES) {
     this.use();
-    this.draw(vertexBuffers, primitiveType);
-    this.release();
+    this.draw(vertexBuffer, primitiveType);
   }
 
   // use makes the program the one WebGL draws with, unless it already is,
@@ -303,51 +251,20 @@ export class ShaderProgram {
     return this;
   }
 
-  // draw draws vertexBuffers with the program, which must be in use. Their
-  // vertex attributes stay enabled until the program is released, or draws
-  // other buffers, so drawing the same buffers again, such as a forest's
-  // trees, doesn't set them up again.
-  //
-  // Performance: it runs for every buffer drawn, every frame, so it loops by
-  // index, and finds each attribute's vertex buffer by a name made once
-  // (see vertexBufferName in ShaderAttribute), rather than making a string
-  // or iterator per draw.
-  draw(vertexBuffers, primitiveType = this.gl.TRIANGLES) {
+  // draw draws vertexBuffer, a VertexBuffer, with the program, which must be
+  // in use. Binding its vertex array is all it takes to set up which buffer
+  // each vertex attribute reads, since the vertex array recorded that when
+  // the geometry was built (see VertexBuffer).
+  draw(vertexBuffer, primitiveType = this.gl.TRIANGLES) {
     const gl = this.gl;
-    if (this._boundVertexBuffers !== vertexBuffers) {
-      this.release();
-      this._boundVertexBuffers = vertexBuffers;
-      for (let i = 0; i < this._attributes.length; i++) {
-        const attribute = this._attributes[i];
-        const vertexBuffer = vertexBuffers[attribute.vertexBufferName];
-        if (vertexBuffer) {
-          const {index, size, type, normalized, stride, offset} = attribute;
+    gl.bindVertexArray(vertexBuffer.vertexArray);
 
-          vertexBuffer.bind(gl);
-
-          // Enable this shader attribute.
-          gl.enableVertexAttribArray(index);
-          // Performance: written by index, up to _enabledAttributeCount,
-          // rather than pushed, since release empties the list by setting
-          // the count to 0, not its length (see release).
-          this._enabledAttributeIndexes[this._enabledAttributeCount++] = index;
-
-          // enableVertexAttribArray binds this shader attribute and the
-          // currently bound ARRAY_BUFFER we are rendering. So before calling
-          // enable on an attribute, you must have called bindBuffer.
-          gl.vertexAttribPointer(index, size, type, normalized, stride, offset);
-        }
-      }
-    }
-
-    const {positions, indexes} = vertexBuffers;
+    const {positions, indexes} = vertexBuffer;
 
     // Send command to start rendering the vertices.
     if (indexes) {
       const {data} = indexes;
       const vertexOffset = 0;
-
-      indexes.bind();
 
       gl.drawElements(
         primitiveType,
@@ -372,34 +289,8 @@ export class ShaderProgram {
     return this;
   }
 
-  // release disables the vertex attributes the program's draws enabled.
-  // Enabled attributes are global WebGL state, and an attribute left enabled
-  // after its buffer is deleted makes every later draw fail with
-  // INVALID_OPERATION, even draws whose shaders never read it.
-  //
-  // Performance: it runs for every mesh drawn, every frame. The enabled
-  // attributes are the first _enabledAttributeCount of
-  // _enabledAttributeIndexes, not all of it: the list's length is never set
-  // to 0 or shortened, only its count set to 0. Setting an array's length
-  // to 0 makes the JavaScript engine free the block of memory the array
-  // keeps its items in, so the next draw would allocate a new block. Read
-  // it up to the count, never its length. See "Refilling an array" in the
-  // README.
-  release() {
-    const enabledAttributeIndexes = this._enabledAttributeIndexes;
-    for (let i = 0; i < this._enabledAttributeCount; i++) {
-      this.gl.disableVertexAttribArray(enabledAttributeIndexes[i]);
-    }
-    this._enabledAttributeCount = 0;
-    this._boundVertexBuffers = null;
-    return this;
-  }
-
   // createWithCompiledShaders creates a shader program using the already
   // compiled vertex and fragment shaders provided to this function.
-  // There is no ability to autobind attributes in factory method because there
-  // is no source we can parse to automatically pull out the attributes in a
-  // vertex shader.
   static createWithCompiledShaders(gl, compiledVertexShader, compiledFragmentShader) {
     const program = gl.createProgram();
 
@@ -412,21 +303,10 @@ export class ShaderProgram {
 
   // create creates a shader program with the shader sources provided to this
   // function.
-  // Because the source for the vertex shader is provided, we have the ability
-  // to parse to autobind attributes. Autobinding simply read the (supported)
-  // attributes from the vertex shader and automatically registers them in the
-  // shader program before it is returned.
-  static create(gl, vertexShaderSource, fragmentShaderSource, autobindAttributes = false) {
+  static create(gl, vertexShaderSource, fragmentShaderSource) {
     const program = gl.createProgram();
-
     compileShaderProgram(gl, program, vertexShaderSource, fragmentShaderSource);
-
-    const sp = new ShaderProgram(gl, program);
-    if (autobindAttributes) {
-      sp.addAttributes(parseVertexShaderAttributes(vertexShaderSource));
-    }
-
-    return sp;
+    return new ShaderProgram(gl, program);
   }
 }
 
@@ -449,6 +329,12 @@ export function linkShaderProgram(
 
   gl.attachShader(program, vertexShader); // compileShaderSource(gl, gl.VERTEX_SHADER, vertexShaderSource));
   gl.attachShader(program, fragmentShader); // compileShaderSource(gl, gl.FRAGMENT_SHADER, fragmentShaderSource));
+  // Every program reads each vertex attribute at the same location, so that
+  // a geometry's vertex array works with any of them (see vertexAttributes).
+  // Binding a name the shader doesn't have does nothing.
+  for (const {name, location} of vertexAttributes) {
+    gl.bindAttribLocation(program, location, name);
+  }
   gl.linkProgram(program);
   gl.validateProgram(program);
 
@@ -541,57 +427,6 @@ export function _parseShaderCompilationError(message, shaderSource, lastLinesCou
     console.error("error parsing shader compilation error", message, ex);
   }
   return null;
-}
-
-// Helper function to convert numbers to strings suitable for shaders.
-// Shaders want their values as floats, but the API in ShaderProgramBuilder
-// allows to configure values as numbers for simplicity purposes. When a value
-// for point size for example, is pecified as the number 5.0, JavaScript will
-// drop the decimal part of the number converting to just 5 because the decimal
-// point is inconsequetial. If we specified 5.1, then JavaScript will retain
-// decimal point because the decimal value is non nonzero. Using 5 without the
-// decimal point causes shader compilation errors... This function ensures that
-// we always have a decimal point for numbers that JavaScript would otherwise
-// drop.
-export function numberToString(num) {
-  if (typeof num === "number") {
-    const numStr = num.toString();
-    if (numStr.indexOf(".") === -1) {
-      return numStr + ".0";
-    }
-
-    return numStr;
-  }
-
-  return num;
-}
-
-// parseVertexShaderAttributes gets the list of all the attributes in a vertex
-// shader and returns the name of the attribute and its size. This currently
-// only support vector types.
-// TODO(miguel): add support for other types as the need arises.
-export function parseVertexShaderAttributes(vertexShaderSource) {
-  // tester for regex to parse out attributes.
-  // https://regex101.com/r/jmad0Z/1
-  return [...vertexShaderSource.matchAll(/^\s*^\/?in\s+(\w+)\s+(\w+);/gm)].map(([, type, name]) => {
-    let size;
-    switch (type) {
-      case "vec2":
-        size = 2;
-        break;
-      case "vec3":
-        size = 3;
-        break;
-      case "vec4":
-        size = 4;
-        break;
-    }
-
-    return {
-      name,
-      size,
-    };
-  });
 }
 
 // countDraw adds a draw of count vertices to renderStats, and the triangles

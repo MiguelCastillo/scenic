@@ -402,10 +402,12 @@ export class Terrain extends Mesh {
       steps: detail,
       vertexBuffer,
       boundingVolume: BoundingBox.around(positions),
-      dispose: () =>
+      dispose: () => {
+        vertexBuffer.disposeVertexArray();
         ["positions", "normals", "colors", "textureCoords"].forEach((b) =>
           vertexBuffer[b].dispose()
-        ),
+        );
+      },
     };
   }
 
@@ -474,7 +476,6 @@ export class Terrain extends Mesh {
 
     program.use();
     tilesToRender.forEach((tile) => program.draw(tile.vertexBuffer));
-    program.release();
   }
 
   // getTexture is the texture at url, which repeats, with placeholder, an

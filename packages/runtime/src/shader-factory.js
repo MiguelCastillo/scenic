@@ -1,4 +1,4 @@
-import {ShaderProgram, compileShaderSource, parseVertexShaderAttributes} from "@scenic/renderer";
+import {ShaderProgram, compileShaderSource} from "@scenic/renderer";
 
 import {versionedURL} from "./versioned-url.js";
 
@@ -83,15 +83,11 @@ export function createShaderProgram(gl, name) {
     );
   }
 
-  let {vertexShaderSource, fragmentShaderSource, vertexShader, fragmentShader, attributes} =
-    shaderCache[name];
+  let {vertexShaderSource, fragmentShaderSource, vertexShader, fragmentShader} = shaderCache[name];
 
   if (!vertexShader) {
     vertexShader = compileShaderSource(gl, gl.VERTEX_SHADER, vertexShaderSource);
     shaderCache[name].vertexShader = vertexShader;
-
-    attributes = parseVertexShaderAttributes(vertexShaderSource);
-    shaderCache[name].attributes = attributes;
   }
 
   if (!fragmentShader) {
@@ -99,13 +95,7 @@ export function createShaderProgram(gl, name) {
     shaderCache[name].fragmentShader = fragmentShader;
   }
 
-  const shaderProgram = ShaderProgram.createWithCompiledShaders(gl, vertexShader, fragmentShader);
-
-  if (attributes) {
-    shaderProgram.addAttributes(attributes);
-  }
-
-  return shaderProgram;
+  return ShaderProgram.createWithCompiledShaders(gl, vertexShader, fragmentShader);
 }
 
 // addShaderCacheEntry adds shader sources to the cache.
