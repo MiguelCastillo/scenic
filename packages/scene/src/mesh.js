@@ -85,7 +85,7 @@ export class Mesh extends Renderable {
   // render draws copiesToRender, each copy of the mesh in view, with its
   // level of detail and the buffers that aren't one. Its viewport calls it,
   // when the mesh is in view (see render in Viewport). It uses its program,
-  // sets its own uniforms and its viewport's (see setUniforms), then each
+  // set up to draw the mesh (see useProgram in Renderable), then sets each
   // copy's world matrix before drawing the copy.
   //
   // Performance: every copy is drawn with the same program and uniforms but
@@ -93,9 +93,7 @@ export class Mesh extends Renderable {
   // and a forest draws hundreds of copies. The uniforms skip values the
   // program already has (see ShaderUniform in @scenic/renderer).
   render(context) {
-    const program = this.shaderProgram.use();
-    this.setUniforms(program, context);
-    this.getViewport().setUniforms(program, context);
+    const program = this.useProgram(context);
 
     const worldMatrix = program.uniform("worldMatrix");
     const {vertexBuffers, copiesToRender} = this;
@@ -115,10 +113,10 @@ export class Mesh extends Renderable {
   // values the mesh has: its lights and its material. Each copy's world
   // matrix is set by render, as it draws the copy.
   //
-  // It is part of render: only a renderable's render calls it, after use(),
-  // itself or through another setUniforms, with render's context; anywhere
-  // else its values go missing (see "Where setUniforms is called" in
-  // drawing.md, at the top of the repo).
+  // It is part of render: it is only called as a renderable's render
+  // starts, by useProgram in Renderable, or by another setUniforms, with
+  // render's context; anywhere else its values go missing (see "Where
+  // setUniforms is called" in drawing.md, at the top of the repo).
   setUniforms(program, context) {
     this.setLightUniforms(program, context);
     this.setMaterialUniforms(program, context);

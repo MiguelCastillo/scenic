@@ -92,13 +92,11 @@ export class Sky extends Renderable {
     }
   }
 
-  // render draws the sky's triangle, with its own uniforms and its
-  // viewport's (see setUniforms).
+  // render draws the sky's triangle, with its program set up to draw it (see
+  // useProgram in Renderable).
   render(context) {
     const {gl} = context;
-    const program = this.shaderProgram.use();
-    this.setUniforms(program, context);
-    this.getViewport().setUniforms(program, context);
+    const program = this.useProgram(context);
 
     // The triangle is at the far plane, so it is drawn where the depth
     // buffer is still clear, whether the sky renders before or after the
@@ -116,10 +114,10 @@ export class Sky extends Renderable {
   // state over Sky.defaults, and the inverse of the view-projection, which
   // turns each pixel back into the direction it looks in.
   //
-  // It is part of render: only a renderable's render calls it, after use(),
-  // itself or through another setUniforms, with render's context; anywhere
-  // else its values go missing (see "Where setUniforms is called" in
-  // drawing.md, at the top of the repo).
+  // It is part of render: it is only called as a renderable's render
+  // starts, by useProgram in Renderable, or by another setUniforms, with
+  // render's context; anywhere else its values go missing (see "Where
+  // setUniforms is called" in drawing.md, at the top of the repo).
   setUniforms(program, context) {
     const {ms, sceneManager} = context;
     const state = {...Sky.defaults, ...sceneManager.getNodeStateByID(this.id).sky};

@@ -250,10 +250,10 @@ export class Viewport extends Node {
   // with context too, like every setUniforms, and leaves it out, since it
   // doesn't need it.
   //
-  // It is part of render: only a renderable's render calls it, after use(),
-  // itself or through another setUniforms, with render's context; anywhere
-  // else its values go missing (see "Where setUniforms is called" in
-  // drawing.md, at the top of the repo).
+  // It is part of render: it is only called as a renderable's render
+  // starts, by useProgram in Renderable, or by another setUniforms, with
+  // render's context; anywhere else its values go missing (see "Where
+  // setUniforms is called" in drawing.md, at the top of the repo).
   setUniforms(program) {
     program.uniform("projectionMatrix").setMatrix4fv(false, this.viewProjectionMatrix.data);
 

@@ -138,8 +138,8 @@ with.
 
 ### Using a program, and setting uniforms
 
-`use()` makes the program the one WebGL draws with, with `useProgram`,
-unless it already is. Which program each context has in use is kept in
+`use()` makes the program the one WebGL draws with, with WebGL's
+`gl.useProgram`, unless it already is. Which program each context has in use is kept in
 `programsInUse`.
 
 Once its program is in use, a renderable sets its uniforms, with each
@@ -163,15 +163,15 @@ changes is.
 Uniforms are set by whatever has their values, each with
 `setUniforms(program, context)`, which writes its values into `program`, the
 program being set up to draw, not into a program of its own. The viewport,
-for one, has no program: `this.getViewport().setUniforms(program, context)`
-in the terrain's `render` puts the viewport's view-projection, camera and
-fog into the terrain's program.
+for one, has no program: as the terrain draws, the viewport's
+`setUniforms` puts its view-projection, camera and fog into the terrain's
+program.
 
-`setUniforms` is part of `render`. It is only ever called while a
-renderable draws, right after its `use()`, from its `render` (see
+`setUniforms` is part of `render`. It is only ever called as a renderable's
+`render` starts, by `useProgram` (see
 [Where `setUniforms` is called](#where-setuniforms-is-called)), and it is
-split out of `render` only so that each owner sets its own
-values: a renderable its own, and its viewport the view's. So it runs at
+split out of `render` only so that each owner sets its own values: a
+renderable its own, and its viewport the view's. So it runs at
 the same moment as the `render` that calls it, with the same `context`,
 and it can do what `render` does: read state through
 `context.sceneManager`, such as a mesh's material, and use the WebGL
@@ -182,17 +182,22 @@ Every `setUniforms` is called with both, so that they are all called the
 same way, and one that doesn't need `context`, such as the viewport's,
 leaves it out, the way a node's `prepareForView()` can.
 
-A renderable's `render` uses its program, sets its own uniforms and its
-viewport's, and draws:
+A renderable's `render` starts with `useProgram(context)`, which activates
+its program and returns it, ready to draw the renderable. Activating it
+makes it the program in use, with `use()`, and gives it its uniforms: the
+renderable's own `setUniforms`, then its viewport's (see
+[`renderable.js`](packages/scene/src/renderable.js)). Then `render`
+draws:
 
 ```js
 render(context) {
-  const program = this.shaderProgram.use();
-  this.setUniforms(program, context);
-  this.getViewport().setUniforms(program, context);
+  const program = this.useProgram(context);
   program.draw(this.vertexBuffer);
 }
 ```
+
+A renderable without values of its own, such as an fbx skeleton, keeps
+Renderable's `setUniforms`, which sets nothing.
 
 - **The viewport** sets how it is seen: its
   view-projection matrix, where its camera is, and its fog (see
@@ -228,8 +233,8 @@ for (const {worldMatrix: copyWorldMatrix} of copiesToRender) {
 
 ### Where `setUniforms` is called
 
-`setUniforms` is part of `render`, and is only called from it, through
-the places below.
+`setUniforms` is part of `render`, and is only called as `render` starts,
+by `useProgram`, through the places below.
 
 Called anywhere else, such as in `preRender` or `prepareForView`, a
 `setUniforms` sets nothing, and its values can go missing for good: the
@@ -239,13 +244,12 @@ program's uniform while that program is in use, and outside `render`,
 another program, or none, is. The uniform still keeps the value as sent,
 so its setter skips it from then on, while the program never had it.
 
-So `setUniforms` is only ever called from these places, all of them while
-a renderable draws, after its `use()`:
+So `setUniforms` is only ever called from these places, all of them as a
+renderable's `render` starts, after its program's `use()`:
 
-1. **A renderable's `render`**, right after `use()`, calls its own
-   `this.setUniforms(program, context)` and its viewport's
-   `this.getViewport().setUniforms(program, context)`. Mesh, Light, Sky, Grid,
-   Terrain and the fbx `Armature` do.
+1. **Renderable's `useProgram`**, which every `render` starts with, calls
+   the renderable's own `setUniforms(program, context)` and its viewport's,
+   right after `use()`. No `render` calls a `setUniforms` itself.
 2. **A renderable's `setUniforms`** calls the one it adds to, with
    `super.setUniforms(program, context)`: the terrain's and the fbx mesh's
    call Mesh's.
@@ -253,7 +257,7 @@ a renderable draws, after its `use()`:
    its skinned `Geometry`'s, and each `Texture`'s under its `Material`.
 
 A new kind of value goes in the `setUniforms` of whatever has it, which
-`render` reaches through one of these. A node under a renderable that has
+`useProgram` reaches through one of these. A node under a renderable that has
 uniforms of its own gets a `setUniforms`, called from its renderable's
 `setUniforms`, the way the fbx mesh calls its textures'. Nothing walks the
 scene looking for nodes with a `setUniforms`.
@@ -272,9 +276,10 @@ frame (see `render-loop.js`).
 
 ### Rules for shader programs
 
-- **Use the program, then set its uniforms, then draw,** all in `render`.
-  WebGL only sets a uniform of the program in use, so a uniform set before
-  `use()`, or outside `render`, is never set (see
+- **Use the program, then set its uniforms, then draw,** all in `render`,
+  which `useProgram` does the first two of. WebGL only sets a uniform of
+  the program in use, so a uniform set before `use()`, or outside
+  `render`, is never set (see
   [Where `setUniforms` is called](#where-setuniforms-is-called)).
 - **Set uniforms only with their setters.** The values each uniform keeps
   are only right if every value its program gets goes through them. A
@@ -492,13 +497,14 @@ viewport (see "The draw list" in the [README](README.md)):
 1. `prepareForView` chooses the copies of the mesh in view, and adds the
    mesh to its viewport's draw list.
 2. The viewport calls the mesh's `render`, in the mesh's render order.
-3. `render` calls `use()`, which makes the mesh's program the one in use,
-   if it isn't.
-4. Its `setUniforms` sets the program's uniforms for the mesh's lights,
-   its material, from its `Material` node and its state, and, for an fbx
-   mesh, its textures and bones. Then its
-   viewport's `setUniforms` sets its projection, camera and fog. Each is
-   sent only if the program doesn't have it.
+3. `render` calls `useProgram`, which activates the mesh's program: it
+   makes it the program in use, with `use()`, if it isn't, then gives it
+   its uniforms.
+4. The mesh's `setUniforms` gives it the mesh's lights and its material,
+   from its `Material` node and its state, and, for an fbx mesh, its
+   textures and bones. Its viewport's `setUniforms` gives it the
+   projection, camera and fog. Each is sent only if the program doesn't
+   have it.
 5. For each copy, it sets the copy's world matrix, then draws each of the
    mesh's vertex buffers for the copy's level of detail: `bindVertexArray`,
    then the draw call.

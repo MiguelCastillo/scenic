@@ -93,10 +93,10 @@ export class Texture extends Node {
   // under calls it as it draws (see setUniforms in Mesh in
   // loaders/fbx/scene-node.js, in @scenic/runtime).
   //
-  // It is part of render: only a renderable's render calls it, after use(),
-  // itself or through another setUniforms, with render's context; anywhere
-  // else its values go missing (see "Where setUniforms is called" in
-  // drawing.md, at the top of the repo).
+  // It is part of render: it is only called as a renderable's render
+  // starts, by useProgram in Renderable, or by another setUniforms, with
+  // render's context; anywhere else its values go missing (see "Where
+  // setUniforms is called" in drawing.md, at the top of the repo).
   setUniforms(program, context) {
     const {gl} = context;
     gl.activeTexture(gl.TEXTURE0 + this.textureID);

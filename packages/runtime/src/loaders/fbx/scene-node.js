@@ -112,10 +112,10 @@ export class Mesh extends AnimatableInterface(MeshSceneNode) {
   // @scenic/scene), and those of the nodes under it that only fbx models
   // have: its skinned Geometry's bones, and its Material's textures.
   //
-  // It is part of render: only a renderable's render calls it, after use(),
-  // itself or through another setUniforms, with render's context; anywhere
-  // else its values go missing (see "Where setUniforms is called" in
-  // drawing.md, at the top of the repo).
+  // It is part of render: it is only called as a renderable's render
+  // starts, by useProgram in Renderable, or by another setUniforms, with
+  // render's context; anywhere else its values go missing (see "Where
+  // setUniforms is called" in drawing.md, at the top of the repo).
   setUniforms(program, context) {
     super.setUniforms(program, context);
     for (let i = 0; i < this.items.length; i++) {
@@ -218,10 +218,10 @@ export class Geometry extends GeometrySceneNode {
   // program, which must be in use, that turn skinning on and read the
   // texture. Its mesh calls it as it draws (see setUniforms in Mesh).
   //
-  // It is part of render: only a renderable's render calls it, after use(),
-  // itself or through another setUniforms, with render's context; anywhere
-  // else its values go missing (see "Where setUniforms is called" in
-  // drawing.md, at the top of the repo).
+  // It is part of render: it is only called as a renderable's render
+  // starts, by useProgram in Renderable, or by another setUniforms, with
+  // render's context; anywhere else its values go missing (see "Where
+  // setUniforms is called" in drawing.md, at the top of the repo).
   setUniforms(program, context) {
     if (!this._boneMatrixData) {
       return;
@@ -301,12 +301,12 @@ export class Armature extends AnimatableInterface(RenderableSceneNode) {
     }
   }
 
-  // render draws each bone of the skeleton, with its viewport's uniforms,
-  // and each bone's world matrix before drawing the bone.
+  // render draws each bone of the skeleton, with its program set up to draw
+  // it (see useProgram in Renderable), setting each bone's world matrix
+  // before drawing the bone.
   render(context) {
     const {gl} = context;
-    const program = this.shaderProgram.use();
-    this.getViewport().setUniforms(program, context);
+    const program = this.useProgram(context);
 
     gl.disable(gl.DEPTH_TEST);
     const worldMatrix = program.uniform("worldMatrix");

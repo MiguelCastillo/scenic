@@ -48,14 +48,12 @@ export class Grid extends Renderable {
     }
   }
 
-  // render draws the grid's square, with its own uniforms and its
-  // viewport's (see setUniforms).
+  // render draws the grid's square, with its program set up to draw it (see
+  // useProgram in Renderable).
   render(context) {
     const {gl, sceneManager} = context;
     const {fillColor} = sceneManager.getNodeStateByID(this.id).grid;
-    const program = this.shaderProgram.use();
-    this.setUniforms(program, context);
-    this.getViewport().setUniforms(program, context);
+    const program = this.useProgram(context);
 
     // The grid is seen from both sides, like a sheet of paper. Without a fill,
     // its shader gives each line pixel how much of it the line covers as its
@@ -74,10 +72,10 @@ export class Grid extends Renderable {
   // setUniforms sets the uniforms of program, which must be in use, whose
   // values the grid has: where its square is drawn, its lines and its fill.
   //
-  // It is part of render: only a renderable's render calls it, after use(),
-  // itself or through another setUniforms, with render's context; anywhere
-  // else its values go missing (see "Where setUniforms is called" in
-  // drawing.md, at the top of the repo).
+  // It is part of render: it is only called as a renderable's render
+  // starts, by useProgram in Renderable, or by another setUniforms, with
+  // render's context; anywhere else its values go missing (see "Where
+  // setUniforms is called" in drawing.md, at the top of the repo).
   setUniforms(program, context) {
     const {sceneManager} = context;
     const state = sceneManager.getNodeStateByID(this.id);

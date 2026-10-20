@@ -1133,9 +1133,9 @@ renderables in its draw list, `renderablesInView`, in their `renderOrder`:
 the background, then solid renderables grouped by shader program, then
 translucent ones farthest first, then overlays (see
 [The draw list](#the-draw-list)). Each renderable's `render` draws only what
-its `prepareForView` chose, such as a mesh's `copiesToRender`: it uses its
-program, sets its own uniforms and its viewport's, each with
-`setUniforms`, and draws (see
+its `prepareForView` chose, such as a mesh's `copiesToRender`: it starts
+with `useProgram`, which activates its program, giving it the renderable's
+uniforms and its viewport's, and draws (see
 [Drawing](drawing.md#using-a-program-and-setting-uniforms)). `SceneManager.render` asks each viewport to
 render, rather than walking the scene, since the draw list already holds
 everything to draw. Drawing only reads the scene's state, so the same frame

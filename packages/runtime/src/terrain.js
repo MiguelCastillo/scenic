@@ -432,13 +432,11 @@ export class Terrain extends Mesh {
     };
   }
 
-  // render draws the tiles in tilesToRender, with its own uniforms and its
-  // viewport's (see setUniforms). Its viewport calls it, like a mesh's
+  // render draws the tiles in tilesToRender, with its program set up to
+  // draw them (see useProgram in Renderable). Its viewport calls it, like a mesh's
   // render.
   render(context) {
-    const program = this.shaderProgram.use();
-    this.setUniforms(program, context);
-    this.getViewport().setUniforms(program, context);
+    const program = this.useProgram(context);
     const {tilesToRender} = this;
     for (let i = 0; i < tilesToRender.length; i++) {
       program.draw(tilesToRender[i].vertexBuffer);
@@ -451,10 +449,10 @@ export class Terrain extends Mesh {
   // already where it goes in the terrain, and its textures, loading them
   // the first time they are needed, with their settings.
   //
-  // It is part of render: only a renderable's render calls it, after use(),
-  // itself or through another setUniforms, with render's context; anywhere
-  // else its values go missing (see "Where setUniforms is called" in
-  // drawing.md, at the top of the repo).
+  // It is part of render: it is only called as a renderable's render
+  // starts, by useProgram in Renderable, or by another setUniforms, with
+  // render's context; anywhere else its values go missing (see "Where
+  // setUniforms is called" in drawing.md, at the top of the repo).
   setUniforms(program, context) {
     super.setUniforms(program, context);
     const {gl} = context;

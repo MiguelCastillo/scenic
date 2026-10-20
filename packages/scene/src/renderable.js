@@ -73,6 +73,30 @@ export const RenderableInterface = (superclass) =>
       return this;
     }
 
+    // useProgram activates the renderable's program and returns it, ready to
+    // draw the renderable. Activating it makes it the program in use and
+    // gives it its uniforms: the renderable's own (see setUniforms), then
+    // its viewport's view-projection, camera and fog. A renderable's render
+    // starts with it.
+    useProgram(context) {
+      const program = this.shaderProgram.use();
+      this.setUniforms(program, context);
+      // Configure the program with the viewport's camera, projection and fog.
+      this.getViewport().setUniforms(program, context);
+      return program;
+    }
+
+    // setUniforms writes the values the renderable has into program, which
+    // is in use, such as a mesh's material. A renderable with values of its
+    // own overrides it, and one without, such as an fbx skeleton, keeps
+    // this one, which sets nothing.
+    //
+    // It is part of render: it is only called as a renderable's render
+    // starts, by useProgram, or by another setUniforms, with render's
+    // context; anywhere else its values go missing (see "Where setUniforms
+    // is called" in drawing.md, at the top of the repo).
+    setUniforms() {}
+
     dispose(gl) {
       if (this.shaderProgram) {
         this.shaderProgram.dispose();
