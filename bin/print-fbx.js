@@ -6,7 +6,7 @@ import {hideBin} from "yargs/helpers";
 
 import fs from "fs";
 import path from "path";
-import {FbxFile, findChildByName, getNodeName} from "../packages/formats/fbxfile.js";
+import {FbxFile, findChildByName, getNodeName} from "../packages/encoding/fbx/src/fbxfile.js";
 
 let _indentCache = {};
 function _indent(indent, char = "\t") {
@@ -45,7 +45,7 @@ function getObjectsByID(model) {
 
   const {file} = args;
   const modelBuffer = fs.readFileSync(file);
-  const model = FbxFile.fromBinary(modelBuffer.buffer);
+  const model = FbxFile.fromBinary(new Uint8Array(modelBuffer).buffer);
   const objectsByID = getObjectsByID(model);
 
   model.children.forEach((c) => printNode(c, 1));

@@ -58,16 +58,16 @@ function raceText({lap, laps, time, gate, gates, best, finished, place, racers, 
           : []),
       ]
     : lap === 0
-    ? []
-    : [
-        `Lap ${lap}/${laps}   ${clock(time)}`,
-        ...(racers > 1 ? [`Position ${place} of ${racers}`] : []),
-        gate === 0
-          ? lap === laps
-            ? "Next: the finish"
-            : "Next: the start gate"
-          : `Next: gate ${gate} of ${gates}`,
-      ];
+      ? []
+      : [
+          `Lap ${lap}/${laps}   ${clock(time)}`,
+          ...(racers > 1 ? [`Position ${place} of ${racers}`] : []),
+          gate === 0
+            ? lap === laps
+              ? "Next: the finish"
+              : "Next: the start gate"
+            : `Next: gate ${gate} of ${gates}`,
+        ];
   if (best != null && !finished) {
     lines.push(`Best ${clock(best)}`);
   }
@@ -418,19 +418,19 @@ domReady.onReady(async () => {
             const problem = !code
               ? "Type a race's code"
               : !info
-              ? `No race with the code ${code}`
-              : info.full
-              ? `Race ${code} is full`
-              : info.game && info.game !== game
-              ? `Race ${code} is another game's`
-              : "";
+                ? `No race with the code ${code}`
+                : info.full
+                  ? `Race ${code} is full`
+                  : info.game && info.game !== game
+                    ? `Race ${code} is another game's`
+                    : "";
             if (problem) {
               friendsErrorEl.textContent = problem;
               return;
             }
             race = {code: info.code, scene: info.scene || scene};
           }
-        } catch (ex) {
+        } catch {
           friendsErrorEl.textContent = "Unable to reach the races. Try again.";
           return;
         }
@@ -686,7 +686,7 @@ domReady.onReady(async () => {
           return;
         }
         showing = true;
-        for (let shown = null; shown !== shipToShow; ) {
+        for (let shown = null; shown !== shipToShow;) {
           shown = shipToShow;
           await replaceShip(scene, "showcase ship", await ships.shipConfig(shown));
           const {sceneManager} = scene;
@@ -884,15 +884,15 @@ domReady.onReady(async () => {
       const waitingFor = !inLobby
         ? ""
         : racers
-        ? [
-            watchedPlace >= 0
-              ? `Watching ${racers[watchedPlace].name} · ${ordinal(watchedPlace + 1)} of ${
-                  racers.length
-                }`
-              : "Waiting for the race to end",
-            ...(touchScreen ? [] : ["← → to watch another racer"]),
-          ].join("\n")
-        : `${snapshot?.lobby.ready ?? 0} of ${snapshot?.lobby.players ?? 1} ready`;
+          ? [
+              watchedPlace >= 0
+                ? `Watching ${racers[watchedPlace].name} · ${ordinal(watchedPlace + 1)} of ${
+                    racers.length
+                  }`
+                : "Waiting for the race to end",
+              ...(touchScreen ? [] : ["← → to watch another racer"]),
+            ].join("\n")
+          : `${snapshot?.lobby.ready ?? 0} of ${snapshot?.lobby.players ?? 1} ready`;
       if (lobbyWatchEl.hidden === !!racers) {
         lobbyWatchEl.hidden = !racers;
       }
@@ -911,12 +911,12 @@ domReady.onReady(async () => {
         menuShows || showLobby
           ? ""
           : !playingNow
-          ? `${manifest.name}\n${touchScreen ? "Tap" : "Click"} to ${join}`
-          : pausedNow
-          ? "Paused\nPress P to play"
-          : inLobby
-          ? `Waiting for players\n${waitingFor}`
-          : "";
+            ? `${manifest.name}\n${touchScreen ? "Tap" : "Click"} to ${join}`
+            : pausedNow
+              ? "Paused\nPress P to play"
+              : inLobby
+                ? `Waiting for players\n${waitingFor}`
+                : "";
       if (messageEl.textContent !== text) {
         messageEl.textContent = text;
       }

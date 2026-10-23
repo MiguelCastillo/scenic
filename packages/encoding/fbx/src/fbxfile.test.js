@@ -14,7 +14,8 @@ import {geometry as geo} from "@scenic/math";
 
 test("parse binary cube", () => {
   const file = fs.readFileSync(path.join(__dirname, "../__testdata__/cube.fbx"));
-  const model = FbxFile.fromBinary(file.buffer);
+  // Copy the file's bytes: a Buffer can sit inside a larger, shared ArrayBuffer.
+  const model = FbxFile.fromBinary(new Uint8Array(file).buffer);
   expect(model).toBeInstanceOf(Node);
   expect(findPropertyValueByName(model, "CreationTime")).toEqual("1970-01-01 10:00:00:000");
   expect(findPropertyValueByName(model, "Creator")).toEqual(
@@ -175,7 +176,7 @@ test("parse binary cube", () => {
 
 test("match calculated normals to normals from file", () => {
   const file = fs.readFileSync(path.join(__dirname, "../__testdata__/cube.fbx"));
-  const model = FbxFile.fromBinary(file.buffer);
+  const model = FbxFile.fromBinary(new Uint8Array(file).buffer);
   expect(model).toBeInstanceOf(Node);
 
   const objects = findChildByName(model, "Objects");
@@ -203,7 +204,7 @@ test("match calculated normals to normals from file", () => {
 
 test("iterate connections", () => {
   const file = fs.readFileSync(path.join(__dirname, "../__testdata__/cube.fbx"));
-  const model = FbxFile.fromBinary(file.buffer);
+  const model = FbxFile.fromBinary(new Uint8Array(file).buffer);
 
   const objectsByID = {};
   const objects = findChildByName(model, "Objects");
@@ -233,7 +234,7 @@ test("iterate connections", () => {
 
 test("parse binary cube7500", () => {
   const file = fs.readFileSync(path.join(__dirname, "../__testdata__/cube7500.fbx"));
-  const model = FbxFile.fromBinary(file.buffer);
+  const model = FbxFile.fromBinary(new Uint8Array(file).buffer);
   expect(model).toBeInstanceOf(Node);
   expect(findPropertyValueByName(model, "CreationTime")).toEqual("2018-11-27 08:12:37:098");
   expect(findPropertyValueByName(model, "Creator")).toEqual(

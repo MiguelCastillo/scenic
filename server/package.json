@@ -8,7 +8,7 @@
   "dependencies": {
     "@scenic/racers": "*",
     "@scenic/runtime": "*",
-    "ws": "8.18.3"
+    "ws": "8.22.0"
   },
   "scripts": {
     "start": "node src/main.js --addr :3000 --static ..",

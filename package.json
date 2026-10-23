@@ -14,33 +14,31 @@
     "logs": "pm2 logs",
     "build": "node bin/build.js && node bin/fingerprint.js apps/arcade/dist/arcade.js apps/editor/dist/editor.js && node bin/version-games.js",
     "build:prod": "node bin/build.js --minify && node bin/fingerprint.js apps/arcade/dist/arcade.js apps/editor/dist/editor.js && node bin/version-games.js",
-    "prepare": "husky install"
+    "prepare": "husky"
   },
   "author": "Miguel Castillo",
   "license": "MIT",
   "engines": {
-    "node": ">=20.18.2"
+    "node": "^22.22.1 || >=24.11.0"
   },
   "dependencies": {
-    "encoding": "^0.1.13",
-    "iconoir-react": "^5.0.0",
-    "node-fetch": "^3.2.6",
-    "yargs": "^17.5.1"
+    "iconoir-react": "^7.12.1",
+    "yargs": "^18.2.0"
   },
   "devDependencies": {
-    "@babel/eslint-parser": "^7.18.2",
-    "@babel/preset-env": "^7.18.2",
-    "@babel/preset-react": "^7.17.12",
+    "@babel/core": "^8.0.9",
+    "@babel/preset-env": "^8.0.7",
+    "@babel/preset-react": "^8.0.1",
     "esbuild": "0.28.2",
-    "eslint": "^8.17.0",
-    "eslint-plugin-react": "^7.30.0",
-    "husky": "^8.0.1",
-    "jest": "^28.1.1",
-    "lint-staged": "^13.0.1",
-    "pm2": "^5.2.0",
-    "prettier": "2.7.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
+    "eslint": "^9.39.5",
+    "eslint-plugin-react": "^7.37.5",
+    "husky": "^9.1.7",
+    "jest": "^30.5.2",
+    "lint-staged": "^17.6.0",
+    "pm2": "^7.1.1",
+    "prettier": "3.9.10",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
     "webgl-mock": "^0.1.7"
   },
   "lint-staged": {

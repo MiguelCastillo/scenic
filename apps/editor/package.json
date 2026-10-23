@@ -13,7 +13,7 @@
   "devDependencies": {},
   "scripts": {
     "test": "jest ./",
-    "lint": "eslint --ext .js --ext .jsx ./"
+    "lint": "eslint ./"
   },
   "repository": {
     "type": "git",

@@ -4,9 +4,8 @@
   "description": "scenic library for parsing FBX files",
   "type": "module",
   "main": "src/fbxfile.js",
-  "devDependencies": {},
   "dependencies": {
-    "pako": "^2.0.4"
+    "pako": "^3.0.2"
   },
   "scripts": {
     "test": "jest",

@@ -1,5 +1,5 @@
 import * as React from "react";
-import {PlayOutline, PauseOutline, SkipNextOutline, SkipPrevOutline} from "iconoir-react";
+import {Play, Pause, SkipNext, SkipPrev} from "iconoir-react";
 import {WithNodeState} from "./with-node-state.jsx";
 import Slider from "../components/slider.jsx";
 
@@ -73,20 +73,20 @@ export class AnimationProperties extends WithNodeState {
 
         <div className="animaton-controls">
           <button className="prev" name="prev" onClick={this.handlePrevFrame}>
-            <SkipPrevOutline />
+            <SkipPrev />
           </button>
           {animationState.state !== "play" ? (
             <button className="play" name="play" onClick={this.handlePlay}>
-              <PlayOutline />
+              <Play />
             </button>
           ) : null}
           {animationState.state === "play" ? (
             <button className="pause" name="pause" onClick={this.handlePause}>
-              <PauseOutline />
+              <Pause />
             </button>
           ) : null}
           <button className="next" name="next" onClick={this.handleNextFrame}>
-            <SkipNextOutline />
+            <SkipNext />
           </button>
         </div>
       </div>

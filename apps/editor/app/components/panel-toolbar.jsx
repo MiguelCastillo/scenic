@@ -8,13 +8,13 @@ import {
   DashboardDots,
   VideoCamera,
   Fog,
-  InfoEmpty,
+  InfoCircle,
   Keyframes,
   Leaf,
   Map as MapIcon,
   PerspectiveView,
   SunLight,
-  Svg3DSelectFace,
+  SelectFace3d,
   BounceRight,
 } from "iconoir-react";
 
@@ -27,11 +27,11 @@ import {
 function getTabDetails(tab) {
   switch (tab) {
     case "info-details":
-      return {icon: InfoEmpty, label: "Info & Details"};
+      return {icon: InfoCircle, label: "Info & Details"};
     case "transform":
       return {icon: Axes, label: "Transform"};
     case "material":
-      return {icon: Svg3DSelectFace, label: "Material"};
+      return {icon: SelectFace3d, label: "Material"};
     case "animation":
       return {icon: Keyframes, label: "Animation"};
     case "projection":

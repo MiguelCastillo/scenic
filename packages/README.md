@@ -17,15 +17,9 @@ export the exact package name.
 TODO(miguel): improve the bundler to allow us to export the actual package name
 rather than the cleaned up string version.
 
-Each module's eslintrc is symlinked to the one in the packages directory. If
-you need a custom one then feel free to create a separate non symlinked file
-in the module that needs it. To symlink it you can run a command like below
-from the root folder; be sure to switch out `math` in the path for the
-specific module you want to configure.
-
-```
-$ ln -sf ../.eslintrc.cjs packages/math/.eslintrc.cjs
-```
+Every module, app and the server is linted with the one ESLint config at the
+root (`eslint.config.mjs`). A module that needs different rules gets its own
+entry there, matched by its path.
 
 Babel is only used by the tests, with the project's config at the root
 (`babel.config.json`), which each module's jest config points to.

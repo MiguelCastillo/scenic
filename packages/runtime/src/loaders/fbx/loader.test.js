@@ -33,7 +33,8 @@ function mockShaders(shaders) {
 function loadModel(filename) {
   const filepath = path.join(__dirname, filename);
   const file = fs.readFileSync(filepath);
-  return FbxFile.fromBinary(file.buffer);
+  // Copy the file's bytes: a Buffer can sit inside a larger, shared ArrayBuffer.
+  return FbxFile.fromBinary(new Uint8Array(file).buffer);
 }
 
 function createSceneContextForTests(...sceneConfigItems) {
