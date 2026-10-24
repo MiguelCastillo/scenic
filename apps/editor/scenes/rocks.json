@@ -1,0 +1,219 @@
+{
+  "items": [
+    {
+      "name": "axis",
+      "type": "viewport",
+      "items": [
+        {
+          "name": "axis camera",
+          "type": "camera",
+          "projection": {
+            "type": "orthographic",
+            "far": 10000
+          }
+        },
+        {
+          "name": "axis gizmo",
+          "type": "transform",
+          "script": {
+            "src": "/resources/scripts/axis-gizmo.js"
+          },
+          "transform": {
+            "scale": [30, 30, 30],
+            "position": [100, 100, 0]
+          },
+          "items": [
+            {
+              "name": "axis-x",
+              "type": "static-mesh",
+              "resource": "/resources/obj/axis.obj",
+              "material": {
+                "color": [1, 0, 0, 1],
+                "reflectiveness": 0
+              },
+              "ambient": {
+                "color": [1, 0, 0]
+              }
+            },
+            {
+              "name": "axis-y",
+              "type": "static-mesh",
+              "resource": "/resources/obj/axis.obj",
+              "material": {
+                "color": [0, 1, 0, 1],
+                "reflectiveness": 0
+              },
+              "ambient": {
+                "color": [0, 1, 0]
+              },
+              "transform": {
+                "rotation": [0, 0, 90]
+              }
+            },
+            {
+              "name": "axis-z",
+              "type": "static-mesh",
+              "resource": "/resources/obj/axis.obj",
+              "material": {
+                "color": [0, 0, 1, 1],
+                "reflectiveness": 0
+              },
+              "ambient": {
+                "color": [0, 0, 1]
+              },
+              "transform": {
+                "rotation": [0, -90, 0]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "world",
+      "type": "viewport",
+      "input": true,
+      "fog": {
+        "color": [0.75, 0.88, 1],
+        "near": 5000,
+        "far": 12000
+      },
+      "items": [
+        {
+          "name": "camera",
+          "type": "free-fly-camera",
+          "projection": {
+            "type": "perspective",
+            "near": 1,
+            "far": 12000,
+            "fov": 30
+          },
+          "transform": {
+            "position": [0, 250, 1700]
+          },
+          "freeFly": {
+            "speed": 200,
+            "maxPitch": 89
+          }
+        },
+        {
+          "name": "sky",
+          "type": "sky",
+          "sky": {
+            "zenithColor": [0.25, 0.5, 0.95],
+            "horizonColor": [0.75, 0.88, 1],
+            "groundColor": [0.45, 0.62, 0.42],
+            "sunColor": [1, 0.95, 0.8],
+            "cloudCover": 0.55,
+            "cloudScale": 1,
+            "cloudSpeed": 1,
+            "cloudColor": [1, 1, 1],
+            "cloudShadeColor": [0.72, 0.78, 0.92],
+            "mountainHeight": 7,
+            "farMountainColor": [0.58, 0.68, 0.88],
+            "nearMountainColor": [0.38, 0.48, 0.66]
+          },
+          "items": [
+            {
+              "name": "sun",
+              "type": "light",
+              "resource": "/resources/obj/sphere.obj",
+              "light": {
+                "sun": true,
+                "intensity": 0.75,
+                "color": [1, 0.97, 0.9]
+              },
+              "material": {
+                "color": [1, 0.97, 0.9, 1],
+                "reflectiveness": 1
+              },
+              "transform": {
+                "position": [-1500, 1800, 2200]
+              }
+            },
+            {
+              "name": "fill",
+              "type": "light",
+              "resource": "/resources/obj/sphere.obj",
+              "light": {
+                "intensity": 0.25,
+                "color": [0.75, 0.85, 1]
+              },
+              "material": {
+                "color": [0.75, 0.85, 1, 1],
+                "reflectiveness": 1
+              },
+              "transform": {
+                "position": [1800, 700, 1500]
+              }
+            }
+          ]
+        },
+        {
+          "name": "floor",
+          "type": "grid",
+          "transform": {
+            "position": [0, 0, 0]
+          },
+          "grid": {
+            "size": 6000,
+            "spacing": 100
+          },
+          "material": {
+            "color": [0.35, 0.35, 0.35, 1]
+          },
+          "visible": false
+        },
+        {
+          "name": "scene objects",
+          "type": "transform",
+          "transform": {
+            "scale": [1, 1, 1],
+            "position": [0, 0, 0],
+            "rotation": [0, 0, 0]
+          },
+          "items": [
+            {
+              "name": "boulder",
+              "type": "static-mesh",
+              "resource": "/resources/obj/rock-boulder.obj",
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.05,
+                "shininess": 8
+              },
+              "ambient": {
+                "color": [0.42, 0.45, 0.42]
+              },
+              "transform": {
+                "position": [-200, -10, 0],
+                "rotation": [0, 0, 0],
+                "scale": [1, 1, 1]
+              }
+            },
+            {
+              "name": "boulder 4",
+              "type": "static-mesh",
+              "resource": "/resources/obj/rock-boulder-4.obj",
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.05,
+                "shininess": 8
+              },
+              "ambient": {
+                "color": [0.42, 0.45, 0.42]
+              },
+              "transform": {
+                "position": [220, -10, -200],
+                "rotation": [0, 60, 0],
+                "scale": [1, 1, 1]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

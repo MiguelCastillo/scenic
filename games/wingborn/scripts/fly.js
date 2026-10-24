@@ -29,11 +29,11 @@
 // trunk or upside down under a branch. Taking off, it can't stick to a tree
 // again for a moment, so it lets go of the one it was on.
 //
-// Perches are the nodes under the node the perches setting names whose
+// Perches are the nodes under the nodes the perches setting names whose
 // collider has "perch" set, such as a cap's: {"shape": "cylinder",
-// "radius": 190, "height": 160, "perch": true} (see
-// bin/generate-mushroom.js, which lists a mushroom's colliders). The top of
-// the cylinder is where the ling lands, anywhere it is within the
+// "radius": 190, "height": 160, "perch": true} (see bin/generate-mushroom.js
+// and bin/generate-rock.js, which list a mushroom's and a rock's colliders).
+// The top of the cylinder is where the ling lands, anywhere it is within the
 // cylinder's radius, or with "dome" in the collider, how far a round cap
 // falls from its middle to its rim, on the cap's curve, so its feet stay on
 // the cap as it walks across it. The ling's own collider, a sphere around
@@ -71,8 +71,8 @@
 // - restDelay: how long it has to go without flapping before it starts
 //   getting energy back in the air, so tapping Space can't keep it up.
 //   0.4 by default.
-// - perches: the ID of the node the perches are under. "mushrooms" by
-//   default.
+// - perches: the ID of the node the perches are under, or a list of them,
+//   such as ["mushrooms", "rocks"]. "mushrooms" by default.
 // - ground: the ID of a terrain node to land on (see Terrain in
 //   @scenic/runtime). Without one, the ground is flat at 0.
 // - trees: the ID of the node the trees are under. Optional.
@@ -457,7 +457,9 @@ module.exports = function createFlyScript(node) {
       const groundAt = (x, z) => (terrain ? terrain.heightAt(x, z) : 0);
 
       const start = state.transform.position;
-      const perches = perchesUnder(sceneManager, sceneManager.getNodeByID(settings.perches));
+      const perches = [settings.perches]
+        .flat()
+        .flatMap((id) => perchesUnder(sceneManager, sceneManager.getNodeByID(id)));
       const tubes = tubesOf(
         sceneManager,
         settings.trees && sceneManager.getNodeByID(settings.trees)

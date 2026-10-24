@@ -28,6 +28,7 @@ const sceneFiles = [
   "scenes/jedi-star-fighter.json",
   "scenes/outdoors.json",
   "scenes/rockets.json",
+  "scenes/rocks.json",
   "scenes/skinning-mesh-animation-dancing-character.json",
   "scenes/trees.json",
   "/games/bubble-squadron/race.json",
