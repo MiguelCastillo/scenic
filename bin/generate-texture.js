@@ -1,13 +1,19 @@
 #!/usr/bin/env node
-// generate-texture writes a seamless cartoon texture for terrain as a PNG
-// file in resources/textures. Every kind wraps around at its edges, so it
-// repeats across the ground forever without a seam. Its kind is one of:
+// generate-texture writes a seamless cartoon texture for terrain, or for tree
+// bark, as a PNG file in resources/textures. Every kind wraps around at its
+// edges, so it repeats across the ground, or around and up a trunk, forever
+// without a seam. Its kind is one of:
 // - grass: a grey detail map of soft mottling and little tufts, for grass.
 //   Terrain tints it with its grass colors, so it is grey rather than green.
 // - dirt: a grey detail map of mottling and small, round pebbles, for dirt.
 //   Terrain tints it with its dirt color.
 // - blend: where dirt shows through grass, in the alpha channel, from 0 for
 //   grass to 255 for dirt, as soft-edged patches. Its color is white.
+// - bark: light plates of bark split by darker grooves, which run up and
+//   down it, wavering, with fine grain, for a mesh it tints, such as a tree's
+//   trunk and branches (see textures on a static mesh in the README). It is
+//   mostly near white, so the bark keeps the color it is painted, with its
+//   grooves shading it darker.
 // Detail maps are light grey on average, around 80%, so terrain brightens
 // them back up by 1.25 to keep its colors as they are on average.
 //
@@ -15,9 +21,10 @@
 //   node bin/generate-texture.js --kind grass     terrain-grass.png
 //   node bin/generate-texture.js --kind dirt      terrain-dirt.png
 //   node bin/generate-texture.js --kind blend     terrain-blend.png
+//   node bin/generate-texture.js --kind bark      bark.png
 //
 // Parameters:
-//   --kind: grass, dirt or blend. grass by default.
+//   --kind: grass, dirt, blend or bark. grass by default.
 //   --size: how many pixels wide and tall it is, a power of 2. 256 by
 //     default, and 512 for blend.
 //   --seed: which random texture. 1 by default.
@@ -112,6 +119,28 @@ const kinds = {
       paint(grey, size, cx, cy + r * 0.35, r * 1.15, (d) => -0.12 * (1 - d));
       paint(grey, size, cx, cy, r, (d) => 0.14 * (1 - d * d * d));
     });
+    fill(pixels, grey);
+  },
+
+  bark(pixels, size, {seed}) {
+    const grey = new Float32Array(size * size);
+    // The grooves are where a few waves across the texture, wavered by noise
+    // running up it, are near their highest, so they run up and down,
+    // splitting the bark into long plates. They widen and narrow along their
+    // length, and the plates have fine grain. Everything repeats, across in
+    // whole waves and up in whole cells of noise, so it tiles.
+    const grooves = 5;
+    for (let y = 0; y < size; y++) {
+      for (let x = 0; x < size; x++) {
+        const [u, v] = [x / size, y / size];
+        const waver = 0.9 * (fbm(u, v, 3, 3, seed) - 0.5);
+        const wave = 0.5 + 0.5 * Math.cos(2 * Math.PI * (u * grooves + waver));
+        const width = 0.62 + 0.3 * fbm(u, v, 4, 2, seed + 5);
+        const groove = smoothstep(width, width + 0.18, wave);
+        const grain = fbm(u, v, 24, 2, seed + 9);
+        grey[y * size + x] = 0.98 - 0.45 * groove - 0.14 * grain;
+      }
+    }
     fill(pixels, grey);
   },
 
@@ -212,7 +241,7 @@ function main() {
   const pixels = new Uint8Array(pixelSize * pixelSize * 4);
   kinds[kind](pixels, pixelSize, {seed: Number(seed), cover: Number(cover)});
 
-  const filename = out || `terrain-${kind}.png`;
+  const filename = out || (kind === "bark" ? "bark.png" : `terrain-${kind}.png`);
   const output = path.isAbsolute(filename)
     ? filename
     : path.join(__dirname, "..", "resources", "textures", filename);

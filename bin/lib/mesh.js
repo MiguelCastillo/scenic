@@ -3,16 +3,16 @@
 
 const SEGMENTS = 48; // around a lathe
 
-// Mesh accumulates vertices, each with a normal and a color, and triangles
-// that index them.
+// Mesh accumulates vertices, each with a normal and a color, and optionally
+// texture coordinates, [u, v], and triangles that index them.
 class Mesh {
   constructor() {
     this.vertices = [];
     this.triangles = [];
   }
 
-  vertex(position, normal, color) {
-    this.vertices.push({position, normal: normalize(normal), color});
+  vertex(position, normal, color, uv) {
+    this.vertices.push({position, normal: normalize(normal), color, uv});
     return this.vertices.length - 1;
   }
 
@@ -42,7 +42,8 @@ class Mesh {
   }
 
   // toObj is the mesh as an OBJ file, with header as comment lines at the
-  // top and the mesh in one group named group.
+  // top and the mesh in one group named group. A mesh with texture
+  // coordinates has a vt line for each vertex, [0, 0] for any without.
   toObj(header, group) {
     const lines = [...header.map((line) => `# ${line}`), `g ${group}`];
     for (const {position, color} of this.vertices) {
@@ -51,8 +52,15 @@ class Mesh {
     for (const {normal} of this.vertices) {
       lines.push(`vn ${normal.map(fmt).join(" ")}`);
     }
+    const textured = this.vertices.some(({uv}) => uv);
+    if (textured) {
+      for (const {uv = [0, 0]} of this.vertices) {
+        lines.push(`vt ${uv.map(fmt).join(" ")}`);
+      }
+    }
     for (const triangle of this.triangles) {
-      lines.push(`f ${triangle.map((i) => `${i + 1}//${i + 1}`).join(" ")}`);
+      const corner = (i) => (textured ? `${i + 1}/${i + 1}/${i + 1}` : `${i + 1}//${i + 1}`);
+      lines.push(`f ${triangle.map(corner).join(" ")}`);
     }
     return lines.join("\n") + "\n";
   }

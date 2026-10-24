@@ -39,6 +39,13 @@
 //   node bin/generate-tree.js --random           a random tree from a new seed
 //   node bin/generate-tree.js --seed 42 --style round --branches 5 --out my-tree.obj
 //   node bin/generate-tree.js --seed 42 --min-branches 2   allow as few as 2 branches
+//   node bin/generate-tree.js --style weeping --bark   weeping-tree.obj and weeping-tree-bark.obj
+//
+// With --bark, the trunk, branches and twigs are a file of their own, its
+// name with -bark on the end, with texture coordinates for a bark texture,
+// which wraps around them twice and runs along them at the same scale (see
+// bin/generate-texture.js and textures on a static mesh in the README), and
+// the rest, its leaves, is the tree's file. Both have the same header.
 //
 // A seed always makes the same tree. It picks a style unless --style names
 // one, then picks the branches, where the bubbles go, how big they are, and
@@ -51,7 +58,10 @@
 // file, along with its colliders: upright cylinders around its trunk and its
 // crown, each with its position, for colliders in a scene (see collision in
 // @scenic/scene). Leaning trunks and branches reaching out from the crown are
-// left out, so they are a close fit rather than exact.
+// left out, so they are a close fit rather than exact. Its skeleton is saved
+// there too: every tube of its trunk, branches and twigs, as {points, radii},
+// the three points of its curve and its radius at five even steps along it,
+// for things to walk along the tree (see games/wingborn/scripts/fly.js).
 
 const fs = require("fs");
 const path = require("path");
@@ -628,6 +638,7 @@ function randomParameters(random, styleName, minBranches) {
 // Resolution.
 const TUBE_SIDES = 16; // around a trunk or branch
 const TUBE_STEPS = 14; // along a trunk or branch
+const BARK_WRAPS = 2; // how many times a bark texture wraps around a tube
 const BUBBLE_SIDES = 28; // around a big bubble; smaller ones get fewer
 const BUBBLE_RINGS = 18; // from a big bubble's bottom to its top
 
@@ -670,16 +681,28 @@ const curve = (p0, p1, p2, t) =>
 // radiusAt(t) giving its radius along the way, for t from 0 to 1. Its rings
 // are turned as little as possible from one to the next, so it doesn't
 // twist. It has sides around it and steps along it, fewer for thin, straight
-// ones, which are small on screen.
+// ones, which are small on screen. Given a skeleton, a list, it adds itself
+// to it, as {points, radii}.
 function tube(
   mesh,
   [p0, p1, p2],
   radiusAt,
   color,
   p,
-  {sides = TUBE_SIDES, steps = TUBE_STEPS} = {}
+  {sides = TUBE_SIDES, steps = TUBE_STEPS, skeleton, textured = false} = {}
 ) {
+  skeleton?.push({points: [p0, p1, p2], radii: [0, 0.25, 0.5, 0.75, 1].map(radiusAt)});
   const points = Array.from({length: steps + 1}, (_, i) => curve(p0, p1, p2, i / steps));
+  // A textured tube has texture coordinates: the texture wraps around it
+  // BARK_WRAPS times, and runs along it at the same scale, from how far
+  // along it is, so it isn't stretched. Its first side is doubled, at the
+  // far end of the texture, so the texture doesn't smear back across the
+  // seam.
+  const around = textured ? sides + 1 : sides;
+  const radii = points.map((_, i) => radiusAt(i / steps));
+  const meanRadius = radii.reduce((sum, r) => sum + r, 0) / radii.length || 1;
+  const repeat = (2 * Math.PI * meanRadius) / BARK_WRAPS;
+  let along = 0;
   let side = null;
   const rings = points.map((point, i) => {
     const tangent = normalize(sub(points[Math.min(i + 1, steps)], points[Math.max(i - 1, 0)]));
@@ -690,22 +713,24 @@ function tube(
       side = normalize(sub(side, scale(tangent, dot(side, tangent))));
     }
     const other = cross(tangent, side);
-    const radius = radiusAt(i / steps);
+    const radius = radii[i];
+    along += i ? Math.hypot(...sub(point, points[i - 1])) : 0;
 
-    return Array.from({length: sides}, (_, s) => {
+    return Array.from({length: around}, (_, s) => {
       const angle = (s / sides) * 2 * Math.PI;
       const normal = add(scale(side, Math.cos(angle)), scale(other, Math.sin(angle)));
       return mesh.vertex(
         add(point, scale(normal, radius)),
         normal,
-        shade(color, normal, {...p, highlight: p.highlight * 0.5})
+        shade(color, normal, {...p, highlight: p.highlight * 0.5}),
+        textured ? [(s / sides) * BARK_WRAPS, along / repeat] : undefined
       );
     });
   });
 
   for (let i = 0; i < steps; i++) {
     for (let s = 0; s < sides; s++) {
-      const t = (s + 1) % sides;
+      const t = textured ? s + 1 : (s + 1) % sides;
       mesh.quad(rings[i][s], rings[i][t], rings[i + 1][t], rings[i + 1][s]);
     }
   }
@@ -749,10 +774,16 @@ function bubble(mesh, center, radius, color, p) {
 
 // buildTree builds the tree's mesh from its parameters, using random for the
 // details its parameters leave open, such as exactly where each bubble goes.
-// It returns the mesh and its colliders.
-function buildTree(p, random) {
+// It returns the mesh, its colliders and skeleton, and, textured, its bark:
+// its trunk, branches and twigs, apart, with texture coordinates.
+function buildTree(p, random, {textured = false} = {}) {
   const between = (min, max) => min + (max - min) * random();
   const mesh = new Mesh();
+  // The trunk, branches and twigs, which, textured, are a mesh of their own,
+  // with texture coordinates for bark.
+  const bark = textured ? new Mesh() : mesh;
+  // The tubes of its trunk, branches and twigs, for walking along it.
+  const skeleton = [];
 
   // The trunk leans its top a little to one side, curving there.
   const leanAngle = between(0, 2 * Math.PI);
@@ -760,7 +791,7 @@ function buildTree(p, random) {
   const trunk = [[0, 0, 0], [0, p.trunkHeight * 0.5, 0], top];
   const trunkRadiusAt = (t) =>
     p.trunkRadius * (1 + (p.trunkTaper - 1) * t) * (1 + (p.rootFlare - 1) * (1 - t) ** 6);
-  tube(mesh, trunk, trunkRadiusAt, p.trunkColor, p);
+  tube(bark, trunk, trunkRadiusAt, p.trunkColor, p, {skeleton, textured});
 
   // Bubbles are placed as [center, radius] pairs, then built.
   const sized = (factor = 1) =>
@@ -804,7 +835,10 @@ function buildTree(p, random) {
       const straightBend = scale(add(start, end), 0.5);
       const curvedBend = add(start, scale(reach, length * 0.55));
       const bend = add(scale(straightBend, 1 - p.branchCurve), scale(curvedBend, p.branchCurve));
-      tube(mesh, [start, bend, end], (t) => branchRadius * (1 - 0.35 * t), p.trunkColor, p);
+      tube(bark, [start, bend, end], (t) => branchRadius * (1 - 0.35 * t), p.trunkColor, p, {
+        skeleton,
+        textured,
+      });
       anchors.push(end);
       bubbles.push([end, sized(p.tipSize)]);
       tips.push(bubbles[bubbles.length - 1]);
@@ -835,11 +869,12 @@ function buildTree(p, random) {
         );
         const twigRadius = branchRadius * (1 - 0.35 * forkT) * 0.6;
         tube(
-          mesh,
+          bark,
           [twigStart, twigBend, twigEnd],
           (t) => twigRadius * (1 - 0.35 * t),
           p.trunkColor,
-          p
+          p,
+          {skeleton, textured}
         );
         bubbles.push([twigEnd, sized(p.tipSize * 0.65)]);
         tips.push(bubbles[bubbles.length - 1]);
@@ -990,12 +1025,12 @@ function buildTree(p, random) {
             const [from, to] = [strand[i], strand[i + 1]];
             const along = (t) => (i + t) / (strand.length - 1);
             tube(
-              mesh,
+              bark,
               [from, scale(add(from, to), 0.5), to],
               (t) => strandRadius * (1 - 0.5 * along(t)),
               p.trunkColor,
               p,
-              {sides: 6, steps: 1}
+              {sides: 6, steps: 1, textured}
             );
           }
         }
@@ -1040,7 +1075,10 @@ function buildTree(p, random) {
       const length = p.branchLength * spread * (1.15 - 0.5 * order) * between(0.9, 1.1);
       const end = add(add(start, scale(out, length)), [0, length * 0.2 * p.branchCurve, 0]);
       const bend = add(start, scale(out, length * 0.55));
-      tube(mesh, [start, bend, end], (t) => branchRadius * (1 - 0.35 * t), p.trunkColor, p);
+      tube(bark, [start, bend, end], (t) => branchRadius * (1 - 0.35 * t), p.trunkColor, p, {
+        skeleton,
+        textured,
+      });
       pad(add(end, [0, p.bubbleSize * 0.25, 0]), 1.15 - 0.45 * order);
     }
 
@@ -1150,7 +1188,7 @@ function buildTree(p, random) {
     },
   ];
 
-  return {mesh, colliders};
+  return {mesh, bark: textured ? bark : null, colliders, skeleton};
 }
 
 function main() {
@@ -1159,6 +1197,7 @@ function main() {
     random: randomSeed,
     style: styleArg,
     out,
+    bark: textured = false,
     ...overrides
   } = parseArgs(process.argv.slice(2));
 
@@ -1234,25 +1273,28 @@ function main() {
   // The layout of the branches and bubbles gets its own random numbers, from
   // the seed when there is one, so overriding a parameter doesn't reshuffle
   // the whole tree.
-  const {mesh, colliders} = buildTree(parameters, mulberry32((seed ?? 0) + 7919));
+  const {mesh, bark, colliders, skeleton} = buildTree(parameters, mulberry32((seed ?? 0) + 7919), {
+    textured: !!textured,
+  });
   const roundedColliders = JSON.stringify(colliders, round);
-  fs.writeFileSync(
-    output,
-    mesh.toObj(
-      [
-        "Generated by bin/generate-tree.js",
-        seed == null ? `Style ${style}` : `Seed ${seed}, style ${style}`,
-        `Parameters ${rounded}`,
-        `Colliders ${roundedColliders}`,
-      ],
-      "tree"
-    )
-  );
-
+  const roundedSkeleton = JSON.stringify(skeleton, round);
+  const header = [
+    "Generated by bin/generate-tree.js",
+    seed == null ? `Style ${style}` : `Seed ${seed}, style ${style}`,
+    `Parameters ${rounded}`,
+    `Colliders ${roundedColliders}`,
+    `Skeleton ${roundedSkeleton}`,
+  ];
+  // Its bark, given --bark, is a file of its own beside it, named for it.
+  const barkOutput = output.replace(/\.obj$/, "") + "-bark.obj";
+  const files = [[output, mesh, "tree"], ...(bark ? [[barkOutput, bark, "bark"]] : [])];
   /* eslint-disable no-console */
-  console.log(
-    `wrote ${output}: ${mesh.vertices.length} vertices, ${mesh.triangles.length} triangles`
-  );
+  for (const [file, fileMesh, group] of files) {
+    fs.writeFileSync(file, fileMesh.toObj(header, group));
+    console.log(
+      `wrote ${file}: ${fileMesh.vertices.length} vertices, ${fileMesh.triangles.length} triangles`
+    );
+  }
   console.log(seed == null ? `style ${style}` : `seed ${seed}, style ${style}`);
   console.log(`parameters ${rounded}`);
   console.log(`colliders ${roundedColliders}`);

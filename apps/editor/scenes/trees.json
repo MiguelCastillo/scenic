@@ -668,79 +668,163 @@
             },
             {
               "name": "colony tree",
-              "type": "static-mesh",
-              "resource": "/resources/obj/colony-tree.obj",
+              "type": "transform",
               "transform": {
                 "position": [-967, 0, 2700],
                 "rotation": [0, 0, 0],
                 "scale": [1, 1, 1]
               },
-              "material": {
-                "color": [0, 0, 0, 1],
-                "reflectiveness": 1,
-                "specular": 0.1,
-                "shininess": 16
-              },
-              "ambient": {
-                "color": [0.4, 0.4, 0.43]
-              }
+              "items": [
+                {
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/colony-tree.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.1,
+                    "shininess": 16
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  },
+                  "name": "colony tree leaves"
+                },
+                {
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/colony-tree-bark.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.05,
+                    "shininess": 8
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  },
+                  "name": "colony tree bark",
+                  "texture": "/resources/textures/bark.png"
+                }
+              ]
             },
             {
               "name": "colony tree 21",
-              "type": "static-mesh",
-              "resource": "/resources/obj/colony-tree-21.obj",
+              "type": "transform",
               "transform": {
                 "position": [-322, 0, 2700],
                 "rotation": [0, 0, 0],
                 "scale": [1, 1, 1]
               },
-              "material": {
-                "color": [0, 0, 0, 1],
-                "reflectiveness": 1,
-                "specular": 0.1,
-                "shininess": 16
-              },
-              "ambient": {
-                "color": [0.4, 0.4, 0.43]
-              }
+              "items": [
+                {
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/colony-tree-21.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.1,
+                    "shininess": 16
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  },
+                  "name": "colony tree 21 leaves"
+                },
+                {
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/colony-tree-21-bark.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.05,
+                    "shininess": 8
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  },
+                  "name": "colony tree 21 bark",
+                  "texture": "/resources/textures/bark.png"
+                }
+              ]
             },
             {
               "name": "colony tree 22",
-              "type": "static-mesh",
-              "resource": "/resources/obj/colony-tree-22.obj",
+              "type": "transform",
               "transform": {
                 "position": [322, 0, 2700],
                 "rotation": [0, 0, 0],
                 "scale": [1, 1, 1]
               },
-              "material": {
-                "color": [0, 0, 0, 1],
-                "reflectiveness": 1,
-                "specular": 0.1,
-                "shininess": 16
-              },
-              "ambient": {
-                "color": [0.4, 0.4, 0.43]
-              }
+              "items": [
+                {
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/colony-tree-22.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.1,
+                    "shininess": 16
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  },
+                  "name": "colony tree 22 leaves"
+                },
+                {
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/colony-tree-22-bark.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.05,
+                    "shininess": 8
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  },
+                  "name": "colony tree 22 bark",
+                  "texture": "/resources/textures/bark.png"
+                }
+              ]
             },
             {
               "name": "colony tree 23",
-              "type": "static-mesh",
-              "resource": "/resources/obj/colony-tree-23.obj",
+              "type": "transform",
               "transform": {
                 "position": [967, 0, 2700],
                 "rotation": [0, 0, 0],
                 "scale": [1, 1, 1]
               },
-              "material": {
-                "color": [0, 0, 0, 1],
-                "reflectiveness": 1,
-                "specular": 0.1,
-                "shininess": 16
-              },
-              "ambient": {
-                "color": [0.4, 0.4, 0.43]
-              }
+              "items": [
+                {
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/colony-tree-23.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.1,
+                    "shininess": 16
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  },
+                  "name": "colony tree 23 leaves"
+                },
+                {
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/colony-tree-23-bark.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.05,
+                    "shininess": 8
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  },
+                  "name": "colony tree 23 bark",
+                  "texture": "/resources/textures/bark.png"
+                }
+              ]
             }
           ]
         }

@@ -10,10 +10,12 @@ ling starts on. Space flaps, which climbs and uses energy, the left and
 right arrows turn, and the down arrow dives. Gliding sinks, and gives a
 little energy back once the ling has stopped flapping a moment. The ling
 lands on caps and on the ground, where the up and down arrows walk, and
-standing gives its energy back, faster on a cap. A cyan ring marks the next
-perch, and the pause menu starts the run over (see `scripts/fly.js` and
-`scripts/course.js`). Its models come from `bin/generate-ling.js` and
-`bin/generate-mushroom.js`. The rest of this is the story so far, to build
+standing gives its energy back, faster on a cap. It sticks to the giant
+trees where it touches them, and climbs them, up the trunk and out along the
+branches. A cyan ring marks the next perch, and the pause menu starts the
+run over (see `scripts/fly.js` and `scripts/course.js`). Its models come from
+`bin/generate-ling.js`, `bin/generate-mushroom.js`, `bin/generate-grass.js`
+and `bin/generate-tree.js`. The rest of this is the story so far, to build
 the other scenes from.
 
 ## The world
