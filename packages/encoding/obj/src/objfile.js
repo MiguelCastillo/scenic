@@ -56,7 +56,7 @@ export class ObjFile {
         const v = geo.getIndexed3DComponents(obj.vertices, faces.vertices);
         const vc = geo.getIndexed3DComponents(obj.colors, faces.vertices);
         const vn = geo.getIndexed3DComponents(obj.normals, faces.normals);
-        const vt = geo.getIndexed3DComponents(obj.textures, faces.textures);
+        const vt = geo.getIndexed2DComponents(obj.textures, faces.textures);
 
         return {
           vertices: result.vertices.concat(v),
@@ -177,9 +177,13 @@ export function parse(data) {
       case NORMAL_VECTOR:
         currentGroup.normals.push(...parseVertices(token.value));
         break;
-      case TEXTURE_VERTEX:
-        currentGroup.textures.push(...parseVertices(token.value));
+      case TEXTURE_VERTEX: {
+        // A texture vertex is u and v, and an optional w that textures,
+        // being flat, don't use, so it is left out.
+        const [u, v] = parseVertices(token.value);
+        currentGroup.textures.push(u, v);
         break;
+      }
       case FACES:
         const {vertices, textures, normals} = parseFace(token.value);
 

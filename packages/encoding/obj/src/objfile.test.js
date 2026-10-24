@@ -244,12 +244,12 @@ test("parse cube with texture vertices", () => {
 
   // prettier-ignore
   expect(cube.groups[0].textures).toEqual([
-    0.0, 0.0, 1.0,
-    0.0, 0.0, -1.0,
-    0.0, 1.0, 0.0,
-    0.0, -1.0, 0.0,
-    1.0, 0.0, 0.0,
-    -1.0, 0.0, 0.0,
+    0.0, 0.0,
+    0.0, 0.0,
+    0.0, 1.0,
+    0.0, -1.0,
+    1.0, 0.0,
+    -1.0, 0.0,
   ]);
 
   // prettier-ignore
@@ -464,5 +464,32 @@ test("parse object with a 7 component face", () => {
     0,0,0,
     7,5,0,
     2.5,7,0,
+  ]);
+});
+
+// A quad of two triangles, with a texture vertex for each corner. Texture
+// vertices have u and v, and the last one has an unused w as well.
+const texturedQuad = `
+v 0 0 0
+v 1 0 0
+v 1 1 0
+v 0 1 0
+vt 0 0
+vt 1 0
+vt 1 1
+vt 0 1 0
+vn 0 0 1
+f 1/1/1 2/2/1 3/3/1
+f 1/1/1 3/3/1 4/4/1
+`;
+
+test("triangles have two texture coordinates for each vertex", () => {
+  const triangles = ObjFile.create(texturedQuad).getTriangles();
+
+  expect(triangles.vertices.length / 3).toEqual(6);
+  // prettier-ignore
+  expect(triangles.textures).toEqual([
+    0, 0, 1, 0, 1, 1,
+    0, 0, 1, 1, 0, 1,
   ]);
 });

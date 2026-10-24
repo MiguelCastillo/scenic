@@ -1,5 +1,5 @@
 import {geometry as geo} from "@scenic/math";
-import {VertexBuffer, VertexBufferData} from "@scenic/renderer";
+import {TextureVertexBufferData, VertexBuffer, VertexBufferData} from "@scenic/renderer";
 import {Geometry as GeometrySceneNode} from "@scenic/scene";
 
 import {WorkerLoader} from "../base-loader.js";
@@ -26,10 +26,13 @@ export function buildSceneNode(gl, model, sceneNode, sceneManager, lodDistance) 
     sceneNode.remove(previous);
     previous.dispose(gl);
   }
-  let {vertices, normals, colors} = model;
+  let {vertices, normals, colors, textures} = model;
 
   const hasNormals = normals.byteLength || normals.length;
   const hasColors = colors.byteLength || colors.length;
+  // Texture coordinates, from the model's vt lines, for a mesh with a
+  // texture (see textures on a static mesh in the README).
+  const hasTextures = textures?.byteLength || textures?.length;
   const vertexBuffer = new VertexBuffer({
     positions: new VertexBufferData(gl, vertices),
     normals: new VertexBufferData(
@@ -37,6 +40,7 @@ export function buildSceneNode(gl, model, sceneNode, sceneManager, lodDistance) 
       hasNormals ? normals : geo.normalizeTriangleVertices(new Float32Array(vertices))
     ),
     colors: hasColors ? new VertexBufferData(gl, colors) : undefined,
+    textureCoords: hasTextures ? new TextureVertexBufferData(gl, textures) : undefined,
   });
 
   if (!isStaticMesh(sceneNode) && !isSkinnedMesh(sceneNode) && !isLight(sceneNode)) {
