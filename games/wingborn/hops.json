@@ -6,8 +6,8 @@
       "input": true,
       "fog": {
         "color": [0.78, 0.89, 0.96],
-        "near": 2500,
-        "far": 11000
+        "near": 4000,
+        "far": 30000
       },
       "items": [
         {
@@ -16,7 +16,7 @@
           "projection": {
             "type": "perspective",
             "near": 1,
-            "far": 14000,
+            "far": 45000,
             "fov": 60
           },
           "transform": {
@@ -43,7 +43,7 @@
           "projection": {
             "type": "perspective",
             "near": 1,
-            "far": 14000,
+            "far": 45000,
             "fov": 60
           },
           "transform": {
@@ -118,8 +118,28 @@
             "flatness": 0.6,
             "lowColor": [0.5, 0.7, 0.32],
             "highColor": [0.62, 0.8, 0.38],
-            "dirtColor": [0.55, 0.45, 0.32],
-            "showTiles": false
+            "dirtColor": [0.4, 0.58, 0.27],
+            "showTiles": false,
+            "clearings": [
+              [0, 0, 650],
+              [520, 760, 650],
+              [-120, 1560, 650],
+              [640, 2260, 650],
+              [40, 3060, 650],
+              [760, 3800, 650],
+              [-900, 600, 650],
+              [1500, 1300, 650],
+              [-800, 2400, 650],
+              [1500, 3000, 650],
+              [-900, 3600, 650],
+              [1200, -500, 650],
+              [260, 380, 500],
+              [200, 1160, 500],
+              [260, 1910, 500],
+              [340, 2660, 500],
+              [400, 3430, 500],
+              [760, 4300, 500]
+            ]
           },
           "material": {
             "color": [0, 0, 0, 1],
@@ -139,7 +159,7 @@
             {
               "name": "giant tree 1",
               "type": "static-mesh",
-              "resource": "/resources/obj/canopy-tree-lod2.obj",
+              "resource": "/resources/obj/colony-tree-22.obj",
               "material": {
                 "color": [0, 0, 0, 1],
                 "reflectiveness": 1,
@@ -150,15 +170,15 @@
                 "color": [0.4, 0.4, 0.43]
               },
               "transform": {
-                "position": [-5000, -20, 2500],
+                "position": [3378, -60, 10357],
                 "rotation": [0, 0, 0],
-                "scale": [8, 8, 8]
+                "scale": [31, 31, 31]
               }
             },
             {
               "name": "giant tree 2",
               "type": "static-mesh",
-              "resource": "/resources/obj/tall-tree-lod2.obj",
+              "resource": "/resources/obj/colony-tree-22.obj",
               "material": {
                 "color": [0, 0, 0, 1],
                 "reflectiveness": 1,
@@ -169,15 +189,15 @@
                 "color": [0.4, 0.4, 0.43]
               },
               "transform": {
-                "position": [-4200, -20, 6500],
-                "rotation": [0, 50, 0],
-                "scale": [9, 9, 9]
+                "position": [9697, -60, -1520],
+                "rotation": [0, 80, 0],
+                "scale": [37, 37, 37]
               }
             },
             {
               "name": "giant tree 3",
               "type": "static-mesh",
-              "resource": "/resources/obj/canopy-tree-211-lod2.obj",
+              "resource": "/resources/obj/colony-tree-22.obj",
               "material": {
                 "color": [0, 0, 0, 1],
                 "reflectiveness": 1,
@@ -188,15 +208,15 @@
                 "color": [0.4, 0.4, 0.43]
               },
               "transform": {
-                "position": [3500, -20, 8000],
-                "rotation": [0, 100, 0],
-                "scale": [8, 8, 8]
+                "position": [-2949, -60, -7027],
+                "rotation": [0, 160, 0],
+                "scale": [34, 34, 34]
               }
             },
             {
               "name": "giant tree 4",
               "type": "static-mesh",
-              "resource": "/resources/obj/cloud-tree-1-lod2.obj",
+              "resource": "/resources/obj/colony-tree-22.obj",
               "material": {
                 "color": [0, 0, 0, 1],
                 "reflectiveness": 1,
@@ -207,48 +227,756 @@
                 "color": [0.4, 0.4, 0.43]
               },
               "transform": {
-                "position": [5200, -20, 3000],
-                "rotation": [0, 150, 0],
-                "scale": [8, 8, 8]
+                "position": [-9097, -60, 5320],
+                "rotation": [0, 240, 0],
+                "scale": [40, 40, 40]
+              }
+            }
+          ]
+        },
+        {
+          "name": "grass forest",
+          "type": "forest",
+          "forest": {
+            "terrain": "terrain",
+            "seed": 7,
+            "density": 2,
+            "distance": 14000,
+            "margin": 100,
+            "minScale": 0.56,
+            "maxScale": 0.91,
+            "tileSize": 2000
+          },
+          "items": [
+            {
+              "name": "grass kind 1",
+              "type": "static-mesh",
+              "resource": "/resources/obj/grass.obj",
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.05,
+                "shininess": 8
+              },
+              "ambient": {
+                "color": [0.42, 0.45, 0.42]
               }
             },
             {
-              "name": "giant tree 5",
+              "name": "grass kind 2",
               "type": "static-mesh",
-              "resource": "/resources/obj/canopy-tree-217-lod2.obj",
+              "resource": "/resources/obj/grass-1.obj",
               "material": {
                 "color": [0, 0, 0, 1],
                 "reflectiveness": 1,
-                "specular": 0.1,
-                "shininess": 16
+                "specular": 0.05,
+                "shininess": 8
               },
               "ambient": {
-                "color": [0.4, 0.4, 0.43]
-              },
-              "transform": {
-                "position": [4600, -20, -2500],
-                "rotation": [0, 200, 0],
-                "scale": [7, 7, 7]
+                "color": [0.42, 0.45, 0.42]
               }
             },
             {
-              "name": "giant tree 6",
+              "name": "grass kind 3",
               "type": "static-mesh",
-              "resource": "/resources/obj/tall-tree-117-lod2.obj",
+              "resource": "/resources/obj/grass-2.obj",
               "material": {
                 "color": [0, 0, 0, 1],
                 "reflectiveness": 1,
-                "specular": 0.1,
-                "shininess": 16
+                "specular": 0.05,
+                "shininess": 8
               },
               "ambient": {
-                "color": [0.4, 0.4, 0.43]
-              },
-              "transform": {
-                "position": [-3500, -20, -2600],
-                "rotation": [0, 250, 0],
-                "scale": [8, 8, 8]
+                "color": [0.42, 0.45, 0.42]
               }
+            },
+            {
+              "name": "grass kind 4",
+              "type": "static-mesh",
+              "resource": "/resources/obj/grass-3.obj",
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.05,
+                "shininess": 8
+              },
+              "ambient": {
+                "color": [0.42, 0.45, 0.42]
+              }
+            },
+            {
+              "name": "grass kind 5",
+              "type": "static-mesh",
+              "resource": "/resources/obj/grass-short.obj",
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.05,
+                "shininess": 8
+              },
+              "ambient": {
+                "color": [0.42, 0.45, 0.42]
+              }
+            }
+          ]
+        },
+        {
+          "name": "grass",
+          "type": "transform",
+          "items": [
+            {
+              "name": "grass clump 1",
+              "type": "transform",
+              "transform": {
+                "position": [-450, -10, 700],
+                "rotation": [0, 0, 0],
+                "scale": [0.7, 0.7, 0.7]
+              },
+              "items": [
+                {
+                  "name": "grass clump 1 model",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/grass-1.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.05,
+                    "shininess": 8
+                  },
+                  "ambient": {
+                    "color": [0.42, 0.45, 0.42]
+                  }
+                },
+                {
+                  "name": "grass clump 1 blade 1",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 73.22,
+                    "height": 840
+                  },
+                  "transform": {
+                    "position": [100.428, 420, -90.234],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                },
+                {
+                  "name": "grass clump 1 blade 2",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 58.554,
+                    "height": 554.009
+                  },
+                  "transform": {
+                    "position": [98.258, 277.005, 18.878],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                },
+                {
+                  "name": "grass clump 1 blade 3",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 53.511,
+                    "height": 542.4
+                  },
+                  "transform": {
+                    "position": [59.822, 271.2, 99.533],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                },
+                {
+                  "name": "grass clump 1 blade 4",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 76.846,
+                    "height": 586.967
+                  },
+                  "transform": {
+                    "position": [-85.414, 293.483, 90.345],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                },
+                {
+                  "name": "grass clump 1 blade 5",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 64.983,
+                    "height": 810.623
+                  },
+                  "transform": {
+                    "position": [-130.561, 405.312, -29.562],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                },
+                {
+                  "name": "grass clump 1 blade 6",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 60.974,
+                    "height": 769.129
+                  },
+                  "transform": {
+                    "position": [-58.818, 384.565, -140.235],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                },
+                {
+                  "name": "grass clump 1 blade 7",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 66.185,
+                    "height": 805.115
+                  },
+                  "transform": {
+                    "position": [59.946, 402.558, -83.943],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "grass clump 2",
+              "type": "transform",
+              "transform": {
+                "position": [1000, -10, 1300],
+                "rotation": [0, 40, 0],
+                "scale": [0.7, 0.7, 0.7]
+              },
+              "items": [
+                {
+                  "name": "grass clump 2 model",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/grass-short.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.05,
+                    "shininess": 8
+                  },
+                  "ambient": {
+                    "color": [0.42, 0.45, 0.42]
+                  }
+                },
+                {
+                  "name": "grass clump 2 blade 1",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 61.926,
+                    "height": 455
+                  },
+                  "transform": {
+                    "position": [-71.739, 227.5, 19.089],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                },
+                {
+                  "name": "grass clump 2 blade 2",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 65.64,
+                    "height": 304.94
+                  },
+                  "transform": {
+                    "position": [-8.109, 152.47, -51.182],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                },
+                {
+                  "name": "grass clump 2 blade 3",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 52.53,
+                    "height": 364.221
+                  },
+                  "transform": {
+                    "position": [154.351, 182.11, -9.608],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                },
+                {
+                  "name": "grass clump 2 blade 4",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 70.98,
+                    "height": 301.827
+                  },
+                  "transform": {
+                    "position": [27.522, 150.914, 80.268],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "grass clump 3",
+              "type": "transform",
+              "transform": {
+                "position": [-600, -10, 2000],
+                "rotation": [0, 80, 0],
+                "scale": [0.63, 0.63, 0.63]
+              },
+              "items": [
+                {
+                  "name": "grass clump 3 model",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/grass-2.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.05,
+                    "shininess": 8
+                  },
+                  "ambient": {
+                    "color": [0.42, 0.45, 0.42]
+                  }
+                },
+                {
+                  "name": "grass clump 3 blade 1",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 53.668,
+                    "height": 840
+                  },
+                  "transform": {
+                    "position": [57.924, 420, -119.283],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                },
+                {
+                  "name": "grass clump 3 blade 2",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 73.117,
+                    "height": 677.418
+                  },
+                  "transform": {
+                    "position": [56.994, 338.709, -3.508],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                },
+                {
+                  "name": "grass clump 3 blade 3",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 67.107,
+                    "height": 773.632
+                  },
+                  "transform": {
+                    "position": [90.73, 386.816, 129.02],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                },
+                {
+                  "name": "grass clump 3 blade 4",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 69.757,
+                    "height": 589.886
+                  },
+                  "transform": {
+                    "position": [-16.172, 294.943, 52.13],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                },
+                {
+                  "name": "grass clump 3 blade 5",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 73.034,
+                    "height": 471.818
+                  },
+                  "transform": {
+                    "position": [-95.598, 235.909, 57.683],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                },
+                {
+                  "name": "grass clump 3 blade 6",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 62.947,
+                    "height": 595.656
+                  },
+                  "transform": {
+                    "position": [-157.035, 297.828, 9.076],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                },
+                {
+                  "name": "grass clump 3 blade 7",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 56.048,
+                    "height": 507.862
+                  },
+                  "transform": {
+                    "position": [-26.745, 253.931, -45.514],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "grass clump 4",
+              "type": "transform",
+              "transform": {
+                "position": [1200, -10, 2700],
+                "rotation": [0, 120, 0],
+                "scale": [0.7, 0.7, 0.7]
+              },
+              "items": [
+                {
+                  "name": "grass clump 4 model",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/grass-3.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.05,
+                    "shininess": 8
+                  },
+                  "ambient": {
+                    "color": [0.42, 0.45, 0.42]
+                  }
+                },
+                {
+                  "name": "grass clump 4 blade 1",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 71.284,
+                    "height": 840
+                  },
+                  "transform": {
+                    "position": [43.113, 420, 134.533],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                },
+                {
+                  "name": "grass clump 4 blade 2",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 59.444,
+                    "height": 650.105
+                  },
+                  "transform": {
+                    "position": [-15.167, 325.053, 92.95],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                },
+                {
+                  "name": "grass clump 4 blade 3",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 70.983,
+                    "height": 511.839
+                  },
+                  "transform": {
+                    "position": [-80.401, 255.92, 27.856],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                },
+                {
+                  "name": "grass clump 4 blade 4",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 56.636,
+                    "height": 765.475
+                  },
+                  "transform": {
+                    "position": [-50.132, 382.737, -32.086],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                },
+                {
+                  "name": "grass clump 4 blade 5",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 71.654,
+                    "height": 493.247
+                  },
+                  "transform": {
+                    "position": [-13.428, 246.623, -79.148],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                },
+                {
+                  "name": "grass clump 4 blade 6",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 63.398,
+                    "height": 665.524
+                  },
+                  "transform": {
+                    "position": [53.455, 332.762, -33.364],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                },
+                {
+                  "name": "grass clump 4 blade 7",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 75.141,
+                    "height": 811.162
+                  },
+                  "transform": {
+                    "position": [77.45, 405.581, 19.074],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "grass clump 5",
+              "type": "transform",
+              "transform": {
+                "position": [-500, -10, 3400],
+                "rotation": [0, 10, 0],
+                "scale": [0.77, 0.77, 0.77]
+              },
+              "items": [
+                {
+                  "name": "grass clump 5 model",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/grass-short.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.05,
+                    "shininess": 8
+                  },
+                  "ambient": {
+                    "color": [0.42, 0.45, 0.42]
+                  }
+                },
+                {
+                  "name": "grass clump 5 blade 1",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 61.926,
+                    "height": 455
+                  },
+                  "transform": {
+                    "position": [-71.739, 227.5, 19.089],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                },
+                {
+                  "name": "grass clump 5 blade 2",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 65.64,
+                    "height": 304.94
+                  },
+                  "transform": {
+                    "position": [-8.109, 152.47, -51.182],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                },
+                {
+                  "name": "grass clump 5 blade 3",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 52.53,
+                    "height": 364.221
+                  },
+                  "transform": {
+                    "position": [154.351, 182.11, -9.608],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                },
+                {
+                  "name": "grass clump 5 blade 4",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 70.98,
+                    "height": 301.827
+                  },
+                  "transform": {
+                    "position": [27.522, 150.914, 80.268],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "grass clump 6",
+              "type": "transform",
+              "transform": {
+                "position": [300, -10, 4500],
+                "rotation": [0, 60, 0],
+                "scale": [0.7, 0.7, 0.7]
+              },
+              "items": [
+                {
+                  "name": "grass clump 6 model",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/grass.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.05,
+                    "shininess": 8
+                  },
+                  "ambient": {
+                    "color": [0.42, 0.45, 0.42]
+                  }
+                },
+                {
+                  "name": "grass clump 6 blade 1",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 56.083,
+                    "height": 840
+                  },
+                  "transform": {
+                    "position": [18.615, 420, 56.17],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                },
+                {
+                  "name": "grass clump 6 blade 2",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 68.833,
+                    "height": 546.96
+                  },
+                  "transform": {
+                    "position": [-61.905, 273.48, 98.054],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                },
+                {
+                  "name": "grass clump 6 blade 3",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 57.933,
+                    "height": 556.521
+                  },
+                  "transform": {
+                    "position": [-52.945, 278.261, 2.143],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                },
+                {
+                  "name": "grass clump 6 blade 4",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 75.467,
+                    "height": 733.928
+                  },
+                  "transform": {
+                    "position": [-121.933, 366.964, -38.023],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                },
+                {
+                  "name": "grass clump 6 blade 5",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 64.444,
+                    "height": 817.749
+                  },
+                  "transform": {
+                    "position": [-3.339, 408.875, -140.016],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                },
+                {
+                  "name": "grass clump 6 blade 6",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 55.665,
+                    "height": 588.953
+                  },
+                  "transform": {
+                    "position": [119.171, 294.476, -77.015],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                },
+                {
+                  "name": "grass clump 6 blade 7",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 76.008,
+                    "height": 533.543
+                  },
+                  "transform": {
+                    "position": [104.937, 266.771, -26.865],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                }
+              ]
             }
           ]
         },

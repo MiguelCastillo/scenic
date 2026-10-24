@@ -13,7 +13,10 @@
 // fast. Coming down onto a perch, the top of a cap, it lands there, and
 // coming down to the ground, it lands on that, and either way it stands
 // until it takes off again, getting its energy back, faster on a perch. It
-// bumps off stems and the sides of caps.
+// bumps off stems and the sides of caps, and the undersides of caps are
+// ceilings: it can't walk in under a cap without room to take off, twice its
+// height, and flying up under one, it bumps its head and flies on out from
+// under it.
 //
 // Perches are the nodes under the node the perches setting names whose
 // collider has "perch" set, such as a cap's: {"shape": "cylinder",
@@ -32,6 +35,8 @@
 //   default.
 // - turnRate: how fast it turns, in degrees per second. 100 by default.
 // - walkSpeed: how fast it walks. 160 by default.
+// - height: how tall it stands, to the tips of its antennae, so it keeps its
+//   head out of the caps above it. 150 by default.
 // - bank: how far it leans into a turn in the air, in degrees. 30 by
 //   default.
 // - climbSpeed: how fast it climbs while flapping, in scene units per
@@ -72,6 +77,9 @@
 // - roll: how far it is banked, in degrees.
 // - flapping: whether it is flapping, 0 or 1.
 // - restedSeconds: how long it has gone without flapping in the air.
+// - up: which way is up for it, standing: the surface's normal, which it
+//   leans toward as it lands and walks, so it stands along a cap's dome or
+//   a slope of the ground. In the air it flies upright, and up is [0, 1, 0].
 //
 // With "hud" in the node's state, such as {"hud": "energy"}, it tells the
 // app's UI about its energy every frame, on that channel of
@@ -83,6 +91,7 @@ const defaults = {
   speed: 380,
   turnRate: 100,
   walkSpeed: 160,
+  height: 150,
   bank: 30,
   climbSpeed: 260,
   takeoffSpeed: 300,
@@ -104,7 +113,12 @@ const defaults = {
   roll: 0,
   flapping: 0,
   restedSeconds: 0,
+  up: [0, 1, 0],
 };
+
+// STANDABLE is how far out from its middle a cap can be stood on, as a part
+// of its radius: past that, the dome turns too steep, toward its rim.
+const STANDABLE = 0.9;
 
 // rotation is the rotation matrix for the ling heading degrees around the
 // world's up axis, climbing degrees nose up, and rolled degrees around its
@@ -154,6 +168,73 @@ function surfaceAt(perch, x, z) {
   return perch.top - perch.dome * (1 - Math.sqrt(1 - out * out));
 }
 
+// pushOut moves position out sideways to the rim of perch's cap, straight
+// out from its middle.
+function pushOut(position, perch) {
+  const [dx, dz] = [position[0] - perch.center[0], position[2] - perch.center[2]];
+  const out = Math.hypot(dx, dz);
+  if (out > 0 && out < perch.radius) {
+    position[0] = perch.center[0] + (dx * perch.radius) / out;
+    position[2] = perch.center[2] + (dz * perch.radius) / out;
+  }
+}
+
+// standing is the rotation for the ling heading degrees around the world's
+// up axis while it stands on a surface whose normal is up: its own up axis
+// along up, and its nose, its +Z axis, along its heading, laid along the
+// surface. It is turned to the angles node transforms use (see
+// mat4.rotationAngles).
+function standing(heading, up) {
+  const radians = (heading * Math.PI) / 180;
+  const ahead = [Math.sin(radians), 0, Math.cos(radians)];
+  const along = dot(ahead, up);
+  const nose = normalize(ahead.map((v, i) => v - up[i] * along));
+  const side = cross(up, nose);
+  // Matrix4 data is row-major, so each axis is a column.
+  // prettier-ignore
+  return mat4.rotationAngles([
+    side[0], up[0], nose[0], 0,
+    side[1], up[1], nose[1], 0,
+    side[2], up[2], nose[2], 0,
+    0, 0, 0, 1,
+  ]);
+}
+
+// normalOnCap is the normal of perch's cap at (x, z), on the curve of its
+// dome, tipping out from straight up toward its rim.
+function normalOnCap(perch, x, z) {
+  const [dx, dz] = [x - perch.center[0], z - perch.center[2]];
+  const out = Math.hypot(dx, dz);
+  const part = Math.min(0.99, out / perch.radius);
+  if (!out || !perch.dome) {
+    return [0, 1, 0];
+  }
+  // How steeply the dome falls away here, outward.
+  const slope = (perch.dome * part) / (perch.radius * Math.sqrt(1 - part * part));
+  return normalize([(dx / out) * slope, 1, (dz / out) * slope]);
+}
+
+// normalOnGround is the ground's normal at (x, z), from its height a little
+// to either side, groundAt.
+function normalOnGround(groundAt, x, z) {
+  const step = 20;
+  const slopeX = (groundAt(x + step, z) - groundAt(x - step, z)) / (2 * step);
+  const slopeZ = (groundAt(x, z + step) - groundAt(x, z - step)) / (2 * step);
+  return normalize([-slopeX, 1, -slopeZ]);
+}
+
+// Vectors: dot and cross products, and length 1.
+const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+const cross = (a, b) => [
+  a[1] * b[2] - a[2] * b[1],
+  a[2] * b[0] - a[0] * b[2],
+  a[0] * b[1] - a[1] * b[0],
+];
+const normalize = (a) => {
+  const length = Math.hypot(...a) || 1;
+  return a.map((v) => v / length);
+};
+
 module.exports = function createFlyScript(node) {
   return {
     update({seconds = 0, keys = new Set(), sceneManager}) {
@@ -169,6 +250,7 @@ module.exports = function createFlyScript(node) {
         roll: settings.roll,
         flapping: 0,
         restedSeconds: settings.restedSeconds,
+        up: settings.up,
       };
 
       const held = (code) => (keys.has(code) ? 1 : 0);
@@ -186,15 +268,10 @@ module.exports = function createFlyScript(node) {
       flight.heading += turn * settings.turnRate * seconds;
       const radians = (flight.heading * Math.PI) / 180;
 
-      // write saves where the ling is and how it flies, climbing degrees
-      // nose up.
-      const write = (position, climb) => {
+      // write saves where the ling is, turned to angles, and how it flies.
+      const write = (position, angles) => {
         sceneManager.updateNodeStateByID(node.id, {
-          transform: {
-            ...state.transform,
-            position,
-            rotation: rotation(flight.heading, climb, flight.roll),
-          },
+          transform: {...state.transform, position, rotation: angles},
           script: {...state.script, settings: {...state.script.settings, ...flight}},
         });
         if (state.hud) {
@@ -233,8 +310,9 @@ module.exports = function createFlyScript(node) {
       const perches = perchesUnder(sceneManager, sceneManager.getNodeByID(settings.perches));
 
       // Standing, on a perch or the ground, it rests, walks with the up and
-      // down arrows, and takes off with Space. Walking off its cap, a little
-      // before the rim, where the dome turns steep, drops it into a glide.
+      // down arrows, and takes off with Space. Walking out off its cap, a
+      // little before the rim, where the dome turns steep, drops it into a
+      // glide.
       if (flight.perch || flight.grounded) {
         const refill = flight.perch ? settings.refill : settings.groundRefill;
         flight.energy = Math.min(1, flight.energy + refill * seconds);
@@ -243,29 +321,55 @@ module.exports = function createFlyScript(node) {
           flight.rise = 0;
           const walk = held("ArrowUp") - held("ArrowDown");
           const perch = perches.find(({id}) => id === flight.perch);
+          // normalAt is the normal of what it stands on at (x, z).
+          const normalAt = (x, z) =>
+            perch ? normalOnCap(perch, x, z) : normalOnGround(groundAt, x, z);
+          // stand saves it standing at position, leaning toward the normal
+          // of what it stands on there.
+          const stand = (position) => {
+            const normal = normalAt(position[0], position[2]);
+            const lean = ease(settings.response * 0.4);
+            flight.up = normalize(flight.up.map((v, i) => v + (normal[i] - v) * lean));
+            write(position, standing(flight.heading, flight.up));
+          };
           if (!walk || (flight.perch && !perch)) {
-            write(start, 0);
+            stand(start);
             return;
           }
+          // It walks the way its nose points along the surface where it
+          // stands, so it goes as fast up and down slopes as on the flat,
+          // and follows a dome's curve, then settles back onto the surface
+          // below.
           const step = walk * settings.walkSpeed * seconds;
-          const position = [
-            start[0] + Math.sin(radians) * step,
-            start[1],
-            start[2] + Math.cos(radians) * step,
-          ];
+          const ahead = [Math.sin(radians), 0, Math.cos(radians)];
+          const normal = normalAt(start[0], start[2]);
+          const along = dot(ahead, normal);
+          const nose = normalize(ahead.map((v, i) => v - normal[i] * along));
+          const position = start.map((v, i) => v + nose[i] * step);
           if (flight.grounded) {
             bump(position);
             position[1] = groundAt(position[0], position[2]);
+            // Only caps with room to take off from under them, twice its
+            // height, can be walked under.
+            for (const perch of perches) {
+              if (position[1] + settings.height * 2 > perch.bottom) {
+                pushOut(position, perch);
+              }
+            }
           } else if (
             Math.hypot(position[0] - perch.center[0], position[2] - perch.center[2]) <
-            perch.radius * 0.9
+              perch.radius * STANDABLE ||
+            Math.hypot(position[0] - perch.center[0], position[2] - perch.center[2]) <
+              Math.hypot(start[0] - perch.center[0], start[2] - perch.center[2])
           ) {
+            // It walks anywhere on its cap short of the rim, and back in
+            // from it, and steps off walking out past it.
             position[1] = surfaceAt(perch, position[0], position[2]);
           } else {
             flight.perch = null;
             flight.restedSeconds = 0;
           }
-          write(position, 0);
+          stand(position);
           return;
         }
         flight.perch = null;
@@ -296,26 +400,37 @@ module.exports = function createFlyScript(node) {
         start[2] + Math.cos(radians) * settings.speed * seconds,
       ];
 
-      // Coming down through the top of a perch, it lands on it. Inside one
-      // otherwise, it came from the side or below, and is pushed back out
-      // the side.
+      // Touching a perch's cap, coming down onto it or into its side, it
+      // sticks, the way ants do: it lands on the nearest part of the cap it
+      // can stand on. Coming up from well under one, it bumps its head on
+      // its underside, and stops rising, flying on out from under it. Rising
+      // into its side or past its rim, it is pushed back out the side.
       for (const perch of perches) {
-        const [dx, dz] = [position[0] - perch.center[0], position[2] - perch.center[2]];
-        const out = Math.hypot(dx, dz);
+        const out = Math.hypot(position[0] - perch.center[0], position[2] - perch.center[2]);
         const surface = surfaceAt(perch, position[0], position[2]);
-        if (out > perch.radius || position[1] > surface || position[1] < perch.bottom) {
+        const head = position[1] + settings.height;
+        if (out > perch.radius || position[1] > surface || head < perch.bottom) {
           continue;
         }
-        if (flight.rise <= 0 && start[1] >= surface - 1) {
-          position[1] = surface;
+        // Near the rim, within its own width of it, it isn't under the cap.
+        const width = state.collider?.radius ?? 0;
+        if (start[1] + settings.height <= perch.bottom + 1 && out < perch.radius - width) {
+          position[1] = perch.bottom - settings.height;
+          flight.rise = Math.min(flight.rise, 0);
+        } else if (flight.rise <= 0) {
+          if (out > perch.radius * STANDABLE) {
+            const pull = (perch.radius * STANDABLE) / out;
+            position[0] = perch.center[0] + (position[0] - perch.center[0]) * pull;
+            position[2] = perch.center[2] + (position[2] - perch.center[2]) * pull;
+          }
+          position[1] = surfaceAt(perch, position[0], position[2]);
           flight.perch = perch.id;
           flight.lastPerch = perch.id;
           flight.rise = 0;
           break;
+        } else {
+          pushOut(position, perch);
         }
-        const push = out > 0 ? perch.radius / out : 0;
-        position[0] = perch.center[0] + dx * push;
-        position[2] = perch.center[2] + dz * push;
       }
 
       if (!flight.perch) {
@@ -330,10 +445,12 @@ module.exports = function createFlyScript(node) {
         flight.rise = 0;
       }
 
-      // It tips its nose up climbing and down sinking, a little.
-      const standing = flight.perch || flight.grounded;
-      const climb = standing ? 0 : (Math.atan2(flight.rise, settings.speed) * 90) / Math.PI;
-      write(position, climb);
+      // It tips its nose up climbing and down sinking, a little, and flies
+      // upright.
+      const landed = flight.perch || flight.grounded;
+      const climb = landed ? 0 : (Math.atan2(flight.rise, settings.speed) * 90) / Math.PI;
+      flight.up = landed ? flight.up : [0, 1, 0];
+      write(position, rotation(flight.heading, climb, flight.roll));
     },
   };
 };

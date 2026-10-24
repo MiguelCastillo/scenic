@@ -89,7 +89,7 @@
             "fov": 30
           },
           "transform": {
-            "position": [0, 420, 4300]
+            "position": [0, 300, 5000]
           },
           "freeFly": {
             "speed": 200,
@@ -653,6 +653,82 @@
               "resource": "/resources/obj/orchard-tree-1.obj",
               "transform": {
                 "position": [967, 0, 1300],
+                "rotation": [0, 0, 0],
+                "scale": [1, 1, 1]
+              },
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.1,
+                "shininess": 16
+              },
+              "ambient": {
+                "color": [0.4, 0.4, 0.43]
+              }
+            },
+            {
+              "name": "colony tree",
+              "type": "static-mesh",
+              "resource": "/resources/obj/colony-tree.obj",
+              "transform": {
+                "position": [-967, 0, 2700],
+                "rotation": [0, 0, 0],
+                "scale": [1, 1, 1]
+              },
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.1,
+                "shininess": 16
+              },
+              "ambient": {
+                "color": [0.4, 0.4, 0.43]
+              }
+            },
+            {
+              "name": "colony tree 21",
+              "type": "static-mesh",
+              "resource": "/resources/obj/colony-tree-21.obj",
+              "transform": {
+                "position": [-322, 0, 2700],
+                "rotation": [0, 0, 0],
+                "scale": [1, 1, 1]
+              },
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.1,
+                "shininess": 16
+              },
+              "ambient": {
+                "color": [0.4, 0.4, 0.43]
+              }
+            },
+            {
+              "name": "colony tree 22",
+              "type": "static-mesh",
+              "resource": "/resources/obj/colony-tree-22.obj",
+              "transform": {
+                "position": [322, 0, 2700],
+                "rotation": [0, 0, 0],
+                "scale": [1, 1, 1]
+              },
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.1,
+                "shininess": 16
+              },
+              "ambient": {
+                "color": [0.4, 0.4, 0.43]
+              }
+            },
+            {
+              "name": "colony tree 23",
+              "type": "static-mesh",
+              "resource": "/resources/obj/colony-tree-23.obj",
+              "transform": {
+                "position": [967, 0, 2700],
                 "rotation": [0, 0, 0],
                 "scale": [1, 1, 1]
               },

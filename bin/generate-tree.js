@@ -24,7 +24,8 @@
 //   different heights, each holding up a flat pad of bubbles, like a tree
 //   pruned into clouds. Lower limbs reach farther and hold bigger pads.
 // - weeping: a small round crown with strands of bubbles hanging from its
-//   branch tips, shrinking toward the ground, like a willow or wisteria.
+//   branch tips, shrinking toward the ground, like a willow or wisteria, on
+//   a wide old trunk that flares out at its foot.
 // - acacia: a tall trunk whose limbs reach far out to a wide, flat crown,
 //   like an umbrella.
 // - orchard: a full crown dotted with small, bright fruit.
@@ -92,11 +93,17 @@ const styles = {
     strands: 0, // how many strands of bubbles hang from each branch and twig
     // tip, like a weeping willow
     strandBubbles: 5, // how many bubbles each strand has, shrinking downward
+    strandSpacing: 0, // how far apart a strand's bubbles hang, as a part of
+    // their size: 0 is touching, a chain, and more hangs them apart on a thin
+    // branch
     fruit: 0, // how many small fruit bubbles dot the crown's surface
     fruitColor: [0.9, 0.2, 0.2], // the fruit's color, as [r, g, b]
     bubbleVariety: 0.2, // how much bubbles' sizes vary, 0 to 1: at 0.6, from
     // under half the average size to over one and a half times it
     crownSpread: 1, // how far apart the bubbles spread, 1 is snug
+    crownWidth: 1, // how far out to its sides a round crown reaches, as a
+    // part of how its branches reach: 1 is as they do, and more spreads its
+    // branches, twigs and bubbles out wider without making it taller
     squash: 0.9, // how tall bubbles are for how wide; 1 is round
     highlight: 0.3, // how much lighter each bubble's highlight is; 0 for none
     highlightSize: 0.35, // how much of a bubble its highlight covers, 0 to 1
@@ -346,41 +353,42 @@ const styles = {
   weeping: {
     crown: "round",
     trunkHeight: 220,
-    trunkRadius: 22,
-    trunkTaper: 0.6,
-    trunkLean: 16,
-    rootFlare: 1.5,
-    branches: 5,
-    minBranches: 4,
-    branchAngle: 50,
-    branchLength: 140,
-    branchStart: 0.8,
+    trunkRadius: 38,
+    trunkTaper: 0.55,
+    trunkLean: 6,
+    rootFlare: 2.4,
+    branches: 7,
+    minBranches: 6,
+    branchAngle: 65,
+    branchLength: 220,
+    branchStart: 0.84,
     branchRadius: 0.5,
     branchCurve: 1,
     branchStagger: 0.2,
-    twigs: 1,
+    twigs: 2,
     topBubble: 1,
-    bubbles: 14,
-    bubbleSize: 55,
+    bubbles: 24,
+    bubbleSize: 51,
     tipSize: 0.9,
     fillSize: 1,
     smallBubbles: 6,
     dots: 0,
     crownHeight: 0.6,
-    strands: 2,
-    strandBubbles: 5,
+    strands: 3,
+    strandBubbles: 4,
+    strandSpacing: 1.2,
     fruit: 0,
     fruitColor: [0.9, 0.2, 0.2],
     bubbleVariety: 0.2,
     crownSpread: 1,
+    crownWidth: 1.8,
     squash: 1,
     highlight: 0.3,
     highlightSize: 0.3,
-    trunkColor: [0.4, 0.3, 0.26],
+    trunkColor: [0.55, 0.33, 0.22],
     leafColors: [
-      [0.62, 0.48, 0.85],
-      [0.72, 0.58, 0.9],
-      [0.82, 0.7, 0.95],
+      [0.65, 0.77, 0.47],
+      [0.73, 0.87, 0.6],
     ],
   },
   acacia: {
@@ -586,8 +594,8 @@ function randomParameters(random, styleName, minBranches) {
     Object.assign(parameters, {
       branches: fewest + pick([0, 1, 2]),
       twigs: pick([0, 1, 1]),
-      strands: pick([1, 2, 2, 3]),
-      strandBubbles: pick([4, 5, 6]),
+      strands: pick([2, 3, 3]),
+      strandBubbles: pick([3, 4, 4]),
     });
   } else if (name === "acacia") {
     Object.assign(parameters, {
@@ -661,12 +669,20 @@ const curve = (p0, p1, p2, t) =>
 // tube sweeps a circle along the quadratic curve through p0, p1 and p2, with
 // radiusAt(t) giving its radius along the way, for t from 0 to 1. Its rings
 // are turned as little as possible from one to the next, so it doesn't
-// twist.
-function tube(mesh, [p0, p1, p2], radiusAt, color, p) {
-  const points = Array.from({length: TUBE_STEPS + 1}, (_, i) => curve(p0, p1, p2, i / TUBE_STEPS));
+// twist. It has sides around it and steps along it, fewer for thin, straight
+// ones, which are small on screen.
+function tube(
+  mesh,
+  [p0, p1, p2],
+  radiusAt,
+  color,
+  p,
+  {sides = TUBE_SIDES, steps = TUBE_STEPS} = {}
+) {
+  const points = Array.from({length: steps + 1}, (_, i) => curve(p0, p1, p2, i / steps));
   let side = null;
   const rings = points.map((point, i) => {
-    const tangent = normalize(sub(points[Math.min(i + 1, TUBE_STEPS)], points[Math.max(i - 1, 0)]));
+    const tangent = normalize(sub(points[Math.min(i + 1, steps)], points[Math.max(i - 1, 0)]));
     if (!side) {
       const reference = Math.abs(tangent[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0];
       side = normalize(cross(tangent, reference));
@@ -674,10 +690,10 @@ function tube(mesh, [p0, p1, p2], radiusAt, color, p) {
       side = normalize(sub(side, scale(tangent, dot(side, tangent))));
     }
     const other = cross(tangent, side);
-    const radius = radiusAt(i / TUBE_STEPS);
+    const radius = radiusAt(i / steps);
 
-    return Array.from({length: TUBE_SIDES}, (_, s) => {
-      const angle = (s / TUBE_SIDES) * 2 * Math.PI;
+    return Array.from({length: sides}, (_, s) => {
+      const angle = (s / sides) * 2 * Math.PI;
       const normal = add(scale(side, Math.cos(angle)), scale(other, Math.sin(angle)));
       return mesh.vertex(
         add(point, scale(normal, radius)),
@@ -687,9 +703,9 @@ function tube(mesh, [p0, p1, p2], radiusAt, color, p) {
     });
   });
 
-  for (let i = 0; i < TUBE_STEPS; i++) {
-    for (let s = 0; s < TUBE_SIDES; s++) {
-      const t = (s + 1) % TUBE_SIDES;
+  for (let i = 0; i < steps; i++) {
+    for (let s = 0; s < sides; s++) {
+      const t = (s + 1) % sides;
       mesh.quad(rings[i][s], rings[i][t], rings[i + 1][t], rings[i + 1][s]);
     }
   }
@@ -761,6 +777,8 @@ function buildTree(p, random) {
     // up, with a bubble on its tip.
     const twist = between(0, 2 * Math.PI);
     const branchRadius = p.trunkRadius * p.trunkTaper * p.branchRadius;
+    // Styles made before crownWidth don't have it.
+    const width = p.crownWidth ?? 1;
     for (let b = 0; b < p.branches; b++) {
       const around = twist + (b / p.branches) * 2 * Math.PI + between(-0.3, 0.3);
       const lean = (p.branchAngle * between(0.85, 1.15) * Math.PI) / 180;
@@ -778,11 +796,13 @@ function buildTree(p, random) {
         : Math.max(0.05, 1 - p.branchStagger * (1 - order));
       const start = curve(...trunk, forkAt);
       const length = p.branchLength * spread * between(0.85, 1.15);
+      // A wider crown stretches how far the branch reaches out, not up.
+      const reach = [out[0] * width, out[1], out[2] * width];
       // A curving branch bends at its middle and lifts its tip; a straight
       // one runs straight from its fork to its tip.
-      const end = add(add(start, scale(out, length)), [0, length * 0.25 * p.branchCurve, 0]);
+      const end = add(add(start, scale(reach, length)), [0, length * 0.25 * p.branchCurve, 0]);
       const straightBend = scale(add(start, end), 0.5);
-      const curvedBend = add(start, scale(out, length * 0.55));
+      const curvedBend = add(start, scale(reach, length * 0.55));
       const bend = add(scale(straightBend, 1 - p.branchCurve), scale(curvedBend, p.branchCurve));
       tube(mesh, [start, bend, end], (t) => branchRadius * (1 - 0.35 * t), p.trunkColor, p);
       anchors.push(end);
@@ -797,9 +817,9 @@ function buildTree(p, random) {
         const twigAround = around + side * between(0.6, 1.1);
         const twigLean = Math.min(lean + between(0.15, 0.4), (80 * Math.PI) / 180);
         const twigOut = [
-          Math.cos(twigAround) * Math.sin(twigLean),
+          Math.cos(twigAround) * Math.sin(twigLean) * width,
           Math.cos(twigLean),
-          Math.sin(twigAround) * Math.sin(twigLean),
+          Math.sin(twigAround) * Math.sin(twigLean) * width,
         ];
         const forkT = between(0.4, 0.75);
         const twigStart = curve(start, bend, end, forkT);
@@ -851,7 +871,7 @@ function buildTree(p, random) {
       let best = null;
       for (let attempt = 0; attempt < 8; attempt++) {
         const angle = between(0, 2 * Math.PI);
-        const reach = p.bubbleSize * spread * between(0.5, 1.1);
+        const reach = p.bubbleSize * spread * width * between(0.5, 1.1);
         const lift = p.bubbleSize * spread * between(-0.2, p.crownHeight);
         const position = add(center, [Math.cos(angle) * reach, lift, Math.sin(angle) * reach]);
         const radius = Math.min(
@@ -937,7 +957,10 @@ function buildTree(p, random) {
 
     // Strands hang from the tips: a chain of bubbles from under each tip,
     // each a little smaller than the one above it and drifting out from the
-    // trunk, like a weeping willow's.
+    // trunk, like a weeping willow's. Spaced apart, the bubbles hang on a
+    // thin branch that runs down through them from the tip.
+    const spacing = p.strandSpacing ?? 0;
+    const strandRadius = p.trunkRadius * p.trunkTaper * p.branchRadius * 0.3;
     for (const [tip, tipRadius] of tips) {
       const outward = normalize([tip[0] - top[0], 0, tip[2] - top[2]]);
       for (let k = 0; k < p.strands; k++) {
@@ -945,17 +968,36 @@ function buildTree(p, random) {
         let radius = tipRadius * between(0.4, 0.55);
         let position = add(tip, [
           Math.cos(angle) * tipRadius * 0.5,
-          -tipRadius * 0.75,
+          -tipRadius * (0.75 + spacing * 0.6),
           Math.sin(angle) * tipRadius * 0.5,
         ]);
+        const strand = [tip];
         for (let n = 0; n < p.strandBubbles; n++) {
           bubbles.push([position, radius]);
+          strand.push(position);
           const next = radius * between(0.8, 0.9);
           position = add(
             position,
-            add([0, -(radius + next) * 0.75, 0], scale(outward, next * 0.3))
+            add(
+              [0, -(radius + next) * 0.75 * (1 + spacing), 0],
+              scale(outward, next * 0.3 * (1 + spacing))
+            )
           );
           radius = next;
+        }
+        if (spacing > 0) {
+          for (let i = 0; i < strand.length - 1; i++) {
+            const [from, to] = [strand[i], strand[i + 1]];
+            const along = (t) => (i + t) / (strand.length - 1);
+            tube(
+              mesh,
+              [from, scale(add(from, to), 0.5), to],
+              (t) => strandRadius * (1 - 0.5 * along(t)),
+              p.trunkColor,
+              p,
+              {sides: 6, steps: 1}
+            );
+          }
         }
       }
     }
@@ -1127,8 +1169,8 @@ function main() {
   const seed = randomSeed
     ? Math.floor(Math.random() * 1e6)
     : seedArg != null
-    ? Number(seedArg)
-    : null;
+      ? Number(seedArg)
+      : null;
   if (seed != null && !Number.isInteger(seed)) {
     throw new Error(`--seed must be a whole number, not "${seedArg}"`);
   }
@@ -1156,10 +1198,10 @@ function main() {
             .split(";")
             .map((color) => color.split(",").map(Number))
         : Array.isArray(example)
-        ? String(value).split(",").map(Number)
-        : typeof example === "string"
-        ? String(value)
-        : Number(value);
+          ? String(value).split(",").map(Number)
+          : typeof example === "string"
+            ? String(value)
+            : Number(value);
   }
   for (const name of [
     "branches",
