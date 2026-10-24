@@ -43,7 +43,7 @@
 //
 // Parameters:
 //   --shape: ring, gantry, sign or digit. ring by default.
-//   --palette: the colors, one of candy, checker, mint, berry or ink, taken
+//   --palette: the colors, one of candy, checker, mint, berry, cyan or ink, taken
 //     in turn by the stripes and blocks, or for a digit, its color. candy by
 //     default. A sign is always cream with a pink frame.
 //   --radius: the ring's radius. 300 by default.
@@ -95,6 +95,10 @@ const palettes = {
   berry: [
     [0.6, 0.35, 0.95],
     [1, 0.75, 0.9],
+  ],
+  cyan: [
+    [0.16, 0.88, 1],
+    [0.85, 0.98, 1],
   ],
   ink: [[0.16, 0.2, 0.5]],
 };
@@ -257,15 +261,15 @@ function main() {
     shape === "ring"
       ? "race-gate"
       : shape === "digit"
-      ? `race-digit-${Math.round(parameters.number)}`
-      : `race-${shape}`;
+        ? `race-digit-${Math.round(parameters.number)}`
+        : `race-${shape}`;
   const filename =
     out ||
     (shape === "sign"
       ? `race-sign-${Math.round(parameters.digits)}.obj`
       : palette === "candy"
-      ? `${base}.obj`
-      : `${base}-${palette}.obj`);
+        ? `${base}.obj`
+        : `${base}-${palette}.obj`);
   const output = path.isAbsolute(filename)
     ? filename
     : path.join(__dirname, "..", "resources", "obj", filename);

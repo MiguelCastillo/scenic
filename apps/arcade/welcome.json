@@ -131,6 +131,10 @@
                 {
                   "label": "Bubble Squadron",
                   "goTo": "bubble-squadron"
+                },
+                {
+                  "label": "Wingborn",
+                  "goTo": "wingborn"
                 }
               ],
               "hint": "Choose a game"

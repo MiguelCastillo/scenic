@@ -89,10 +89,23 @@ function boosterText({ready, left}) {
   return left > 0 ? "BOOSTER!" : ready ? "Booster ready: press B" : "";
 }
 
+// courseText is a Mushroom Hops course's message (see
+// games/wingborn/scripts/course.js) as the HUD shows it: how to take off
+// before the run starts, then the time and the perch to land on next, and
+// the time it took once it is done.
+function courseText({next, total, time, started, finished}) {
+  if (finished) {
+    return `Finished in ${clock(time)}`;
+  }
+  return [started ? clock(time) : "Hold Space to fly", `Next: perch ${next} of ${total}`].join(
+    "\n"
+  );
+}
+
 // What the HUD shows for each channel of the scene's sceneManager.ui (see
 // SceneManager in @scenic/scene), from its messages. Channels not here don't
 // show.
-const hudTexts = {race: raceText, booster: boosterText};
+const hudTexts = {race: raceText, booster: boosterText, course: courseText};
 
 // newRace makes a room on the server for a race of game's scene, such as
 // "race.json", for a player racing alone, and resolves with its code (see
@@ -120,6 +133,8 @@ async function fetchJSON(url) {
 domReady.onReady(async () => {
   const canvas = document.querySelector("#canvas");
   const hudEl = document.querySelector("#hud");
+  const energyEl = document.querySelector("#energy");
+  const energyFillEl = document.querySelector("#energy-fill");
   const fpsEl = document.querySelector("#fps");
   const menuEl = document.querySelector("#menu");
   const messageEl = document.querySelector("#message");
@@ -619,6 +634,7 @@ domReady.onReady(async () => {
           })
         : null;
       hudEl.textContent = "";
+      energyEl.hidden = true;
       underWay = false;
       stopReceivingHud?.();
       stopReceivingHud = receiveEveryFrame(() => {
@@ -630,6 +646,16 @@ domReady.onReady(async () => {
           .join("\n\n");
         if (hudEl.textContent !== text) {
           hudEl.textContent = text;
+        }
+
+        // A flier's energy, such as the ling's (see games/wingborn/scripts/fly.js),
+        // shows as a bar that empties as it flaps.
+        energyEl.hidden = !messages.energy;
+        if (messages.energy) {
+          const width = `${Math.round(messages.energy.energy * 100)}%`;
+          if (energyFillEl.style.width !== width) {
+            energyFillEl.style.width = width;
+          }
         }
 
         // A race's countdown shows while it runs, each second popping in,

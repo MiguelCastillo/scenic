@@ -1,0 +1,39 @@
+{
+  "items": [
+    {
+      "name": "menu",
+      "type": "viewport",
+      "items": [
+        {
+          "name": "menu camera",
+          "type": "camera",
+          "projection": {
+            "type": "orthographic",
+            "far": 4000
+          }
+        },
+        {
+          "name": "pause menu",
+          "type": "transform",
+          "hud": "menu",
+          "script": {
+            "src": "/resources/scripts/menu.js",
+            "settings": {
+              "title": "Paused",
+              "choices": [
+                {
+                  "label": "Resume",
+                  "resume": true
+                },
+                {
+                  "label": "Start over",
+                  "restart": true
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

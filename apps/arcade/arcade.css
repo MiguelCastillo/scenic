@@ -102,6 +102,33 @@ button {
   display: none;
 }
 
+/* A flier's energy, as a slanted bar in the top left corner: a dark glass
+   track, filled cyan, which empties as the flier flaps. */
+#energy {
+  position: absolute;
+  top: 40px;
+  left: 24px;
+  width: clamp(140px, 18vw, 260px);
+  height: 16px;
+  padding: 3px;
+  border: 2px solid var(--panel-rim);
+  border-radius: 4px;
+  background: var(--panel);
+  transform: var(--slant);
+  pointer-events: none;
+}
+
+#energy[hidden] {
+  display: none;
+}
+
+#energy-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: var(--accent);
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+
 /* What the player needs to know to play, such as "Click to play" or that
    the game is paused, in the middle of the screen, gently pulsing so it
    draws the eye. Clicks go through it to the canvas. */
@@ -147,7 +174,9 @@ button {
   color: var(--text);
   font-family: var(--display-font);
   font-size: clamp(72px, 14vmin, 180px);
-  text-shadow: 0 0 32px var(--accent-glow), var(--shadow);
+  text-shadow:
+    0 0 32px var(--accent-glow),
+    var(--shadow);
   pointer-events: none;
 }
 
@@ -262,7 +291,10 @@ button {
   cursor: pointer;
   pointer-events: auto;
   transform: var(--slant);
-  transition: transform 0.15s ease-out, background 0.15s, border-color 0.15s;
+  transition:
+    transform 0.15s ease-out,
+    background 0.15s,
+    border-color 0.15s;
 }
 
 #menu li:hover {
@@ -417,7 +449,8 @@ button {
 }
 
 /* While the menu is open, the game's own HUD is hidden behind it. */
-body.menu-open #hud {
+body.menu-open #hud,
+body.menu-open #energy {
   display: none;
 }
 
@@ -520,7 +553,10 @@ body.menu-open #hud {
   cursor: pointer;
   pointer-events: auto;
   transform: var(--slant);
-  transition: transform 0.1s ease-out, background 0.1s, color 0.1s;
+  transition:
+    transform 0.1s ease-out,
+    background 0.1s,
+    color 0.1s;
 }
 
 #menu .carousel-arrow:hover {
@@ -573,7 +609,9 @@ body.menu-open #hud {
   border: 2px solid var(--panel-rim);
   border-radius: 12px;
   background: var(--panel);
-  box-shadow: 0 0 28px var(--accent-glow), 0 12px 32px rgba(0, 0, 0, 0.45);
+  box-shadow:
+    0 0 28px var(--accent-glow),
+    0 12px 32px rgba(0, 0, 0, 0.45);
 }
 
 #menu.opening .carousel-picture {

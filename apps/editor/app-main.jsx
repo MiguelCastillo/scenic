@@ -35,6 +35,8 @@ const sceneFiles = [
   "/games/bubble-squadron/welcome.json",
   "/games/bubble-squadron/menu.json",
   "/games/bubble-squadron/starfighters.json",
+  "/games/wingborn/hops.json",
+  "/games/wingborn/menu.json",
 ];
 
 // clock is seconds as minutes, seconds and tenths, such as 1:05.3.

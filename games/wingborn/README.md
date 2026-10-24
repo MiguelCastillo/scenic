@@ -4,7 +4,17 @@ A young ling grows from a hatchling that can only walk into the leader of its
 colony. It gets stronger with its friends, earns its wings, and leads the
 colony to defeat Red Hill.
 
-The game has no scenes yet. This is the story so far, to build them from.
+Its first scene is `hops.json`, Mushroom Hops: a mossy clearing of
+mushroom perches to land on in order, against the clock, from the one the
+ling starts on. Space flaps, which climbs and uses energy, the left and
+right arrows turn, and the down arrow dives. Gliding sinks, and gives a
+little energy back once the ling has stopped flapping a moment. The ling
+lands on caps and on the ground, where the up and down arrows walk, and
+standing gives its energy back, faster on a cap. A cyan ring marks the next
+perch, and the pause menu starts the run over (see `scripts/fly.js` and
+`scripts/course.js`). Its models come from `bin/generate-ling.js` and
+`bin/generate-mushroom.js`. The rest of this is the story so far, to build
+the other scenes from.
 
 ## The world
 
@@ -41,7 +51,7 @@ Every stage has two tracks:
 - **Growth**: how the ling gets stronger. Races, obstacle courses and
   training with friends. They are low-stakes and can be replayed.
 
-Growth earns rewards: molts, wings, mandibles, antennae and mastery. The Goal
+Growth earns rewards: molts, wings, gear and mastery. The Goal
 tests them: it can be tried early, but it is hard until the ling has trained.
 Beating the Goal unlocks the next stage and its Growth activities. Growth
 takes place where the Goal will happen, so the ling learns the ground before
@@ -67,7 +77,8 @@ no type is the best. Friends choose wings too, so a squad's mix matters.
 
 ### Other parts
 
-- **Mandibles**: grip and carry, or a fast bite.
+- **Arms**: carrying and grabbing, a quick strike, and holding gear and the
+  slingshot.
 - **Legs**: climbing, or speed on the ground.
 - **Antennae**: sensing, finding paths, and later signalling to friends,
   which is how commanding starts.
@@ -127,8 +138,8 @@ wings.
 
 ### Mastery
 
-Each skill has its own mastery, such as each wing type, the mandibles, the
-legs and the antennae. Mastery grows by using the skill in Growth. Each stage
+Each skill has its own mastery, such as each wing type, the arms, the legs
+and the antennae. Mastery grows by using the skill in Growth. Each stage
 raises its cap: growing up opens the next level, and practice fills it. A
 hatchling can't train its way to adult strength.
 
@@ -161,14 +172,14 @@ helpful, which sets up wanting to learn to fight in stage 2.
 The ling hatches in the nursery, where its first moments teach it to walk.
 Pip, Moss and Zip hatch nearby, and the mentor greets them.
 
-Growth, with legs, mandibles and antennae up to mastery 2:
+Growth, with legs, arms and antennae up to mastery 2:
 
-| Activity        | What you do                                                        | Skill               | Friend moment                                      |
-| --------------- | ------------------------------------------------------------------ | ------------------- | -------------------------------------------------- |
-| **Tunnel Run**  | Race friends through the colony's tunnels                          | Legs: speed         | Pip always wins at first                           |
-| **Root Climb**  | Climb up the tree roots toward daylight                            | Legs: climbing      | Zip rushes and falls; Moss is slow but never slips |
-| **Crumb Haul**  | Carry food to the stores; heavier crumbs are worth more but slower | Mandibles: carrying | A first taste of the wing trade-offs               |
-| **Scent Trail** | Follow trails through dark tunnels and the grass edge              | Antennae: sensing   | A strange sharp smell: Red Hill's                  |
+| Activity        | What you do                                                        | Skill             | Friend moment                                      |
+| --------------- | ------------------------------------------------------------------ | ----------------- | -------------------------------------------------- |
+| **Tunnel Run**  | Race friends through the colony's tunnels                          | Legs: speed       | Pip always wins at first                           |
+| **Root Climb**  | Climb up the tree roots toward daylight                            | Legs: climbing    | Zip rushes and falls; Moss is slow but never slips |
+| **Crumb Haul**  | Carry food to the stores; heavier crumbs are worth more but slower | Arms: carrying    | A first taste of the wing trade-offs               |
+| **Scent Trail** | Follow trails through dark tunnels and the grass edge              | Antennae: sensing | A strange sharp smell: Red Hill's                  |
 
 The Root Climb ends at a view of the grass edge, with winged ants flying
 overhead: what the ling grows toward. The Scent Trail introduces Red Hill
@@ -179,11 +190,11 @@ store. The ling can't fight them, so it uses everything it trained:
 
 1. Senses them (antennae), from the smell on the trail.
 2. Raises the alarm (legs: speed), a Tunnel Run with real stakes.
-3. Saves the food (mandibles), hauling it to the inner chambers with friends.
+3. Saves the food (arms), hauling it to the inner chambers with friends.
 4. Blocks the way (legs: climbing), knocking a pebble into the tunnel.
 
 It wins once the alarm is raised and enough food is saved. Faster legs give
-it more time, and stronger mandibles let it carry more.
+it more time, and stronger arms let it carry more.
 
 The adults drive the scouts off. For a moment the ling is face to face with
 a scout, bigger, with sharp mandibles, and can only run. The mentor says it's
@@ -200,30 +211,30 @@ It goes out into the grass forest: tall blades, fallen leaves for bridges,
 dew drops and pebbles. Beyond it are the puddle, where the colony forages,
 and the soda can, a half-buried ruin on the border with Red Hill.
 
-The ling learns to fight, kept simple to read:
+The ling learns to fight, with only three moves, so the game is easy to
+play:
 
-- **Bite** (mandibles): a quick attack.
-- **Clamp** (mandibles): grab an enemy or an object to shove or throw it.
-  Slower, but strong.
-- **Dodge** (legs): a quick sidestep or roll.
-- **Brace** (body): plant the feet and block with the head.
-- **Read** (antennae): smell an attack coming, shown as a small hint, and
-  signal a friend.
+- **Strike** (arms): a quick hit.
+- **Dodge** (legs): a quick sidestep or roll, which is also how it defends.
 - **Shoot** (arms): pebbles from the slingshot, stage 1's reward. They hit
-  from afar, but reloading is slow, so biting and clamping stay the main
-  moves.
+  from afar, but reloading is slow, so striking stays the main move.
+
+Besides those, the button that picks up crumbs grabs pebbles and debris, to
+shove, throw or build with, and one button signals a friend. When an attack
+is coming, the ling's antennae sense it on their own, and a small hint shows,
+with no button to press.
 
 Stage 1's skills go up to mastery 3, and the new moves go from 1 to 3.
 
 Growth:
 
-| Activity            | What you do                                                                   | Skill                            | Friend moment                                         |
-| ------------------- | ----------------------------------------------------------------------------- | -------------------------------- | ----------------------------------------------------- |
-| **Sparring Ring**   | One-on-one with friends, in a ring the mentor runs                            | Mandibles: bite, and brace       | Pip is fast, Moss blocks everything, Zip swings wild  |
-| **Grass Run**       | An obstacle course of leaf bridges, dew drops and falling seeds               | Legs: dodge                      | It runs over the ground the skirmishes happen on      |
-| **Pebble Push**     | Clamp pebbles and twigs to build barricades or clear paths, against the clock | Mandibles: clamp                 | Moss hates fighting but loves building, and is strong |
-| **Border Patrol**   | Walk the border with a friend, read scents, spot ambushes                     | Antennae: reading and signalling | The first call to a friend, where leading starts      |
-| **Dewdrop Gallery** | Shoot dew drops off leaves, against the clock and friends                     | Slingshot: aim                   | Pip wants to beat you at this too                     |
+| Activity            | What you do                                                                  | Skill                            | Friend moment                                         |
+| ------------------- | ---------------------------------------------------------------------------- | -------------------------------- | ----------------------------------------------------- |
+| **Sparring Ring**   | One-on-one with friends, in a ring the mentor runs                           | Arms: strike                     | Pip is fast, Moss is hard to hit, Zip swings wild     |
+| **Grass Run**       | An obstacle course of leaf bridges, dew drops and falling seeds              | Legs: dodge                      | It runs over the ground the skirmishes happen on      |
+| **Pebble Push**     | Grab pebbles and twigs to build barricades or clear paths, against the clock | Arms: grab                       | Moss hates fighting but loves building, and is strong |
+| **Border Patrol**   | Walk the border with a friend, read scents, spot ambushes                    | Antennae: reading and signalling | The first call to a friend, where leading starts      |
+| **Dewdrop Gallery** | Shoot dew drops off leaves, against the clock and friends                    | Slingshot: aim                   | Pip wants to beat you at this too                     |
 
 By the end of the stage the ling can tap its antennae to call one friend to
 help: its first command.
@@ -236,7 +247,7 @@ each bigger than the last.
    foragers while it fights, and spots where the ambush comes from, as on
    Border Patrol.
 3. **The soda can**: Red Hill makes the can an outpost on the border. The
-   ling and all three friends take it back, clamping debris to break Red
+   ling and all three friends take it back, grabbing debris to break Red
    Hill's barricade or build their own. The boss is the scout from stage 1.
 
 Friends fight on their own: Pip charges, Moss holds a line, and Zip does
@@ -265,7 +276,7 @@ The ling learns to fly:
   open, each starting at mastery 1.
 - **Energy**: flying drains it and landing on a perch restores it. Knowing
   when to land is the skill.
-- **Dive** (wings and mandibles): a swoop from above into a bite or clamp.
+- **Dive** (wings): a swoop from above into a strike.
 - **Air dodge** (wings): a quick roll in the air.
 - **Shoot in flight** (slingshot).
 
@@ -367,7 +378,7 @@ leading, and the Goal can't be won alone.
 
 The outline it came from:
 
-Stronger wings, new mandibles and antennae, and the first commands. The ling
+Stronger wings, arms and antennae, and the first commands. The ling
 picks its squad's wings and plans its missions: scouting, sabotage and
 rescues. The finale is the assault on Red Hill, a push on the ground and a
 battle in the air, with each friend flying to their wings, joined by the
@@ -478,16 +489,17 @@ The reference art is for inspiration only; Wingborn's designs are its own.
 ### The ling
 
 - **Big head, small body** when young, with huge glossy eyes that read at a
-  distance, behind a chase camera. A brow ridge lets it look determined, for
-  a sporty look rather than only a cute one.
+  distance, behind a chase camera. Softly arched brows keep it friendly and
+  curious.
 - **An ant's body**: head, a small chest, and a round abdomen, with a pinched
   waist.
 - **Four legs and two arms**: the legs give a steady stance, and the arms
-  carry, clamp, signal and hold gear.
+  carry, grab, strike, signal and hold gear.
 - **Elbowed antennae** that bend in the middle, and show how it feels:
   drooping when sad, perked up when alert.
-- **Mandibles, not a grin**: small and rounded, growing with each stage. No
-  nose and no teeth.
+- **A simple mouth, no mandibles**: a single line that smiles, shouts or
+  worries, for expression. No nose and no teeth. Red Hill keeps sharp
+  mandibles, so the enemy reads at a glance and looks a little scarier.
 - **Colors**: warm amber and brown for the root colony, with a lighter belly.
   Red Hill is brick red with darker armor. In matches, a team color shows as
   an accent (see Team colors).
@@ -496,12 +508,12 @@ The reference art is for inspiration only; Wingborn's designs are its own.
 
 The look grows up with the stages, keeping the same face:
 
-| Stage         | Head to body           | Eyes                | Mandibles           | Wings                      | Posture                     |
-| ------------- | ---------------------- | ------------------- | ------------------- | -------------------------- | --------------------------- |
-| **Hatchling** | As big as the body     | Huge and round      | Tiny nubs           | None                       | Wobbly, stubby legs         |
-| **Young**     | Still big, body longer | Big, a brow forming | Small but useful    | Buds at the end            | Steadier, a fighting stance |
-| **Winged**    | More balanced          | Big and focused     | Medium              | Small, shaped by wing type | Leaner, athletic            |
-| **Adult**     | Smaller than the body  | Confident           | Strong and distinct | Full                       | Upright, a leader's stance  |
+| Stage         | Head to body           | Eyes                | Arms                 | Wings                      | Posture                     |
+| ------------- | ---------------------- | ------------------- | -------------------- | -------------------------- | --------------------------- |
+| **Hatchling** | As big as the body     | Huge and round      | Thin and short       | None                       | Wobbly, stubby legs         |
+| **Young**     | Still big, body longer | Big, a brow forming | Stronger             | Buds at the end            | Steadier, a fighting stance |
+| **Winged**    | More balanced          | Big and focused     | Athletic             | Small, shaped by wing type | Leaner, athletic            |
+| **Adult**     | Smaller than the body  | Confident           | Strong, holding gear | Full                       | Upright, a leader's stance  |
 
 ### Gear
 

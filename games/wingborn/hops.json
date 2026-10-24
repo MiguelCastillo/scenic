@@ -1,0 +1,1264 @@
+{
+  "items": [
+    {
+      "name": "world",
+      "type": "viewport",
+      "input": true,
+      "fog": {
+        "color": [0.78, 0.89, 0.96],
+        "near": 2500,
+        "far": 11000
+      },
+      "items": [
+        {
+          "name": "chase camera",
+          "type": "third-person-camera",
+          "projection": {
+            "type": "perspective",
+            "near": 1,
+            "far": 14000,
+            "fov": 60
+          },
+          "transform": {
+            "position": [0, 500, -450]
+          },
+          "thirdPerson": {
+            "target": {
+              "nodeID": "ling"
+            },
+            "offset": [0, 60, 0],
+            "distance": 420,
+            "minDistance": 150,
+            "maxDistance": 1400,
+            "rotation": [-12, 0],
+            "maxPitch": 70,
+            "followTime": 0.25,
+            "lookUp": 10,
+            "mouseOrbit": false
+          }
+        },
+        {
+          "name": "free camera",
+          "type": "free-fly-camera",
+          "projection": {
+            "type": "perspective",
+            "near": 1,
+            "far": 14000,
+            "fov": 60
+          },
+          "transform": {
+            "position": [0, 600, -700]
+          },
+          "freeFly": {
+            "speed": 300,
+            "maxPitch": 89
+          }
+        },
+        {
+          "name": "sky",
+          "type": "sky",
+          "sky": {
+            "zenithColor": [0.25, 0.5, 0.95],
+            "horizonColor": [0.75, 0.88, 1],
+            "groundColor": [0.45, 0.62, 0.42],
+            "sunColor": [1, 0.95, 0.8],
+            "cloudStyle": 1,
+            "cloudCover": 0.72,
+            "cloudScale": 1,
+            "cloudSpeed": 1,
+            "cloudColor": [1, 1, 1],
+            "cloudShadeColor": [0.72, 0.78, 0.92],
+            "mountainHeight": 7,
+            "farMountainColor": [0.58, 0.68, 0.88],
+            "nearMountainColor": [0.38, 0.48, 0.66]
+          },
+          "items": [
+            {
+              "name": "sun",
+              "type": "light",
+              "resource": "/resources/obj/sphere.obj",
+              "light": {
+                "sun": true,
+                "intensity": 0.8,
+                "color": [1, 0.96, 0.88]
+              },
+              "material": {
+                "color": [1, 0.96, 0.88, 1],
+                "reflectiveness": 1
+              },
+              "transform": {
+                "position": [1229, 1721, 2128]
+              }
+            },
+            {
+              "name": "fill",
+              "type": "light",
+              "resource": "/resources/obj/sphere.obj",
+              "light": {
+                "intensity": 0.55,
+                "color": [0.7, 0.82, 1]
+              },
+              "material": {
+                "color": [0.7, 0.82, 1, 1],
+                "reflectiveness": 1
+              },
+              "transform": {
+                "position": [-1229, 1200, -2128]
+              }
+            }
+          ]
+        },
+        {
+          "name": "terrain",
+          "type": "terrain",
+          "terrain": {
+            "seed": 5,
+            "height": 60,
+            "scale": 3000,
+            "flatness": 0.6,
+            "lowColor": [0.5, 0.7, 0.32],
+            "highColor": [0.62, 0.8, 0.38],
+            "dirtColor": [0.55, 0.45, 0.32],
+            "showTiles": false
+          },
+          "material": {
+            "color": [0, 0, 0, 1],
+            "reflectiveness": 1,
+            "specular": 0.05,
+            "shininess": 8
+          },
+          "ambient": {
+            "color": [0.42, 0.45, 0.5],
+            "groundColor": [0.2, 0.24, 0.16]
+          }
+        },
+        {
+          "name": "giant trees",
+          "type": "transform",
+          "items": [
+            {
+              "name": "giant tree 1",
+              "type": "static-mesh",
+              "resource": "/resources/obj/canopy-tree-lod2.obj",
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.1,
+                "shininess": 16
+              },
+              "ambient": {
+                "color": [0.4, 0.4, 0.43]
+              },
+              "transform": {
+                "position": [-5000, -20, 2500],
+                "rotation": [0, 0, 0],
+                "scale": [8, 8, 8]
+              }
+            },
+            {
+              "name": "giant tree 2",
+              "type": "static-mesh",
+              "resource": "/resources/obj/tall-tree-lod2.obj",
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.1,
+                "shininess": 16
+              },
+              "ambient": {
+                "color": [0.4, 0.4, 0.43]
+              },
+              "transform": {
+                "position": [-4200, -20, 6500],
+                "rotation": [0, 50, 0],
+                "scale": [9, 9, 9]
+              }
+            },
+            {
+              "name": "giant tree 3",
+              "type": "static-mesh",
+              "resource": "/resources/obj/canopy-tree-211-lod2.obj",
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.1,
+                "shininess": 16
+              },
+              "ambient": {
+                "color": [0.4, 0.4, 0.43]
+              },
+              "transform": {
+                "position": [3500, -20, 8000],
+                "rotation": [0, 100, 0],
+                "scale": [8, 8, 8]
+              }
+            },
+            {
+              "name": "giant tree 4",
+              "type": "static-mesh",
+              "resource": "/resources/obj/cloud-tree-1-lod2.obj",
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.1,
+                "shininess": 16
+              },
+              "ambient": {
+                "color": [0.4, 0.4, 0.43]
+              },
+              "transform": {
+                "position": [5200, -20, 3000],
+                "rotation": [0, 150, 0],
+                "scale": [8, 8, 8]
+              }
+            },
+            {
+              "name": "giant tree 5",
+              "type": "static-mesh",
+              "resource": "/resources/obj/canopy-tree-217-lod2.obj",
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.1,
+                "shininess": 16
+              },
+              "ambient": {
+                "color": [0.4, 0.4, 0.43]
+              },
+              "transform": {
+                "position": [4600, -20, -2500],
+                "rotation": [0, 200, 0],
+                "scale": [7, 7, 7]
+              }
+            },
+            {
+              "name": "giant tree 6",
+              "type": "static-mesh",
+              "resource": "/resources/obj/tall-tree-117-lod2.obj",
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.1,
+                "shininess": 16
+              },
+              "ambient": {
+                "color": [0.4, 0.4, 0.43]
+              },
+              "transform": {
+                "position": [-3500, -20, -2600],
+                "rotation": [0, 250, 0],
+                "scale": [8, 8, 8]
+              }
+            }
+          ]
+        },
+        {
+          "name": "mushrooms",
+          "type": "transform",
+          "items": [
+            {
+              "name": "perch 0",
+              "type": "transform",
+              "transform": {
+                "position": [0, -10, 0],
+                "rotation": [0, 0, 0],
+                "scale": [1, 1, 1]
+              },
+              "items": [
+                {
+                  "name": "perch 0 model",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/mushroom-pad.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.1,
+                    "shininess": 16
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "perch 0 stem 1",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 52.2,
+                    "height": 180
+                  },
+                  "transform": {
+                    "position": [0, 90, 0],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                },
+                {
+                  "name": "perch 0 cap 1",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 290,
+                    "height": 163.173,
+                    "perch": true,
+                    "dome": 145
+                  },
+                  "transform": {
+                    "position": [0, 243.413, 0],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "perch 1",
+              "type": "transform",
+              "transform": {
+                "position": [520, -10, 760],
+                "rotation": [0, 40, 0],
+                "scale": [1, 1, 1]
+              },
+              "items": [
+                {
+                  "name": "perch 1 model",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/mushroom-cluster.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.1,
+                    "shininess": 16
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "perch 1 stem 1",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 42.9,
+                    "height": 500
+                  },
+                  "transform": {
+                    "position": [0, 250, 0],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                },
+                {
+                  "name": "perch 1 cap 1",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 195,
+                    "height": 192.417,
+                    "perch": true,
+                    "dome": 156
+                  },
+                  "transform": {
+                    "position": [0, 559.791, 0],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                },
+                {
+                  "name": "perch 1 stem 2",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 25.706,
+                    "height": 267.806
+                  },
+                  "transform": {
+                    "position": [-33.846, 133.903, -209.163],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                },
+                {
+                  "name": "perch 1 cap 2",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 116.844,
+                    "height": 115.297,
+                    "perch": true,
+                    "dome": 93.475
+                  },
+                  "transform": {
+                    "position": [-37.268, 303.633, -230.312],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                },
+                {
+                  "name": "perch 1 stem 3",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 28.296,
+                    "height": 310.996
+                  },
+                  "transform": {
+                    "position": [87.679, 155.498, 203.741],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                },
+                {
+                  "name": "perch 1 cap 3",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 128.618,
+                    "height": 126.914,
+                    "perch": true,
+                    "dome": 102.894
+                  },
+                  "transform": {
+                    "position": [97.514, 350.433, 226.595],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "perch 2",
+              "type": "transform",
+              "transform": {
+                "position": [-120, -10, 1560],
+                "rotation": [0, 10, 0],
+                "scale": [1, 1, 1]
+              },
+              "items": [
+                {
+                  "name": "perch 2 model",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/mushroom-single.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.1,
+                    "shininess": 16
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "perch 2 stem 1",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 41.8,
+                    "height": 600
+                  },
+                  "transform": {
+                    "position": [0, 300, 0],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                },
+                {
+                  "name": "perch 2 cap 1",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 190,
+                    "height": 187.484,
+                    "perch": true,
+                    "dome": 152
+                  },
+                  "transform": {
+                    "position": [0, 658.258, 0],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "perch 3",
+              "type": "transform",
+              "transform": {
+                "position": [640, -10, 2260],
+                "rotation": [0, 70, 0],
+                "scale": [1, 1, 1]
+              },
+              "items": [
+                {
+                  "name": "perch 3 model",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/mushroom-pad.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.1,
+                    "shininess": 16
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "perch 3 stem 1",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 52.2,
+                    "height": 180
+                  },
+                  "transform": {
+                    "position": [0, 90, 0],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                },
+                {
+                  "name": "perch 3 cap 1",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 290,
+                    "height": 163.173,
+                    "perch": true,
+                    "dome": 145
+                  },
+                  "transform": {
+                    "position": [0, 243.413, 0],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "perch 4",
+              "type": "transform",
+              "transform": {
+                "position": [40, -10, 3060],
+                "rotation": [0, 120, 0],
+                "scale": [1, 1, 1]
+              },
+              "items": [
+                {
+                  "name": "perch 4 model",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/mushroom-cluster.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.1,
+                    "shininess": 16
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "perch 4 stem 1",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 42.9,
+                    "height": 500
+                  },
+                  "transform": {
+                    "position": [0, 250, 0],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                },
+                {
+                  "name": "perch 4 cap 1",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 195,
+                    "height": 192.417,
+                    "perch": true,
+                    "dome": 156
+                  },
+                  "transform": {
+                    "position": [0, 559.791, 0],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                },
+                {
+                  "name": "perch 4 stem 2",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 25.706,
+                    "height": 267.806
+                  },
+                  "transform": {
+                    "position": [-33.846, 133.903, -209.163],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                },
+                {
+                  "name": "perch 4 cap 2",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 116.844,
+                    "height": 115.297,
+                    "perch": true,
+                    "dome": 93.475
+                  },
+                  "transform": {
+                    "position": [-37.268, 303.633, -230.312],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                },
+                {
+                  "name": "perch 4 stem 3",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 28.296,
+                    "height": 310.996
+                  },
+                  "transform": {
+                    "position": [87.679, 155.498, 203.741],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                },
+                {
+                  "name": "perch 4 cap 3",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 128.618,
+                    "height": 126.914,
+                    "perch": true,
+                    "dome": 102.894
+                  },
+                  "transform": {
+                    "position": [97.514, 350.433, 226.595],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "perch 5",
+              "type": "transform",
+              "transform": {
+                "position": [760, -10, 3800],
+                "rotation": [0, 30, 0],
+                "scale": [1, 1, 1]
+              },
+              "items": [
+                {
+                  "name": "perch 5 model",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/mushroom-single.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.1,
+                    "shininess": 16
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "perch 5 stem 1",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 41.8,
+                    "height": 600
+                  },
+                  "transform": {
+                    "position": [0, 300, 0],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                },
+                {
+                  "name": "perch 5 cap 1",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 190,
+                    "height": 187.484,
+                    "perch": true,
+                    "dome": 152
+                  },
+                  "transform": {
+                    "position": [0, 658.258, 0],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "mushroom 1",
+              "type": "transform",
+              "transform": {
+                "position": [-900, -10, 600],
+                "rotation": [0, 200, 0],
+                "scale": [0.8, 0.8, 0.8]
+              },
+              "items": [
+                {
+                  "name": "mushroom 1 model",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/mushroom-cluster.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.1,
+                    "shininess": 16
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "mushroom 1 stem 1",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 42.9,
+                    "height": 500
+                  },
+                  "transform": {
+                    "position": [0, 250, 0],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                },
+                {
+                  "name": "mushroom 1 cap 1",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 195,
+                    "height": 192.417,
+                    "perch": true,
+                    "dome": 156
+                  },
+                  "transform": {
+                    "position": [0, 559.791, 0],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                },
+                {
+                  "name": "mushroom 1 stem 2",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 25.706,
+                    "height": 267.806
+                  },
+                  "transform": {
+                    "position": [-33.846, 133.903, -209.163],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                },
+                {
+                  "name": "mushroom 1 cap 2",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 116.844,
+                    "height": 115.297,
+                    "perch": true,
+                    "dome": 93.475
+                  },
+                  "transform": {
+                    "position": [-37.268, 303.633, -230.312],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                },
+                {
+                  "name": "mushroom 1 stem 3",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 28.296,
+                    "height": 310.996
+                  },
+                  "transform": {
+                    "position": [87.679, 155.498, 203.741],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                },
+                {
+                  "name": "mushroom 1 cap 3",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 128.618,
+                    "height": 126.914,
+                    "perch": true,
+                    "dome": 102.894
+                  },
+                  "transform": {
+                    "position": [97.514, 350.433, 226.595],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "mushroom 2",
+              "type": "transform",
+              "transform": {
+                "position": [1500, -10, 1300],
+                "rotation": [0, 0, 0],
+                "scale": [0.9, 0.9, 0.9]
+              },
+              "items": [
+                {
+                  "name": "mushroom 2 model",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/mushroom-single.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.1,
+                    "shininess": 16
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "mushroom 2 stem 1",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 41.8,
+                    "height": 600
+                  },
+                  "transform": {
+                    "position": [0, 300, 0],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                },
+                {
+                  "name": "mushroom 2 cap 1",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 190,
+                    "height": 187.484,
+                    "perch": true,
+                    "dome": 152
+                  },
+                  "transform": {
+                    "position": [0, 658.258, 0],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "mushroom 3",
+              "type": "transform",
+              "transform": {
+                "position": [-800, -10, 2400],
+                "rotation": [0, 100, 0],
+                "scale": [0.9, 0.9, 0.9]
+              },
+              "items": [
+                {
+                  "name": "mushroom 3 model",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/mushroom-pad.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.1,
+                    "shininess": 16
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "mushroom 3 stem 1",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 52.2,
+                    "height": 180
+                  },
+                  "transform": {
+                    "position": [0, 90, 0],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                },
+                {
+                  "name": "mushroom 3 cap 1",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 290,
+                    "height": 163.173,
+                    "perch": true,
+                    "dome": 145
+                  },
+                  "transform": {
+                    "position": [0, 243.413, 0],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "mushroom 4",
+              "type": "transform",
+              "transform": {
+                "position": [1500, -10, 3000],
+                "rotation": [0, 300, 0],
+                "scale": [1.1, 1.1, 1.1]
+              },
+              "items": [
+                {
+                  "name": "mushroom 4 model",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/mushroom-cluster.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.1,
+                    "shininess": 16
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "mushroom 4 stem 1",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 42.9,
+                    "height": 500
+                  },
+                  "transform": {
+                    "position": [0, 250, 0],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                },
+                {
+                  "name": "mushroom 4 cap 1",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 195,
+                    "height": 192.417,
+                    "perch": true,
+                    "dome": 156
+                  },
+                  "transform": {
+                    "position": [0, 559.791, 0],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                },
+                {
+                  "name": "mushroom 4 stem 2",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 25.706,
+                    "height": 267.806
+                  },
+                  "transform": {
+                    "position": [-33.846, 133.903, -209.163],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                },
+                {
+                  "name": "mushroom 4 cap 2",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 116.844,
+                    "height": 115.297,
+                    "perch": true,
+                    "dome": 93.475
+                  },
+                  "transform": {
+                    "position": [-37.268, 303.633, -230.312],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                },
+                {
+                  "name": "mushroom 4 stem 3",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 28.296,
+                    "height": 310.996
+                  },
+                  "transform": {
+                    "position": [87.679, 155.498, 203.741],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                },
+                {
+                  "name": "mushroom 4 cap 3",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 128.618,
+                    "height": 126.914,
+                    "perch": true,
+                    "dome": 102.894
+                  },
+                  "transform": {
+                    "position": [97.514, 350.433, 226.595],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "mushroom 5",
+              "type": "transform",
+              "transform": {
+                "position": [-900, -10, 3600],
+                "rotation": [0, 50, 0],
+                "scale": [1.2, 1.2, 1.2]
+              },
+              "items": [
+                {
+                  "name": "mushroom 5 model",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/mushroom-single.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.1,
+                    "shininess": 16
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "mushroom 5 stem 1",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 41.8,
+                    "height": 600
+                  },
+                  "transform": {
+                    "position": [0, 300, 0],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                },
+                {
+                  "name": "mushroom 5 cap 1",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 190,
+                    "height": 187.484,
+                    "perch": true,
+                    "dome": 152
+                  },
+                  "transform": {
+                    "position": [0, 658.258, 0],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "mushroom 6",
+              "type": "transform",
+              "transform": {
+                "position": [1200, -10, -500],
+                "rotation": [0, 10, 0],
+                "scale": [1, 1, 1]
+              },
+              "items": [
+                {
+                  "name": "mushroom 6 model",
+                  "type": "static-mesh",
+                  "resource": "/resources/obj/mushroom-pad.obj",
+                  "material": {
+                    "color": [0, 0, 0, 1],
+                    "reflectiveness": 1,
+                    "specular": 0.1,
+                    "shininess": 16
+                  },
+                  "ambient": {
+                    "color": [0.4, 0.4, 0.43]
+                  }
+                },
+                {
+                  "name": "mushroom 6 stem 1",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 52.2,
+                    "height": 180
+                  },
+                  "transform": {
+                    "position": [0, 90, 0],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                },
+                {
+                  "name": "mushroom 6 cap 1",
+                  "type": "transform",
+                  "collider": {
+                    "shape": "cylinder",
+                    "radius": 290,
+                    "height": 163.173,
+                    "perch": true,
+                    "dome": 145
+                  },
+                  "transform": {
+                    "position": [0, 243.413, 0],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "course",
+          "type": "transform",
+          "hud": "course",
+          "script": {
+            "src": "scripts/course.js",
+            "settings": {
+              "perches": ["perch 0", "perch 1", "perch 2", "perch 3", "perch 4", "perch 5"],
+              "flier": "ling",
+              "marker": "next perch marker"
+            }
+          },
+          "items": [
+            {
+              "name": "next perch marker",
+              "type": "static-mesh",
+              "resource": "/resources/obj/race-gate-cyan.obj",
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 0
+              },
+              "ambient": {
+                "color": [1, 1, 1]
+              },
+              "transform": {
+                "position": [0, 0, 0],
+                "rotation": [90, 0, 0],
+                "scale": [1, 1, 1]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ling",
+          "type": "transform",
+          "collider": {
+            "shape": "sphere",
+            "radius": 60
+          },
+          "transform": {
+            "position": [0, 315.0, 0],
+            "rotation": [0, 0, 0],
+            "scale": [1, 1, 1]
+          },
+          "items": [
+            {
+              "name": "ling body",
+              "type": "static-mesh",
+              "resource": "/resources/obj/ling.obj",
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.1,
+                "shininess": 16
+              },
+              "ambient": {
+                "color": [0.4, 0.4, 0.43]
+              },
+              "transform": {
+                "position": [0, 0, 0],
+                "rotation": [0, 0, 0],
+                "scale": [1, 1, 1]
+              }
+            },
+            {
+              "name": "ling wings",
+              "type": "static-mesh",
+              "resource": "/resources/obj/ling-wings.obj",
+              "material": {
+                "color": [0, 0, 0, 1],
+                "reflectiveness": 1,
+                "specular": 0.1,
+                "shininess": 16,
+                "opacity": 0.55
+              },
+              "ambient": {
+                "color": [0.4, 0.4, 0.43]
+              },
+              "transform": {
+                "position": [0, 60, -2],
+                "rotation": [0, 0, 0],
+                "scale": [1, 1, 1]
+              },
+              "script": {
+                "src": "scripts/flap.js",
+                "settings": {
+                  "rate": 12
+                }
+              }
+            }
+          ],
+          "hud": "energy",
+          "script": {
+            "src": "scripts/fly.js",
+            "settings": {
+              "ground": "terrain",
+              "perches": "mushrooms"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

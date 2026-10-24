@@ -1,0 +1,8 @@
+{
+  "name": "Wingborn",
+  "description": "Grow from a hatchling into the leader of your colony, and earn your wings.",
+  "scene": "hops.json",
+  "scenes": ["hops.json", "menu.json"],
+  "player": "ling",
+  "menu": "menu.json"
+}
