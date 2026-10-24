@@ -667,6 +667,43 @@ material's Material tab, and fog on a viewport's Fog tab. The viewport sets
 the camera position and fog uniforms of each renderable's program as it
 draws, with its view-projection matrix (`setUniforms` in `viewport.js`).
 
+### Textures on a static mesh
+
+A static mesh can have a texture, an image that tints its colors, named by
+its state's `texture`, the path to the image:
+
+```json
+{
+  "name": "crate",
+  "type": "static-mesh",
+  "resource": "/resources/obj/crate.obj",
+  "texture": "/resources/textures/wood-grain.png",
+  "material": {"color": [0, 0, 0, 1], "reflectiveness": 1}
+}
+```
+
+The mesh's color, its vertex colors plus its material's color, is multiplied
+by the texture's at each point, so a light texture with darker marks, such as
+wood grain, shades the mesh's own colors rather than replacing them. A
+white texture leaves them as they are. Where on the image each point is comes
+from the model's texture coordinates, its `vt` lines in an OBJ file, which
+repeat past 1, so a small texture can tile across a big mesh. Images whose
+sides are powers of 2, such as 256 by 512, tile and get mipmaps; others are
+clamped at their edges.
+
+When the model loads, the resource loader gives the mesh a `Texture` node,
+the kind FBX models' materials have, before its shader program is picked
+(see `addTexture` in `resource-loader.js`), and a mesh with a `Texture`
+child draws with `phong-texture`, which has no skinning (see
+[Shaders](#shaders)). The mesh binds its textures as it draws, along with its
+lights and material, and turns on the shader's `textureTint`, so its texture
+multiplies its colors (see `setUniforms` in `mesh.js`). The texture is asked for at the game's version,
+like the model.
+
+OBJ models can't name their own textures yet: their `.mtl` material files
+are skipped. FBX models name theirs, under their materials, and their
+textures replace the mesh's colors instead, with `textureTint` left off.
+
 ### Sky
 
 A `sky` node paints a cartoon sky behind everything in its viewport: a
@@ -992,7 +1029,10 @@ flowchart TB
 3. The OBJ loader's `buildSceneNode` creates a `VertexBuffer` from the parsed
    vertices and wraps it in a `Geometry` child of the mesh.
 4. The shader registry gives the mesh a `phong-lighting` shader program, now
-   that it has geometry to draw (see [Shaders](#shaders)).
+   that it has geometry to draw (see [Shaders](#shaders)). A mesh whose
+   state names a texture gets a `Texture` child first, and draws with
+   `phong-texture` instead (see
+   [Textures on a static mesh](#textures-on-a-static-mesh)).
 
 The resulting scene graph:
 
@@ -1061,7 +1101,9 @@ shaderRegistry.register(Mesh, (mesh) => (hasGeometry(mesh) ? "shaders/phong-ligh
 
 A node uses the registration of its most specific class, so the FBX `Mesh`
 registers its own choice over the scene `Mesh`'s: the textured shader when it
-has textures. A function returns null for a node that draws nothing, such as
+has textures. The scene `Mesh`'s own choice draws a mesh with a `Texture`
+child of its own with `phong-texture` too (see
+[Textures on a static mesh](#textures-on-a-static-mesh)). A function returns null for a node that draws nothing, such as
 the config node an FBX model is loaded into, so it gets no program.
 
 A shader's name is its path in the runtime package without the extension:

@@ -76,6 +76,11 @@ uniform vec3 fogColor;
 uniform float fogNear;
 uniform float fogFar;
 uniform Texture textures[MAX_TEXTURES];
+// Whether the textures tint the mesh's colors, multiplying them, such as a
+// static mesh's texture tinting its vertex colors (see textures on a static
+// mesh in the README, at the top of the repo), rather than replacing them,
+// the way an fbx model's textures paint it.
+uniform bool textureTint;
 uniform Light lights[MAX_LIGHTS];
 
 // calculateSpecularLight is the Blinn-Phong highlight of a light: brightest
@@ -152,10 +157,12 @@ void main() {
     }
   }
 
-  if (textureCount != 0) {
-    pixelColor = texelColor;
-  } else {
+  if (textureCount == 0) {
     pixelColor = fragmentColor + materialColor;
+  } else if (textureTint) {
+    pixelColor = (fragmentColor + materialColor) * texelColor;
+  } else {
+    pixelColor = texelColor;
   }
 
   // Ambient light comes from above and below in the world, so it goes by the

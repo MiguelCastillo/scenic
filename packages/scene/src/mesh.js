@@ -1,5 +1,6 @@
 import {Material} from "./material.js";
 import {Renderable} from "./renderable.js";
+import {Texture} from "./texture.js";
 import {RenderOrder} from "./viewport.js";
 
 // findLights returns the lights that shine on a node. It walks up from the
@@ -110,8 +111,10 @@ export class Mesh extends Renderable {
   }
 
   // setUniforms sets the uniforms of program, which must be in use, whose
-  // values the mesh has: its lights and its material. Each copy's world
-  // matrix is set by render, as it draws the copy.
+  // values the mesh has: its lights, its material, and its textures, its
+  // Texture children, such as the one a static mesh's state names, which
+  // tint its colors (see textures on a static mesh in the README). Each
+  // copy's world matrix is set by render, as it draws the copy.
   //
   // It is part of render: it is only called as a renderable's render
   // starts, by useProgram in Renderable, or by another setUniforms, with
@@ -120,6 +123,12 @@ export class Mesh extends Renderable {
   setUniforms(program, context) {
     this.setLightUniforms(program, context);
     this.setMaterialUniforms(program, context);
+    for (let i = 0; i < this.items.length; i++) {
+      if (this.items[i] instanceof Texture) {
+        this.items[i].setUniforms(program, context);
+        program.uniform("textureTint").set1i(true);
+      }
+    }
   }
 
   // setLightUniforms sets the uniforms of program for each light that shines

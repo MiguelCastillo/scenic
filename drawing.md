@@ -52,7 +52,7 @@ such as `"shaders/phong-lighting"`.
 | Shader           | Draws                                                               |
 | ---------------- | ------------------------------------------------------------------- |
 | `phong-lighting` | lit meshes, with materials, lights and fog, and skinned fbx models  |
-| `phong-texture`  | lit fbx meshes with textures, including normal maps                 |
+| `phong-texture`  | lit meshes with textures: fbx models' and static meshes'            |
 | `flat-material`  | unlit shapes in one color, such as a light's marker and fbx bones   |
 | `terrain`        | the terrain's tiles, blending grass, dirt tracks and their textures |
 | `sky`            | the sky: one triangle covering the screen, with its clouds and sun  |
@@ -92,7 +92,8 @@ can register its own shader over its parent's.
 program the one its registration picks. It runs once nodes are built, such
 as when a scene loads or a model finishes loading (see `load-scene.js` and
 `resource-loader.js`), since what a node draws can decide its shader, such
-as an fbx mesh with textures drawing with `phong-texture`.
+as an fbx mesh or a static mesh with textures drawing with `phong-texture`
+(see "Textures on a static mesh" in the README).
 
 ## Shader programs: `ShaderProgram`
 

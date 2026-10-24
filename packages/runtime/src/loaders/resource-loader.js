@@ -1,4 +1,4 @@
-import {traversal} from "@scenic/scene";
+import {Texture, traversal} from "@scenic/scene";
 import {Loader as ObjFileLoader, buildSceneNode as objBuildSceneNode} from "./obj/loader.js";
 import {Loader as FbxFileLoader, buildSceneNode as fbxBuildSceneNode} from "./fbx/loader.js";
 import {applyShaders} from "../shader-registry.js";
@@ -53,6 +53,7 @@ export function createResourceLoader(gl, sceneManager, {version = null} = {}) {
         throw new Error(`unable to load resource. scene node with "${node.id}" was not found.`);
       }
       buildSceneNode(gl, data, sceneNode, sceneManager, lodDistance);
+      addTexture(gl, sceneNode, sceneManager, version);
 
       // Now that the node is built, give its renderables the shader programs
       // they draw with.
@@ -127,4 +128,18 @@ class LoaderManager {
   dispose() {
     Object.values(this.loaders).forEach(({loader}) => loader.dispose());
   }
+}
+
+// addTexture gives node the texture its state names in "texture", the path
+// to an image, such as "/resources/textures/bark.png", asked for at version
+// like the node's model, as a Texture child, unless it already has one,
+// such as from an earlier level of detail. It is added before the node's
+// shader program is picked, which a texture decides (see shader-registry.js).
+// See textures on a static mesh in the README.
+function addTexture(gl, node, sceneManager, version) {
+  const url = sceneManager.getNodeStateByID(node.id)?.texture;
+  if (typeof url !== "string" || node.items.some((child) => child instanceof Texture)) {
+    return;
+  }
+  node.add(new Texture(0, "diffusecolor", {name: "texture"}).load(gl, versionedURL(url, version)));
 }

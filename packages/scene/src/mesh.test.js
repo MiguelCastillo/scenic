@@ -4,6 +4,7 @@ import {Camera} from "./camera.js";
 import {Geometry} from "./geometry.js";
 import {Mesh} from "./mesh.js";
 import {Node} from "./node.js";
+import {Texture} from "./texture.js";
 import {RenderOrder, Viewport} from "./viewport.js";
 
 // contextWith is the context a mesh gets each frame, with a scene manager
@@ -263,5 +264,50 @@ describe("Mesh render at worldMatrices", () => {
         [50, 0, -100],
       ])
     ).toEqual([["use"], ["set", "worldMatrix"], ["draw"], ["set", "worldMatrix"], ["draw"]]);
+  });
+});
+
+describe("Mesh setUniforms with textures", () => {
+  // A program that keeps the integer uniforms it was given, by name, and
+  // other uniforms are set and not kept; and a context whose gl keeps the
+  // texture units it was told to use.
+  const program = () => {
+    const ints = {};
+    const setNothing = {set1f() {}, set1i() {}, set3fv() {}, set4fv() {}, setMatrix4fv() {}};
+    return {
+      ints,
+      uniform: (name) => ({...setNothing, set1i: (value) => (ints[name] = value)}),
+    };
+  };
+  const contextWithGL = () => {
+    const units = [];
+    const gl = {
+      TEXTURE0: 100,
+      TEXTURE_2D: 1,
+      activeTexture: (unit) => units.push(unit),
+      bindTexture() {},
+    };
+    return {...contextWith(), gl, units};
+  };
+
+  test("turns on and binds its Texture children, which tint its colors", () => {
+    const mesh = new Mesh({type: "static-mesh", name: "trunk"});
+    mesh.add(new Texture(0, "diffusecolor", {name: "bark"}));
+    const shader = program();
+    const context = contextWithGL();
+    mesh.setUniforms(shader, context);
+    expect(shader.ints["textures[0].enabled"]).toBe(true);
+    expect(shader.ints["textures[0].id"]).toBe(0);
+    expect(shader.ints.textureTint).toBe(true);
+    expect(context.units).toEqual([100]);
+  });
+
+  test("leaves textures alone without any", () => {
+    const shader = program();
+    const context = contextWithGL();
+    new Mesh({type: "static-mesh", name: "cap"}).setUniforms(shader, context);
+    expect(shader.ints["textures[0].enabled"]).toBe(undefined);
+    expect(shader.ints.textureTint).toBe(undefined);
+    expect(context.units).toEqual([]);
   });
 });
