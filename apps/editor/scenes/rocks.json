@@ -190,7 +190,8 @@
                 "position": [-200, -10, 0],
                 "rotation": [0, 0, 0],
                 "scale": [1, 1, 1]
-              }
+              },
+              "texture": "/resources/textures/stone.png"
             },
             {
               "name": "boulder 4",
@@ -209,7 +210,8 @@
                 "position": [220, -10, -200],
                 "rotation": [0, 60, 0],
                 "scale": [1, 1, 1]
-              }
+              },
+              "texture": "/resources/textures/stone.png"
             }
           ]
         }

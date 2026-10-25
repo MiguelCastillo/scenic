@@ -10,9 +10,12 @@
 // - slab: a low, wide rock, an easy landing.
 // - standing: a tall stone, standing up.
 //
-// Its colors are vertex colors, with a lighter cartoon highlight on top of
-// the moss, so it renders without a material color: the lit shaders add the
-// material color to the vertex color, so leave it black.
+// Its colors are vertex colors, each triangle one color, so the moss's edge
+// is sharp, with a lighter cartoon highlight on top of the moss, so it
+// renders without a material color: the lit shaders add the material color to
+// the vertex color, so leave it black. It has texture coordinates too, for a
+// texture that tints it, such as stone.png from bin/generate-texture.js (see
+// textures on a static mesh in the README).
 //
 // The rock sits on its origin, growing up +Y, and reaches a little below the
 // ground, so it sits in the ground rather than on it.
@@ -41,8 +44,10 @@ const path = require("path");
 
 const {Mesh, cross, dot, normalize, parseArgs, sub} = require("./lib/mesh.js");
 
-const SIDES = 48; // around the rock
-const RINGS = 24; // from its foot to its top
+const SIDES = 72; // around the rock
+const RINGS = 36; // from its foot to its top
+// How many times its texture wraps around it.
+const TEXTURE_WRAPS = 6;
 
 // The direction of the cartoon highlight, up and a little to one side.
 const HIGHLIGHT = normalize([0.4, 1, 0.3]);
@@ -157,8 +162,11 @@ function buildRock(p, random) {
 
   // The point on the rock in direction from its middle.
   const pointAt = (direction) => {
+    // The lumps fade out toward its top, where every way around meets, so
+    // they don't pinch it into creases there.
+    const fade = Math.sqrt(1 - Math.max(0, direction[1]) ** 2);
     const bulge =
-      1 + p.lumps * lumps(Math.atan2(direction[2], direction[0]), Math.asin(direction[1]));
+      1 + p.lumps * fade * lumps(Math.atan2(direction[2], direction[0]), Math.asin(direction[1]));
     // A blocky rock is a ball pushed out toward a box: the higher the power,
     // the squarer.
     const power = 2 + 4 * p.blocky;
@@ -183,7 +191,7 @@ function buildRock(p, random) {
   // its top.
   const bottom = Math.asin(-0.25);
   const grid = Array.from({length: RINGS + 1}, (_, i) => {
-    const latitude = bottom + ((Math.PI / 2 - bottom) * i) / RINGS;
+    const latitude = bottom + ((Math.PI / 2 - bottom) * i) / (RINGS + 1);
     return Array.from({length: SIDES}, (_, s) => {
       const angle = (s / SIDES) * 2 * Math.PI;
       const direction = [
@@ -197,14 +205,45 @@ function buildRock(p, random) {
   const top = pointAt([0, 1, 0]);
   const height = Math.max(top[1], ...grid.flat().map(({position}) => position[1]));
 
-  // Its normals come from its shape, across to the points around and above
-  // and below each one, since the facets and lean bend it away from a ball.
-  const rings = grid.map((ring, i) =>
+  // Its normals come from its shape, since the facets and lean bend it away
+  // from a ball: each point's is the sum of the faces' around it, bigger
+  // faces counting for more, so the many thin faces near the top, where the
+  // rings close in, don't make it streaky.
+  const sums = grid.map((ring) => ring.map(() => [0, 0, 0]));
+  const topSum = [0, 0, 0];
+  const addFace = (corners) => {
+    const [pa, pb, pc] = corners.map(([i, s]) => (i > RINGS ? top : grid[i][s % SIDES].position));
+    const face = cross(sub(pb, pa), sub(pc, pa));
+    for (const [i, s] of corners) {
+      const sum = i > RINGS ? topSum : sums[i][s % SIDES];
+      face.forEach((v, axis) => (sum[axis] += v));
+    }
+  };
+  for (let i = 0; i <= RINGS; i++) {
+    for (let s = 0; s < SIDES; s++) {
+      if (i < RINGS) {
+        addFace([
+          [i, s],
+          [i + 1, s + 1],
+          [i, s + 1],
+        ]);
+        addFace([
+          [i, s],
+          [i + 1, s],
+          [i + 1, s + 1],
+        ]);
+      } else {
+        addFace([
+          [i, s],
+          [i + 1, 0],
+          [i, s + 1],
+        ]);
+      }
+    }
+  }
+  const points = grid.map((ring, i) =>
     ring.map(({angle, direction, position}, s) => {
-      const around = sub(ring[(s + 1) % SIDES].position, ring[(s + SIDES - 1) % SIDES].position);
-      const above = i < RINGS ? grid[i + 1][s].position : top;
-      const below = grid[Math.max(i - 1, 0)][s].position;
-      let normal = normalize(cross(sub(above, below), around));
+      let normal = normalize(sums[i][s]);
       if (dot(normal, direction) < 0) {
         normal = normal.map((v) => -v);
       }
@@ -216,25 +255,56 @@ function buildRock(p, random) {
       const waver = 0.06 * Math.sin(angle * 3 + edgePhase);
       const drip = p.dripLength * Math.max(0, Math.sin(angle * p.drips + dripPhase)) ** 4;
       const mossy = p.moss > 0 && up > 1 - p.moss - waver - drip;
-      const color = mossy
-        ? paint(p.mossColor, normal, p.highlight)
-        : normal[1] < -0.1
-          ? p.shadowColor
-          : p.stoneColor;
-      return mesh.vertex(position, normal, color);
+      return {position, normal, mossy, lit: dot(normal, HIGHLIGHT) > 0.8};
     })
   );
 
+  // Its texture is laid on each triangle straight along the axis it faces
+  // most, from above, the side or the front, so it is never stretched, and
+  // it repeats every `repeat` units, TEXTURE_WRAPS times around the rock (see
+  // textures on a static mesh in the README).
+  const repeat = (2 * Math.PI * ((p.width + p.depth) / 2)) / TEXTURE_WRAPS;
+  const uvOf = ([x, y, z], [nx, ny, nz]) => {
+    const [ax, ay, az] = [Math.abs(nx), Math.abs(ny), Math.abs(nz)];
+    const [u, v] = ay >= ax && ay >= az ? [x, z] : ax >= az ? [z, y] : [x, y];
+    return [u / repeat, v / repeat];
+  };
+
+  // Each triangle has its own corners, all one color, so the moss's edge is
+  // sharp, running along the triangles' edges, rather than blurring across
+  // them. A triangle is moss when most of its corners are, lighter when most
+  // of them face the highlight, and stone darker underneath when it faces
+  // down.
+  const facet = (corners) => {
+    const normal = normalize(
+      corners.reduce((sum, {normal}) => sum.map((v, i) => v + normal[i]), [0, 0, 0])
+    );
+    const mossy = corners.filter(({mossy}) => mossy).length >= 2;
+    const lit = corners.filter(({lit}) => lit).length >= 2;
+    const color = mossy
+      ? lit
+        ? lighten(p.mossColor, p.highlight)
+        : p.mossColor
+      : normal[1] < -0.1
+        ? p.shadowColor
+        : p.stoneColor;
+    const [a, b, c] = corners.map((corner) =>
+      mesh.vertex(corner.position, corner.normal, color, uvOf(corner.position, normal))
+    );
+    mesh.triangle(a, b, c);
+  };
+  const corner = (i, s) => points[i][s % SIDES];
   for (let i = 0; i < RINGS; i++) {
     for (let s = 0; s < SIDES; s++) {
-      const t = (s + 1) % SIDES;
-      mesh.quad(rings[i][s], rings[i][t], rings[i + 1][t], rings[i + 1][s]);
+      facet([corner(i, s), corner(i, s + 1), corner(i + 1, s + 1)]);
+      facet([corner(i, s), corner(i + 1, s + 1), corner(i + 1, s)]);
     }
   }
   // The top closes over its middle.
-  const middle = mesh.vertex(top, [0, 1, 0], paint(p.mossColor, [0, 1, 0], p.highlight));
+  const middle = {position: top, normal: normalize(topSum), mossy: p.moss > 0};
+  middle.lit = dot(middle.normal, HIGHLIGHT) > 0.8;
   for (let s = 0; s < SIDES; s++) {
-    mesh.triangle(middle, rings[RINGS][s], rings[RINGS][(s + 1) % SIDES]);
+    facet([middle, corner(RINGS, s), corner(RINGS, s + 1)]);
   }
 
   // Its collider stands under its top, which the lean shifts, and reaches out
@@ -256,10 +326,10 @@ function buildRock(p, random) {
   return {mesh, colliders};
 }
 
-// paint is color lightened by highlight, with a sharp edge, where normal
-// faces the highlight, for a painted highlight rather than a gradient.
-function paint(color, normal, highlight) {
-  return dot(normal, HIGHLIGHT) > 0.8 ? color.map((v) => v + (1 - v) * highlight) : color;
+// lighten is color lightened by highlight, for the painted highlight where
+// the moss faces HIGHLIGHT.
+function lighten(color, highlight) {
+  return color.map((v) => v + (1 - v) * highlight);
 }
 
 function main() {

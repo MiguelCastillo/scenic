@@ -3778,7 +3778,8 @@
                   },
                   "ambient": {
                     "color": [0.42, 0.45, 0.42]
-                  }
+                  },
+                  "texture": "/resources/textures/stone.png"
                 },
                 {
                   "name": "rock 1 top",
@@ -3786,12 +3787,12 @@
                   "collider": {
                     "shape": "cylinder",
                     "radius": 143.52,
-                    "height": 220.583,
-                    "dome": 220.583,
-                    "perch": true
+                    "height": 221.29,
+                    "perch": true,
+                    "dome": 221.29
                   },
                   "transform": {
-                    "position": [-1.094, 110.292, 17.967],
+                    "position": [-1.094, 110.645, 17.967],
                     "rotation": [0, 0, 0],
                     "scale": [1, 1, 1]
                   }
@@ -3819,7 +3820,8 @@
                   },
                   "ambient": {
                     "color": [0.42, 0.45, 0.42]
-                  }
+                  },
+                  "texture": "/resources/textures/stone.png"
                 },
                 {
                   "name": "rock 2 top",
@@ -3827,12 +3829,12 @@
                   "collider": {
                     "shape": "cylinder",
                     "radius": 154.413,
-                    "height": 193.051,
-                    "dome": 193.051,
-                    "perch": true
+                    "height": 193.301,
+                    "perch": true,
+                    "dome": 193.301
                   },
                   "transform": {
-                    "position": [-3.121, 96.525, 15.938],
+                    "position": [-3.121, 96.651, 15.938],
                     "rotation": [0, 0, 0],
                     "scale": [1, 1, 1]
                   }

@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // generate-texture writes a seamless cartoon texture for terrain, or for tree
-// bark, as a PNG file in resources/textures. Every kind wraps around at its
-// edges, so it repeats across the ground, or around and up a trunk, forever
-// without a seam. Its kind is one of:
+// bark or stone, as a PNG file in resources/textures. Every kind wraps around
+// at its edges, so it repeats across the ground, or around and up a trunk,
+// forever without a seam. Its kind is one of:
 // - grass: a grey detail map of soft mottling and little tufts, for grass.
 //   Terrain tints it with its grass colors, so it is grey rather than green.
 // - dirt: a grey detail map of mottling and small, round pebbles, for dirt.
@@ -14,6 +14,9 @@
 //   trunk and branches (see textures on a static mesh in the README). It is
 //   mostly near white, so the bark keeps the color it is painted, with its
 //   grooves shading it darker.
+// - stone: soft mottling, fine wandering cracks and dark and light specks,
+//   for a mesh it tints, such as a rock (see bin/generate-rock.js). It is
+//   mostly near white, like bark.
 // Detail maps are light grey on average, around 80%, so terrain brightens
 // them back up by 1.25 to keep its colors as they are on average.
 //
@@ -22,9 +25,10 @@
 //   node bin/generate-texture.js --kind dirt      terrain-dirt.png
 //   node bin/generate-texture.js --kind blend     terrain-blend.png
 //   node bin/generate-texture.js --kind bark      bark.png
+//   node bin/generate-texture.js --kind stone     stone.png
 //
 // Parameters:
-//   --kind: grass, dirt, blend or bark. grass by default.
+//   --kind: grass, dirt, blend, bark or stone. grass by default.
 //   --size: how many pixels wide and tall it is, a power of 2. 256 by
 //     default, and 512 for blend.
 //   --seed: which random texture. 1 by default.
@@ -144,6 +148,27 @@ const kinds = {
     fill(pixels, grey);
   },
 
+  stone(pixels, size, {seed}) {
+    const grey = new Float32Array(size * size);
+    // Soft mottling, crossed by fine cracks where two noises are nearly
+    // even, which wander every which way, and specks, dark and light.
+    for (let y = 0; y < size; y++) {
+      for (let x = 0; x < size; x++) {
+        const [u, v] = [x / size, y / size];
+        const mottling = fbm(u, v, 4, 4, seed);
+        const crackAt = (cells, offset) =>
+          1 - smoothstep(0.002, 0.009, Math.abs(fbm(u, v, cells, 2, seed + offset) - 0.5));
+        const crack = Math.max(crackAt(3, 3), 0.6 * crackAt(6, 7));
+        grey[y * size + x] = 0.8 + 0.24 * mottling - 0.2 * crack;
+      }
+    }
+    dabs(500, 0.002, 0.006, seed + 11, (cx, cy, r, i) => {
+      const shade = random(i, 4, seed) < 0.6 ? -0.12 : 0.1;
+      paint(grey, size, cx, cy, r, (d) => shade * (1 - d * d));
+    });
+    fill(pixels, grey);
+  },
+
   blend(pixels, size, {seed, cover}) {
     // Patches are where the noise is highest, cover of the texture, with a
     // soft edge.
@@ -241,7 +266,8 @@ function main() {
   const pixels = new Uint8Array(pixelSize * pixelSize * 4);
   kinds[kind](pixels, pixelSize, {seed: Number(seed), cover: Number(cover)});
 
-  const filename = out || (kind === "bark" ? "bark.png" : `terrain-${kind}.png`);
+  const filename =
+    out || (["bark", "stone"].includes(kind) ? `${kind}.png` : `terrain-${kind}.png`);
   const output = path.isAbsolute(filename)
     ? filename
     : path.join(__dirname, "..", "resources", "textures", filename);
