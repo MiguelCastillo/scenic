@@ -37,8 +37,8 @@
 // cylinder's radius, or with "dome" in the collider, how far a round cap
 // falls from its middle to its rim, on the cap's curve, so its feet stay on
 // the cap as it walks across it. With "heights", a grid of how high its
-// surface is above the cylinder's bottom, across the cylinder's width, such
-// as a rock's, it stands on the surface wherever it is, however uneven:
+// surface is above the cylinder's bottom, across "heightsBox", such as a
+// rock's, it stands on the surface wherever it is, however uneven:
 // flying into it from any side, it lands where it touched, and walking into
 // it from the ground, it climbs on. The ling's own collider, a sphere around
 // its feet, bumps it off every other collider, such as a stem's.
@@ -188,7 +188,15 @@ function perchesUnder(sceneManager, node) {
         dome: (collider.dome ?? 0) * yScale,
         heights: collider.heights && {
           grid: collider.heights,
-          radius: collider.radius ?? 1,
+          box: collider.heightsBox,
+          // How far apart its points are in the world, the closer way.
+          cell:
+            (Math.min(
+              collider.heightsBox[2] - collider.heightsBox[0],
+              collider.heightsBox[3] - collider.heightsBox[1]
+            ) /
+              (collider.heights.length - 1)) *
+            (radius / (collider.radius ?? 1)),
           yScale,
           toLocal: child.worldMatrix.invert().data,
         },
@@ -212,17 +220,26 @@ function surfaceAt(perch, x, z) {
 }
 
 // heightAt is the height of a perch with heights at (x, z), blended between
-// the four around it on its grid, which spans its cylinder's width in its
-// own coordinates (see bin/generate-rock.js), or -Infinity off its grid.
+// the four around it on its grid, which spans its heightsBox, [minX, minZ,
+// maxX, maxZ], in its own coordinates (see bin/generate-rock.js), or
+// -Infinity off its grid.
+//
+// TODO: a grid has one height per point, so a rock's near-vertical face is a
+// ramp one cell wide, and walking it from the ground, the ling lurches up it
+// lying on its side. Either make steep faces walls it can't walk up, and have
+// generate-rock.js chip no face steeper than about 70 degrees, or climb walls
+// for real, on a mesh collider with closest-point lookups, the way it climbs
+// trees.
 function heightAt(perch, x, z) {
-  const {grid, radius, yScale, toLocal: m} = perch.heights;
+  const {grid, box, yScale, toLocal: m} = perch.heights;
+  const [minX, minZ, maxX, maxZ] = box;
   // Matrix4 data is row-major, so its rows give the local X and Z.
   const y = perch.center[1];
   const lx = m[0] * x + m[1] * y + m[2] * z + m[3];
   const lz = m[8] * x + m[9] * y + m[10] * z + m[11];
   const last = grid.length - 1;
-  const column = ((lx + radius) / (2 * radius)) * last;
-  const row = ((lz + radius) / (2 * radius)) * last;
+  const column = ((lx - minX) / (maxX - minX)) * last;
+  const row = ((lz - minZ) / (maxZ - minZ)) * last;
   if (!(column >= 0 && row >= 0 && column <= last && row <= last)) {
     return -Infinity;
   }
@@ -382,7 +399,7 @@ const sub = (a, b) => a.map((v, i) => v - b[i]);
 function normalOnCap(perch, x, z) {
   if (perch.heights) {
     // A grid's slope, from its height a cell to either side.
-    const step = (2 * perch.radius) / (perch.heights.grid.length - 1);
+    const step = perch.heights.cell;
     const height = (dx, dz) => {
       const h = heightAt(perch, x + dx, z + dz);
       return h === -Infinity ? perch.bottom : h;

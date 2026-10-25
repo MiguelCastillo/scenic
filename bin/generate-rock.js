@@ -35,7 +35,7 @@
 // Files are written to resources/obj unless --out says otherwise. Its
 // collider is printed and saved as a comment at the top of the file: an
 // upright cylinder around it, named "top", that can be landed on, with the
-// heights of its surface over a grid, for colliders in a scene (see
+// heights of its surface over a grid around it, for colliders in a scene (see
 // collision in @scenic/scene, and perches in games/wingborn/scripts/fly.js).
 
 const fs = require("fs");
@@ -310,18 +310,24 @@ function buildRock(p, random) {
 
   // Its collider is an upright cylinder around all of it, from its foot to
   // its top, with its heights: how high its surface is above its foot, over a
-  // square grid as wide as the cylinder, so the ling stands on it where it
-  // really is, however uneven, rather than on a dome. Its surface comes from
-  // its triangles, the highest one over each point of the grid, and is 0 off
-  // the rock.
+  // grid, so the ling stands on it where it really is, however uneven,
+  // rather than on a dome. The grid spans heightsBox, [minX, minZ, maxX,
+  // maxZ], the box around the part of it above the ground, so its points are
+  // as close together as they can be. Its surface comes from its triangles,
+  // the highest one over each point of the grid, and is 0 off the rock.
   const radius = Math.max(...grid.flat().map(({position: [x, , z]}) => Math.hypot(x, z)));
-  const cell = (2 * radius) / (HEIGHTS - 1);
+  const above = grid.flat().filter(({position}) => position[1] >= 0);
+  const xs = above.map(({position}) => position[0]);
+  const zs = above.map(({position}) => position[2]);
+  const heightsBox = [Math.min(...xs), Math.min(...zs), Math.max(...xs), Math.max(...zs)];
+  const [minX, minZ, maxX, maxZ] = heightsBox;
   const triangles = mesh.triangles.map((triangle) =>
     triangle.map((i) => mesh.vertices[i].position)
   );
   const heights = Array.from({length: HEIGHTS}, (_, row) =>
     Array.from({length: HEIGHTS}, (_, column) => {
-      const [x, z] = [column * cell - radius, row * cell - radius];
+      const x = minX + ((maxX - minX) * column) / (HEIGHTS - 1);
+      const z = minZ + ((maxZ - minZ) * row) / (HEIGHTS - 1);
       return Math.max(0, ...triangles.map((corners) => heightOver(corners, x, z)));
     })
   );
@@ -332,6 +338,7 @@ function buildRock(p, random) {
       radius,
       height,
       heights,
+      heightsBox,
       position: [0, height / 2, 0],
     },
   ];
