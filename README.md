@@ -583,9 +583,11 @@ Only spheres are tested against other shapes, so of any two shapes that should
 collide, at least one is a sphere. In Bubble Squadron, the starfighter
 has a sphere and each tree has a cylinder up its trunk and one around its
 crown, and `fly.js` bounces the starfighter off whatever it hits. A collider doesn't need a
-mesh: the trees' are on transform nodes beside their meshes, placed where
-`bin/generate-tree.js` says they go. A Collider tab in the editor edits a
-collider's size live.
+mesh: a model's colliders go on transform nodes beside its mesh. Each of
+those nodes names the model and one of its colliders, and gets that
+collider's shape and position from the model's meta file (see Model meta
+files).
+A Collider tab in the editor edits a collider's size live.
 
 ### Model meta files
 
@@ -633,13 +635,36 @@ for people reading it:
 # Meta in rock-boulder.meta.json
 ```
 
-Tools find a model's meta file from the model's path, never by reading the
-model's header, so a format without comments, such as FBX, can have a meta
-file too. A model's other files, such as a tree's bark, have no meta file of
-their own; their headers name the model's. A level of detail made by
-`bin/simplify-obj.js` has its own meta file, which names the model it was
-simplified from. A game's version covers the meta files of the models it
-uses (see `bin/version-games.js`).
+A scene doesn't copy a model's data. It names the model and what to take
+from it, so the data lives in one place, and regenerating a model updates
+every scene that uses it. Before building the scene, `loadScene` fills in
+what each node names, with or without WebGL, fetching each meta file once
+(see `fillFromModels` in `@scenic/runtime`):
+
+- A node whose `collider` has a `model` and a `name` gets the fields of the
+  model's collider with that name, such as `shape` and `radius`, added to
+  its collider. Its own fields, such as `perch`, stay. The node's position
+  is set to that collider's position in the meta file.
+- A node whose `skeleton` is `{"model": ...}` gets the model's skeleton in
+  its place.
+
+```json
+{
+  "name": "rock 1 top",
+  "type": "transform",
+  "collider": {"model": "/resources/obj/rock-boulder.obj", "name": "top", "perch": true}
+}
+```
+
+Code finds a model's meta file from the model's path, never by reading the
+model's header. So a server fetches only the meta file, not the model, and a
+format without comments, such as FBX, can have a meta file too. A model's
+other files, such as a tree's bark, have no meta file of their own; their
+headers name the model's. A level of detail made by `bin/simplify-obj.js`
+has its own meta file, which names the model it was simplified from. A
+game's version covers the meta files of the models it uses (see
+`bin/version-games.js`). Loading a scene fails if a meta file it needs is
+missing, or doesn't have the collider or skeleton a node names.
 
 ### Reference floor
 

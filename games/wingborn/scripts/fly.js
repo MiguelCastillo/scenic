@@ -23,16 +23,23 @@
 // its trunk, it holds on wherever it touched, and walks on from there,
 // following its trunk, branches and twigs as tubes, the tree's skeleton:
 // "skeleton" in the state of each tree under the node the trees setting
-// names (see bin/generate-tree.js, which lists a tree's skeleton). On a
-// tree it has a nose and an up of its own, the way it faces and the
+// names. In the scene file, a tree's "skeleton" only names its model, such
+// as {"model": "/resources/obj/colony-acacia.obj"}, and loadScene replaces
+// it with the skeleton in that model's meta file (see "Model meta files" in
+// the README, and bin/generate-tree.js). On a tree it has a nose and an up
+// of its own, the way it faces and the
 // surface's normal, rather than a heading, so it can walk straight up the
 // trunk or upside down under a branch. Taking off, it can't stick to a tree
 // again for a moment, so it lets go of the one it was on.
 //
 // Perches are the nodes under the nodes the perches setting names whose
 // collider has "perch" set, such as a cap's: {"shape": "cylinder",
-// "radius": 190, "height": 160, "perch": true} (see bin/generate-mushroom.js
-// and bin/generate-rock.js, which list a mushroom's and a rock's colliders).
+// "radius": 190, "height": 160, "perch": true}. In the scene file, a cap's
+// collider names its model and the model's collider instead of listing its
+// shape, such as {"model": "/resources/obj/mushroom-pad.obj", "name":
+// "cap 1", "perch": true}, and loadScene adds the shape from that model's
+// meta file (see "Model meta files" in the README, bin/generate-mushroom.js
+// and bin/generate-rock.js).
 // The top of the cylinder is where the ling lands, anywhere it is within the
 // cylinder's radius, or with "dome" in the collider, how far a round cap
 // falls from its middle to its rim, on the cap's curve, so its feet stay on

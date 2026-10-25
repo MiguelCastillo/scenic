@@ -14,8 +14,11 @@ standing gives its energy back, faster on a cap. It sticks to the giant
 trees where it touches them, and climbs them, up the trunk and out along the
 branches. A cyan ring marks the next perch, and the pause menu starts the
 run over (see `scripts/fly.js` and `scripts/course.js`). Its models come from
-`bin/generate-ling.js`, `bin/generate-mushroom.js`, `bin/generate-grass.js`
-and `bin/generate-tree.js`. The rest of this is the story so far, to build
+`bin/generate-ling.js`, `bin/generate-mushroom.js`, `bin/generate-grass.js`,
+`bin/generate-tree.js` and `bin/generate-rock.js`. The scene doesn't copy
+their colliders or the trees' skeletons: it names the models they come
+from, and loadScene fills them in from the models' meta files (see "Model
+meta files" in the main README). The rest of this is the story so far, to build
 the other scenes from.
 
 ## The world

@@ -11,9 +11,13 @@ import {createScene, buildDefaultState, buildSceneNodes} from "./scene-factory.j
 import {createResourceLoader, getResourcesFromConfig} from "./loaders/resource-loader.js";
 import {applyShaders} from "./shader-registry.js";
 import {loadScripts} from "./script-loader.js";
+import {fillFromModels} from "./model-meta.js";
 
 // loadScene builds a scene from its config and loads its models, shaders
-// and scripts, ready to run (see SceneRunner). It returns the scene:
+// and scripts, ready to run (see SceneRunner). Before building the scene, it
+// fills in the colliders and skeletons that nodes take from their models'
+// meta files (see fillFromModels), with or without gl, so a scene run on a
+// server has them too. It returns the scene:
 // its sceneManager, its resourceLoader, add and remove, which add nodes to it
 // and take them out while it runs, and dispose, which tears it down.
 //
@@ -50,7 +54,8 @@ export const loadScene = async (
 
   const start = Date.now();
 
-  const sceneConfig = buildDefaultState(config);
+  const baseURL = new URL(sceneURL, globalThis.location?.href).href;
+  const sceneConfig = buildDefaultState(await fillFromModels(config, {baseURL, version}));
 
   // Let's create the scene, which is made up of a scene manager and a
   // state manager.
@@ -75,7 +80,6 @@ export const loadScene = async (
     sceneManager.dispose(gl);
   }
 
-  const baseURL = new URL(sceneURL, globalThis.location?.href).href;
   // The scripts the scene has loaded, kept so that each is loaded once for
   // the scene's life, however often nodes are added to it (see add).
   const scriptFactoriesByURL = new Map();
@@ -89,8 +93,9 @@ export const loadScene = async (
   // Its scripts' paths are relative to the scene file, like the scene's own.
   //
   // It resolves with the added node's id once its models, shaders and
-  // scripts are loaded. It is in the scene from the start, so it is drawn as
-  // its models arrive, and its scripts run as they arrive. Models the scene
+  // scripts are loaded. It joins the scene as soon as its models' meta files
+  // are fetched (see fillFromModels), before its models load, so it is drawn
+  // as its models arrive, and its scripts run as they arrive. Models the scene
   // already has, such as the player's own ship's, are not fetched again. If
   // loading fails, nothing is added.
   async function add(config, {parentID, idPrefix = ""} = {}) {
@@ -106,7 +111,8 @@ export const loadScene = async (
       id: idPrefix + (nodeConfig.id ?? nodeConfig.name),
       ...(nodeConfig.items && {items: nodeConfig.items.map(withIDs)}),
     });
-    const [state] = buildDefaultState({items: [withIDs(config)]}).items;
+    const filled = await fillFromModels(config, {baseURL, version});
+    const [state] = buildDefaultState({items: [withIDs(filled)]}).items;
     sceneManager.stateManager.addItems([state]);
 
     const node = buildSceneNodes(state);
