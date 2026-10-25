@@ -36,7 +36,11 @@
 // The top of the cylinder is where the ling lands, anywhere it is within the
 // cylinder's radius, or with "dome" in the collider, how far a round cap
 // falls from its middle to its rim, on the cap's curve, so its feet stay on
-// the cap as it walks across it. The ling's own collider, a sphere around
+// the cap as it walks across it. With "heights", a grid of how high its
+// surface is above the cylinder's bottom, across the cylinder's width, such
+// as a rock's, it stands on the surface wherever it is, however uneven:
+// flying into it from any side, it lands where it touched, and walking into
+// it from the ground, it climbs on. The ling's own collider, a sphere around
 // its feet, bumps it off every other collider, such as a stem's.
 //
 // Keys come from the frame's `keys` and time from its `seconds`, so it flies
@@ -165,8 +169,9 @@ function rotation(heading, climb, roll) {
 }
 
 // perchesUnder is every perch under node, as {id, center, radius, top,
-// bottom, dome}: where its cylinder stands in the world, and how far its
-// cap falls from its middle to its rim.
+// bottom, dome, heights}: where its cylinder stands in the world, how far its
+// cap falls from its middle to its rim, and, for a perch with heights, such
+// as a rock's, its grid of heights and how to find a point on it.
 function perchesUnder(sceneManager, node) {
   const perches = [];
   const visit = (child) => {
@@ -181,6 +186,12 @@ function perchesUnder(sceneManager, node) {
         top: center[1] + halfHeight,
         bottom: center[1] - halfHeight,
         dome: (collider.dome ?? 0) * yScale,
+        heights: collider.heights && {
+          grid: collider.heights,
+          radius: collider.radius ?? 1,
+          yScale,
+          toLocal: child.worldMatrix.invert().data,
+        },
       });
     }
     child.items.forEach(visit);
@@ -190,10 +201,36 @@ function perchesUnder(sceneManager, node) {
 }
 
 // surfaceAt is the height of perch's cap at (x, z), on the curve of its
-// dome, from its top in the middle down to its rim.
+// dome, from its top in the middle down to its rim, or with heights, between
+// the nearest of them, and -Infinity off its grid.
 function surfaceAt(perch, x, z) {
+  if (perch.heights) {
+    return heightAt(perch, x, z);
+  }
   const out = Math.min(1, Math.hypot(x - perch.center[0], z - perch.center[2]) / perch.radius);
   return perch.top - perch.dome * (1 - Math.sqrt(1 - out * out));
+}
+
+// heightAt is the height of a perch with heights at (x, z), blended between
+// the four around it on its grid, which spans its cylinder's width in its
+// own coordinates (see bin/generate-rock.js), or -Infinity off its grid.
+function heightAt(perch, x, z) {
+  const {grid, radius, yScale, toLocal: m} = perch.heights;
+  // Matrix4 data is row-major, so its rows give the local X and Z.
+  const y = perch.center[1];
+  const lx = m[0] * x + m[1] * y + m[2] * z + m[3];
+  const lz = m[8] * x + m[9] * y + m[10] * z + m[11];
+  const last = grid.length - 1;
+  const column = ((lx + radius) / (2 * radius)) * last;
+  const row = ((lz + radius) / (2 * radius)) * last;
+  if (!(column >= 0 && row >= 0 && column <= last && row <= last)) {
+    return -Infinity;
+  }
+  const [c0, r0] = [Math.min(last - 1, Math.floor(column)), Math.min(last - 1, Math.floor(row))];
+  const [fc, fr] = [column - c0, row - r0];
+  const near = grid[r0][c0] + (grid[r0][c0 + 1] - grid[r0][c0]) * fc;
+  const far = grid[r0 + 1][c0] + (grid[r0 + 1][c0 + 1] - grid[r0 + 1][c0]) * fc;
+  return perch.bottom + (near + (far - near) * fr) * yScale;
 }
 
 // pushOut moves position out sideways to the rim of perch's cap, straight
@@ -343,6 +380,17 @@ const sub = (a, b) => a.map((v, i) => v - b[i]);
 // normalOnCap is the normal of perch's cap at (x, z), on the curve of its
 // dome, tipping out from straight up toward its rim.
 function normalOnCap(perch, x, z) {
+  if (perch.heights) {
+    // A grid's slope, from its height a cell to either side.
+    const step = (2 * perch.radius) / (perch.heights.grid.length - 1);
+    const height = (dx, dz) => {
+      const h = heightAt(perch, x + dx, z + dz);
+      return h === -Infinity ? perch.bottom : h;
+    };
+    const slopeX = (height(step, 0) - height(-step, 0)) / (2 * step);
+    const slopeZ = (height(0, step) - height(0, -step)) / (2 * step);
+    return normalize([-slopeX, 1, -slopeZ]);
+  }
   const [dx, dz] = [x - perch.center[0], z - perch.center[2]];
   const out = Math.hypot(dx, dz);
   const part = Math.min(0.99, out / perch.radius);
@@ -579,10 +627,30 @@ module.exports = function createFlyScript(node) {
             position[1] = groundAt(position[0], position[2]);
             // Only caps with room to take off from under them, twice its
             // height, can be walked under.
+            // Walking into a rock, it climbs onto it.
             for (const perch of perches) {
-              if (position[1] + settings.height * 2 > perch.bottom) {
+              if (perch.heights) {
+                const surface = heightAt(perch, position[0], position[2]);
+                if (surface > position[1]) {
+                  position[1] = surface;
+                  flight.grounded = false;
+                  flight.perch = perch.id;
+                  flight.lastPerch = perch.id;
+                  break;
+                }
+              } else if (position[1] + settings.height * 2 > perch.bottom) {
                 pushOut(position, perch);
               }
+            }
+          } else if (perch.heights) {
+            // On a rock, it walks anywhere over it, and steps down off it
+            // onto the ground where it meets the ground.
+            const surface = heightAt(perch, position[0], position[2]);
+            const ground = groundAt(position[0], position[2]);
+            position[1] = Math.max(surface, ground);
+            if (surface <= ground) {
+              flight.perch = null;
+              flight.grounded = true;
             }
           } else if (
             Math.hypot(position[0] - perch.center[0], position[2] - perch.center[2]) <
@@ -649,6 +717,20 @@ module.exports = function createFlyScript(node) {
       // its underside, and stops rising, flying on out from under it. Rising
       // into its side or past its rim, it is pushed back out the side.
       for (const perch of perches) {
+        // A rock has no underside, so coming into it any way at all, it
+        // lands on it where it touched, wherever the rock is above the
+        // ground.
+        if (perch.heights) {
+          const surface = heightAt(perch, position[0], position[2]);
+          if (position[1] > surface || surface <= groundAt(position[0], position[2])) {
+            continue;
+          }
+          position[1] = surface;
+          flight.perch = perch.id;
+          flight.lastPerch = perch.id;
+          flight.rise = 0;
+          break;
+        }
         const out = Math.hypot(position[0] - perch.center[0], position[2] - perch.center[2]);
         const surface = surfaceAt(perch, position[0], position[2]);
         const head = position[1] + settings.height;

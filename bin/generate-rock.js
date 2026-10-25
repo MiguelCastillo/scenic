@@ -34,10 +34,9 @@
 //
 // Files are written to resources/obj unless --out says otherwise. Its
 // collider is printed and saved as a comment at the top of the file: an
-// upright cylinder around it, named "top", that can be landed on, with its
-// dome, how far its round top falls from its middle to its edge, for
-// colliders in a scene (see collision in @scenic/scene, and perches in
-// games/wingborn/scripts/fly.js).
+// upright cylinder around it, named "top", that can be landed on, with the
+// heights of its surface over a grid, for colliders in a scene (see
+// collision in @scenic/scene, and perches in games/wingborn/scripts/fly.js).
 
 const fs = require("fs");
 const path = require("path");
@@ -46,6 +45,8 @@ const {Mesh, cross, dot, normalize, parseArgs, sub} = require("./lib/mesh.js");
 
 const SIDES = 72; // around the rock
 const RINGS = 36; // from its foot to its top
+// How many points along each side of the grid of its collider's heights.
+const HEIGHTS = 32;
 // How many times its texture wraps around it.
 const TEXTURE_WRAPS = 6;
 
@@ -307,23 +308,47 @@ function buildRock(p, random) {
     facet([middle, corner(RINGS, s), corner(RINGS, s + 1)]);
   }
 
-  // Its collider stands under its top, which the lean shifts, and reaches out
-  // as far as its narrower side, short of its lumps and facets, so it can be
-  // landed on anywhere above it. Its dome is its round top's, a ball's, from
-  // its height at the middle to the ground at its edge.
-  const radius = Math.min(p.width, p.depth) * (1 - p.lumps) * (1 - p.cut / 2);
-  const shift = p.lean * p.height * 0.5;
+  // Its collider is an upright cylinder around all of it, from its foot to
+  // its top, with its heights: how high its surface is above its foot, over a
+  // square grid as wide as the cylinder, so the ling stands on it where it
+  // really is, however uneven, rather than on a dome. Its surface comes from
+  // its triangles, the highest one over each point of the grid, and is 0 off
+  // the rock.
+  const radius = Math.max(...grid.flat().map(({position: [x, , z]}) => Math.hypot(x, z)));
+  const cell = (2 * radius) / (HEIGHTS - 1);
+  const triangles = mesh.triangles.map((triangle) =>
+    triangle.map((i) => mesh.vertices[i].position)
+  );
+  const heights = Array.from({length: HEIGHTS}, (_, row) =>
+    Array.from({length: HEIGHTS}, (_, column) => {
+      const [x, z] = [column * cell - radius, row * cell - radius];
+      return Math.max(0, ...triangles.map((corners) => heightOver(corners, x, z)));
+    })
+  );
   const colliders = [
     {
       name: "top",
       shape: "cylinder",
       radius,
       height,
-      dome: height,
-      position: [leanTo[0] * shift, height / 2, leanTo[2] * shift],
+      heights,
+      position: [0, height / 2, 0],
     },
   ];
   return {mesh, colliders};
+}
+
+// heightOver is the height of the triangle with corners over (x, z), or
+// -Infinity when it isn't over it.
+function heightOver([a, b, c], x, z) {
+  const area = (b[2] - c[2]) * (a[0] - c[0]) + (c[0] - b[0]) * (a[2] - c[2]);
+  if (Math.abs(area) < 1e-9) {
+    return -Infinity;
+  }
+  const wa = ((b[2] - c[2]) * (x - c[0]) + (c[0] - b[0]) * (z - c[2])) / area;
+  const wb = ((c[2] - a[2]) * (x - c[0]) + (a[0] - c[0]) * (z - c[2])) / area;
+  const wc = 1 - wa - wb;
+  return Math.min(wa, wb, wc) < -1e-9 ? -Infinity : wa * a[1] + wb * b[1] + wc * c[1];
 }
 
 // lighten is color lightened by highlight, for the painted highlight where
