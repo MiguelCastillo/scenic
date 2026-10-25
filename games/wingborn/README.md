@@ -21,6 +21,10 @@ from, and loadScene fills them in from the models' meta files (see "Model
 meta files" in the main README). The rest of this is the story so far, to build
 the other scenes from.
 
+![The ling on its starting cap, with the first ring ahead](screenshots/start.jpg)
+![Flying through the grass toward the next cap](screenshots/flight.jpg)
+![The mushroom meadow and the giant trees](screenshots/meadow.jpg)
+
 ## The world
 
 The game is ant-sized: a backyard is the whole world. Grass is a forest, a

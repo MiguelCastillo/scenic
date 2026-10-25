@@ -41,14 +41,20 @@ const resourcesDir = path.join(root, "resources");
 const watch = process.argv.includes("--watch");
 
 // filesIn is every file under dir, as paths relative to root, in order, other
-// than games' version.json files, which these versions are written to.
+// than games' version.json files, which these versions are written to, and
+// files in a screenshots folder, which are for the README, not the game.
 function filesIn(dir) {
   if (!fs.existsSync(dir)) {
     return [];
   }
   return fs
     .readdirSync(dir, {recursive: true, withFileTypes: true})
-    .filter((entry) => entry.isFile() && entry.name !== "version.json")
+    .filter(
+      (entry) =>
+        entry.isFile() &&
+        entry.name !== "version.json" &&
+        path.basename(entry.parentPath ?? entry.path) !== "screenshots"
+    )
     .map((entry) => path.relative(root, path.join(entry.parentPath ?? entry.path, entry.name)))
     .sort();
 }
