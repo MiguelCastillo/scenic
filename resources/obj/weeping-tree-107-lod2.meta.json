@@ -1,0 +1,9 @@
+{
+  "generator": "bin/simplify-obj.js",
+  "from": "weeping-tree-107.obj",
+  "cell": 25,
+  "bounds": {"min":[-139.69,-0.188,-178.546],"max":[185.252,336.071,138.031]},
+  "vertices": 660,
+  "triangles": 1888,
+  "modelHash": "sha256:82960c67f1e640b0f2e0abd5521011f9a56a8e3e9656447c36fc9468012567f8"
+}

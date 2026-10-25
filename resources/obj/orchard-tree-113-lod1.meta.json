@@ -1,0 +1,9 @@
+{
+  "generator": "bin/simplify-obj.js",
+  "from": "orchard-tree-113.obj",
+  "cell": 12,
+  "bounds": {"min":[-137.381,-0.151,-136.188],"max":[184.681,288.186,129.197]},
+  "vertices": 2246,
+  "triangles": 5468,
+  "modelHash": "sha256:49ebc050c679179156367272b0545c055770a9ffccc59a5c8c9c05d78761fdf6"
+}

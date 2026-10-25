@@ -1,0 +1,9 @@
+{
+  "generator": "bin/simplify-obj.js",
+  "from": "tall-tree.obj",
+  "cell": 45,
+  "bounds": {"min":[-93.787,-0.1,-94.48],"max":[108.087,605.935,103.419]},
+  "vertices": 197,
+  "triangles": 598,
+  "modelHash": "sha256:81b49dc47869fff85f545b8158cd3d0994f31c108dd04efd816e423eb0bba13c"
+}

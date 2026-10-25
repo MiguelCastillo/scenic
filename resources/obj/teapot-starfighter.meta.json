@@ -1,0 +1,12 @@
+{
+  "generator": "bin/generate-starfighter.js",
+  "style": "teapot",
+  "rarity": "mythic",
+  "parameters": {"bellyRadius":55,"bellyHeight":40,"spoutLength":60,"handleSize":26,"plateSize":42,"plateTilt":12,"dots":20,"band":1,"cups":1,"highlight":0.4,"bodyColor":[0.97,0.97,0.98],"accentColor":[0.2,0.36,0.78],"trimColor":[0.92,0.76,0.32],"glassColor":[0.62,0.82,0.9],"teaColor":[0.55,0.32,0.15]},
+  "exhausts": [{"position":[14,-18,-63],"radius":5},{"position":[-14,-18,-63],"radius":5}],
+  "cannons": [{"position":[0,22,118],"direction":[0,0,1]}],
+  "bounds": {"min":[-134.078,-37.659,-72.597],"max":[134.078,64.31,121.819]},
+  "vertices": 13818,
+  "triangles": 25384,
+  "modelHash": "sha256:07ae7029f3aba3a5c9922b818ae1d14902c668ff8e1df0033dcb36163b180a0e"
+}

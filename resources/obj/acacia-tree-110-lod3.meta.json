@@ -1,0 +1,9 @@
+{
+  "generator": "bin/simplify-obj.js",
+  "from": "acacia-tree-110.obj",
+  "cell": 45,
+  "bounds": {"min":[-236.657,-0.154,-147.94],"max":[227.295,428.014,197.953]},
+  "vertices": 176,
+  "triangles": 353,
+  "modelHash": "sha256:6e6cddebd6b33ad538b3ba40cf843a1b19f5c44156bd64751dd10328f3c726be"
+}

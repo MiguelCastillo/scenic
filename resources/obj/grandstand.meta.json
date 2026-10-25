@@ -1,0 +1,8 @@
+{
+  "generator": "bin/generate-grandstand.js",
+  "parameters": {"sections":4,"seats":8,"rows":8,"roof":1},
+  "bounds": {"min":[-1225,0,-40],"max":[1225,725,880]},
+  "vertices": 19080,
+  "triangles": 9540,
+  "modelHash": "sha256:633411058ba17581b48d1f9ecb1310e80d3003e05d5a7cd3dec2e1470d00abce"
+}

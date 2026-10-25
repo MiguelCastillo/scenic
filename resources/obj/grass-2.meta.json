@@ -1,0 +1,10 @@
+{
+  "generator": "bin/generate-grass.js",
+  "seed": 2,
+  "parameters": {"blades":7,"height":2400,"width":130,"spread":160,"lean":0.35,"fold":0.15,"dew":2,"colors":[[0.42,0.66,0.25],[0.5,0.74,0.3],[0.36,0.6,0.22]]},
+  "colliders": [{"name":"blade 1","shape":"cylinder","radius":53.668,"height":840,"position":[57.924,420,-119.283]},{"name":"blade 2","shape":"cylinder","radius":73.117,"height":677.418,"position":[56.994,338.709,-3.508]},{"name":"blade 3","shape":"cylinder","radius":67.107,"height":773.632,"position":[90.73,386.816,129.02]},{"name":"blade 4","shape":"cylinder","radius":69.757,"height":589.886,"position":[-16.172,294.943,52.13]},{"name":"blade 5","shape":"cylinder","radius":73.034,"height":471.818,"position":[-95.598,235.909,57.683]},{"name":"blade 6","shape":"cylinder","radius":62.947,"height":595.656,"position":[-157.035,297.828,9.076]},{"name":"blade 7","shape":"cylinder","radius":56.048,"height":507.862,"position":[-26.745,253.931,-45.514]}],
+  "bounds": {"min":[-593.905,0,-1167.758],"max":[796.761,1779.209,818.568]},
+  "vertices": 826,
+  "triangles": 1152,
+  "modelHash": "sha256:9838f2f5dc138404994f63b1ba017dfe633ba6d6cb8db5c9214e4db5d2a0aadb"
+}

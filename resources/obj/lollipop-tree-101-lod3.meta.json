@@ -1,0 +1,9 @@
+{
+  "generator": "bin/simplify-obj.js",
+  "from": "lollipop-tree-101.obj",
+  "cell": 45,
+  "bounds": {"min":[-151.998,-0.144,-186.7],"max":[204.155,485.764,147.561]},
+  "vertices": 247,
+  "triangles": 534,
+  "modelHash": "sha256:e019b3cabdc06b1afe2e16568bf6d161f455df663181de4974f8ea87556b03a2"
+}

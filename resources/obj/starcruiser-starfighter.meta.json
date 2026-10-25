@@ -1,0 +1,12 @@
+{
+  "generator": "bin/generate-starfighter.js",
+  "style": "starcruiser",
+  "rarity": "rare",
+  "parameters": {"saucerRadius":72,"saucerHeight":12,"saucerForward":55,"saucerLift":28,"hullDrop":48,"hullRadius":19,"hullLength":140,"nacelleSpan":58,"nacelleLift":8,"nacelleLength":140,"nacelleRadius":12,"highlight":0.3,"bodyColor":[0.88,0.89,0.92],"accentColor":[0.86,0.22,0.2],"trimColor":[0.62,0.64,0.7],"glassColor":[0.12,0.17,0.32],"glowColor":[0.45,0.75,1],"bussardColor":[1,0.35,0.25]},
+  "exhausts": [{"position":[15.84,28,-17],"radius":4},{"position":[-15.84,28,-17],"radius":4}],
+  "cannons": [{"position":[21.6,21.4,121.92],"direction":[0,0,1]},{"position":[-21.6,21.4,121.92],"direction":[0,0,1]}],
+  "bounds": {"min":[-72,-39,-131.2],"max":[72,52.96,127]},
+  "vertices": 11790,
+  "triangles": 22392,
+  "modelHash": "sha256:53d22240cc7bb44b3086d4140affd3d889c0d29d4aa2ff17a64cb2f170cc8d8d"
+}

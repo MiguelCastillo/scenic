@@ -1,0 +1,10 @@
+{
+  "generator": "bin/generate-rocket.js",
+  "style": "classic",
+  "parameters": {"radius":30,"nose":65,"noseRoundness":0.55,"tail":55,"dome":0.23,"noseStripe":0,"band":-5,"bandRidge":1,"rivets":12,"spike":32,"portholes":0,"portholeSize":12,"fins":3,"finSpan":62,"finSweep":38,"finRoot":32,"finThickness":2.5,"boosters":0,"boosterRadius":12,"boosterLength":90,"nozzle":16,"bodyColor":[0.9,0.9,0.92],"noseColor":[0.08,0.1,0.16],"finColor":[0.72,0.74,0.78],"trimColor":[0.7,0.72,0.75],"stripeColor":[0.15,0.2,0.9],"ringColor":[0.95,0.35,0.35],"glassColor":[0.5,0.88,0.98]},
+  "exhausts": [{"position":[0,0,-66.1],"radius":8}],
+  "bounds": {"min":[-54.319,-32.083,-83.1],"max":[54.319,62,97]},
+  "vertices": 6615,
+  "triangles": 11248,
+  "modelHash": "sha256:501708902eedc8a2fe0e4af151ed5232c56a085d72c91983f4dc44640a7933c9"
+}

@@ -1,0 +1,9 @@
+{
+  "generator": "bin/simplify-obj.js",
+  "from": "pine-tree-105.obj",
+  "cell": 25,
+  "bounds": {"min":[-136.601,6.8,-143.888],"max":[135.61,321.781,136.319]},
+  "vertices": 711,
+  "triangles": 2030,
+  "modelHash": "sha256:ec7e4f65a5c9c380de315f4b9d6c80eb7a6f74b4499dade18535a88ba1ee0ed5"
+}

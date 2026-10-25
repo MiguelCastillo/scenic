@@ -1,0 +1,10 @@
+{
+  "generator": "bin/generate-tree.js",
+  "style": "lollipop",
+  "parameters": {"crown":"lollipop","trunkHeight":230,"trunkRadius":16,"trunkTaper":0.75,"trunkLean":18,"rootFlare":1.6,"branches":0,"branchAngle":30,"branchLength":80,"branchStart":0.8,"branchRadius":0.5,"branchCurve":1,"branchStagger":0,"topBubble":1,"bubbles":4,"bubbleSize":110,"bubbleVariety":0.2,"crownSpread":1,"squash":0.92,"highlight":0.35,"highlightSize":0.35,"trunkColor":[0.6,0.38,0.22],"leafColors":[[0.95,0.45,0.65],[0.98,0.6,0.75]]},
+  "crown": {"center":[25.309,293.417,18.278],"radius":187.579},
+  "bounds": {"min":[-133.373,-0.14,-157.316],"max":[183.76,460.759,180.413]},
+  "vertices": 2368,
+  "triangles": 4480,
+  "modelHash": "sha256:0d07f37bd57a76119114d79f1558326a00f49be946c73e35c6cd0b1f053d8fc0"
+}

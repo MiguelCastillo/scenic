@@ -1,0 +1,10 @@
+{
+  "generator": "bin/generate-mushroom.js",
+  "style": "cluster",
+  "parameters": {"mushrooms":3,"height":500,"cap":195,"puff":0.8,"curl":1.15,"stemWidth":0.22,"flare":0.5,"lean":0.08,"spots":6,"spotSize":0.13,"highlight":0.22,"capColor":[0.85,0.28,0.18],"stemColor":[0.94,0.87,0.7],"gillColor":[0.92,0.83,0.64],"spotColor":[1,0.95,0.86]},
+  "colliders": [{"name":"stem 1","shape":"cylinder","radius":42.9,"height":500,"position":[0,250,0]},{"name":"cap 1","shape":"cylinder","radius":195,"height":192.417,"dome":156,"position":[0,559.791,0]},{"name":"stem 2","shape":"cylinder","radius":25.706,"height":267.806,"position":[-33.846,133.903,-209.163]},{"name":"cap 2","shape":"cylinder","radius":116.844,"height":115.297,"dome":93.475,"position":[-37.268,303.633,-230.312]},{"name":"stem 3","shape":"cylinder","radius":28.296,"height":310.996,"position":[87.679,155.498,203.741]},{"name":"cap 3","shape":"cylinder","radius":128.618,"height":126.914,"dome":102.894,"position":[97.514,350.433,226.595]}],
+  "bounds": {"min":[-194.951,0,-347.127],"max":[226.1,656,355.18]},
+  "vertices": 3432,
+  "triangles": 6144,
+  "modelHash": "sha256:43c92f661900472a45ad00f52fb95ab9b070a35aa068fc8dba9d351788fb3ec7"
+}

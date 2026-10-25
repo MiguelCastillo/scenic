@@ -1,0 +1,13 @@
+{
+  "generator": "bin/generate-starfighter.js",
+  "seed": 6,
+  "style": "cross-wing",
+  "rarity": "common",
+  "parameters": {"length":172.907,"radius":28.978,"noseRadius":16.374,"canopyLength":75.48,"wingAngle":16.979,"wingSpan":117.173,"wingRoot":70.902,"wingTip":38.787,"wingThickness":12.597,"stripe":1,"engineRadius":18.128,"engineLength":83.508,"cannonLength":116.218,"cannonRadius":4.439,"highlight":0.3,"bodyColor":[0.96,0.84,0.8],"accentColor":[0.3,0.68,0.3],"trimColor":[0.7,0.64,0.72],"glassColor":[0.094,0.164,0.276],"droidColor":[0.95,0.95,0.96],"droidAccentColor":[0.95,0.5,0.12]},
+  "exhausts": [{"position":[38.117,11.639,-60.895],"radius":9.97},{"position":[-38.117,11.639,-60.895],"radius":9.97},{"position":[-38.117,-11.639,-60.895],"radius":9.97},{"position":[38.117,-11.639,-60.895],"radius":9.97}],
+  "cannons": [{"position":[116.312,35.514,71.835],"direction":[0,0,1]},{"position":[-116.312,35.514,71.835],"direction":[0,0,1]},{"position":[-116.312,-35.514,71.835],"direction":[0,0,1]},{"position":[116.312,-35.514,71.835],"direction":[0,0,1]}],
+  "bounds": {"min":[-126.078,-45.281,-72.621],"max":[126.078,45.281,100.286]},
+  "vertices": 20484,
+  "triangles": 39008,
+  "modelHash": "sha256:8e5b99104c486dd2fc8b76518ae324a87f900f01424c7b7eaf3239cea39e9dd3"
+}

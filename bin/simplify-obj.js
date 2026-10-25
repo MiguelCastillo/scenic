@@ -19,11 +19,16 @@
 //   --cell: how big the grid's cubes are, in the mesh's units. 15 by default.
 //   --out: where to write it. Next to the file by default, named for its
 //     level of detail.
+//
+// The simplified file gets a meta file of its own that names only the file
+// it was simplified from and the cell size. It doesn't copy that file's
+// meta, such as its colliders; look there for them.
 
 const fs = require("fs");
 const path = require("path");
 
 const {Mesh, normalize, parseArgs} = require("./lib/mesh.js");
+const {metaHeader, writeMeta} = require("./generate-obj-meta.js");
 
 function main() {
   const args = process.argv.slice(2);
@@ -39,16 +44,13 @@ function main() {
   const source = path.isAbsolute(file) ? file : path.join(objFolder, file);
   const lines = fs.readFileSync(source, "utf8").split("\n");
 
-  const header = [];
   const positions = [];
   const colors = [];
   const normals = [];
   const triangles = [];
   for (const line of lines) {
     const [kind, ...values] = line.trim().split(/\s+/);
-    if (kind === "#") {
-      header.push(line.slice(2));
-    } else if (kind === "v") {
+    if (kind === "v") {
       const numbers = values.map(Number);
       positions.push(numbers.slice(0, 3));
       colors.push(numbers.length >= 6 ? numbers.slice(3, 6) : [1, 1, 1]);
@@ -104,13 +106,14 @@ function main() {
       ? out
       : path.join(objFolder, out)
     : source.replace(/\.obj$/, `-lod${lod}.obj`);
-  fs.writeFileSync(
-    output,
-    mesh.toObj(
-      [...header, `Simplified by bin/simplify-obj.js from ${path.basename(source)}, cell ${size}`],
-      "simplified"
-    )
-  );
+  const meta = {
+    generator: "bin/simplify-obj.js",
+    from: path.basename(source),
+    cell: size,
+  };
+  const header = metaHeader(output, meta);
+  fs.writeFileSync(output, mesh.toObj(header, "simplified"));
+  writeMeta(output, meta);
 
   // eslint-disable-next-line no-console
   console.log(

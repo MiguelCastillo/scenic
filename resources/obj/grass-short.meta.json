@@ -1,0 +1,10 @@
+{
+  "generator": "bin/generate-grass.js",
+  "seed": 4,
+  "parameters": {"blades":4,"height":1300,"width":130,"spread":160,"lean":0.35,"fold":0.15,"dew":1,"colors":[[0.42,0.66,0.25],[0.5,0.74,0.3],[0.36,0.6,0.22]]},
+  "colliders": [{"name":"blade 1","shape":"cylinder","radius":61.926,"height":455,"position":[-71.739,227.5,19.089]},{"name":"blade 2","shape":"cylinder","radius":65.64,"height":304.94,"position":[-8.109,152.47,-51.182]},{"name":"blade 3","shape":"cylinder","radius":52.53,"height":364.221,"position":[154.351,182.11,-9.608]},{"name":"blade 4","shape":"cylinder","radius":70.98,"height":301.827,"position":[27.522,150.914,80.268]}],
+  "bounds": {"min":[-347.132,0,-351.7],"max":[653.901,1056.01,444.803]},
+  "vertices": 452,
+  "triangles": 624,
+  "modelHash": "sha256:b600791653727605581cc7b0f57ab579aeb6352548eb5e8265fb22e37a32aa5d"
+}

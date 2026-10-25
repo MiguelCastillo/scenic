@@ -1,0 +1,14 @@
+{
+  "generator": "bin/generate-starfighter.js",
+  "seed": 1,
+  "style": "bumblebee",
+  "rarity": "legendary",
+  "parameters": {"abdomenLength":110.558,"abdomenRadius":37.839,"thoraxRadius":32.069,"headRadius":23.574,"wingLength":89.971,"wingWidth":36.283,"stripes":5,"highlight":0.35,"bodyColor":[1,0.62,0.2],"accentColor":[0.36,0.2,0.12],"trimColor":[0.36,0.2,0.12],"glassColor":[0.14,0.12,0.2],"wingColor":[0.95,0.9,1],"glowColor":[0.75,0.6,1]},
+  "exhausts": [{"position":[0,-17.028,-127.006],"radius":6}],
+  "cannons": [{"position":[17.072,54.103,96.151],"direction":[0,0,1]},{"position":[-17.072,54.103,96.151],"direction":[0,0,1]}],
+  "translucent": {"file":"bumblebee-starfighter-1-translucent.obj","opacity":0.5},
+  "bounds": {"min":[-39.431,-45.046,-154.006],"max":[39.431,58.603,95.651]},
+  "vertices": 7952,
+  "triangles": 14960,
+  "modelHash": "sha256:6110990937a1d851caf8d1d6eaad72e0c110a35e2838ece2ae6b893b2ee238d3"
+}

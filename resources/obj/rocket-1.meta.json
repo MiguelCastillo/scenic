@@ -1,0 +1,11 @@
+{
+  "generator": "bin/generate-rocket.js",
+  "seed": 1,
+  "style": "slender",
+  "parameters": {"radius":20.559,"nose":102.308,"noseRoundness":0.406,"tail":63.372,"dome":0.403,"noseStripe":1,"band":-0.342,"bandRidge":0,"rivets":0,"spike":0,"portholes":3,"portholeSize":10.131,"fins":3,"finSpan":64.634,"finSweep":5.068,"finRoot":38.393,"finThickness":2.579,"boosters":1,"boosterRadius":10.888,"boosterLength":73.854,"nozzle":11.674,"bodyColor":[0.593,0.877,0.905],"noseColor":[0.217,0.512,0.902],"finColor":[0.217,0.512,0.902],"trimColor":[0.217,0.512,0.902],"stripeColor":[0.9,0.1,0.46],"ringColor":[0.3,0.9,0.63],"glassColor":[0.641,0.833,0.971]},
+  "exhausts": [{"position":[0,0,-67.287],"radius":5.837},{"position":[0,64.634,-67.036],"radius":3.811},{"position":[-55.975,-32.317,-67.036],"radius":3.811},{"position":[55.975,-32.317,-67.036],"radius":3.811}],
+  "bounds": {"min":[-66.863,-43.205,-67.287],"max":[66.863,75.522,102.308]},
+  "vertices": 15054,
+  "triangles": 26304,
+  "modelHash": "sha256:b2a2c860694a33ca8de2e97a3e85ee9ef82fa42aabf7f55213173a05f44d256d"
+}

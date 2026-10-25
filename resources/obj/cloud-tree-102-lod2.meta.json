@@ -1,0 +1,9 @@
+{
+  "generator": "bin/simplify-obj.js",
+  "from": "cloud-tree-102.obj",
+  "cell": 25,
+  "bounds": {"min":[-131.671,-0.438,-110.874],"max":[157.594,289.895,181.407]},
+  "vertices": 303,
+  "triangles": 966,
+  "modelHash": "sha256:bccbd5a3490e3566f37d9b90ead54a40374580b107b7ec54f98655075849262e"
+}

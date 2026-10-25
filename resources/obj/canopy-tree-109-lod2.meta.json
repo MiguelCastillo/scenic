@@ -1,0 +1,9 @@
+{
+  "generator": "bin/simplify-obj.js",
+  "from": "canopy-tree-109.obj",
+  "cell": 25,
+  "bounds": {"min":[-138.216,-0.134,-180.387],"max":[180.486,393.562,177.078]},
+  "vertices": 734,
+  "triangles": 2248,
+  "modelHash": "sha256:eed0aaa2e238e26df2f4d03ff5d9aefe149df116ded2e62c593221a4c10d8073"
+}

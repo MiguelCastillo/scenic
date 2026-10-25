@@ -1,0 +1,12 @@
+{
+  "generator": "bin/generate-starfighter.js",
+  "style": "dart",
+  "rarity": "common",
+  "parameters": {"width":78,"noseLength":115,"tailLength":60,"hullThickness":24,"noseStripe":0.38,"canopyLength":52,"engineRadius":17,"engineLength":95,"finHeight":32,"cannonLength":60,"cannonRadius":3.5,"highlight":0.3,"bodyColor":[0.93,0.92,0.88],"accentColor":[0.86,0.22,0.2],"trimColor":[0.62,0.64,0.7],"glassColor":[0.12,0.17,0.32]},
+  "exhausts": [{"position":[63.96,0,-93.25],"radius":9.35},{"position":[-63.96,0,-93.25],"radius":9.35}],
+  "cannons": [{"position":[86.46,0,5.75],"direction":[0,0,1]},{"position":[-86.46,0,5.75],"direction":[0,0,1]}],
+  "bounds": {"min":[-92.06,-17,-93.25],"max":[92.06,49,98.375]},
+  "vertices": 3860,
+  "triangles": 7080,
+  "modelHash": "sha256:1551767c228ae654beafbcb87ed239b1f162ac6b411f3a922305337d43ee54fe"
+}

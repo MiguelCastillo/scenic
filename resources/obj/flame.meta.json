@@ -1,0 +1,8 @@
+{
+  "generator": "bin/generate-flame.js",
+  "parameters": {"length":4,"bulge":1.25,"tongues":5,"lick":0.35,"inset":0.3,"palette":"fire"},
+  "bounds": {"min":[-1.085,-1.085,-4],"max":[1.085,1.085,0.3]},
+  "vertices": 1968,
+  "triangles": 3840,
+  "modelHash": "sha256:36605f645e66a76fe0e11dc7a27e499ea3cb43bdffe05caaa5b1acb728b2857d"
+}

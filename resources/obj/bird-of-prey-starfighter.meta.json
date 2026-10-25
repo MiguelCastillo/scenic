@@ -1,0 +1,12 @@
+{
+  "generator": "bin/generate-starfighter.js",
+  "style": "bird-of-prey",
+  "rarity": "uncommon",
+  "parameters": {"headLength":50,"headRadius":20,"neckLength":55,"bodyWidth":60,"bodyLength":70,"wingSpan":140,"wingChord":90,"wingDroop":25,"highlight":0.3,"bodyColor":[0.45,0.55,0.42],"accentColor":[0.75,0.3,0.2],"trimColor":[0.4,0.42,0.4],"glassColor":[0.12,0.17,0.2],"glowColor":[1,0.35,0.2]},
+  "exhausts": [{"position":[12.6,6,-36.2],"radius":5},{"position":[-12.6,6,-36.2],"radius":5}],
+  "cannons": [{"position":[0,-9,132],"direction":[0,0,1]},{"position":[129.602,-60.434,41.5],"direction":[0,0,1]},{"position":[-129.602,-60.434,41.5],"direction":[0,0,1]}],
+  "bounds": {"min":[-135.602,-66.434,-39.234],"max":[135.602,24,143.5]},
+  "vertices": 5104,
+  "triangles": 9184,
+  "modelHash": "sha256:436c32cbd3d31b461a0f04934bfccb6858b6b79299d4b0505a5ed8d505f3d614"
+}

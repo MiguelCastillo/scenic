@@ -1,0 +1,12 @@
+{
+  "generator": "bin/generate-starfighter.js",
+  "style": "streamliner",
+  "rarity": "uncommon",
+  "parameters": {"length":230,"radius":26,"canopyLength":70,"wingSpan":62,"wingRoot":74,"wingTip":30,"finHeight":56,"finLength":84,"finTilt":18,"bumperRadius":9,"highlight":0.35,"bodyColor":[0.96,0.92,0.82],"accentColor":[0.86,0.2,0.3],"trimColor":[0.86,0.88,0.92],"glassColor":[0.12,0.17,0.32],"tailLightColor":[1,0.28,0.22]},
+  "exhausts": [{"position":[0,0,-117.5],"radius":6.24}],
+  "cannons": [{"position":[14.3,-8.32,132.4],"direction":[0,0,1]},{"position":[-14.3,-8.32,132.4],"direction":[0,0,1]}],
+  "bounds": {"min":[-88,-26,-117.5],"max":[88,64.487,131.4]},
+  "vertices": 12264,
+  "triangles": 23104,
+  "modelHash": "sha256:23761be7f4f290ecd879de5ac4abf8d29119d8df5a8c1bf31b50b92e3fc4e1b8"
+}

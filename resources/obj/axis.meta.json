@@ -1,0 +1,6 @@
+{
+  "bounds": {"min":[0,-0.2,-0.2],"max":[2.2,0.2,0.2]},
+  "vertices": 97,
+  "triangles": 186,
+  "modelHash": "sha256:0be7340bdcdf1818b49e6cf9776a3734bbcbe22c0f39f5a15c733b78754c8af9"
+}

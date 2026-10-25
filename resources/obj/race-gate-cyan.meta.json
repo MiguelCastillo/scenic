@@ -1,0 +1,8 @@
+{
+  "generator": "bin/generate-gate.js",
+  "parameters": {"radius":300,"thickness":20,"stripes":24,"width":2000,"height":800,"block":80,"digits":1,"number":1,"post":120,"dot":45,"shape":"ring","palette":"cyan"},
+  "bounds": {"min":[-320,-320,-20],"max":[320,320,20]},
+  "vertices": 1920,
+  "triangles": 3072,
+  "modelHash": "sha256:5c4c886fbef1edecd0dd0249937703b24cc7c0460260b71ad7a2a8e6a931b642"
+}

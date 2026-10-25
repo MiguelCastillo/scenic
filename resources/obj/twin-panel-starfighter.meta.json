@@ -1,0 +1,12 @@
+{
+  "generator": "bin/generate-starfighter.js",
+  "style": "twin-panel",
+  "rarity": "common",
+  "parameters": {"ballRadius":40,"windowSize":0.6,"windowSpokes":8,"armLength":62,"armRadius":8,"panelSize":108,"panelSides":6,"panelThickness":10,"panelSpokes":1,"cannonLength":22,"cannonRadius":3.5,"highlight":0.3,"bodyColor":[0.72,0.76,0.84],"accentColor":[0.86,0.22,0.2],"trimColor":[0.58,0.6,0.66],"glassColor":[0.1,0.14,0.26],"panelColor":[0.2,0.22,0.3]},
+  "exhausts": [{"position":[14,0,-48],"radius":5},{"position":[-14,0,-48],"radius":5}],
+  "cannons": [{"position":[12,-22,54.2],"direction":[0,0,1]},{"position":[-12,-22,54.2],"direction":[0,0,1]}],
+  "bounds": {"min":[-116.6,-98.727,-101.56],"max":[116.6,98.727,101.56]},
+  "vertices": 10104,
+  "triangles": 18320,
+  "modelHash": "sha256:3c7ca3c2aaaac1d7f592c55f60cc618ab19a07f7108539e5854668974d26535e"
+}

@@ -1,0 +1,8 @@
+{
+  "generator": "bin/generate-ling.js",
+  "parameters": {"bodyColor":[1,0.64,0.24],"wingLength":70},
+  "bounds": {"min":[-37,0,-73],"max":[37,153,56.5]},
+  "vertices": 6420,
+  "triangles": 11312,
+  "modelHash": "sha256:52b9fc5f35ced822dcdb5bb1377157ad3878db991961963caefd7a1810995ef8"
+}

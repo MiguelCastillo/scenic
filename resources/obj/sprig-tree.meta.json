@@ -1,0 +1,10 @@
+{
+  "generator": "bin/generate-tree.js",
+  "style": "sprig",
+  "parameters": {"crown":"round","trunkHeight":270,"trunkRadius":9,"trunkTaper":0.55,"trunkLean":0,"rootFlare":1.2,"branches":4,"minBranches":4,"branchAngle":42,"branchLength":105,"branchStart":0.55,"branchRadius":0.9,"branchCurve":0,"branchStagger":0.35,"topBubble":0,"bubbles":4,"bubbleSize":50,"bubbleVariety":0.15,"crownSpread":1,"squash":1,"highlight":0.25,"highlightSize":0.35,"trunkColor":[0.3,0.3,0.34],"leafColors":[[0.45,0.65,0.9],[0.55,0.72,0.92]]},
+  "crown": {"center":[-0.463,302.578,1.284],"radius":133.048},
+  "bounds": {"min":[-98.362,0,-112.819],"max":[111.618,394.239,117.104]},
+  "vertices": 3860,
+  "triangles": 7280,
+  "modelHash": "sha256:2bcd225806aac773545a6f3d41b41bb00e7c3fe469e6b8026c3b51bf6a539d5d"
+}

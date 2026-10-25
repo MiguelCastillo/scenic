@@ -1,0 +1,12 @@
+{
+  "generator": "bin/generate-starfighter.js",
+  "style": "longwing",
+  "rarity": "common",
+  "parameters": {"headLength":120,"headRadius":22,"neckLength":34,"span":78,"barRadius":9,"nacelleLength":200,"nacelleRadius":14,"cannonLength":45,"cannonRadius":3,"highlight":0.3,"bodyColor":[0.93,0.92,0.88],"accentColor":[0.95,0.75,0.2],"trimColor":[0.62,0.64,0.7],"glassColor":[0.12,0.17,0.32],"droidColor":[0.95,0.95,0.97],"droidAccentColor":[0.86,0.22,0.2]},
+  "exhausts": [{"position":[78,0,-178],"radius":7.7},{"position":[-78,0,-178],"radius":7.7}],
+  "cannons": [{"position":[9.9,-14.3,166],"direction":[0,0,1]},{"position":[-9.9,-14.3,166],"direction":[0,0,1]}],
+  "bounds": {"min":[-96.122,-25.214,-178],"max":[96.122,33.77,168]},
+  "vertices": 7112,
+  "triangles": 13416,
+  "modelHash": "sha256:aad11351f2bb4ab947888a7f03aaa8171f4d1ed1657d3eefbd2bf253982965a1"
+}

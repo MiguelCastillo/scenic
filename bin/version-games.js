@@ -69,7 +69,11 @@ function addFiles(hash, files) {
 // those that exist: in a scene, a ship or any other JSON, and in a script,
 // the paths of shared files, such as "/resources/obj/flame.obj"; in an OBJ
 // model, its materials, by its mtllib lines; and in a materials file, its
-// textures, by its map_ lines, both relative to the file naming them.
+// textures, by its map_ lines, both relative to the file naming them. An OBJ
+// or FBX model also uses its meta file, such as rock.meta.json for rock.obj,
+// when there is one. No file names a meta file, since loaders find it from
+// the model's name, so it is added here (see "Model meta files" in the
+// README).
 function referencesIn(file) {
   const full = path.join(root, file);
   const ext = path.extname(file).toLowerCase();
@@ -86,6 +90,9 @@ function referencesIn(file) {
     for (const [, name] of text.matchAll(pattern)) {
       named.push(path.resolve(path.dirname(full), name));
     }
+  }
+  if (ext === ".obj" || ext === ".fbx") {
+    named.push(full.slice(0, -ext.length) + ".meta.json");
   }
   return named
     .filter((name) => fs.existsSync(name) && fs.statSync(name).isFile())

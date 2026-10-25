@@ -1,0 +1,11 @@
+{
+  "generator": "bin/generate-tree.js",
+  "seed": 114,
+  "style": "weeping",
+  "parameters": {"crown":"round","trunkHeight":196.933,"trunkRadius":18.503,"trunkTaper":0.595,"trunkLean":14.357,"rootFlare":1.5,"branches":4,"minBranches":4,"branchAngle":49.435,"branchLength":133.038,"branchStart":0.782,"branchRadius":0.5,"branchCurve":1,"branchStagger":0.2,"twigs":1,"topBubble":1,"bubbles":14,"bubbleSize":54.389,"tipSize":0.9,"fillSize":1,"smallBubbles":6,"dots":0,"crownHeight":0.6,"strands":1,"strandBubbles":5,"fruit":0,"fruitColor":[0.9,0.2,0.2],"bubbleVariety":0.257,"crownSpread":1.131,"squash":0.987,"highlight":0.3,"highlightSize":0.3,"trunkColor":[0.553,0.331,0.21],"leafColors":[[0.613,0.886,0.286]]},
+  "colliders": [{"name":"trunk","shape":"cylinder","radius":18.503,"height":196.933,"position":[0,98.466,0]},{"name":"crown","shape":"cylinder","radius":183.655,"height":286.456,"position":[9.151,231.419,1.768]}],
+  "bounds": {"min":[-137.869,-0.144,-157.173],"max":[156.171,374.647,160.372]},
+  "vertices": 9115,
+  "triangles": 16522,
+  "modelHash": "sha256:53f040290ceb7339d4cbba6adfc85465b55e5c7e5dce2e287b04cf80dfbbee7e"
+}

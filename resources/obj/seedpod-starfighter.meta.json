@@ -1,0 +1,13 @@
+{
+  "generator": "bin/generate-starfighter.js",
+  "style": "seedpod",
+  "rarity": "rare",
+  "parameters": {"length":170,"radius":34,"flatten":0.8,"petals":4,"petalLength":120,"petalWidth":30,"petalCurl":-0.9,"petalSpread":25,"highlight":0.3,"bodyColor":[0.62,0.76,0.48],"accentColor":[0.95,0.62,0.72],"petalTipColor":[1,0.9,0.82],"trimColor":[0.5,0.62,0.36],"glassColor":[0.6,0.85,0.9],"glowColor":[0.9,1,0.6]},
+  "exhausts": [{"position":[0,0,-89.84],"radius":6.8}],
+  "cannons": [{"position":[20.4,-6.8,58.75],"direction":[0,0,1]},{"position":[-20.4,-6.8,58.75],"direction":[0,0,1]}],
+  "spinner": {"file":"seedpod-starfighter-spinner.obj","axis":[0,0,1]},
+  "bounds": {"min":[-34,-27.2,-89.84],"max":[34,60.701,85]},
+  "vertices": 6512,
+  "triangles": 12448,
+  "modelHash": "sha256:a4c43c5dca9ddc638e35bce5f88382b906181c1884714b2baeeea7e67db68d9b"
+}

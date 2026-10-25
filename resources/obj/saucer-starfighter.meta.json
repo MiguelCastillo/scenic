@@ -1,0 +1,12 @@
+{
+  "generator": "bin/generate-starfighter.js",
+  "style": "saucer",
+  "rarity": "uncommon",
+  "parameters": {"discRadius":110,"discHeight":26,"belly":0.75,"prongLength":95,"prongWidth":32,"prongGap":24,"cockpitRadius":13,"domeSize":30,"dishSize":20,"glowSpread":50,"highlight":0.3,"bodyColor":[0.88,0.87,0.84],"accentColor":[0.86,0.22,0.2],"trimColor":[0.62,0.64,0.7],"glassColor":[0.1,0.14,0.26],"glowColor":[0.55,0.85,1]},
+  "exhausts": [{"position":[56.1,0,-97.168],"radius":7.8},{"position":[0,0,-112.2],"radius":7.8},{"position":[-56.1,0,-97.168],"radius":7.8}],
+  "cannons": [{"position":[28,0,165],"direction":[0,0,1]},{"position":[-28,0,165],"direction":[0,0,1]}],
+  "bounds": {"min":[-110,-19.5,-114.998],"max":[128.719,54.7,167.5]},
+  "vertices": 9092,
+  "triangles": 17088,
+  "modelHash": "sha256:b8dc8a3f5d951663a24ddad49ba87061a4c401ed0f2a23d17e5e1abca881fc8f"
+}

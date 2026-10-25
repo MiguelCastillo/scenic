@@ -1,0 +1,12 @@
+{
+  "generator": "bin/generate-starfighter.js",
+  "style": "atomic-saucer",
+  "rarity": "rare",
+  "parameters": {"discRadius":95,"discHeight":16,"domeRadius":40,"lights":12,"legs":3,"legLength":40,"cannonLength":34,"highlight":0.4,"bodyColor":[0.82,0.85,0.9],"accentColor":[0.86,0.22,0.2],"trimColor":[0.7,0.72,0.78],"glassColor":[0.55,0.8,0.85],"glowColor":[0.6,1,0.55]},
+  "exhausts": [{"position":[28.5,0,-95],"radius":4},{"position":[-28.5,0,-95],"radius":4}],
+  "cannons": [{"position":[23.75,-2,116.9],"direction":[0,0,1]},{"position":[-23.75,-2,116.9],"direction":[0,0,1]}],
+  "bounds": {"min":[-97.65,-53.224,-97.65],"max":[97.65,68.6,116.4]},
+  "vertices": 12522,
+  "triangles": 23628,
+  "modelHash": "sha256:c93300066a3f842b1483e3871fc4430d754ef941fb5206261f91680b3c49e497"
+}
