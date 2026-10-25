@@ -1,4 +1,5 @@
 import {CameraSystem} from "@scenic/camera";
+import {stepBodies} from "@scenic/physics";
 import {Node, Viewport} from "@scenic/scene";
 
 import {createFrameRateCounter} from "./fps-counter.js";
@@ -105,7 +106,8 @@ export class SceneRunner {
   // clock, then, through its scripts, everything they move, then where
   // everything is (see preRender in SceneManager), then its active camera,
   // then what is prepared for the view from where the camera is (see
-  // prepareForView in SceneManager). This is the logic for the game itself.
+  // prepareForView in SceneManager), and last, physics. This is the logic for
+  // the game itself.
   stepFrame(ms) {
     const {sceneManager} = this;
     const paused = this._paused;
@@ -241,6 +243,15 @@ export class SceneRunner {
     if (this._gl) {
       sceneManager.prepareForView(this._sceneMs, this._gl);
     }
+
+    // Last, physics moves every body, such as a falling ling, from what the
+    // scripts set this frame, such as a flap's force (see stepBodies in
+    // @scenic/physics). It runs once the frame is worked out for drawing, so
+    // everything drawn, and the cameras and what is attached to them, are
+    // from the same state. The scripts see where it moved bodies next frame,
+    // and can respond before it is drawn, such as landing on a cap a body
+    // fell into.
+    stepBodies(sceneManager, sceneSeconds);
 
     // Let's write out the number of frames per second that we are able to
     // run.

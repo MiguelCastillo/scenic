@@ -349,7 +349,8 @@ that games and apps share, such as `hover.js` and `flame.js`, are in
 Scripts run like CommonJS modules: the editor fetches the script and runs it
 inside a function given `require`, `module` and `exports`
 (`packages/runtime/src/script-loader.js`). `require` returns the app's own copies of
-`@scenic/math`, `@scenic/scene`, `@scenic/animation` and `@scenic/renderer`, so
+`@scenic/math`, `@scenic/scene`, `@scenic/animation`, `@scenic/renderer` and
+`@scenic/physics`, so
 scripts share the app's classes, and requiring anything else is an error.
 Scripts that need other libraries can bundle them with their own build: write
 ES modules, mark the `@scenic` packages as external, and output CommonJS. A
@@ -1279,6 +1280,11 @@ depends on where the camera is. So `SceneRunner.stepFrame`:
    where the node it follows is this frame, then runs `preRender` again on
    the camera and what is attached to it, with `SceneManager.preRenderNode`.
 4. Runs `prepareForView`, from where the camera is now.
+5. Runs physics, with `stepBodies` from `@scenic/physics`, which moves every
+   node whose state has a `body` by its mass, the forces scripts set, and
+   gravity: the `gravity` of the nearest node above it that has one, such as
+   `"gravity": [0, -2400, 0]` on the viewport. It runs last, so everything drawn this frame, cameras included, is
+   from the same state, and scripts see where it moved bodies next frame.
 
 `SceneRunner.renderFrame` then runs `render`.
 

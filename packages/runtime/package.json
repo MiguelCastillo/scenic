@@ -10,6 +10,7 @@
     "@scenic/fbx": "*",
     "@scenic/math": "*",
     "@scenic/obj": "*",
+    "@scenic/physics": "*",
     "@scenic/renderer": "*",
     "@scenic/scene": "*",
     "@scenic/utils": "*"

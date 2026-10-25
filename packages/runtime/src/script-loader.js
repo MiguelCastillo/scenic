@@ -2,6 +2,7 @@ import * as math from "@scenic/math";
 import * as scene from "@scenic/scene";
 import * as animation from "@scenic/animation";
 import * as renderer from "@scenic/renderer";
+import * as physics from "@scenic/physics";
 
 import {versionedURL} from "./versioned-url.js";
 
@@ -15,6 +16,7 @@ const scriptModules = {
   "@scenic/scene": scene,
   "@scenic/animation": animation,
   "@scenic/renderer": renderer,
+  "@scenic/physics": physics,
 };
 
 // loadScript fetches a script and runs it the way CommonJS modules run: inside

@@ -1,0 +1,32 @@
+{
+  "name": "@scenic/physics",
+  "version": "0.0.0",
+  "description": "scenic physics library",
+  "type": "module",
+  "main": "src/index.js",
+  "devDependencies": {},
+  "scripts": {
+    "test": "jest",
+    "lint": "eslint ./src"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MiguelCastillo/scenic.git"
+  },
+  "author": "Miguel Castillo <manchagnu@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/MiguelCastillo/scenic/issues"
+  },
+  "homepage": "https://github.com/MiguelCastillo/scenic#readme",
+  "jest": {
+    "transform": {
+      "\\.jsx?$": [
+        "babel-jest",
+        {
+          "rootMode": "upward"
+        }
+      ]
+    }
+  }
+}
