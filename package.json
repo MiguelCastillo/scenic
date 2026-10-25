@@ -42,7 +42,8 @@
     "webgl-mock": "^0.1.7"
   },
   "lint-staged": {
-    "*.{js,css,md}": "prettier --write"
+    "*.{js,css,md}": "prettier --write",
+    "*.obj": "node bin/generate-obj-meta.js --check"
   },
   "workspaces": [
     "packages/math",

@@ -611,7 +611,7 @@ model again and records its hash, and keeps every other field already in
 the meta file:
 
 ```bash
-node bin/generate-obj-meta.js cube.obj
+node bin/generate-obj-meta.js resources/obj/cube.obj
 ```
 
 `--check` writes nothing. It lists the models whose meta file is missing, or
@@ -619,8 +619,10 @@ whose `modelHash` doesn't match the model file any more because any byte of
 the file changed, such as a model re-exported or edited by hand:
 
 ```bash
-node bin/generate-obj-meta.js --check --all
+node bin/generate-obj-meta.js --check resources/obj/*.obj
 ```
+
+The pre-commit hook runs `--check` on the staged OBJ files.
 
 To fix a generated model that `--check` lists, rerun its generator, which
 writes both the model and its meta file. Running `generate-obj-meta.js` on

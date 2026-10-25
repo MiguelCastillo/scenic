@@ -42,19 +42,26 @@ function writeMetaFile(model, meta, measured) {
   fs.writeFileSync(metaFileOf(model), `{\n${fields.join(",\n")}\n}\n`);
 }
 
-// checkMeta returns null when a model's meta file is up to date, meaning its
-// modelHash matches the model file's hash now. Otherwise it returns what is
-// wrong, as a sentence: "no meta file", "its meta file has no modelHash" or
-// "the model changed since its meta file was written".
-function checkMeta(model) {
-  if (!fs.existsSync(metaFileOf(model))) {
-    return "no meta file";
+// checkMeta checks that each of models has an up-to-date meta file, meaning
+// one whose modelHash matches the model file's hash. If any don't, it throws
+// one error listing every problem, a line each, such as
+// "resources/obj/cube.obj: no meta file". The problems are "no meta file",
+// "its meta file has no modelHash" and "its modelHash doesn't match the model
+// file".
+function checkMeta(models) {
+  const problems = [];
+  for (const model of models) {
+    if (!fs.existsSync(metaFileOf(model))) {
+      problems.push(`${model}: no meta file`);
+    } else if (!readMeta(model).modelHash) {
+      problems.push(`${model}: its meta file has no modelHash`);
+    } else if (readMeta(model).modelHash !== hashOf(model)) {
+      problems.push(`${model}: its modelHash doesn't match the model file`);
+    }
   }
-  const {modelHash} = readMeta(model);
-  if (!modelHash) {
-    return "its meta file has no modelHash";
+  if (problems.length) {
+    throw new Error(problems.join("\n"));
   }
-  return modelHash === hashOf(model) ? null : "the model changed since its meta file was written";
 }
 
 module.exports = {checkMeta, metaFileOf, readMeta, writeMetaFile};
