@@ -1,0 +1,10 @@
+{
+  "generator": "bin/generate-mushroom.js",
+  "style": "pad",
+  "parameters": {"mushrooms":1,"height":180,"cap":290,"puff":0.5,"curl":1.08,"stemWidth":0.18,"flare":0.5,"lean":0.08,"spots":0,"spotSize":0.13,"highlight":0.22,"capColor":[0.62,0.42,0.26],"stemColor":[0.94,0.87,0.7],"gillColor":[0.92,0.83,0.64],"spotColor":[1,0.95,0.86]},
+  "colliders": [{"name":"stem 1","shape":"cylinder","radius":52.2,"height":180,"position":[0,90,0]},{"name":"cap 1","shape":"cylinder","radius":290,"height":163.173,"dome":145,"position":[0,243.413,0]}],
+  "bounds": {"min":[-289.997,0,-289.997],"max":[289.997,325,289.997]},
+  "vertices": 864,
+  "triangles": 1600,
+  "modelHash": "sha256:9b62fc5cdf56bca273fab0a79f19f73999a6391270d5204792eb4e1e398ff6ae"
+}
