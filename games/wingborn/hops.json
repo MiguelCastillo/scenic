@@ -3,6 +3,7 @@
     {
       "name": "world",
       "type": "viewport",
+      "gravity": [0, -2400, 0],
       "input": true,
       "fog": {
         "color": [0.78, 0.89, 0.96],

@@ -19,6 +19,14 @@
 // height, and flying up under one, it bumps its head and flies on out from
 // under it.
 //
+// In the air it has a body, so physics moves it up and down at the end of
+// each frame: the world's gravity pulls it down, the air slows it, and
+// flapping pushes it up (see stepBodies in @scenic/physics). This script
+// moves it forward, sets the body's force and drag, and lands it where
+// physics took it into a cap or the ground. Standing or on a tree it has no
+// body, so nothing pulls it, and taking off gives it one again, rising at
+// takeoffSpeed.
+//
 // It sticks to trees, the way ants do: touching one flying, or walking into
 // its trunk, it holds on wherever it touched, and walks on from there,
 // following its trunk, branches and twigs as tubes, the tree's skeleton:
@@ -63,16 +71,21 @@
 //   head out of the caps above it. 150 by default.
 // - bank: how far it leans into a turn in the air, in degrees. 30 by
 //   default.
-// - climbSpeed: how fast it climbs while flapping, in scene units per
-//   second. 260 by default.
 // - takeoffSpeed: how fast it rises as it takes off. 300 by default.
-// - glideSink: how fast it sinks while gliding. 260 by default.
-// - fallSink: how fast it sinks once out of energy, and diving. 320 by
-//   default.
-// - response: how quickly its climbing and sinking catch up with the keys,
-//   in seconds. 0.3 by default.
-// - drain: how much of its energy flapping uses, per second. 0.25 by
-//   default, so it can flap for four seconds.
+// - weight: how heavy it is, its body's mass. Gravity pulls on it with
+//   weight times gravity, so a heavier ling sinks faster and climbs slower.
+//   1 by default.
+// - flapForce: how hard flapping pushes it up. 4300 by default, so with
+//   the world's gravity at 2400 it climbs at about 257 a second.
+// - glideDrag: how strongly the air slows its rise and fall with its wings
+//   spread, as force per unit of speed. 7.4 by default, so it glides down
+//   at about 324 a second.
+// - foldedDrag: the same with its wings folded, diving or out of energy.
+//   6 by default, so it falls at 400 a second.
+// - response: how quickly its banking catches up with the keys, in
+//   seconds. 0.3 by default.
+// - drain: how much of its energy flapping uses, per second. 0.2 by
+//   default, so it can flap for five seconds.
 // - refill: how much of its energy standing on a perch gives back, per
 //   second. 0.6 by default.
 // - groundRefill: how much of its energy standing on the ground gives back,
@@ -106,7 +119,6 @@
 //   stood on one.
 // - heading: which way it heads, in degrees around the world's up axis. The
 //   node's Y rotation by default.
-// - rise: how fast it is going up, negative going down.
 // - roll: how far it is banked, in degrees.
 // - flapping: whether it is flapping, 0 or 1.
 // - restedSeconds: how long it has gone without flapping in the air.
@@ -127,12 +139,13 @@ const defaults = {
   treeWalkSpeed: 450,
   height: 150,
   bank: 30,
-  climbSpeed: 260,
   takeoffSpeed: 300,
-  glideSink: 260,
-  fallSink: 320,
+  weight: 1,
+  flapForce: 4300,
+  glideDrag: 7.4,
+  foldedDrag: 6,
   response: 0.3,
-  drain: 0.25,
+  drain: 0.2,
   refill: 0.6,
   groundRefill: 0.3,
   airRefill: 0.1,
@@ -148,7 +161,6 @@ const defaults = {
   nose: [0, 0, 1],
   letGoSeconds: 1,
   lastPerch: null,
-  rise: 0,
   roll: 0,
   flapping: 0,
   restedSeconds: 0,
@@ -461,12 +473,21 @@ module.exports = function createFlyScript(node) {
         letGoSeconds: settings.letGoSeconds,
         lastPerch: settings.lastPerch,
         heading: settings.heading ?? state.transform.rotation[1],
-        rise: settings.rise,
         roll: settings.roll,
         flapping: 0,
         restedSeconds: settings.restedSeconds,
         up: settings.up,
       };
+      // Its body while it flies, which physics moves up and down, or null
+      // while it stands or holds on to a tree.
+      let body = state.body ?? null;
+      // launch returns a body rising at takeoffSpeed, for taking off.
+      const launch = () => ({
+        mass: settings.weight,
+        velocity: [0, settings.takeoffSpeed, 0],
+        force: [0, 0, 0],
+        drag: settings.glideDrag,
+      });
 
       const held = (code) => (keys.has(code) ? 1 : 0);
       const turn = held("ArrowLeft") - held("ArrowRight");
@@ -488,6 +509,7 @@ module.exports = function createFlyScript(node) {
       const write = (position, angles, view = flight.heading) => {
         sceneManager.updateNodeStateByID(node.id, {
           transform: {...state.transform, position, rotation: angles},
+          body,
           script: {...state.script, settings: {...state.script.settings, ...flight}},
         });
         const viewState = settings.view && sceneManager.getNodeStateByID(settings.view);
@@ -543,7 +565,7 @@ module.exports = function createFlyScript(node) {
         flight.tree = surface.tube.tree;
         flight.perch = null;
         flight.grounded = false;
-        flight.rise = 0;
+        body = null;
         flight.up = surface.normal;
         flight.nose = along(heading, surface.normal);
         return surface.center.map((v, i) => v + surface.normal[i] * surface.radius);
@@ -593,7 +615,7 @@ module.exports = function createFlyScript(node) {
             ? headingOf(flight.nose)
             : headingOf(flight.up);
         flight.tree = null;
-        flight.rise = settings.takeoffSpeed;
+        body = launch();
         flight.restedSeconds = 0;
         flight.letGoSeconds = 0;
         flight.up = [0, 1, 0];
@@ -608,7 +630,7 @@ module.exports = function createFlyScript(node) {
         flight.energy = Math.min(1, flight.energy + refill * seconds);
         flight.roll -= flight.roll * ease(settings.response);
         if (!flapKey) {
-          flight.rise = 0;
+          body = null;
           const walk = held("ArrowUp") - held("ArrowDown");
           const perch = perches.find(({id}) => id === flight.perch);
           // normalAt is the normal of what it stands on at (x, z).
@@ -694,7 +716,7 @@ module.exports = function createFlyScript(node) {
         }
         flight.perch = null;
         flight.grounded = false;
-        flight.rise = settings.takeoffSpeed;
+        body = launch();
         flight.restedSeconds = 0;
       }
 
@@ -706,17 +728,23 @@ module.exports = function createFlyScript(node) {
       const resting = flight.restedSeconds >= settings.restDelay;
       const change = flight.flapping ? -settings.drain : resting ? settings.airRefill : 0;
       flight.energy = Math.max(0, Math.min(1, flight.energy + change * seconds));
-      const targetRise = flight.flapping
-        ? settings.climbSpeed
-        : flight.energy > 0 && !diveKey
-          ? -settings.glideSink
-          : -settings.fallSink;
-      flight.rise += (targetRise - flight.rise) * ease(settings.response);
+      // Physics moved it up or down at the end of last frame, from its
+      // body. Here it moves forward, and sets what physics does next: the air
+      // slows it more with its wings spread, and flapping pushes it up.
+      body ??= {mass: settings.weight, velocity: [0, 0, 0]};
+      const rise = body.velocity[1];
+      const folded = !flight.flapping && (flight.energy <= 0 || diveKey);
+      body = {
+        ...body,
+        mass: settings.weight,
+        force: [0, flight.flapping * settings.flapForce, 0],
+        drag: folded ? settings.foldedDrag : settings.glideDrag,
+      };
       flight.roll += (-turn * settings.bank - flight.roll) * ease(settings.response);
 
       const position = [
         start[0] + Math.sin(radians) * settings.speed * seconds,
-        start[1] + flight.rise * seconds,
+        start[1],
         start[2] + Math.cos(radians) * settings.speed * seconds,
       ];
 
@@ -725,11 +753,7 @@ module.exports = function createFlyScript(node) {
       flight.letGoSeconds += seconds;
       const surface = flight.letGoSeconds > 0.4 && surfaceOf(tubes, position);
       if (surface && surface.distance <= 0 && position[1] > groundAt(position[0], position[2])) {
-        const going = normalize([
-          Math.sin(radians),
-          flight.rise / settings.speed,
-          Math.cos(radians),
-        ]);
+        const going = normalize([Math.sin(radians), rise / settings.speed, Math.cos(radians)]);
         const onTree = hold(surface, going);
         write(onTree, facing(flight.nose, flight.up), treeView());
         return;
@@ -752,7 +776,7 @@ module.exports = function createFlyScript(node) {
           position[1] = surface;
           flight.perch = perch.id;
           flight.lastPerch = perch.id;
-          flight.rise = 0;
+          body = null;
           break;
         }
         const out = Math.hypot(position[0] - perch.center[0], position[2] - perch.center[2]);
@@ -762,11 +786,14 @@ module.exports = function createFlyScript(node) {
           continue;
         }
         // Near the rim, within its own width of it, it isn't under the cap.
+        // Where it was before physics moved it last frame tells whether it
+        // came up from under the cap.
         const width = state.collider?.radius ?? 0;
-        if (start[1] + settings.height <= perch.bottom + 1 && out < perch.radius - width) {
+        const before = position[1] - rise * seconds;
+        if (before + settings.height <= perch.bottom + 1 && out < perch.radius - width) {
           position[1] = perch.bottom - settings.height;
-          flight.rise = Math.min(flight.rise, 0);
-        } else if (flight.rise <= 0) {
+          body = {...body, velocity: [0, Math.min(rise, 0), 0]};
+        } else if (rise <= 0) {
           if (out > perch.radius * STANDABLE) {
             const pull = (perch.radius * STANDABLE) / out;
             position[0] = perch.center[0] + (position[0] - perch.center[0]) * pull;
@@ -775,7 +802,7 @@ module.exports = function createFlyScript(node) {
           position[1] = surfaceAt(perch, position[0], position[2]);
           flight.perch = perch.id;
           flight.lastPerch = perch.id;
-          flight.rise = 0;
+          body = null;
           break;
         } else {
           pushOut(position, perch);
@@ -791,13 +818,13 @@ module.exports = function createFlyScript(node) {
       if (!flight.perch && position[1] <= ground) {
         position[1] = ground;
         flight.grounded = true;
-        flight.rise = 0;
+        body = null;
       }
 
       // It tips its nose up climbing and down sinking, a little, and flies
       // upright.
       const landed = flight.perch || flight.grounded;
-      const climb = landed ? 0 : (Math.atan2(flight.rise, settings.speed) * 90) / Math.PI;
+      const climb = landed ? 0 : (Math.atan2(rise, settings.speed) * 90) / Math.PI;
       flight.up = landed ? flight.up : [0, 1, 0];
       write(position, rotation(flight.heading, climb, flight.roll));
     },
